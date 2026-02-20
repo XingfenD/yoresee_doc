@@ -1,0 +1,61 @@
+[server]
+port = 8080
+mode = "debug"
+read_timeout = 10
+write_timeout = 10
+
+[database]
+host = "yoresee_doc_postgre"
+port = 5432
+user = "root"
+password = "your_password"
+name = "doc_manager"
+# max_idle_conns = 10
+# max_open_conns = 100
+# conn_max_lifetime = 3600
+# charset = "utf8mb4"
+
+[redis]
+host = "yoresee_doc_redis"
+port = 6379
+password = "your_redis_password"
+db = 0
+timeout = 5
+
+[minio]
+endpoint = "yoresee_doc_minio:9000"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+bucket = "documents"
+use_ssl = false
+timeout = 30
+
+[backend]
+http_framework = "gin"
+
+[backend.jwt]
+secret = "yoresee_doc_jwt_secret_key"
+expire = 86400                 # 24 hours
+refresh_expire = 604800        # 7 days
+
+[backend.log]
+level = "info"
+file = "logs/app.log"
+console = true
+file_log = true
+
+[backend.document]
+max_size = 10
+allowed_extensions = [".md", ".txt", ".pdf", ".doc", ".docx"]
+storage_path = "uploads"
+
+[backend.security]
+password_hash_cost = 12
+max_login_attempts = 5
+login_lock_duration = 30
+[backend.security.cors]
+allowed_origins = ["*"]
+allowed_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+allowed_headers = ["Origin", "Content-Type", "Authorization"]
+allow_credentials = true
+max_age = 86400
