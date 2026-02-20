@@ -6,6 +6,7 @@ WORKDIR /app
 ENV GOPROXY=https://goproxy.cn,direct
 
 COPY go.mod go.sum ./
+COPY . .
 RUN go mod download
 
 COPY . .
@@ -21,7 +22,7 @@ WORKDIR /app
 COPY --from=builder /app/main.out .
 COPY --from=builder /app/create_admin.out .
 COPY --from=builder /app/migrate.out .
-COPY config.yaml .
+COPY config.toml .
 
 EXPOSE 8080
 
