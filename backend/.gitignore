@@ -1,0 +1,12 @@
+# binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# config
+config.yaml
+config.toml
