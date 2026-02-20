@@ -3,36 +3,46 @@ package middleware
 import (
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/api"
 	"github.com/XingfenD/yoresee_doc/internal/auth"
+	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
-func JWTAuth() gin.HandlerFunc {
+var JWTAuth = &JWTAuthMiddleware{}
+
+type JWTAuthMiddleware struct {
+}
+
+func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
+	if authHeader == "" {
+		return nil, status.GenErrWithCustomMsg(status.StatusTokenInvalid, "unlogin or illegal access")
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if !(len(parts) == 2 && parts[0] == "Bearer") {
+		return nil, status.GenErrWithCustomMsg(status.StatusTokenInvalid, "invalid token format")
+	}
+	token := parts[1]
+	jwtValidator := &auth.JWTValidator{}
+	claims, err := jwtValidator.Validate(token)
+	if err != nil {
+		return nil, status.StatusTokenInvalid
+	}
+
+	if jwtValidator.IsExpired(claims) {
+		return nil, status.StatusTokenExpired
+	}
+	return claims, nil
+}
+
+func (m *JWTAuthMiddleware) GinHandle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(401, gin.H{"error": "未登录或非法访问"})
-			c.Abort()
-			return
-		}
-
-		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			c.JSON(401, gin.H{"error": "请求头中auth格式有误"})
-			c.Abort()
-			return
-		}
-
-		jwtValidator := &auth.JWTValidator{}
-		claims, err := jwtValidator.Validate(parts[1])
+		claims, err := m.handle(authHeader)
 		if err != nil {
-			c.JSON(401, gin.H{"error": "无效的Token"})
-			c.Abort()
-			return
-		}
-
-		if jwtValidator.IsExpired(claims) {
-			c.JSON(401, gin.H{"error": "Token已过期"})
+			c.JSON(401, api.GenBaseRespWithErr(err))
 			c.Abort()
 			return
 		}

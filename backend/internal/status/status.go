@@ -31,7 +31,9 @@ func GenErrWithCustomMsg(err error, msg string) error {
 }
 
 var (
-	StatusCommon = NewStatusErr(200, "success")
+	StatusSuccess = NewStatusErr(20000, "success")
 
-	StatusParamError = NewStatusErr(400, "invalid parameter")
+	StatusParamError   = NewStatusErr(40000, "invalid parameter")
+	StatusTokenInvalid = NewStatusErr(40001, "invalid token")
+	StatusTokenExpired = NewStatusErr(40002, "token expired")
 )

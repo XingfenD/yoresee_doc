@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,15 +16,15 @@ func (h *HealthHandler) handle(ctx context.Context, req Request) (resp Response,
 	}, nil
 }
 
-func (h *HealthHandler) GinHander() gin.HandlerFunc {
+func (h *HealthHandler) GinHandle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		req := &HealthRequest{}
 		resp, err := h.handle(ctx, req)
 		if err != nil {
-			c.JSON(200, GenBaseRespWithErr(err))
+			c.JSON(http.StatusInternalServerError, GenBaseRespWithErr(err))
 			return
 		}
-		c.JSON(200, resp)
+		c.JSON(http.StatusOK, resp)
 	}
 }

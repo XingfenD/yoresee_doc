@@ -8,7 +8,7 @@ import (
 )
 
 type API interface {
-	GinHander() gin.HandlerFunc
+	GinHandle() gin.HandlerFunc
 	handle(ctx context.Context, req Request) (resp Response, err error)
 }
 

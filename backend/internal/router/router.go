@@ -9,17 +9,16 @@ import (
 func SetupRouter(r *gin.Engine) {
 	root := r.Group("/")
 
-	// RegisterController(root, "GET", "/health", controller.HealthControllerImpl.Name(), controller.HealthControllerImpl.Handle)
-	root.GET("/health", api.HealthHandlerImpl.GinHander())
+	root.GET("/health", api.HealthHandlerImpl.GinHandle())
 
-	api := root.Group("/api")
+	api_ := root.Group("/api")
 
-	// Protected routes
-	protected := api.Group("/")
-	protected.Use(middleware.JWTAuth())
+	api_.POST("/test/post", api.TestPostHandlerImpl.GinHandle())
+
+	// protected routes
+	protected := api_.Group("/")
+	protected.Use(middleware.JWTAuth.GinHandle())
 	{
-		// 示例：注册受保护的路由
-		// RegisterController(protected, "GET", "/user/profile", authCtrl.Name(), authCtrl.GetProfile)
-		// RegisterController(protected, "GET", "/document/list", docCtrl.Name(), docCtrl.List)
+		protected.GET("/test/protected", api.TestProtectedHandlerImpl.GinHandle())
 	}
 }
