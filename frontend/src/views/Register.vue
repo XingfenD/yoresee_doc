@@ -155,7 +155,7 @@ const handleRegister = async () => {
           registerForm.invitationCode || null
         );
         if (success) {
-          router.push('/');
+          router.push({ path: '/login', query: { email: registerForm.email } });
         } else {
           error.value = userStore.error;
         }

@@ -55,10 +55,11 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store/user';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const loginFormRef = ref(null);
 const loading = ref(false);
@@ -66,7 +67,7 @@ const error = ref('');
 const systemName = ref('Yoresee');
 
 const loginForm = reactive({
-  email: '',
+  email: route.query.email || '',
   password: ''
 });
 
