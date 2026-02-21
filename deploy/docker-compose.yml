@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: yoresee_doc_postgre
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: your_password
+      POSTGRES_DB: doc_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - yoresee_doc_postgres_data:/var/lib/postgresql/data
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: yoresee_doc_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+volumes:
+  yoresee_doc_postgres_data:
+
+networks:
+  yoresee_doc_network:
+    driver: bridge
