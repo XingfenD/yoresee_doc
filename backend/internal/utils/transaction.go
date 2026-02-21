@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// WithTransaction 执行一个包含事务的操作
 func WithTransaction(fn func(tx *gorm.DB) error) error {
 	tx := storage.DB.Begin()
 	defer func() {
