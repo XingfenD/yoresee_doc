@@ -48,6 +48,7 @@ type MinioConfig struct {
 type BackendConfig struct {
 	HTTPFramework string    `mapstructure:"http_framework"`
 	Jwt           JWTConfig `mapstructure:"jwt"`
+	SystemName    string    `mapstructure:"system_name"`
 	// Log           LogConfig      `mapstructure:"log"`
 	// document      DocumentConfig `mapstructure:"document"`
 }

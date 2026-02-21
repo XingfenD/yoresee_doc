@@ -7,12 +7,14 @@ var TestProtectedHandlerImpl = &TestProtectedHandler{}
 var TestPostHandlerImpl = &TestPostHandler{}
 var AuthRegisterHandlerImpl = &AuthRegisterHandler{}
 var AuthLoginHandlerImpl = &AuthLoginHandler{}
+var SystemInfoHandlerImpl = &SystemInfoHandler{}
 
 type HealthHandler struct{}
 type TestProtectedHandler struct{}
 type TestPostHandler struct{}
 type AuthRegisterHandler struct{}
 type AuthLoginHandler struct{}
+type SystemInfoHandler struct{}
 
 type HealthResponse struct {
 	BaseResponse
@@ -66,4 +68,13 @@ type AuthLoginRequest struct {
 	BaseRequest
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type SystemInfoResponse struct {
+	BaseResponse
+	SystemName string `json:"system_name"`
+}
+
+type SystemInfoRequest struct {
+	BaseRequest
 }

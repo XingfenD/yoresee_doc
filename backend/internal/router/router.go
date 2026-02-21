@@ -11,6 +11,7 @@ func SetupRouter(r *gin.Engine) {
 
 	root.GET("/health", api.HealthHandlerImpl.GinHandle())
 
+	root.GET("/system-info", api.SystemInfoHandlerImpl.GinHandle())
 	root.POST("/test/post", api.TestPostHandlerImpl.GinHandle())
 	root.POST("/login", api.AuthLoginHandlerImpl.GinHandle())
 	root.POST("/register", api.AuthRegisterHandlerImpl.GinHandle())
