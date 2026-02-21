@@ -1,3 +1,16 @@
+# dev
+FROM node:20-alpine AS dev
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+EXPOSE 80
+
+CMD ["npm", "run", "dev", "--", "--host", "--port", "80"]
+
+# release
 FROM node:20-alpine AS builder
 WORKDIR /app
 
