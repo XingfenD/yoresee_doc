@@ -22,7 +22,6 @@ WORKDIR /app
 COPY --from=builder /app/main.out .
 COPY --from=builder /app/create_admin.out .
 COPY --from=builder /app/migrate.out .
-COPY config.toml .
 
 EXPOSE 8080
 
