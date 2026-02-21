@@ -4,16 +4,27 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
 )
 
-func (h *AuthLoginHandler) handle(ctx context.Context, req AuthLoginRequest) (*AuthLoginResponse, error) {
-	if req.Username == "" || req.Password == "" {
+func (h *AuthLoginHandler) handle(ctx context.Context, req Request) (Response, error) {
+	authLoginReq := req.(AuthLoginRequest)
+	if authLoginReq.Username == "" || authLoginReq.Password == "" {
 		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "username or password is empty")
 	}
 
-	return &AuthLoginResponse{}, nil
+	token, user, err := service.AuthSvc.Login(authLoginReq.Username, authLoginReq.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthLoginResponse{
+		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),
+		Token:        token,
+		User:         *user,
+	}, nil
 }
 
 func (h *AuthLoginHandler) GinHandle() gin.HandlerFunc {

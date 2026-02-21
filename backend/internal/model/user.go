@@ -17,7 +17,6 @@ type User struct {
 	RoleID         int64          `gorm:"not null" json:"role_id"`
 	Role           Role           `gorm:"foreignKey:RoleID" json:"role"`
 	Status         int            `gorm:"default:1" json:"status"`
-	LastLoginAt    *time.Time     `json:"last_login_at"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`

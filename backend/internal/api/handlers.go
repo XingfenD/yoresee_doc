@@ -1,5 +1,7 @@
 package api
 
+import "github.com/XingfenD/yoresee_doc/internal/dto"
+
 var HealthHandlerImpl = &HealthHandler{}
 var TestProtectedHandlerImpl = &TestProtectedHandler{}
 var TestPostHandlerImpl = &TestPostHandler{}
@@ -56,7 +58,8 @@ type AuthRegisterRequest struct {
 
 type AuthLoginResponse struct {
 	BaseResponse
-	Token string `json:"token"`
+	Token string           `json:"token"`
+	User  dto.UserResponse `json:"user"`
 }
 
 type AuthLoginRequest struct {

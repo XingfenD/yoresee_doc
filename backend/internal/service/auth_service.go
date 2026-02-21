@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -18,40 +19,38 @@ func NewAuthService() *AuthService {
 	}
 }
 
-func (s *AuthService) Register(username string, password string, email string, invitationCode *string) error {
+func (s *AuthService) Register(userCreate *dto.UserCreate) error {
 	return utils.WithTransaction(func(tx *gorm.DB) error {
 		mode, _ := ConfigSvc.Get("registration_mode")
 		if mode == "invitation" {
-			if invitationCode == nil || *invitationCode == "" {
+			if userCreate.InvitationCode == nil || *userCreate.InvitationCode == "" {
 				return status.GenErrWithCustomMsg(status.StatusParamError, "the system enable invitation mode, but the invitation code is empty")
 			}
-			err := InvitationSvc.ValidateAndUseWithTx(tx, *invitationCode)
+			err := InvitationSvc.ValidateAndUseWithTx(tx, *userCreate.InvitationCode)
 			if err != nil {
 				return err
 			}
 		}
 
-		// 使用新的链式调用API
-		_, err := s.userRepo.GetByUsername(username).WithTx(tx).Exec()
+		_, err := s.userRepo.GetByUsername(userCreate.Username).WithTx(tx).Exec()
 		if err == nil {
 			return status.StatusUserAlreadyExists
 		}
 
-		hashedPwd, err := utils.HashPassword(password)
+		hashedPwd, err := utils.HashPassword(userCreate.Password)
 		if err != nil {
 			return err
 		}
 
 		user := &model.User{
-			Username:       username,
+			Username:       userCreate.Username,
 			PasswordHash:   hashedPwd,
-			Email:          email,
+			Email:          userCreate.Email,
 			RoleID:         2, // default to normal user (assuming 2 is user role)
 			Status:         1,
-			InvitationCode: invitationCode,
+			InvitationCode: userCreate.InvitationCode,
 		}
 
-		// 使用新的链式调用API
 		if err := s.userRepo.Create(user).WithTx(tx).Exec(); err != nil {
 			return err
 		}
@@ -60,17 +59,24 @@ func (s *AuthService) Register(username string, password string, email string, i
 	})
 }
 
-func (s *AuthService) Login(username string, password string) error {
+func (s *AuthService) Login(username string, password string) (string, *dto.UserResponse, error) {
 	user, err := s.userRepo.GetByUsername(username).Exec()
 	if err != nil {
-		return status.StatusUserNotFound
+		return "", nil, status.StatusUserNotFound
 	}
 
 	if !utils.CheckPassword(password, user.PasswordHash) {
-		return status.StatusInvalidPassword
+		return "", nil, status.StatusInvalidPassword
 	}
 
-	return nil
+	token, err := utils.GenerateToken(user.ID, user.RoleID, user.Username)
+	if err != nil {
+		return "", nil, err
+	}
+
+	userResponse := dto.NewUserResponseFromModel(user)
+
+	return token, userResponse, nil
 }
 
 var AuthSvc = NewAuthService()
