@@ -5,6 +5,14 @@
         <h2>{{ systemName }}</h2>
         <p>请登录您的账户</p>
       </div>
+      <div class="theme-toggle-container">
+        <el-button
+          type="text"
+          class="theme-toggle"
+          @click="toggleDarkMode"
+          :icon="darkMode ? 'Sunny' : 'Moon'"
+        />
+      </div>
       <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login-form">
         <el-form-item prop="email">
           <el-input
@@ -54,9 +62,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../store/user';
+import { Moon, Sunny } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -64,7 +73,12 @@ const userStore = useUserStore();
 const loginFormRef = ref(null);
 const loading = ref(false);
 const error = ref('');
-const systemName = ref('Yoresee');
+const systemName = ref('文档管理系统');
+const darkMode = computed(() => userStore.darkMode);
+
+const toggleDarkMode = () => {
+  userStore.toggleDarkMode();
+};
 
 const loginForm = reactive({
   email: route.query.email || '',
@@ -125,39 +139,40 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #F7F8FA;
-  padding: 20px;
+  background-color: var(--bg-light);
+  padding: var(--spacing-md);
+  transition: all 0.3s ease;
 }
 
 .login-form-wrapper {
   width: 100%;
   max-width: 400px;
-  background-color: #FFFFFF;
-  border-radius: 12px;
-  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
-  padding: 40px;
+  background-color: var(--bg-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xl);
   transition: all 0.3s ease;
 }
 
 .login-form-wrapper:hover {
-  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--spacing-lg);
 }
 
 .login-header h2 {
   font-size: 24px;
   font-weight: 600;
-  color: #1D2129;
-  margin-bottom: 8px;
+  color: var(--text-dark);
+  margin-bottom: var(--spacing-sm);
 }
 
 .login-header p {
   font-size: 14px;
-  color: #86909C;
+  color: var(--text-light);
   margin: 0;
 }
 
@@ -166,12 +181,12 @@ onMounted(() => {
 }
 
 .login-form .el-form-item {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-md);
 }
 
 .login-form .el-input {
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
 }
 
 .login-form .el-input__wrapper {
@@ -179,31 +194,31 @@ onMounted(() => {
 }
 
 .login-form .el-input__wrapper.is-focus {
-  box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.2);
+  box-shadow: 0 0 0 2px var(--primary-light);
 }
 
 .login-button {
   width: 100%;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   font-size: 14px;
   font-weight: 500;
-  background-color: #165DFF;
-  border-color: #165DFF;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .login-button:hover {
-  background-color: #4080FF;
-  border-color: #4080FF;
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 .login-button:active {
-  background-color: #0E42D2;
-  border-color: #0E42D2;
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 .error-message {
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-md);
 }
 
 .error-alert {
@@ -213,11 +228,11 @@ onMounted(() => {
 
 .register-link {
   text-align: center;
-  margin-top: 16px;
+  margin-top: var(--spacing-md);
 }
 
 .register-link a {
-  color: #165DFF;
+  color: var(--primary-color);
   font-size: 14px;
   text-decoration: none;
 }
@@ -226,9 +241,25 @@ onMounted(() => {
   text-decoration: underline;
 }
 
+.theme-toggle-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-md);
+}
+
+.theme-toggle {
+  font-size: 18px;
+  color: var(--text-medium);
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--primary-color);
+}
+
 @media (max-width: 768px) {
   .login-form-wrapper {
-    padding: 32px 24px;
+    padding: var(--spacing-lg) var(--spacing-md);
   }
   
   .login-header h2 {

@@ -6,6 +6,12 @@
         <h1 class="system-title">{{ systemName }}</h1>
       </div>
       <div class="nav-right">
+        <el-button
+          type="text"
+          class="theme-toggle"
+          @click="toggleDarkMode"
+          :icon="darkMode ? 'Sunny' : 'Moon'"
+        />
         <el-dropdown trigger="click">
           <span class="user-info">
             <el-avatar size="small" :src="userAvatar"></el-avatar>
@@ -126,18 +132,23 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
-import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View } from '@element-plus/icons-vue';
+import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View, Moon, Sunny } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
 
-const systemName = ref('Yoresee');
+const systemName = ref('文档管理系统');
 const activeMenu = ref('documents');
 const searchKeyword = ref('');
 const filterStatus = ref('all');
 
 const userInfo = computed(() => userStore.userInfo);
+const darkMode = computed(() => userStore.darkMode);
 const userAvatar = ref('');
+
+const toggleDarkMode = () => {
+  userStore.toggleDarkMode();
+};
 
 // 模拟文档数据
 const documents = ref([
@@ -214,45 +225,63 @@ onMounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #F7F8FA;
+  background-color: var(--bg-light);
+  transition: all 0.3s ease;
 }
 
 /* 顶部导航栏 */
 .top-nav {
   height: 60px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #C9CDD4;
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 0 var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
 }
 
 .system-title {
   font-size: 18px;
   font-weight: 600;
-  color: #165DFF;
+  color: var(--primary-color);
   margin: 0;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.theme-toggle {
+  font-size: 18px;
+  color: var(--text-medium);
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--primary-color);
 }
 
 .user-info {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
   transition: background-color 0.3s;
 }
 
 .user-info:hover {
-  background-color: #F2F3F5;
+  background-color: var(--bg-medium);
 }
 
 .username {
-  margin-left: 8px;
+  margin-left: var(--spacing-sm);
   margin-right: 4px;
-  color: #4E5969;
+  color: var(--text-medium);
   font-size: 14px;
 }
 
@@ -266,9 +295,10 @@ onMounted(() => {
 /* 左侧导航 */
 .side-nav {
   width: 240px;
-  background-color: #FFFFFF;
-  border-right: 1px solid #C9CDD4;
+  background-color: var(--bg-white);
+  border-right: 1px solid var(--border-color);
   overflow-y: auto;
+  transition: all 0.3s ease;
 }
 
 .side-menu {
@@ -280,23 +310,24 @@ onMounted(() => {
   line-height: 48px;
   margin: 0;
   border-radius: 0;
-  color: #4E5969;
+  color: var(--text-medium);
+  transition: all 0.3s ease;
 }
 
 .side-menu .el-menu-item:hover {
-  background-color: #E8F0FF;
-  color: #165DFF;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
 }
 
 .side-menu .el-menu-item.is-active {
-  background-color: #E8F0FF;
-  color: #165DFF;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
 }
 
 /* 右侧内容 */
 .content-area {
   flex: 1;
-  padding: 24px;
+  padding: var(--spacing-lg);
   overflow-y: auto;
 }
 
@@ -305,75 +336,76 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-lg);
 }
 
 .page-title {
   font-size: 20px;
   font-weight: 600;
-  color: #1D2129;
+  color: var(--text-dark);
   margin: 0;
 }
 
 .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
 
 .primary-btn {
-  border-radius: 8px;
-  background-color: #165DFF;
-  border-color: #165DFF;
+  border-radius: var(--border-radius-md);
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .primary-btn:hover {
-  background-color: #4080FF;
-  border-color: #4080FF;
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 .secondary-btn {
-  border-radius: 8px;
-  background-color: #FFFFFF;
-  border-color: #C9CDD4;
-  color: #4E5969;
+  border-radius: var(--border-radius-md);
+  background-color: var(--bg-white);
+  border-color: var(--border-color);
+  color: var(--text-medium);
 }
 
 .secondary-btn:hover {
-  border-color: #165DFF;
-  color: #165DFF;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 /* 搜索和筛选 */
 .search-filter {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .search-input {
   width: 300px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
 }
 
 .filter-select {
   width: 120px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
 }
 
 /* 文档列表 */
 .document-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
 .document-card {
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   transition: all 0.3s ease;
+  background-color: var(--bg-white);
 }
 
 .document-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }
 
@@ -381,13 +413,13 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md);
 }
 
 .document-title {
   font-size: 16px;
   font-weight: 500;
-  color: #1D2129;
+  color: var(--text-dark);
   margin: 0;
   flex: 1;
 }
@@ -397,23 +429,23 @@ onMounted(() => {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  margin-left: 12px;
+  margin-left: var(--spacing-md);
 }
 
 .status-draft {
-  background-color: #F2F3F5;
-  color: #86909C;
+  background-color: var(--bg-medium);
+  color: var(--text-light);
 }
 
 .status-published {
-  background-color: #E8F0FF;
-  color: #165DFF;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
 }
 
 .document-meta {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
   flex-wrap: wrap;
 }
 
@@ -421,13 +453,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: #86909C;
+  color: var(--text-light);
   gap: 4px;
 }
 
 .document-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
   justify-content: flex-end;
 }
 
@@ -450,7 +482,7 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .top-nav {
-    padding: 0 16px;
+    padding: 0 var(--spacing-md);
   }
   
   .system-title {
@@ -466,13 +498,13 @@ onMounted(() => {
   }
   
   .content-area {
-    padding: 16px;
+    padding: var(--spacing-md);
   }
   
   .action-bar {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: var(--spacing-md);
   }
   
   .search-filter {

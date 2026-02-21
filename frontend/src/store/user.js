@@ -14,6 +14,7 @@ export const useUserStore = defineStore('user', {
     })(),
     systemName: '',
     systemRegisterMode: 'open',
+    darkMode: localStorage.getItem('darkMode') === 'true',
     loading: false,
     error: ''
   }),
@@ -72,6 +73,11 @@ export const useUserStore = defineStore('user', {
         console.error('获取系统信息失败:', error);
         return { system_name: 'Yoresee', system_register_mode: 'invite' };
       }
+    },
+    
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+      localStorage.setItem('darkMode', this.darkMode.toString());
     }
   }
 });
