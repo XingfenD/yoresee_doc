@@ -72,7 +72,8 @@ type AuthLoginRequest struct {
 
 type SystemInfoResponse struct {
 	BaseResponse
-	SystemName string `json:"system_name"`
+	SystemName         string `json:"system_name"`
+	SystemRegisterMode string `json:"system_register_mode"`
 }
 
 type SystemInfoRequest struct {

@@ -1,6 +1,10 @@
 package utils
 
-import "github.com/bwmarrin/snowflake"
+import (
+	"strings"
+
+	"github.com/bwmarrin/snowflake"
+)
 
 func init() {
 	var err error
@@ -12,4 +16,8 @@ func init() {
 
 func Of[T any](v T) *T {
 	return &v
+}
+
+func GenConfigKey(parts ...string) string {
+	return strings.Join(parts, ".")
 }
