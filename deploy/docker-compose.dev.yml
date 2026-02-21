@@ -21,6 +21,7 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
       target: dev
+    image: yoresee_doc_frontend_dev:latest
     container_name: yoresee_doc_frontend
     volumes:
       - ../frontend:/app
@@ -51,6 +52,8 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
+      target: runner
+    image: yoresee_doc_backend_runner:latest
     container_name: yoresee_doc_backend
     volumes:
       - ../backend/config.toml:/app/config.toml

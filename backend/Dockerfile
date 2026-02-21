@@ -13,6 +13,7 @@ COPY . .
 RUN go mod tidy
 RUN CGO_ENABLED=0 go build -p 1 -v -o main.out cmd/main.go && \
     CGO_ENABLED=0 go build -p 1 -v -o create_admin.out cmd/create_admin/main.go && \
+    CGO_ENABLED=0 go build -p 1 -v -o init_config.out cmd/init_config/main.go && \
     CGO_ENABLED=0 go build -p 1 -v -o migrate.out cmd/migrate/main.go
 
 FROM alpine:latest AS runner
@@ -21,8 +22,9 @@ WORKDIR /app
 
 COPY --from=builder /app/main.out .
 COPY --from=builder /app/create_admin.out .
+COPY --from=builder /app/init_config.out .
 COPY --from=builder /app/migrate.out .
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "./migrate.out && ./create_admin.out && ./main.out"]
+CMD ["sh", "-c", "./migrate.out && ./init_config.out && ./create_admin.out && ./main.out"]

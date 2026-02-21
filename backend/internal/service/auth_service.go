@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
@@ -21,8 +22,8 @@ func NewAuthService() *AuthService {
 
 func (s *AuthService) Register(userCreate *dto.UserCreate) error {
 	return utils.WithTransaction(func(tx *gorm.DB) error {
-		mode, _ := ConfigSvc.Get("registration_mode")
-		if mode == "invitation" {
+		mode := ConfigSvc.GetSystemRegisterMode()
+		if mode == constant.RegisterMode_Invite {
 			if userCreate.InvitationCode == nil || *userCreate.InvitationCode == "" {
 				return status.GenErrWithCustomMsg(status.StatusParamError, "the system enable invitation mode, but the invitation code is empty")
 			}
@@ -32,9 +33,9 @@ func (s *AuthService) Register(userCreate *dto.UserCreate) error {
 			}
 		}
 
-		_, err := s.userRepo.GetByUsername(userCreate.Username).WithTx(tx).Exec()
+		_, err := s.userRepo.GetByEmail(userCreate.Email).WithTx(tx).Exec()
 		if err == nil {
-			return status.StatusUserAlreadyExists
+			return status.GenErrWithCustomMsg(status.StatusUserAlreadyExists, "email already registered")
 		}
 
 		hashedPwd, err := utils.HashPassword(userCreate.Password)
@@ -60,8 +61,8 @@ func (s *AuthService) Register(userCreate *dto.UserCreate) error {
 	})
 }
 
-func (s *AuthService) Login(username string, password string) (string, *dto.UserResponse, error) {
-	user, err := s.userRepo.GetByUsername(username).Exec()
+func (s *AuthService) Login(email string, password string) (string, *dto.UserResponse, error) {
+	user, err := s.userRepo.GetByEmail(email).Exec()
 	if err != nil {
 		return "", nil, status.StatusUserNotFound
 	}

@@ -3,12 +3,21 @@
     <div class="login-form-wrapper">
       <div class="login-header">
         <h2>{{ systemName }}</h2>
-        <p>请登录您的账户</p>
+        <p>创建新账户</p>
       </div>
-      <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login-form">
+      <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" class="login-form">
+        <el-form-item prop="username">
+          <el-input
+            v-model="registerForm.username"
+            placeholder="用户名"
+            prefix-icon="User"
+            :disabled="loading"
+          />
+        </el-form-item>
         <el-form-item prop="email">
           <el-input
-            v-model="loginForm.email"
+            v-model="registerForm.email"
+            type="email"
             placeholder="邮箱"
             prefix-icon="Message"
             :disabled="loading"
@@ -16,13 +25,31 @@
         </el-form-item>
         <el-form-item prop="password">
           <el-input
-            v-model="loginForm.password"
+            v-model="registerForm.password"
             type="password"
             placeholder="密码"
             prefix-icon="Lock"
             :disabled="loading"
             show-password
-            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
+        <el-form-item prop="confirmPassword">
+          <el-input
+            v-model="registerForm.confirmPassword"
+            type="password"
+            placeholder="确认密码"
+            prefix-icon="Check"
+            :disabled="loading"
+            show-password
+            @keyup.enter="handleRegister"
+          />
+        </el-form-item>
+        <el-form-item v-if="systemRegisterMode === 'invite'" prop="invitationCode">
+          <el-input
+            v-model="registerForm.invitationCode"
+            placeholder="邀请码"
+            prefix-icon="Ticket"
+            :disabled="loading"
           />
         </el-form-item>
         <el-form-item v-if="error" class="error-message">
@@ -39,14 +66,14 @@
             type="primary"
             class="login-button"
             :loading="loading"
-            @click="handleLogin"
+            @click="handleRegister"
             :disabled="loading"
           >
-            登录
+            注册
           </el-button>
         </el-form-item>
         <el-form-item class="register-link">
-          <router-link to="/register">没有账户？立即注册</router-link>
+          <router-link to="/login">已有账户？立即登录</router-link>
         </el-form-item>
       </el-form>
     </div>
@@ -60,43 +87,80 @@ import { useUserStore } from '../store/user';
 
 const router = useRouter();
 const userStore = useUserStore();
-const loginFormRef = ref(null);
+const registerFormRef = ref(null);
 const loading = ref(false);
 const error = ref('');
 const systemName = ref('Yoresee');
+const systemRegisterMode = ref('invite');
 
-const loginForm = reactive({
+const registerForm = reactive({
+  username: '',
   email: '',
-  password: ''
+  password: '',
+  confirmPassword: '',
+  invitationCode: ''
 });
 
-const loginRules = {
+const registerRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' }
+  ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== registerForm.password) {
+          callback(new Error('两次输入的密码不一致'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  invitationCode: [
+    {
+      validator: (rule, value, callback) => {
+        if (systemRegisterMode.value === 'invite' && !value) {
+          callback(new Error('请输入邀请码'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur'
+    }
   ]
 };
 
-const handleLogin = async () => {
-  if (!loginFormRef.value) return;
+const handleRegister = async () => {
+  if (!registerFormRef.value) return;
   
-  await loginFormRef.value.validate(async (valid) => {
+  await registerFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true;
       error.value = '';
       
       try {
-        const success = await userStore.login(loginForm.email, loginForm.password);
+        const success = await userStore.register(
+          registerForm.username,
+          registerForm.password,
+          registerForm.email,
+          registerForm.invitationCode || null
+        );
         if (success) {
           router.push('/');
         } else {
           error.value = userStore.error;
         }
       } catch (err) {
-        error.value = '登录失败，请稍后重试';
+        error.value = '注册失败，请稍后重试';
       } finally {
         loading.value = false;
       }
@@ -108,6 +172,7 @@ const fetchSystemInfo = async () => {
   try {
     const info = await userStore.fetchSystemInfo();
     systemName.value = info.system_name;
+    systemRegisterMode.value = info.system_register_mode || 'open';
   } catch (err) {
     console.error('获取系统信息失败:', err);
   }

@@ -9,7 +9,7 @@ import (
 type User struct {
 	ID             int64          `gorm:"primaryKey;autoIncrement" json:"id"`
 	ExternalID     string         `gorm:"size:100;unique" json:"external_id"`
-	Username       string         `gorm:"size:50;unique;not null" json:"username"`
+	Username       string         `gorm:"size:50;not null" json:"username"`
 	Email          string         `gorm:"size:100;unique;not null" json:"email"`
 	PasswordHash   string         `gorm:"size:255;not null" json:"-"`
 	Nickname       string         `gorm:"size:50" json:"nickname"`

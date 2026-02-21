@@ -1,9 +1,11 @@
 package service
 
 import (
+	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 )
 
 type ConfigService struct {
@@ -43,6 +45,18 @@ func (s *ConfigService) Set(key, value string) error {
 		return status.StatusWriteDBError
 	}
 	return nil
+}
+
+func (s *ConfigService) GetSystemRegisterMode() string {
+	registerMode, err := s.Get(utils.GenConfigKey(
+		constant.ConfigKey_First_System,
+		constant.ConfigKey_Second_Security,
+		constant.ConfigKey_Third_RegisterMode,
+	))
+	if err != nil {
+		return constant.RegisterMode_Invite
+	}
+	return registerMode
 }
 
 var ConfigSvc = NewConfigService()

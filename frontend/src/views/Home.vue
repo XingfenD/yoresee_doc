@@ -125,13 +125,13 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '@/store/user';
 import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
 
-const systemName = ref('文档管理系统');
+const systemName = ref('Yoresee');
 const activeMenu = ref('documents');
 const searchKeyword = ref('');
 const filterStatus = ref('all');
@@ -197,8 +197,8 @@ const formatDate = (dateString) => {
 
 const fetchSystemInfo = async () => {
   try {
-    const name = await userStore.fetchSystemInfo();
-    systemName.value = name;
+    const info = await userStore.fetchSystemInfo();
+    systemName.value = info.system_name;
   } catch (err) {
     console.error('获取系统信息失败:', err);
   }

@@ -66,7 +66,7 @@ type AuthLoginResponse struct {
 
 type AuthLoginRequest struct {
 	BaseRequest
-	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 

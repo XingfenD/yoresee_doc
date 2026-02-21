@@ -35,32 +35,32 @@ func (op *UserCreateOperation) Exec() error {
 	return storage.DB.Create(op.user).Error
 }
 
-type UserGetByUsernameOperation struct {
-	repo     *UserRepository
-	username string
-	tx       *gorm.DB
+type UserGetByEmailOperation struct {
+	repo  *UserRepository
+	email string
+	tx    *gorm.DB
 }
 
-func (r *UserRepository) GetByUsername(username string) *UserGetByUsernameOperation {
-	return &UserGetByUsernameOperation{
-		repo:     r,
-		username: username,
+func (r *UserRepository) GetByEmail(email string) *UserGetByEmailOperation {
+	return &UserGetByEmailOperation{
+		repo:  r,
+		email: email,
 	}
 }
 
-func (op *UserGetByUsernameOperation) WithTx(tx *gorm.DB) *UserGetByUsernameOperation {
+func (op *UserGetByEmailOperation) WithTx(tx *gorm.DB) *UserGetByEmailOperation {
 	op.tx = tx
 	return op
 }
 
-func (op *UserGetByUsernameOperation) Exec() (*model.User, error) {
+func (op *UserGetByEmailOperation) Exec() (*model.User, error) {
 	var user model.User
 	var err error
 
 	if op.tx != nil {
-		err = op.tx.Where("username = ?", op.username).First(&user).Error
+		err = op.tx.Where("email = ?", op.email).First(&user).Error
 	} else {
-		err = storage.DB.Where("username = ?", op.username).First(&user).Error
+		err = storage.DB.Where("email = ?", op.email).First(&user).Error
 	}
 
 	return &user, err

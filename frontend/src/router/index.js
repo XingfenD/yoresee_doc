@@ -10,6 +10,11 @@ const router = createRouter({
       component: () => import('../views/Login.vue')
     },
     {
+      path: '/register',
+      name: 'Register',
+      component: () => import('../views/Register.vue')
+    },
+    {
       path: '/',
       name: 'Home',
       component: () => import('../views/Home.vue'),
@@ -18,14 +23,12 @@ const router = createRouter({
   ]
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const userStore = useUserStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   
   if (requiresAuth && !userStore.token) {
-    next('/login');
-  } else {
-    next();
+    return '/login';
   }
 });
 

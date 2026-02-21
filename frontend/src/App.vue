@@ -5,11 +5,11 @@
 </template>
 
 <script setup>
-// App.vue 作为路由容器
+// App.vue 作为路由容器，负责渲染路由组件
 </script>
 
 <style>
-/* 全局样式 */
+
 * {
   margin: 0;
   padding: 0;
@@ -26,7 +26,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 自定义滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
