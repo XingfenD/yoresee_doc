@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/api"
-	"github.com/XingfenD/yoresee_doc/internal/auth"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -25,7 +24,7 @@ func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
 		return nil, status.GenErrWithCustomMsg(status.StatusTokenInvalid, "invalid token format")
 	}
 	token := parts[1]
-	jwtValidator := &auth.JWTValidator{}
+	jwtValidator := &utils.JWTValidator{}
 	claims, err := jwtValidator.Validate(token)
 	if err != nil {
 		return nil, status.StatusTokenInvalid

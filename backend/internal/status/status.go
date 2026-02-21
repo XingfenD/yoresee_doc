@@ -33,7 +33,14 @@ func GenErrWithCustomMsg(err error, msg string) error {
 var (
 	StatusSuccess = NewStatusErr(20000, "success")
 
-	StatusParamError   = NewStatusErr(40000, "invalid parameter")
-	StatusTokenInvalid = NewStatusErr(40001, "invalid token")
-	StatusTokenExpired = NewStatusErr(40002, "token expired")
+	StatusParamError        = NewStatusErr(40000, "invalid parameter")
+	StatusTokenInvalid      = NewStatusErr(40001, "invalid token")
+	StatusTokenExpired      = NewStatusErr(40002, "token expired")
+	StatusPermissionDenied  = NewStatusErr(40300, "permission denied")
+	StatusUserNotFound      = NewStatusErr(40100, "user not found")
+	StatusUserAlreadyExists = NewStatusErr(40101, "user already exists")
+	StatusInvitationInvalid = NewStatusErr(40200, "invitation invalid")
+
+	StatusWriteDBError = NewStatusErr(50000, "write db error")
+	StatusReadDBError  = NewStatusErr(50001, "read db error")
 )

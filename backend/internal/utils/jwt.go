@@ -8,6 +8,16 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type JWTValidator struct{}
+
+func (v *JWTValidator) Validate(tokenString string) (*Claims, error) {
+	return ParseToken(tokenString)
+}
+
+func (v *JWTValidator) IsExpired(claims *Claims) bool {
+	return time.Now().After(claims.ExpiresAt.Time)
+}
+
 type Claims struct {
 	UserID   int64  `json:"user_id"`
 	RoleID   int64  `json:"role_id"`
