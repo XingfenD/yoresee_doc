@@ -1,6 +1,9 @@
 <template>
   <div class="app-container">
-    <router-view />
+    <!-- 主内容区 -->
+    <div class="main-container">
+      <router-view />
+    </div>
   </div>
 </template>
 
@@ -75,6 +78,15 @@ body {
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 主内容区 */
+.main-container {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
 }
 
 /* 深色模式下的Element Plus组件样式 */

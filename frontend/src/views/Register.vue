@@ -1,23 +1,44 @@
 <template>
   <div class="login-container">
+    <!-- 顶部导航栏 -->
+    <header class="register-nav">
+      <div class="nav-right">
+        <!-- 语言切换 -->
+        <el-dropdown trigger="click" @command="handleLanguageChange" class="nav-item">
+          <span class="nav-link">
+            <el-icon :size="18"><Flag v-if="currentLanguage === 'en'" /><ChatLineRound v-else /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="en" :icon="'Flag'">
+                {{ t('language.english') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="zh" :icon="'ChatLineRound'">
+                {{ t('language.chinese') }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        
+        <!-- 主题切换 -->
+        <div class="nav-item theme-switch">
+          <span class="nav-link" @click="toggleTheme">
+            <el-icon :size="18"><Moon v-if="isDarkMode" /><Sunny v-else /></el-icon>
+          </span>
+        </div>
+      </div>
+    </header>
+    
     <div class="login-form-wrapper">
       <div class="login-header">
         <h2>{{ systemName }}</h2>
-        <p>创建新账户</p>
+        <p>{{ t('register.title') }}</p>
       </div>
-      <div class="theme-toggle-container">
-        <el-button
-          type="text"
-          class="theme-toggle"
-          @click="toggleDarkMode"
-          :icon="darkMode ? 'Sunny' : 'Moon'"
-        />
-      </div>
-      <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" class="login-form">
+      <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" class="register-form">
         <el-form-item prop="username">
           <el-input
             v-model="registerForm.username"
-            placeholder="用户名"
+            :placeholder="t('register.username')"
             prefix-icon="User"
             :disabled="loading"
           />
@@ -26,7 +47,7 @@
           <el-input
             v-model="registerForm.email"
             type="email"
-            placeholder="邮箱"
+            :placeholder="t('register.email')"
             prefix-icon="Message"
             :disabled="loading"
           />
@@ -35,7 +56,7 @@
           <el-input
             v-model="registerForm.password"
             type="password"
-            placeholder="密码"
+            :placeholder="t('register.password')"
             prefix-icon="Lock"
             :disabled="loading"
             show-password
@@ -45,7 +66,7 @@
           <el-input
             v-model="registerForm.confirmPassword"
             type="password"
-            placeholder="确认密码"
+            :placeholder="t('register.confirmPassword')"
             prefix-icon="Check"
             :disabled="loading"
             show-password
@@ -55,7 +76,7 @@
         <el-form-item v-if="systemRegisterMode === 'invite'" prop="invitationCode">
           <el-input
             v-model="registerForm.invitationCode"
-            placeholder="邀请码"
+            :placeholder="t('register.invitationCode')"
             prefix-icon="Ticket"
             :disabled="loading"
           />
@@ -77,11 +98,11 @@
             @click="handleRegister"
             :disabled="loading"
           >
-            注册
+            {{ t('register.signUp') }}
           </el-button>
         </el-form-item>
         <el-form-item class="register-link">
-          <router-link to="/login">已有账户？立即登录</router-link>
+          <router-link to="/login">{{ t('register.haveAccount') }} {{ t('register.signIn') }}</router-link>
         </el-form-item>
       </el-form>
     </div>
@@ -89,22 +110,60 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/user';
-import { Moon, Sunny } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
+import { Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
+const { locale, t } = useI18n();
 const registerFormRef = ref(null);
 const loading = ref(false);
 const error = ref('');
 const systemName = ref('文档管理系统');
 const systemRegisterMode = ref('invite');
-const darkMode = computed(() => userStore.darkMode);
+const isDarkMode = ref(false);
 
-const toggleDarkMode = () => {
-  userStore.toggleDarkMode();
+// 计算当前语言
+const currentLanguage = ref(localStorage.getItem('language') || 'en');
+
+// 处理语言切换
+const handleLanguageChange = (command) => {
+  currentLanguage.value = command;
+  locale.value = command;
+  localStorage.setItem('language', command);
+};
+
+// 处理主题切换
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value;
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark-mode');
+    localStorage.setItem('darkMode', 'true');
+  } else {
+    document.documentElement.classList.remove('dark-mode');
+    localStorage.setItem('darkMode', 'false');
+  }
+};
+
+// 初始化主题
+const initTheme = () => {
+  const savedDarkMode = localStorage.getItem('darkMode');
+  if (savedDarkMode === 'true') {
+    isDarkMode.value = true;
+    document.documentElement.classList.add('dark-mode');
+  }
+};
+
+// 初始化语言
+const initLanguage = () => {
+  const savedLanguage = localStorage.getItem('language');
+  if (savedLanguage) {
+    currentLanguage.value = savedLanguage;
+    locale.value = savedLanguage;
+  }
 };
 
 const registerForm = reactive({
@@ -194,6 +253,8 @@ const fetchSystemInfo = async () => {
 
 onMounted(() => {
   fetchSystemInfo();
+  initTheme();
+  initLanguage();
 });
 </script>
 
@@ -201,14 +262,54 @@ onMounted(() => {
 .login-container {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   background-color: var(--bg-light);
   padding: var(--spacing-md);
   transition: all 0.3s ease;
+  position: relative;
+}
+
+/* 注册页面导航栏 */
+.register-nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: var(--spacing-md);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  margin-left: var(--spacing-sm);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  color: var(--text-medium);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: var(--bg-medium);
+    color: var(--primary-color);
+  }
+}
+
+.theme-switch {
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .login-form-wrapper {
+  margin: auto;
   width: 100%;
   max-width: 400px;
   background-color: var(--bg-white);
@@ -303,22 +404,6 @@ onMounted(() => {
 
 .register-link a:hover {
   text-decoration: underline;
-}
-
-.theme-toggle-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--spacing-md);
-}
-
-.theme-toggle {
-  font-size: 18px;
-  color: var(--text-medium);
-  transition: all 0.3s ease;
-}
-
-.theme-toggle:hover {
-  color: var(--primary-color);
 }
 
 @media (max-width: 768px) {

@@ -17,6 +17,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // 从localStorage获取语言设置
+    const language = localStorage.getItem('language') || 'en';
+    config.headers['Accept-Language'] = language;
     return config;
   },
   error => {

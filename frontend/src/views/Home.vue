@@ -6,13 +6,32 @@
         <h1 class="system-title">{{ systemName }}</h1>
       </div>
       <div class="nav-right">
-        <el-button
-          type="text"
-          class="theme-toggle"
-          @click="toggleDarkMode"
-          :icon="darkMode ? 'Sunny' : 'Moon'"
-        />
-        <el-dropdown trigger="click">
+        <!-- 语言切换 -->
+        <el-dropdown trigger="click" @command="handleLanguageChange" class="nav-item">
+          <span class="nav-link">
+            <el-icon :size="18"><Flag v-if="currentLanguage === 'en'" /><ChatLineRound v-else /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="en" :icon="'Flag'">
+                {{ t('language.english') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="zh" :icon="'ChatLineRound'">
+                {{ t('language.chinese') }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        
+        <!-- 主题切换 -->
+        <div class="nav-item theme-switch">
+          <span class="nav-link" @click="toggleTheme">
+            <el-icon :size="18"><Moon v-if="isDarkMode" /><Sunny v-else /></el-icon>
+          </span>
+        </div>
+        
+        <!-- 用户菜单 -->
+        <el-dropdown trigger="click" class="nav-item">
           <span class="user-info">
             <el-avatar size="small" :src="userAvatar"></el-avatar>
             <span class="username">{{ userInfo?.username || '用户' }}</span>
@@ -20,7 +39,7 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+              <el-dropdown-item @click="handleLogout">{{ t('button.logout') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -38,15 +57,15 @@
         >
           <el-menu-item index="documents">
             <el-icon><Document /></el-icon>
-            <span>文档管理</span>
+            <span>{{ t('navigation.documents') }}</span>
           </el-menu-item>
           <el-menu-item index="folders">
             <el-icon><Folder /></el-icon>
-            <span>文件夹</span>
+            <span>{{ t('navigation.folders') }}</span>
           </el-menu-item>
           <el-menu-item index="trash">
             <el-icon><Delete /></el-icon>
-            <span>回收站</span>
+            <span>{{ t('navigation.trash') }}</span>
           </el-menu-item>
         </el-menu>
       </aside>
@@ -55,15 +74,15 @@
       <div class="content-area">
         <!-- 操作栏 -->
         <div class="action-bar">
-          <h2 class="page-title">文档管理</h2>
+          <h2 class="page-title">{{ t('navigation.documents') }}</h2>
           <div class="action-buttons">
             <el-button type="primary" class="primary-btn">
               <el-icon><Plus /></el-icon>
-              新建文档
+              {{ t('home.createDocument') }}
             </el-button>
             <el-button class="secondary-btn">
               <el-icon><Upload /></el-icon>
-              上传文件
+              {{ t('home.uploadFile') }}
             </el-button>
           </div>
         </div>
@@ -72,11 +91,11 @@
         <div class="search-filter">
           <el-input
             v-model="searchKeyword"
-            placeholder="搜索文档..."
+            :placeholder="t('home.searchPlaceholder')"
             prefix-icon="Search"
             class="search-input"
           />
-          <el-select v-model="filterStatus" placeholder="状态" class="filter-select">
+          <el-select v-model="filterStatus" :placeholder="t('document.status')" class="filter-select">
             <el-option label="全部" value="all"></el-option>
             <el-option label="草稿" value="draft"></el-option>
             <el-option label="已发布" value="published"></el-option>
@@ -112,16 +131,16 @@
               </span>
             </div>
             <div class="document-actions">
-              <el-button size="small" text>查看</el-button>
-              <el-button size="small" text>编辑</el-button>
-              <el-button size="small" text>分享</el-button>
+              <el-button size="small" text>{{ t('document.view') }}</el-button>
+              <el-button size="small" text>{{ t('document.edit') }}</el-button>
+              <el-button size="small" text>{{ t('document.share') }}</el-button>
             </div>
           </el-card>
         </div>
 
         <!-- 空状态 -->
         <div v-if="documents.length === 0" class="empty-state">
-          <el-empty description="暂无文档" />
+          <el-empty :description="t('message.empty')" />
         </div>
       </div>
     </div>
@@ -132,22 +151,63 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
-import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View, Moon, Sunny } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
+import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View, Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
+const { locale, t } = useI18n();
 
 const systemName = ref('文档管理系统');
 const activeMenu = ref('documents');
 const searchKeyword = ref('');
 const filterStatus = ref('all');
+const isDarkMode = ref(false);
 
 const userInfo = computed(() => userStore.userInfo);
-const darkMode = computed(() => userStore.darkMode);
 const userAvatar = ref('');
 
-const toggleDarkMode = () => {
-  userStore.toggleDarkMode();
+// 计算当前语言
+const currentLanguage = computed({
+  get: () => locale.value,
+  set: (value) => {
+    locale.value = value;
+    localStorage.setItem('language', value);
+  }
+});
+
+// 处理语言切换
+const handleLanguageChange = (command) => {
+  currentLanguage.value = command;
+};
+
+// 处理主题切换
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value;
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark-mode');
+    localStorage.setItem('darkMode', 'true');
+  } else {
+    document.documentElement.classList.remove('dark-mode');
+    localStorage.setItem('darkMode', 'false');
+  }
+};
+
+// 初始化主题
+const initTheme = () => {
+  const savedDarkMode = localStorage.getItem('darkMode');
+  if (savedDarkMode === 'true') {
+    isDarkMode.value = true;
+    document.documentElement.classList.add('dark-mode');
+  }
+};
+
+// 初始化语言
+const initLanguage = () => {
+  const savedLanguage = localStorage.getItem('language');
+  if (savedLanguage) {
+    currentLanguage.value = savedLanguage;
+  }
 };
 
 // 模拟文档数据
@@ -217,6 +277,8 @@ const fetchSystemInfo = async () => {
 
 onMounted(() => {
   fetchSystemInfo();
+  initTheme();
+  initLanguage();
 });
 </script>
 
@@ -252,17 +314,32 @@ onMounted(() => {
 .nav-right {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
-.theme-toggle {
-  font-size: 18px;
+.nav-item {
+  display: flex;
+  align-items: center;
+  margin-left: var(--spacing-sm);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
   color: var(--text-medium);
   transition: all 0.3s ease;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: var(--bg-medium);
+    color: var(--primary-color);
+  }
 }
 
-.theme-toggle:hover {
-  color: var(--primary-color);
+.theme-switch {
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .user-info {
