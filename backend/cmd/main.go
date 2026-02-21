@@ -2,17 +2,23 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/router"
+	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	if err := config.InitConfig(); err != nil {
-		log.Fatalf("Init config failed: %v", err)
+		logrus.Fatalf("Init config failed: %v", err)
 	}
+
+	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
+		logrus.Fatalf("Init database failed: %v", err)
+	}
+
 	r := gin.Default()
 
 	router.SetupRouter(r)

@@ -1,21 +1,20 @@
 package main
 
 import (
-	"log"
-
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	if err := config.InitConfig(); err != nil {
-		log.Fatalf("Init config failed: %v", err)
+		logrus.Fatalf("Init config failed: %v", err)
 	}
 
 	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
-		log.Fatalf("Init Postgres failed: %v", err)
+		logrus.Fatalf("Init Postgres failed: %v", err)
 	}
 
 	adminRole := model.Role{
@@ -55,10 +54,10 @@ func main() {
 	storage.DB.Model(&model.User{}).Where("username = ?", "admin").Count(&count)
 	if count == 0 {
 		if err := storage.DB.Create(&adminUser).Error; err != nil {
-			log.Fatalf("Create admin user failed: %v", err)
+			logrus.Fatalf("Create admin user failed: %v", err)
 		}
-		log.Println("Admin user created successfully.")
+		logrus.Println("Admin user created successfully.")
 	} else {
-		log.Println("Admin user already exists.")
+		logrus.Println("Admin user already exists.")
 	}
 }

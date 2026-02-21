@@ -1,23 +1,22 @@
 package main
 
 import (
-	"log"
-
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	if err := config.InitConfig(); err != nil {
-		log.Fatalf("Init config failed: %v", err)
+		logrus.Fatalf("Init config failed: %v", err)
 	}
 
 	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
-		log.Fatalf("Init Postgres failed: %v", err)
+		logrus.Fatalf("Init Postgres failed: %v", err)
 	}
 
-	log.Println("Starting migration...")
+	logrus.Println("Starting migration...")
 	err := storage.DB.AutoMigrate(
 		&model.User{},
 		&model.Role{},
@@ -30,6 +29,6 @@ func main() {
 	)
 
 	if err != nil {
-		log.Fatalf("Migration failed: %v", err)
+		logrus.Fatalf("Migration failed: %v", err)
 	}
 }

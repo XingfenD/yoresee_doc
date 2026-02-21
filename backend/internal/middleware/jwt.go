@@ -7,6 +7,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 var JWTAuth = &JWTAuthMiddleware{}
@@ -39,6 +40,7 @@ func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
 func (m *JWTAuthMiddleware) GinHandle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		logrus.Infof("authHeader: %s", authHeader)
 		claims, err := m.handle(authHeader)
 		if err != nil {
 			c.JSON(401, api.GenBaseRespWithErr(err))

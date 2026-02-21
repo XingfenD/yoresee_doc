@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 go build -p 1 -v -o main.out cmd/main.go && \
     CGO_ENABLED=0 go build -p 1 -v -o create_admin.out cmd/create_admin/main.go && \
     CGO_ENABLED=0 go build -p 1 -v -o migrate.out cmd/migrate/main.go
 
-FROM alpine:latest
+FROM alpine:latest AS runner
 
 WORKDIR /app
 
