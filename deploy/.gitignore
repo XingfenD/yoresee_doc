@@ -1,3 +1,7 @@
+# ignore config files
+nginx/nginx.conf
+nginx/conf.d/default.conf
+
 # ignore log files by suffix
 *.logs
 *.log
