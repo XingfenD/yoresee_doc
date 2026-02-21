@@ -43,6 +43,7 @@ func (s *AuthService) Register(userCreate *dto.UserCreate) error {
 		}
 
 		user := &model.User{
+			ExternalID:     utils.GenerateExternalID(utils.ExternalIDContextUser),
 			Username:       userCreate.Username,
 			PasswordHash:   hashedPwd,
 			Email:          userCreate.Email,

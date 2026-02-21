@@ -42,6 +42,7 @@ func main() {
 	hashedPwd, _ := utils.HashPassword(password)
 
 	adminUser := model.User{
+		ExternalID:   utils.GenerateExternalID("admin"),
 		Username:     "admin",
 		PasswordHash: hashedPwd,
 		Email:        "admin@example.com",
