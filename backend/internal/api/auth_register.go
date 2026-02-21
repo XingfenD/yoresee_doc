@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
@@ -37,16 +38,19 @@ func (h *AuthRegisterHandler) GinHandle() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req AuthRegisterRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {
-			ctx.JSON(http.StatusBadRequest, GenBaseRespWithErr(err))
+			ctx.JSON(http.StatusBadRequest, GenBaseRespWithErrAndCtx(ctx, err))
 			return
 		}
 
 		resp, err := h.handle(ctx, req)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, GenBaseRespWithErr(err))
+			ctx.JSON(http.StatusInternalServerError, GenBaseRespWithErrAndCtx(ctx, err))
 			return
 		}
 
+		if registerResp, ok := resp.(*AuthRegisterResponse); ok {
+			registerResp.Message = i18n.Translate(ctx, registerResp.Message)
+		}
 		ctx.JSON(http.StatusOK, resp)
 	}
 }

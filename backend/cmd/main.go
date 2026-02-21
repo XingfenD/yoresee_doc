@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/router"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,8 @@ func main() {
 	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
 		logrus.Fatalf("Init database failed: %v", err)
 	}
+
+	i18n.Init()
 
 	r := gin.Default()
 

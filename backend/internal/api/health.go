@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
 )
@@ -24,8 +25,12 @@ func (h *HealthHandler) GinHandle() gin.HandlerFunc {
 		req := &HealthRequest{}
 		resp, err := h.handle(ctx, req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, GenBaseRespWithErr(err))
+			c.JSON(http.StatusInternalServerError, GenBaseRespWithErrAndCtx(c, err))
 			return
+		}
+
+		if healthResp, ok := resp.(*HealthResponse); ok {
+			healthResp.Message = i18n.Translate(c, healthResp.Message)
 		}
 		c.JSON(http.StatusOK, resp)
 	}

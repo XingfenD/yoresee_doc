@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
@@ -25,8 +26,12 @@ func (h *SystemInfoHandler) GinHandle() gin.HandlerFunc {
 		req := &SystemInfoRequest{}
 		resp, err := h.handle(ctx, req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, GenBaseRespWithErr(err))
+			c.JSON(http.StatusInternalServerError, GenBaseRespWithErrAndCtx(c, err))
 			return
+		}
+
+		if infoResp, ok := resp.(*SystemInfoResponse); ok {
+			infoResp.Message = i18n.Translate(c, infoResp.Message)
 		}
 		c.JSON(http.StatusOK, resp)
 	}
