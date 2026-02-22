@@ -32,7 +32,14 @@ export default {
     invitationCode: 'Invitation Code (Optional)',
     haveAccount: 'Already have an account?',
     signIn: 'Sign In',
-    signUp: 'Sign Up'
+    signUp: 'Sign Up',
+    usernameRequired: 'Please enter username',
+    emailRequired: 'Please enter email',
+    emailFormat: 'Please enter a valid email format',
+    passwordRequired: 'Please enter password',
+    confirmPasswordRequired: 'Please confirm password',
+    passwordMismatch: 'Two password entries do not match',
+    invitationCodeRequired: 'Please enter invitation code'
   },
   
   // 首页

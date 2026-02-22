@@ -158,7 +158,7 @@ const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
-const systemName = ref('文档管理系统');
+const systemName = ref('Yoresee');
 const activeMenu = ref('documents');
 const searchKeyword = ref('');
 const filterStatus = ref('all');

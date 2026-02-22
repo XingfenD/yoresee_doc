@@ -96,7 +96,7 @@ const { locale, t } = useI18n();
 const loginFormRef = ref(null);
 const loading = ref(false);
 const error = ref('');
-const systemName = ref('文档管理系统');
+const systemName = ref('Yoresee');
 const isDarkMode = ref(false);
 
 // 计算当前语言

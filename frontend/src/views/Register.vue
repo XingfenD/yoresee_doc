@@ -122,7 +122,7 @@ const { locale, t } = useI18n();
 const registerFormRef = ref(null);
 const loading = ref(false);
 const error = ref('');
-const systemName = ref('文档管理系统');
+const systemName = ref('Yoresee');
 const systemRegisterMode = ref('invite');
 const isDarkMode = ref(false);
 
@@ -176,21 +176,21 @@ const registerForm = reactive({
 
 const registerRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
+    { required: true, message: t('register.usernameRequired'), trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { required: true, message: t('register.emailRequired'), trigger: 'blur' },
+    { type: 'email', message: t('register.emailFormat'), trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
+    { required: true, message: t('register.passwordRequired'), trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
+    { required: true, message: t('register.confirmPasswordRequired'), trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (value !== registerForm.password) {
-          callback(new Error('两次输入的密码不一致'));
+          callback(new Error(t('register.passwordMismatch')));
         } else {
           callback();
         }
@@ -202,7 +202,7 @@ const registerRules = {
     {
       validator: (rule, value, callback) => {
         if (systemRegisterMode.value === 'invite' && !value) {
-          callback(new Error('请输入邀请码'));
+          callback(new Error(t('register.invitationCodeRequired')));
         } else {
           callback();
         }
