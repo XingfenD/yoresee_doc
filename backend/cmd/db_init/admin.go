@@ -37,13 +37,7 @@ func createAdminUserInTx(tx *gorm.DB) error {
 		logrus.Println("Admin user already exists in transaction.")
 	}
 
-	if err := tx.Where(
-		"resource_type = ? AND resource_id = ? AND subject_type = ? AND subject_id = ?",
-		model.ResourceTypeNamespace, "default", model.SubjectTypeUser, adminUser.ExternalID,
-	).Delete(&model.PermissionRule{}).Error; err != nil {
-		return err
-	}
-
+	// 为管理员创建文档级别的权限规则，确保能访问所有文档
 	if err := tx.Exec(
 		`INSERT INTO permission_rules (
 			resource_type, resource_id, resource_path,
@@ -51,15 +45,16 @@ func createAdminUserInTx(tx *gorm.DB) error {
 			is_deny, priority, created_by, created_at
 		) VALUES (
 			?, ?, ?, ?, ?,
-			ARRAY['read', 'edit', 'manage', 'admin', 'create', 'transfer', 'audit'],
+			'read,edit,manage,admin,create,transfer,audit',
 			?, ?, ?, ?, NOW()
 		)`,
-		model.ResourceTypeNamespace, "default", "",
+		model.ResourceTypeDocument, "*", "", // 使用通配符*表示所有文档
 		model.SubjectTypeUser, adminUser.ExternalID,
 		model.ScopeTypeRecursive, false, 1, "",
 	).Error; err != nil {
 		return err
 	}
+
 	logrus.Println("Admin permission granted successfully in transaction.")
 	return nil
 }
