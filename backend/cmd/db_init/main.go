@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -10,6 +11,16 @@ import (
 )
 
 func main() {
+	// 初始化配置
+	if err := config.InitConfig(); err != nil {
+		logrus.Fatalf("Init config failed: %v", err)
+	}
+
+	// 初始化数据库连接
+	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
+		logrus.Fatalf("Init Postgres failed: %v", err)
+	}
+
 	// 检查数据库是否已初始化
 	if isDatabaseInitialized() {
 		logrus.Println("Database already initialized, skipping initialization steps")
@@ -21,7 +32,7 @@ func main() {
 		logrus.Println("Database initialized successfully")
 	}
 
-	logrus.Println("All migration tasks completed successfully!")
+	logrus.Println("All initialization tasks completed successfully!")
 }
 
 func isDatabaseInitialized() bool {
