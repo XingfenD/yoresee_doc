@@ -1,5 +1,4 @@
 export default {
-  // 导航栏
   navigation: {
     home: 'Home',
     documents: 'Documents',
@@ -9,8 +8,6 @@ export default {
     templates: 'Templates',
     settings: 'Settings'
   },
-  
-  // 登录页
   login: {
     title: 'Sign in to Yoresee',
     email: 'Email',
@@ -19,10 +16,13 @@ export default {
     forgotPassword: 'Forgot password?',
     signIn: 'Sign In',
     noAccount: 'Don\'t have an account?',
-    signUp: 'Sign Up'
+    signUp: 'Sign Up',
+    validation: {
+      emailRequired: 'Please enter email',
+      emailFormat: 'Please enter a valid email format',
+      passwordRequired: 'Please enter password'
+    }
   },
-  
-  // 注册页
   register: {
     title: 'Create an account',
     username: 'Username',
@@ -41,7 +41,7 @@ export default {
     passwordMismatch: 'Two password entries do not match',
     invitationCodeRequired: 'Please enter invitation code'
   },
-  
+
   // 首页
   home: {
     welcome: 'Welcome to Yoresee',
@@ -52,8 +52,6 @@ export default {
     uploadFile: 'Upload File',
     searchPlaceholder: 'Search documents...'
   },
-  
-  // 文档页
   document: {
     title: 'Document Title',
     save: 'Save',
@@ -68,15 +66,11 @@ export default {
     folders: 'Folders',
     trash: 'Trash'
   },
-  
-  // 系统信息
   system: {
     name: 'Yoresee',
     version: 'Version',
     copyright: '© 2026 Yoresee. All rights reserved.'
   },
-  
-  // 按钮
   button: {
     confirm: 'Confirm',
     cancel: 'Cancel',
@@ -86,8 +80,6 @@ export default {
     next: 'Next',
     logout: 'Logout'
   },
-  
-  // 提示信息
   message: {
     success: 'Success',
     error: 'Error',
@@ -99,14 +91,10 @@ export default {
     networkError: 'Network error, please try again later',
     empty: 'No documents found'
   },
-  
-  // 语言切换
   language: {
     english: 'English',
     chinese: '中文'
   },
-  
-  // 主题切换
   theme: {
     light: 'Light Mode',
     dark: 'Dark Mode'

@@ -8,7 +8,6 @@ export default {
     templates: '模板',
     settings: '设置'
   },
-
   login: {
     title: '登录 Yoresee',
     email: '邮箱',
@@ -17,9 +16,13 @@ export default {
     forgotPassword: '忘记密码？',
     signIn: '登录',
     noAccount: '还没有账号？',
-    signUp: '注册'
+    signUp: '注册',
+    validation: {
+      emailRequired: '请输入邮箱',
+      emailFormat: '请输入正确的邮箱格式',
+      passwordRequired: '请输入密码'
+    }
   },
-
   register: {
     title: '创建账号',
     username: '用户名',
@@ -38,7 +41,6 @@ export default {
     passwordMismatch: '两次输入的密码不一致',
     invitationCodeRequired: '请输入邀请码'
   },
-
   home: {
     welcome: '欢迎使用 Yoresee',
     recentDocuments: '最近文档',
@@ -48,7 +50,6 @@ export default {
     uploadFile: '上传文件',
     searchPlaceholder: '搜索文档...'
   },
-
   document: {
     title: '文档标题',
     save: '保存',
@@ -63,13 +64,11 @@ export default {
     folders: '文件夹',
     trash: '回收站'
   },
-
   system: {
     name: 'Yoresee',
     version: '版本',
     copyright: '© 2026 Yoresee. 保留所有权利。'
   },
-
   button: {
     confirm: '确认',
     cancel: '取消',
@@ -79,7 +78,6 @@ export default {
     next: '下一步',
     logout: '登出'
   },
-
   message: {
     success: '成功',
     error: '错误',
@@ -91,12 +89,10 @@ export default {
     networkError: '网络错误，请稍后再试',
     empty: '暂无文档'
   },
-
   language: {
     english: 'English',
     chinese: '中文'
   },
-
   theme: {
     light: '浅色模式',
     dark: '深色模式'

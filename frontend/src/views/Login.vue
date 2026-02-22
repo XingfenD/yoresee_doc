@@ -6,20 +6,22 @@
         <!-- 语言切换 -->
         <el-dropdown trigger="click" @command="handleLanguageChange" class="nav-item">
           <span class="nav-link">
-            <el-icon :size="18"><Flag v-if="currentLanguage === 'en'" /><ChatLineRound v-else /></el-icon>
+            <el-icon :size="18"
+              ><Flag v-if="currentLanguage === 'en'" /><ChatLineRound v-else
+            /></el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="en" :icon="'Flag'">
-                {{ t('language.english') }}
+                {{ t("language.english") }}
               </el-dropdown-item>
               <el-dropdown-item command="zh" :icon="'ChatLineRound'">
-                {{ t('language.chinese') }}
+                {{ t("language.chinese") }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        
+
         <!-- 主题切换 -->
         <div class="nav-item theme-switch">
           <span class="nav-link" @click="toggleTheme">
@@ -28,13 +30,18 @@
         </div>
       </div>
     </header>
-    
+
     <div class="login-form-wrapper">
       <div class="login-header">
         <h2>{{ systemName }}</h2>
-        <p>{{ t('login.title') }}</p>
+        <p>{{ t("login.title") }}</p>
       </div>
-      <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login-form">
+      <el-form
+        :model="loginForm"
+        :rules="loginRules"
+        ref="loginFormRef"
+        class="login-form"
+      >
         <el-form-item prop="email">
           <el-input
             v-model="loginForm.email"
@@ -71,11 +78,13 @@
             @click="handleLogin"
             :disabled="loading"
           >
-            {{ t('login.signIn') }}
+            {{ t("login.signIn") }}
           </el-button>
         </el-form-item>
         <el-form-item class="register-link">
-          <router-link to="/register">{{ t('login.noAccount') }} {{ t('login.signUp') }}</router-link>
+          <router-link to="/register"
+            >{{ t("login.noAccount") }} {{ t("login.signUp") }}</router-link
+          >
         </el-form-item>
       </el-form>
     </div>
@@ -83,11 +92,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useUserStore } from '../store/user';
-import { useI18n } from 'vue-i18n';
-import { Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
+import { ref, reactive, onMounted, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useUserStore } from "../store/user";
+import { useI18n } from "vue-i18n";
+import { Flag, ChatLineRound, Moon, Sunny } from "@element-plus/icons-vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -95,44 +104,44 @@ const userStore = useUserStore();
 const { locale, t } = useI18n();
 const loginFormRef = ref(null);
 const loading = ref(false);
-const error = ref('');
-const systemName = ref('Yoresee');
+const error = ref("");
+const systemName = ref("Yoresee");
 const isDarkMode = ref(false);
 
 // 计算当前语言
-const currentLanguage = ref(localStorage.getItem('language') || 'en');
+const currentLanguage = ref(localStorage.getItem("language") || "en");
 
 // 处理语言切换
 const handleLanguageChange = (command) => {
   currentLanguage.value = command;
   locale.value = command;
-  localStorage.setItem('language', command);
+  localStorage.setItem("language", command);
 };
 
 // 处理主题切换
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value;
   if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-mode');
-    localStorage.setItem('darkMode', 'true');
+    document.documentElement.classList.add("dark-mode");
+    localStorage.setItem("darkMode", "true");
   } else {
-    document.documentElement.classList.remove('dark-mode');
-    localStorage.setItem('darkMode', 'false');
+    document.documentElement.classList.remove("dark-mode");
+    localStorage.setItem("darkMode", "false");
   }
 };
 
 // 初始化主题
 const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
+  const savedDarkMode = localStorage.getItem("darkMode");
+  if (savedDarkMode === "true") {
     isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
+    document.documentElement.classList.add("dark-mode");
   }
 };
 
 // 初始化语言
 const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
+  const savedLanguage = localStorage.getItem("language");
   if (savedLanguage) {
     currentLanguage.value = savedLanguage;
     locale.value = savedLanguage;
@@ -140,37 +149,37 @@ const initLanguage = () => {
 };
 
 const loginForm = reactive({
-  email: route.query.email || '',
-  password: ''
+  email: route.query.email || "",
+  password: "",
 });
 
-const loginRules = {
+const loginRules = computed(() => ({
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { required: true, message: t("login.validation.emailRequired"), trigger: "blur" },
+    { type: "email", message: t("login.validation.emailFormat"), trigger: "blur" },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
-  ]
-};
+    { required: true, message: t("login.validation.passwordRequired"), trigger: "blur" },
+  ],
+}));
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return;
-  
+
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true;
-      error.value = '';
-      
+      error.value = "";
+
       try {
         const success = await userStore.login(loginForm.email, loginForm.password);
         if (success) {
-          router.push('/');
+          router.push("/");
         } else {
           error.value = userStore.error;
         }
       } catch (err) {
-        error.value = '登录失败，请稍后重试';
+        error.value = "登录失败，请稍后重试";
       } finally {
         loading.value = false;
       }
@@ -183,7 +192,7 @@ const fetchSystemInfo = async () => {
     const info = await userStore.fetchSystemInfo();
     systemName.value = info.system_name;
   } catch (err) {
-    console.error('获取系统信息失败:', err);
+    console.error("获取系统信息失败:", err);
   }
 };
 
@@ -233,7 +242,7 @@ onMounted(() => {
   color: var(--text-medium);
   transition: all 0.3s ease;
   cursor: pointer;
-  
+
   &:hover {
     background-color: var(--bg-medium);
     color: var(--primary-color);
@@ -346,7 +355,7 @@ onMounted(() => {
   .login-form-wrapper {
     padding: var(--spacing-lg) var(--spacing-md);
   }
-  
+
   .login-header h2 {
     font-size: 20px;
   }
