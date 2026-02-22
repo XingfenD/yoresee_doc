@@ -9,6 +9,9 @@ http_test/
 *.test
 *.out
 
+# debug binaries
+__debug_bin*
+
 # config
 config.yaml
 config.toml

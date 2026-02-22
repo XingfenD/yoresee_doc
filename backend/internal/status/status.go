@@ -40,6 +40,7 @@ var (
 	StatusUserNotFound      = NewStatusErr(40100, "user not found")
 	StatusUserAlreadyExists = NewStatusErr(40101, "user already exists")
 	StatusInvalidPassword   = NewStatusErr(40102, "invalid password")
+	StatusDocumentNotFound  = NewStatusErr(40120, "document not found")
 
 	StatusInvitationInvalid = NewStatusErr(40200, "invitation invalid")
 

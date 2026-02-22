@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
@@ -18,15 +19,15 @@ func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (re
 	userExternalID, _ := ctx.Value("user_external_id").(string)
 	userID, err := service.UserSvc.GetIDByExternalID(userExternalID)
 	if err != nil {
-		return nil, err
+		return nil, status.StatusUserNotFound
 	}
 
 	document, err := service.DocumentSvc.GetDocumentByExternalID(getDocReq.DocumentExternalID)
 	if err != nil {
-		return nil, err
+		return nil, status.StatusDocumentNotFound
 	}
 
-	allowed, err := service.DocumentSvc.CheckDocumentPermission(userID, document.ID, "read")
+	allowed, err := service.DocumentSvc.CheckDocumentPermission(userID, document.ID, string(model.PermissionRead))
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
+	"github.com/sirupsen/logrus"
 )
 
 // DocumentService 文档服务
@@ -66,7 +67,7 @@ func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64
 
 	err = storage.SetCache(ctx, cacheKey, fmt.Sprintf("%v", allowed), time.Hour)
 	if err != nil {
-		fmt.Printf("Set permission cache failed: %v\n", err)
+		logrus.Info("Set permission cache failed: %v\n", err)
 	}
 
 	return allowed, nil
