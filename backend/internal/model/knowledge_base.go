@@ -15,10 +15,6 @@ type KnowledgeBase struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 	LastAccessedAt time.Time `gorm:"-" json:"last_accessed_at"` // Auxiliary for recent
-
-	// auxiliary fields for list response
-	Role           string `gorm:"-" json:"role"`            // Current user's role
-	IsCollaborator bool   `gorm:"-" json:"is_collaborator"` // Is explicitly added as collaborator
 }
 
 type RecentKnowledgeBase struct {

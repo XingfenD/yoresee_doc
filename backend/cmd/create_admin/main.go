@@ -17,42 +17,22 @@ func main() {
 		logrus.Fatalf("Init Postgres failed: %v", err)
 	}
 
-	adminRole := model.Role{
-		ID:          1,
-		Name:        "超级管理员",
-		Code:        "admin",
-		Description: "系统超级管理员",
-		IsSystem:    true,
-		Permissions: []string{"*"},
-	}
-	storage.DB.FirstOrCreate(&adminRole, model.Role{ID: 1})
-
-	userRole := model.Role{
-		ID:          2,
-		Name:        "普通用户",
-		Code:        "user",
-		Description: "普通用户",
-		IsSystem:    true,
-		Permissions: []string{"read", "write"},
-	}
-	storage.DB.FirstOrCreate(&userRole, model.Role{ID: 2})
-
 	// Create Admin User
 	password := "admin123456"
 	hashedPwd, _ := utils.HashPassword(password)
+	externalID := utils.GenerateExternalID("admin")
 
 	adminUser := model.User{
-		ExternalID:   utils.GenerateExternalID("admin"),
+		ExternalID:   externalID,
 		Username:     "admin",
 		PasswordHash: hashedPwd,
 		Email:        "admin@example.com",
 		Nickname:     "Admin",
-		RoleID:       1,
 		Status:       1,
 	}
 
 	var count int64
-	storage.DB.Model(&model.User{}).Where("username = ?", "admin").Count(&count)
+	storage.DB.Model(&model.User{}).Where("email = ?", adminUser.Email).Count(&count)
 	if count == 0 {
 		if err := storage.DB.Create(&adminUser).Error; err != nil {
 			logrus.Fatalf("Create admin user failed: %v", err)
@@ -61,4 +41,33 @@ func main() {
 	} else {
 		logrus.Println("Admin user already exists.")
 	}
+
+	// 4. 授予系统管理员所有权限
+	// 使用原始SQL语句，确保正确处理PostgreSQL数组类型
+	// 先删除可能存在的记录
+	if err := storage.DB.Exec(
+		"DELETE FROM permission_rules WHERE namespace = ? AND resource_type = ? AND resource_id = ? AND subject_type = ? AND subject_id = ?",
+		"default", model.ResourceTypeNamespace, "default", model.SubjectTypeUser, adminUser.ExternalID,
+	).Error; err != nil {
+		logrus.Fatalf("Delete existing permission rule failed: %v", err)
+	}
+
+	// 使用正确的PostgreSQL数组语法插入权限
+	if err := storage.DB.Exec(
+		`INSERT INTO permission_rules (
+			namespace, resource_type, resource_id, resource_path, 
+			subject_type, subject_id, permissions, scope_type, 
+			is_deny, priority, created_by, created_at
+		) VALUES (
+			?, ?, ?, ?, ?, ?, 
+			ARRAY['read', 'edit', 'manage', 'admin', 'create', 'transfer', 'audit'], 
+			?, ?, ?, ?, NOW()
+		)`,
+		"default", model.ResourceTypeNamespace, "default", "",
+		model.SubjectTypeUser, adminUser.ExternalID,
+		model.ScopeTypeRecursive, false, 1, "",
+	).Error; err != nil {
+		logrus.Fatalf("Grant admin permission failed: %v", err)
+	}
+	logrus.Println("Admin permission granted successfully.")
 }

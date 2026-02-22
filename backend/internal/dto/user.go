@@ -12,7 +12,6 @@ type UserBase struct {
 	Email      string    `json:"email"`
 	Nickname   string    `json:"nickname"`
 	Avatar     string    `json:"avatar"`
-	RoleID     int64     `json:"role_id"`
 	Status     int       `json:"status"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
@@ -31,7 +30,6 @@ type UserUpdate struct {
 	Password       string  `json:"password"`
 	Nickname       string  `json:"nickname"`
 	Avatar         string  `json:"avatar"`
-	RoleID         int64   `json:"role_id"`
 	Status         int     `json:"status"`
 	InvitationCode *string `json:"invitation_code"`
 }
@@ -49,7 +47,6 @@ func NewUserResponseFromModel(user *model.User) *UserResponse {
 			Email:      user.Email,
 			Nickname:   user.Nickname,
 			Avatar:     user.Avatar,
-			RoleID:     user.RoleID,
 			Status:     user.Status,
 			CreatedAt:  user.CreatedAt,
 			UpdatedAt:  user.UpdatedAt,

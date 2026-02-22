@@ -48,7 +48,6 @@ func (s *AuthService) Register(userCreate *dto.UserCreate) error {
 			Username:       userCreate.Username,
 			PasswordHash:   hashedPwd,
 			Email:          userCreate.Email,
-			RoleID:         2, // default to normal user (assuming 2 is user role)
 			Status:         1,
 			InvitationCode: userCreate.InvitationCode,
 		}
@@ -71,7 +70,7 @@ func (s *AuthService) Login(email string, password string) (string, *dto.UserRes
 		return "", nil, status.StatusInvalidPassword
 	}
 
-	token, err := utils.GenerateToken(user.ID, user.RoleID, user.Username)
+	token, err := utils.GenerateToken(user.ExternalID, user.Username)
 	if err != nil {
 		return "", nil, err
 	}

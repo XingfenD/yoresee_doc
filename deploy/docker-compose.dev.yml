@@ -42,6 +42,8 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: your_password
       POSTGRES_DB: yoresee_doc_db
+    ports:
+      - "5432:5432"
     volumes:
       - yoresee_doc_postgres_data:/var/lib/postgresql/data
     networks:

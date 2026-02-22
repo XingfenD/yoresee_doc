@@ -8,6 +8,7 @@ var TestPostHandlerImpl = &TestPostHandler{}
 var AuthRegisterHandlerImpl = &AuthRegisterHandler{}
 var AuthLoginHandlerImpl = &AuthLoginHandler{}
 var SystemInfoHandlerImpl = &SystemInfoHandler{}
+var GetDocumentContentHandlerImpl = &GetDocumentContentHandler{}
 
 type HealthHandler struct{}
 type TestProtectedHandler struct{}
@@ -15,6 +16,7 @@ type TestPostHandler struct{}
 type AuthRegisterHandler struct{}
 type AuthLoginHandler struct{}
 type SystemInfoHandler struct{}
+type GetDocumentContentHandler struct{}
 
 type HealthResponse struct {
 	BaseResponse
@@ -78,4 +80,15 @@ type SystemInfoResponse struct {
 
 type SystemInfoRequest struct {
 	BaseRequest
+}
+
+type GetDocumentContentResponse struct {
+	BaseResponse
+	Document *dto.DocumentResponse `json:"document"`
+	Content  string                `json:"content"`
+}
+
+type GetDocumentContentRequest struct {
+	BaseRequest
+	DocumentExternalID string `json:"document_external_id" form:"document_external_id" uri:"documentExternalID"`
 }

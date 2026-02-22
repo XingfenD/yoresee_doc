@@ -208,3 +208,65 @@ func (op *UserUpdateOperation) Exec() error {
 	}
 	return storage.DB.Save(op.user).Error
 }
+
+type UserGetIDByExternalIDOperation struct {
+	repo       *UserRepository
+	externalID string
+	tx         *gorm.DB
+}
+
+func (r *UserRepository) GetIDByExternalID(externalID string) *UserGetIDByExternalIDOperation {
+	return &UserGetIDByExternalIDOperation{
+		repo:       r,
+		externalID: externalID,
+	}
+}
+
+func (op *UserGetIDByExternalIDOperation) WithTx(tx *gorm.DB) *UserGetIDByExternalIDOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *UserGetIDByExternalIDOperation) Exec() (int64, error) {
+	var user model.User
+	var err error
+
+	if op.tx != nil {
+		err = op.tx.Where("external_id = ?", op.externalID).First(&user).Error
+	} else {
+		err = storage.DB.Where("external_id = ?", op.externalID).First(&user).Error
+	}
+
+	return user.ID, err
+}
+
+type UserGetByExternalIDOperation struct {
+	repo       *UserRepository
+	externalID string
+	tx         *gorm.DB
+}
+
+func (r *UserRepository) GetByExternalID(externalID string) *UserGetByExternalIDOperation {
+	return &UserGetByExternalIDOperation{
+		repo:       r,
+		externalID: externalID,
+	}
+}
+
+func (op *UserGetByExternalIDOperation) WithTx(tx *gorm.DB) *UserGetByExternalIDOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *UserGetByExternalIDOperation) Exec() (*model.User, error) {
+	var user model.User
+	var err error
+
+	if op.tx != nil {
+		err = op.tx.Where("external_id = ?", op.externalID).First(&user).Error
+	} else {
+		err = storage.DB.Where("external_id = ?", op.externalID).First(&user).Error
+	}
+
+	return &user, err
+}

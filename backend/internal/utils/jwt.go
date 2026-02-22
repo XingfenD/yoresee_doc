@@ -19,21 +19,19 @@ func (v *JWTValidator) IsExpired(claims *Claims) bool {
 }
 
 type Claims struct {
-	UserID   int64  `json:"user_id"`
-	RoleID   int64  `json:"role_id"`
-	Username string `json:"username"`
+	ExternalID string `json:"external_id"`
+	Username   string `json:"username"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID, roleID int64, username string) (string, error) {
+func GenerateToken(externalID string, username string) (string, error) {
 	cfg := config.GlobalConfig.Backend.Jwt
 	now := time.Now()
 	expireTime := now.Add(time.Duration(cfg.Expire) * time.Second)
 
 	claims := Claims{
-		UserID:   userID,
-		RoleID:   roleID,
-		Username: username,
+		ExternalID: externalID,
+		Username:   username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			Issuer:    "doc_manager",

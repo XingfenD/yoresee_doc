@@ -48,8 +48,7 @@ func (m *JWTAuthMiddleware) GinHandle() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", claims.UserID)
-		c.Set("role_id", claims.RoleID)
+		c.Set("user_external_id", claims.ExternalID)
 		c.Set("username", claims.Username)
 
 		c.Next()
