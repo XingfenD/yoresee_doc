@@ -2,13 +2,10 @@ package dto
 
 import (
 	"time"
-
-	"github.com/XingfenD/yoresee_doc/internal/model"
 )
 
 // PermissionGrant 权限授予请求
 type PermissionGrant struct {
-	Namespace   string     `json:"namespace" binding:"required"`
 	Resource    Resource   `json:"resource" binding:"required"`
 	Subject     Subject    `json:"subject" binding:"required"`
 	Permissions []string   `json:"permissions" binding:"required"`
@@ -54,28 +51,3 @@ type PermissionBatchCheckResponse map[string]bool
 
 // PermissionEffectiveResponse 有效权限响应
 type PermissionEffectiveResponse []string
-
-// NamespaceCreate 命名域创建请求
-type NamespaceCreate struct {
-	ID      string `json:"id" binding:"required"`
-	Name    string `json:"name" binding:"required"`
-	OwnerID string `json:"owner_id" binding:"required"`
-}
-
-// NamespaceResponse 命名域响应
-type NamespaceResponse struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	OwnerID   string    `json:"owner_id"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-// NewNamespaceResponseFromModel 从模型创建命名域响应
-func NewNamespaceResponseFromModel(namespace *model.Namespace) *NamespaceResponse {
-	return &NamespaceResponse{
-		ID:        namespace.ID,
-		Name:      namespace.Name,
-		OwnerID:   namespace.OwnerID,
-		CreatedAt: namespace.CreatedAt,
-	}
-}

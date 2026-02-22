@@ -50,12 +50,11 @@ func (j *JSONB) Scan(value interface{}) error {
 
 // Resource 资源模型
 type Resource struct {
-	ID        string       `gorm:"primaryKey;size:64" json:"id"`
-	Namespace string       `gorm:"size:64;not null;index" json:"namespace"`
-	Type      ResourceType `gorm:"size:32;not null" json:"type"`
-	ParentID  *string      `gorm:"size:64" json:"parent_id"`
-	Path      string       `gorm:"type:ltree" json:"path"` // PostgreSQL层级路径类型
-	Metadata  JSONB        `gorm:"type:jsonb" json:"metadata"`
+	ID       string       `gorm:"primaryKey;size:64" json:"id"`
+	Type     ResourceType `gorm:"size:32;not null" json:"type"`
+	ParentID *string      `gorm:"size:64" json:"parent_id"`
+	Path     string       `gorm:"type:ltree" json:"path"` // PostgreSQL层级路径类型
+	Metadata JSONB        `gorm:"type:jsonb" json:"metadata"`
 }
 
 func (Resource) TableName() string {

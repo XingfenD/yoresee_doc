@@ -98,16 +98,14 @@ func (op *PermissionRuleDeleteOperation) Exec() error {
 // PermissionRuleGetByResourceOperation 根据资源获取权限规则操作
 type PermissionRuleGetByResourceOperation struct {
 	repo         *PermissionRepository
-	namespace    string
 	resourceType model.ResourceType
 	resourceID   string
 	tx           *gorm.DB
 }
 
-func (r *PermissionRepository) GetRulesByResource(namespace string, resourceType model.ResourceType, resourceID string) *PermissionRuleGetByResourceOperation {
+func (r *PermissionRepository) GetRulesByResource(resourceType model.ResourceType, resourceID string) *PermissionRuleGetByResourceOperation {
 	return &PermissionRuleGetByResourceOperation{
 		repo:         r,
-		namespace:    namespace,
 		resourceType: resourceType,
 		resourceID:   resourceID,
 	}
@@ -123,9 +121,9 @@ func (op *PermissionRuleGetByResourceOperation) Exec() ([]model.PermissionRule, 
 	var err error
 
 	if op.tx != nil {
-		err = op.tx.Where("namespace = ? AND resource_type = ? AND resource_id = ?", op.namespace, op.resourceType, op.resourceID).Find(&rules).Error
+		err = op.tx.Where("resource_type = ? AND resource_id = ?", op.resourceType, op.resourceID).Find(&rules).Error
 	} else {
-		err = storage.DB.Where("namespace = ? AND resource_type = ? AND resource_id = ?", op.namespace, op.resourceType, op.resourceID).Find(&rules).Error
+		err = storage.DB.Where("resource_type = ? AND resource_id = ?", op.resourceType, op.resourceID).Find(&rules).Error
 	}
 
 	return rules, err
@@ -134,16 +132,14 @@ func (op *PermissionRuleGetByResourceOperation) Exec() ([]model.PermissionRule, 
 // PermissionRuleGetBySubjectOperation 根据主体获取权限规则操作
 type PermissionRuleGetBySubjectOperation struct {
 	repo        *PermissionRepository
-	namespace   string
 	subjectType model.SubjectType
 	subjectID   string
 	tx          *gorm.DB
 }
 
-func (r *PermissionRepository) GetRulesBySubject(namespace string, subjectType model.SubjectType, subjectID string) *PermissionRuleGetBySubjectOperation {
+func (r *PermissionRepository) GetRulesBySubject(subjectType model.SubjectType, subjectID string) *PermissionRuleGetBySubjectOperation {
 	return &PermissionRuleGetBySubjectOperation{
 		repo:        r,
-		namespace:   namespace,
 		subjectType: subjectType,
 		subjectID:   subjectID,
 	}
@@ -159,75 +155,12 @@ func (op *PermissionRuleGetBySubjectOperation) Exec() ([]model.PermissionRule, e
 	var err error
 
 	if op.tx != nil {
-		err = op.tx.Where("namespace = ? AND subject_type = ? AND subject_id = ?", op.namespace, op.subjectType, op.subjectID).Find(&rules).Error
+		err = op.tx.Where("subject_type = ? AND subject_id = ?", op.subjectType, op.subjectID).Find(&rules).Error
 	} else {
-		err = storage.DB.Where("namespace = ? AND subject_type = ? AND subject_id = ?", op.namespace, op.subjectType, op.subjectID).Find(&rules).Error
+		err = storage.DB.Where("subject_type = ? AND subject_id = ?", op.subjectType, op.subjectID).Find(&rules).Error
 	}
 
 	return rules, err
-}
-
-// NamespaceRepository 命名域仓库
-type NamespaceRepository struct{}
-
-var NamespaceRepo = &NamespaceRepository{}
-
-// NamespaceCreateOperation 命名域创建操作
-type NamespaceCreateOperation struct {
-	repo      *NamespaceRepository
-	namespace *model.Namespace
-	tx        *gorm.DB
-}
-
-func (r *NamespaceRepository) Create(namespace *model.Namespace) *NamespaceCreateOperation {
-	return &NamespaceCreateOperation{
-		repo:      r,
-		namespace: namespace,
-	}
-}
-
-func (op *NamespaceCreateOperation) WithTx(tx *gorm.DB) *NamespaceCreateOperation {
-	op.tx = tx
-	return op
-}
-
-func (op *NamespaceCreateOperation) Exec() error {
-	if op.tx != nil {
-		return op.tx.Create(op.namespace).Error
-	}
-	return storage.DB.Create(op.namespace).Error
-}
-
-// NamespaceGetByIDOperation 命名域根据ID获取操作
-type NamespaceGetByIDOperation struct {
-	repo *NamespaceRepository
-	id   string
-	tx   *gorm.DB
-}
-
-func (r *NamespaceRepository) GetByID(id string) *NamespaceGetByIDOperation {
-	return &NamespaceGetByIDOperation{
-		repo: r,
-		id:   id,
-	}
-}
-
-func (op *NamespaceGetByIDOperation) WithTx(tx *gorm.DB) *NamespaceGetByIDOperation {
-	op.tx = tx
-	return op
-}
-
-func (op *NamespaceGetByIDOperation) Exec() (*model.Namespace, error) {
-	var namespace model.Namespace
-	var err error
-
-	if op.tx != nil {
-		err = op.tx.First(&namespace, "id = ?", op.id).Error
-	} else {
-		err = storage.DB.First(&namespace, "id = ?", op.id).Error
-	}
-
-	return &namespace, err
 }
 
 // ResourceRepository 资源仓库

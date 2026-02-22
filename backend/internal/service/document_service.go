@@ -43,7 +43,7 @@ func (s *DocumentService) GetDocumentContent(documentID int64) (string, error) {
 }
 
 // CheckDocumentPermission 检查文档权限
-func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64, namespace string, requiredPermission string) (bool, error) {
+func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64, requiredPermission string) (bool, error) {
 	cacheKey := fmt.Sprintf("permission:user:%d:doc:%d:%s", userID, documentID, requiredPermission)
 	ctx := context.Background()
 
@@ -59,7 +59,7 @@ func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64
 		},
 		Permission: requiredPermission,
 	}
-	allowed, err := s.permissionSvc.CheckPermission(userID, namespace, permissionCheck)
+	allowed, err := s.permissionSvc.CheckPermission(userID, permissionCheck)
 	if err != nil {
 		return false, err
 	}

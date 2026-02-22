@@ -26,7 +26,7 @@ func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (re
 		return nil, err
 	}
 
-	allowed, err := service.DocumentSvc.CheckDocumentPermission(userID, document.ID, "default", "read")
+	allowed, err := service.DocumentSvc.CheckDocumentPermission(userID, document.ID, "read")
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,6 @@ func runMigration() error {
 		&model.RecentKnowledgeBase{},
 		&model.Invitation{},
 		&model.SystemConfig{},
-		&model.Namespace{},
 		&model.Resource{},
 		&model.Subject{},
 		&model.PermissionRule{},

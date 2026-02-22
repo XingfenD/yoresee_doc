@@ -11,7 +11,6 @@ import (
 // PermissionService 权限服务
 type PermissionService struct {
 	permissionRepo *repository.PermissionRepository
-	namespaceRepo  *repository.NamespaceRepository
 	resourceRepo   *repository.ResourceRepository
 	subjectRepo    *repository.SubjectRepository
 }
@@ -20,7 +19,6 @@ type PermissionService struct {
 func NewPermissionService() *PermissionService {
 	return &PermissionService{
 		permissionRepo: repository.PermissionRepo,
-		namespaceRepo:  repository.NamespaceRepo,
 		resourceRepo:   repository.ResourceRepo,
 		subjectRepo:    repository.SubjectRepo,
 	}
@@ -37,7 +35,6 @@ func (s *PermissionService) GrantPermission(grant *dto.PermissionGrant) error {
 // convertToPermissionRule 将PermissionGrant转换为PermissionRule
 func (s *PermissionService) convertToPermissionRule(grant *dto.PermissionGrant) *model.PermissionRule {
 	return &model.PermissionRule{
-		Namespace:    grant.Namespace,
 		ResourceType: model.ResourceType(grant.Resource.Type),
 		ResourceID:   grant.Resource.ID,
 		ResourcePath: grant.Resource.Path,
@@ -62,30 +59,6 @@ func (s *PermissionService) GetPermissionRule(id int) (*model.PermissionRule, er
 	return s.permissionRepo.GetRuleByID(id).Exec()
 }
 
-// CreateNamespace 创建命名域
-func (s *PermissionService) CreateNamespace(create *dto.NamespaceCreate) error {
-	namespace := s.convertToNamespace(create)
-	return s.namespaceRepo.Create(namespace).Exec()
-}
-
-// convertToNamespace 将NamespaceCreate转换为Namespace
-func (s *PermissionService) convertToNamespace(create *dto.NamespaceCreate) *model.Namespace {
-	return &model.Namespace{
-		ID:      create.ID,
-		Name:    create.Name,
-		OwnerID: create.OwnerID,
-	}
-}
-
-// GetNamespace 获取命名域
-func (s *PermissionService) GetNamespace(id string) (*dto.NamespaceResponse, error) {
-	namespace, err := s.namespaceRepo.GetByID(id).Exec()
-	if err != nil {
-		return nil, err
-	}
-	return dto.NewNamespaceResponseFromModel(namespace), nil
-}
-
 // CreateResource 创建资源
 func (s *PermissionService) CreateResource(resource *model.Resource) error {
 	return s.resourceRepo.Create(resource).Exec()
@@ -107,15 +80,15 @@ func (s *PermissionService) GetSubject(id string) (*model.Subject, error) {
 }
 
 // CheckPermission 检查用户是否对资源有权限
-func (s *PermissionService) CheckPermission(userID int64, namespace string, check *dto.PermissionCheck) (bool, error) {
+func (s *PermissionService) CheckPermission(userID int64, check *dto.PermissionCheck) (bool, error) {
 	// 1. 获取用户的所有主体身份
-	subjects, err := s.getUserSubjects(userID, namespace)
+	subjects, err := s.getUserSubjects(userID)
 	if err != nil {
 		return false, err
 	}
 
 	// 2. 获取资源的所有相关权限规则
-	rules, err := s.getRelevantRules(model.ResourceType(check.Resource.Type), check.Resource.ID, namespace, subjects)
+	rules, err := s.getRelevantRules(model.ResourceType(check.Resource.Type), check.Resource.ID, subjects)
 	if err != nil {
 		return false, err
 	}
@@ -128,19 +101,18 @@ func (s *PermissionService) CheckPermission(userID int64, namespace string, chec
 }
 
 // getUserSubjects 获取用户的所有主体身份
-func (s *PermissionService) getUserSubjects(userID int64, namespace string) ([]model.Subject, error) {
+func (s *PermissionService) getUserSubjects(userID int64) ([]model.Subject, error) {
 	// TODO: 实现完整的用户主体身份获取逻辑
 	// 暂时只返回用户本身作为主体
 	userSubject := model.Subject{
-		ID:        fmt.Sprintf("%d", userID),
-		Type:      model.SubjectTypeUser,
-		Namespace: namespace,
+		ID:   fmt.Sprintf("%d", userID),
+		Type: model.SubjectTypeUser,
 	}
 	return []model.Subject{userSubject}, nil
 }
 
 // getRelevantRules 获取资源的所有相关权限规则
-func (s *PermissionService) getRelevantRules(resourceType model.ResourceType, resourceID string, namespace string, subjects []model.Subject) ([]model.PermissionRule, error) {
+func (s *PermissionService) getRelevantRules(resourceType model.ResourceType, resourceID string, subjects []model.Subject) ([]model.PermissionRule, error) {
 	// TODO: 实现完整的权限规则获取逻辑
 	// 暂时返回空数组，表示没有权限规则
 	return []model.PermissionRule{}, nil
@@ -164,15 +136,15 @@ func (s *PermissionService) hasPermission(permissions []string, requiredPermissi
 }
 
 // BatchCheckPermissions 批量检查权限
-func (s *PermissionService) BatchCheckPermissions(userID int64, namespace string, batchCheck *dto.PermissionBatchCheck) (dto.PermissionBatchCheckResponse, error) {
+func (s *PermissionService) BatchCheckPermissions(userID int64, batchCheck *dto.PermissionBatchCheck) (dto.PermissionBatchCheckResponse, error) {
 	// 1. 获取用户的所有主体身份
-	subjects, err := s.getUserSubjects(userID, namespace)
+	subjects, err := s.getUserSubjects(userID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. 获取资源的所有相关权限规则
-	rules, err := s.getRelevantRules(model.ResourceType(batchCheck.Resource.Type), batchCheck.Resource.ID, namespace, subjects)
+	rules, err := s.getRelevantRules(model.ResourceType(batchCheck.Resource.Type), batchCheck.Resource.ID, subjects)
 	if err != nil {
 		return nil, err
 	}

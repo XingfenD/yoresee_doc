@@ -37,8 +37,7 @@ const (
 
 // PermissionRule 权限规则模型
 type PermissionRule struct {
-	ID        int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Namespace string `gorm:"size:64;not null;index:idx_resource,priority:1" json:"namespace"`
+	ID int `gorm:"primaryKey;autoIncrement" json:"id"`
 
 	// 资源维度
 	ResourceType ResourceType `gorm:"size:32;not null;index:idx_resource,priority:2" json:"resource_type"`

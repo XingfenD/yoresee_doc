@@ -38,23 +38,23 @@ func createAdminUser() error {
 	}
 
 	if err := storage.DB.Where(
-		"namespace = ? AND resource_type = ? AND resource_id = ? AND subject_type = ? AND subject_id = ?",
-		"default", model.ResourceTypeNamespace, "default", model.SubjectTypeUser, adminUser.ExternalID,
+		"resource_type = ? AND resource_id = ? AND subject_type = ? AND subject_id = ?",
+		model.ResourceTypeNamespace, "default", model.SubjectTypeUser, adminUser.ExternalID,
 	).Delete(&model.PermissionRule{}).Error; err != nil {
 		return err
 	}
 
 	if err := storage.DB.Exec(
 		`INSERT INTO permission_rules (
-			namespace, resource_type, resource_id, resource_path,
+			resource_type, resource_id, resource_path,
 			subject_type, subject_id, permissions, scope_type,
 			is_deny, priority, created_by, created_at
 		) VALUES (
-			?, ?, ?, ?, ?, ?,
+			?, ?, ?, ?, ?,
 			ARRAY['read', 'edit', 'manage', 'admin', 'create', 'transfer', 'audit'],
 			?, ?, ?, ?, NOW()
 		)`,
-		"default", model.ResourceTypeNamespace, "default", "",
+		model.ResourceTypeNamespace, "default", "",
 		model.SubjectTypeUser, adminUser.ExternalID,
 		model.ScopeTypeRecursive, false, 1, "",
 	).Error; err != nil {
