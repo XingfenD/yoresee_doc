@@ -10,7 +10,6 @@ import (
 func createAdminUser() error {
 	logrus.Println("Creating admin user...")
 
-	// Create Admin User
 	password := "admin123456"
 	hashedPwd, err := utils.HashPassword(password)
 	if err != nil {
@@ -38,7 +37,6 @@ func createAdminUser() error {
 		logrus.Println("Admin user already exists.")
 	}
 
-	// 先删除可能存在的记录
 	if err := storage.DB.Where(
 		"namespace = ? AND resource_type = ? AND resource_id = ? AND subject_type = ? AND subject_id = ?",
 		"default", model.ResourceTypeNamespace, "default", model.SubjectTypeUser, adminUser.ExternalID,
@@ -46,7 +44,6 @@ func createAdminUser() error {
 		return err
 	}
 
-	// 使用原始SQL语句，确保正确处理PostgreSQL数组类型
 	if err := storage.DB.Exec(
 		`INSERT INTO permission_rules (
 			namespace, resource_type, resource_id, resource_path,

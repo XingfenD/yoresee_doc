@@ -17,28 +17,23 @@ func main() {
 
 	logrus.Println("Starting migration...")
 
-	// Run database migration
 	if err := runMigration(); err != nil {
 		logrus.Fatalf("Migration failed: %v", err)
 	}
 	logrus.Println("Database migration completed successfully")
 
-	// Initialize system config
 	if err := initializeConfig(); err != nil {
 		logrus.Fatalf("Initialize config failed: %v", err)
 	}
 
-	// Initialize permissions
 	if err := initializePermissions(); err != nil {
 		logrus.Fatalf("Initialize permissions failed: %v", err)
 	}
 
-	// Create admin user
 	if err := createAdminUser(); err != nil {
 		logrus.Fatalf("Create admin user failed: %v", err)
 	}
 
-	// Initialize documents
 	if err := initializeDocuments(); err != nil {
 		logrus.Fatalf("Initialize documents failed: %v", err)
 	}

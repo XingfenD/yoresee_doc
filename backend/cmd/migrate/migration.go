@@ -7,13 +7,11 @@ import (
 )
 
 func runMigration() error {
-	// 创建ltree扩展
 	if err := storage.DB.Exec("CREATE EXTENSION IF NOT EXISTS ltree").Error; err != nil {
 		return err
 	}
 	logrus.Println("ltree extension created successfully")
 
-	// 执行自动迁移
 	err := storage.DB.AutoMigrate(
 		&model.User{},
 		&model.DocumentMeta{},
@@ -23,7 +21,6 @@ func runMigration() error {
 		&model.RecentKnowledgeBase{},
 		&model.Invitation{},
 		&model.SystemConfig{},
-		&model.DocumentCollaborator{},
 		&model.Namespace{},
 		&model.Resource{},
 		&model.Subject{},

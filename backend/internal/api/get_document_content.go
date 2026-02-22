@@ -15,17 +15,26 @@ func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (re
 		return nil, status.StatusParamError
 	}
 
-	// userExternalID, _ := ctx.Value("user_external_id").(string)
+	userExternalID, _ := ctx.Value("user_external_id").(string)
+	userID, err := service.UserSvc.GetIDByExternalID(userExternalID)
+	if err != nil {
+		return nil, err
+	}
 
-	// allowed, err := service.DocumentSvc.CheckDocumentPermission(0, 0, "default", "read")
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if !allowed {
-	// 	return nil, status.StatusPermissionDenied_DocumentRead
-	// }
+	document, err := service.DocumentSvc.GetDocumentByExternalID(getDocReq.DocumentExternalID)
+	if err != nil {
+		return nil, err
+	}
 
-	document, content, err := service.DocumentSvc.GetDocumentWithContent(getDocReq.DocumentExternalID)
+	allowed, err := service.DocumentSvc.CheckDocumentPermission(userID, document.ID, "default", "read")
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, status.StatusPermissionDenied_DocumentRead
+	}
+
+	content, err := service.DocumentSvc.GetDocumentContent(document.ID)
 	if err != nil {
 		return nil, err
 	}

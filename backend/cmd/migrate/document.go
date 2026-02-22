@@ -10,13 +10,11 @@ import (
 func initializeDocuments() error {
 	logrus.Println("Initializing default documents...")
 
-	// 获取管理员用户ID
 	var adminUser model.User
 	if err := storage.DB.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
 		return err
 	}
 
-	// 检查是否已存在默认文档
 	var count int64
 	storage.DB.Model(&model.DocumentMeta{}).Where("title = ?", "欢迎使用 Yoresee Doc").Count(&count)
 	if count > 0 {
@@ -24,7 +22,6 @@ func initializeDocuments() error {
 		return nil
 	}
 
-	// 创建默认文档内容
 	content := model.Content{
 		Content: "# 欢迎使用 Yoresee Doc\n\n这是您的第一个文档。Yoresee Doc 是一个功能强大的文档管理系统，支持以下特性：\n\n- 📝 富文本编辑\n- 📁 文档分类管理\n- 🔍 全文搜索\n- 👥 协作编辑\n- 📊 版本控制\n- 🔒 权限管理\n\n## 快速开始\n\n1. 点击左侧菜单创建新文档\n2. 使用编辑器撰写内容\n3. 保存文档并分享给团队成员\n\n祝您使用愉快！",
 	}
@@ -33,7 +30,6 @@ func initializeDocuments() error {
 		return err
 	}
 
-	// 创建默认文档
 	document := model.DocumentMeta{
 		ExternalID: utils.GenerateExternalID("doc"),
 		Title:      "欢迎使用 Yoresee Doc",
@@ -53,7 +49,6 @@ func initializeDocuments() error {
 		return err
 	}
 
-	// 创建文档版本
 	documentVersion := model.DocumentVersion{
 		DocumentID:    document.ID,
 		Version:       1,
