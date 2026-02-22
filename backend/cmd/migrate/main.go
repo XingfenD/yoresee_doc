@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
-	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -18,28 +17,31 @@ func main() {
 
 	logrus.Println("Starting migration...")
 
-	// 创建ltree扩展
-	if err := storage.DB.Exec("CREATE EXTENSION IF NOT EXISTS ltree").Error; err != nil {
-		logrus.Fatalf("Create ltree extension failed: %v", err)
-	}
-	logrus.Println("ltree extension created successfully")
-
-	// 执行自动迁移
-	err := storage.DB.AutoMigrate(
-		&model.User{},
-		&model.DocumentVersion{},
-		&model.KnowledgeBase{},
-		&model.RecentKnowledgeBase{},
-		&model.Invitation{},
-		&model.SystemConfig{},
-		&model.DocumentCollaborator{},
-		&model.Namespace{},
-		&model.Resource{},
-		&model.Subject{},
-		&model.PermissionRule{},
-	)
-
-	if err != nil {
+	// Run database migration
+	if err := runMigration(); err != nil {
 		logrus.Fatalf("Migration failed: %v", err)
 	}
+	logrus.Println("Database migration completed successfully")
+
+	// Initialize system config
+	if err := initializeConfig(); err != nil {
+		logrus.Fatalf("Initialize config failed: %v", err)
+	}
+
+	// Initialize permissions
+	if err := initializePermissions(); err != nil {
+		logrus.Fatalf("Initialize permissions failed: %v", err)
+	}
+
+	// Create admin user
+	if err := createAdminUser(); err != nil {
+		logrus.Fatalf("Create admin user failed: %v", err)
+	}
+
+	// Initialize documents
+	if err := initializeDocuments(); err != nil {
+		logrus.Fatalf("Initialize documents failed: %v", err)
+	}
+
+	logrus.Println("All migration tasks completed successfully!")
 }
