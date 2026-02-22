@@ -2,10 +2,9 @@ package api
 
 import (
 	"context"
-	"net/http"
+	"reflect"
 	"time"
 
-	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
 )
@@ -20,18 +19,6 @@ func (h *HealthHandler) handle(ctx context.Context, req Request) (resp Response,
 }
 
 func (h *HealthHandler) GinHandle() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := c.Request.Context()
-		req := &HealthRequest{}
-		resp, err := h.handle(ctx, req)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, GenBaseRespWithErrAndCtx(c, err))
-			return
-		}
-
-		if healthResp, ok := resp.(*HealthResponse); ok {
-			healthResp.Message = i18n.Translate(c, healthResp.Message)
-		}
-		c.JSON(http.StatusOK, resp)
-	}
+	baseHandler := &BaseHandler{}
+	return baseHandler.GinHandle(reflect.TypeOf(HealthRequest{}), h.handle)
 }

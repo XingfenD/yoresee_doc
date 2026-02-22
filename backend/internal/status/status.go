@@ -43,6 +43,8 @@ var (
 
 	StatusInvitationInvalid = NewStatusErr(40200, "invitation invalid")
 
+	StatusPermissionDenied_DocumentRead = NewStatusErr(40300, "permission denied for reading document")
+
 	StatusWriteDBError = NewStatusErr(50000, "write db error")
 	StatusReadDBError  = NewStatusErr(50001, "read db error")
 )

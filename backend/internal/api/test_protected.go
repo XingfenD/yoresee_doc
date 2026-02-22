@@ -2,9 +2,8 @@ package api
 
 import (
 	"context"
-	"net/http"
+	"reflect"
 
-	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
 )
@@ -17,16 +16,6 @@ func (h *TestProtectedHandler) handle(ctx context.Context, req Request) (resp Re
 }
 
 func (h *TestProtectedHandler) GinHandle() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		resp, err := h.handle(ctx, TestProtectedRequest{})
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, GenBaseRespWithErrAndCtx(ctx, err))
-			return
-		}
-
-		if testResp, ok := resp.(*TestProtectedResponse); ok {
-			testResp.Message = i18n.Translate(ctx, testResp.Message)
-		}
-		ctx.JSON(http.StatusOK, resp)
-	}
+	baseHandler := &BaseHandler{}
+	return baseHandler.GinHandle(reflect.TypeOf(TestProtectedRequest{}), h.handle)
 }

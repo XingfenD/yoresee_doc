@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"net/http"
+	"reflect"
 
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -10,21 +10,26 @@ import (
 )
 
 func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
-	getDocReq := req.(*GetDocumentContentRequest)
+	getDocReq, ok := req.(*GetDocumentContentRequest)
+	if !ok {
+		return nil, status.StatusParamError
+	}
 
-	// 从上下文中获取用户信息和命名域
-	// 这里简化处理，实际应该从JWT中获取用户信息
-	// 暂时使用默认值
-	userExternalID := "admin"
-	namespace := "default"
+	// userExternalID, _ := ctx.Value("user_external_id").(string)
 
-	// 调用服务获取文档内容
-	document, content, err := service.DocumentSvc.GetDocumentWithContent(getDocReq.DocumentExternalID, userExternalID, namespace)
+	// allowed, err := service.DocumentSvc.CheckDocumentPermission(0, 0, "default", "read")
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if !allowed {
+	// 	return nil, status.StatusPermissionDenied_DocumentRead
+	// }
+
+	document, content, err := service.DocumentSvc.GetDocumentWithContent(getDocReq.DocumentExternalID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 构造响应
 	return &GetDocumentContentResponse{
 		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),
 		Document:     service.DocumentSvc.ConvertToDocumentResponse(document),
@@ -33,25 +38,6 @@ func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (re
 }
 
 func (h *GetDocumentContentHandler) GinHandle() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := c.Request.Context()
-
-		// 从路径参数中获取documentExternalID
-		documentExternalID := c.Param("documentExternalID")
-
-		req := &GetDocumentContentRequest{
-			DocumentExternalID: documentExternalID,
-		}
-
-		resp, err := h.handle(ctx, req)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, GenBaseRespWithErrAndCtx(c, err))
-			return
-		}
-
-		if getDocResp, ok := resp.(*GetDocumentContentResponse); ok {
-			getDocResp.Message = ""
-		}
-		c.JSON(http.StatusOK, resp)
-	}
+	baseHandler := &BaseHandler{}
+	return baseHandler.GinHandle(reflect.TypeOf(GetDocumentContentRequest{}), h.handle)
 }
