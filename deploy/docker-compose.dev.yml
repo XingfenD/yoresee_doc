@@ -48,23 +48,38 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: yoresee_doc_redis
+    environment:
+      REDIS_PASSWORD: your_redis_password
+    volumes:
+      - yoresee_doc_redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
   backend:
     build:
       context: ../backend
       dockerfile: Dockerfile
-      target: runner
-    image: yoresee_doc_backend_runner:latest
+      target: dev
+    image: yoresee_doc_backend_dev:latest
     container_name: yoresee_doc_backend
     volumes:
-      - ../backend/config.toml:/app/config.toml
+      - ../backend:/app
     depends_on:
       - postgres
+      - redis
     networks:
       - yoresee_doc_network
     restart: unless-stopped
 
 volumes:
   yoresee_doc_postgres_data:
+  yoresee_doc_redis_data:
 
 networks:
   yoresee_doc_network:

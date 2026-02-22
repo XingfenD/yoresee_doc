@@ -1,3 +1,10 @@
+FROM golang:1.24-alpine AS dev
+WORKDIR /app
+
+EXPOSE 8080
+
+CMD ["sh", "-c", "go mod download && go run cmd/migrate/main.go && go run cmd/init_config/main.go && go run cmd/create_admin/main.go && go run cmd/main.go"]
+
 FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
@@ -11,10 +18,10 @@ RUN go mod download
 
 COPY . .
 RUN go mod tidy
-RUN CGO_ENABLED=0 go build -p 1 -v -o main.out cmd/main.go && \
-    CGO_ENABLED=0 go build -p 1 -v -o create_admin.out cmd/create_admin/main.go && \
-    CGO_ENABLED=0 go build -p 1 -v -o init_config.out cmd/init_config/main.go && \
-    CGO_ENABLED=0 go build -p 1 -v -o migrate.out cmd/migrate/main.go
+RUN CGO_ENABLED=0 go build -p 1 -o main.out cmd/main.go && \
+    CGO_ENABLED=0 go build -p 1 -o create_admin.out cmd/create_admin/main.go && \
+    CGO_ENABLED=0 go build -p 1 -o init_config.out cmd/init_config/main.go && \
+    CGO_ENABLED=0 go build -p 1 -o migrate.out cmd/migrate/main.go
 
 FROM alpine:latest AS runner
 

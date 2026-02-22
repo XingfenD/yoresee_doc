@@ -2,6 +2,8 @@
 nginx/nginx.conf
 nginx/conf.d/default.conf
 
+redis/redis.conf
+
 # ignore log files by suffix
 *.logs
 *.log
