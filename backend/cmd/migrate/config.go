@@ -4,12 +4,12 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
-func initializeConfig() error {
-	logrus.Println("Initializing system config...")
+func initializeConfigInTx(tx *gorm.DB) error {
+	logrus.Println("Initializing system config in transaction...")
 
 	registerModeConfigModel := &model.SystemConfig{
 		Key: utils.GenConfigKey(
@@ -20,12 +20,12 @@ func initializeConfig() error {
 		Value: constant.RegisterMode_Open,
 	}
 
-	if err := storage.DB.FirstOrCreate(registerModeConfigModel, model.SystemConfig{
+	if err := tx.FirstOrCreate(registerModeConfigModel, model.SystemConfig{
 		Key: registerModeConfigModel.Key,
 	}).Error; err != nil {
 		return err
 	}
 
-	logrus.Println("System config initialized successfully")
+	logrus.Println("System config initialized successfully in transaction")
 	return nil
 }

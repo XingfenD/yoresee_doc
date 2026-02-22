@@ -6,7 +6,7 @@ ENV GOPROXY=https://goproxy.cn,direct
 EXPOSE 8080
 EXPOSE 2345
 
-CMD ["sh", "-c", "go mod download && go install github.com/go-delve/delve/cmd/dlv@latest && go run ./cmd/migrate && dlv debug --headless --listen=:2345 --api-version=2 ./cmd/main.go"]
+CMD ["sh", "-c", "go mod download && go install github.com/go-delve/delve/cmd/dlv@latest && go run ./cmd/migrate && dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient --continue --log ./cmd/main.go"]
 
 FROM golang:1.24-alpine AS builder
 
