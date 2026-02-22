@@ -5,11 +5,11 @@ read_timeout = 10
 write_timeout = 10
 
 [database]
-host = "yoresee_doc_postgre"
+host = "yoresee_doc_postgres"
 port = 5432
 user = "root"
 password = "your_password"
-name = "doc_manager"
+name = "yoresee_doc_db"
 # max_idle_conns = 10
 # max_open_conns = 100
 # conn_max_lifetime = 3600
@@ -32,6 +32,7 @@ timeout = 30
 
 [backend]
 http_framework = "gin"
+system_name = "Yoresee"
 
 [backend.jwt]
 secret = "yoresee_doc_jwt_secret_key"
@@ -39,7 +40,7 @@ expire = 86400                 # 24 hours
 refresh_expire = 604800        # 7 days
 
 [backend.log]
-level = "info"
+level = "debug"
 file = "logs/app.log"
 console = true
 file_log = true
