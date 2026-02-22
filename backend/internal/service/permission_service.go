@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
@@ -42,7 +43,7 @@ func (s *PermissionService) convertToPermissionRule(grant *dto.PermissionGrant) 
 		ResourcePath: grant.Resource.Path,
 		SubjectType:  model.SubjectType(grant.Subject.Type),
 		SubjectID:    grant.Subject.ID,
-		Permissions:  grant.Permissions,
+		Permissions:  strings.Join(grant.Permissions, ","),
 		ScopeType:    model.ScopeType(grant.Scope.Type),
 		IsDeny:       grant.IsDeny,
 		Priority:     grant.Priority,
@@ -141,11 +142,16 @@ func (s *PermissionService) resolveEffectivePermissions(rules []model.Permission
 
 	// Process each rule
 	for _, rule := range rules {
-		for _, perm := range rule.Permissions {
-			// Check if this permission already exists
-			if existingPriority, exists := permissionMap[perm]; !exists || rule.Priority < existingPriority {
-				// Add or update permission with higher priority (lower number)
-				permissionMap[perm] = rule.Priority
+		// 解析逗号分隔的权限字符串
+		perms := strings.Split(rule.Permissions, ",")
+		for _, perm := range perms {
+			perm = strings.TrimSpace(perm)
+			if perm != "" {
+				// Check if this permission already exists
+				if existingPriority, exists := permissionMap[perm]; !exists || rule.Priority < existingPriority {
+					// Add or update permission with higher priority (lower number)
+					permissionMap[perm] = rule.Priority
+				}
 			}
 		}
 	}

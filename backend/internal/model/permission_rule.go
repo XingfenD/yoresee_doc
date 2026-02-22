@@ -49,10 +49,10 @@ type PermissionRule struct {
 	SubjectID   string      `gorm:"size:64;not null;index:idx_subject,priority:3" json:"subject_id"`
 
 	// 权限内容
-	Permissions []string  `gorm:"type:varchar(32)[];not null" json:"permissions"` // 权限列表
-	ScopeType   ScopeType `gorm:"size:32;default:exact" json:"scope_type"`        // 权限范围类型
-	IsDeny      bool      `gorm:"default:false" json:"is_deny"`                   // 是否显式拒绝
-	Priority    int       `gorm:"default:100" json:"priority"`                    // 优先级（数字越小优先级越高）
+	Permissions string    `gorm:"type:text;not null" json:"permissions"`   // 权限列表（逗号分隔）
+	ScopeType   ScopeType `gorm:"size:32;default:exact" json:"scope_type"` // 权限范围类型
+	IsDeny      bool      `gorm:"default:false" json:"is_deny"`            // 是否显式拒绝
+	Priority    int       `gorm:"default:100" json:"priority"`             // 优先级（数字越小优先级越高）
 
 	// 有效期
 	ValidFrom  *time.Time `json:"valid_from"`  // 生效时间

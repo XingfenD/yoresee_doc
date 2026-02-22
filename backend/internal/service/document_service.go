@@ -1,15 +1,11 @@
 package service
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
-	"github.com/sirupsen/logrus"
 )
 
 // DocumentService 文档服务
@@ -45,13 +41,13 @@ func (s *DocumentService) GetDocumentContent(documentID int64) (string, error) {
 
 // CheckDocumentPermission 检查文档权限
 func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64, requiredPermission string) (bool, error) {
-	cacheKey := fmt.Sprintf("permission:user:%d:doc:%d:%s", userID, documentID, requiredPermission)
-	ctx := context.Background()
+	// cacheKey := fmt.Sprintf("permission:user:%d:doc:%d:%s", userID, documentID, requiredPermission)
+	// ctx := context.Background()
 
-	cachedResult, err := storage.GetCache(ctx, cacheKey)
-	if err == nil {
-		return cachedResult == "true", nil
-	}
+	// cachedResult, err := storage.GetCache(ctx, cacheKey)
+	// if err == nil {
+	// 	return cachedResult == "true", nil
+	// }
 
 	permissionCheck := &dto.PermissionCheck{
 		Resource: dto.Resource{
@@ -65,10 +61,10 @@ func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64
 		return false, err
 	}
 
-	err = storage.SetCache(ctx, cacheKey, fmt.Sprintf("%v", allowed), time.Hour)
-	if err != nil {
-		logrus.Info("Set permission cache failed: %v\n", err)
-	}
+	// err = storage.SetCache(ctx, cacheKey, fmt.Sprintf("%v", allowed), time.Hour)
+	// if err != nil {
+	// 	logrus.Info("Set permission cache failed: %v\n", err)
+	// }
 
 	return allowed, nil
 }

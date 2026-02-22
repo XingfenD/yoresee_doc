@@ -120,10 +120,11 @@ func (op *PermissionRuleGetByResourceOperation) Exec() ([]model.PermissionRule, 
 	var rules []model.PermissionRule
 	var err error
 
+	// 支持通配符权限规则查询
 	if op.tx != nil {
-		err = op.tx.Where("resource_type = ? AND resource_id = ?", op.resourceType, op.resourceID).Find(&rules).Error
+		err = op.tx.Where("(resource_type = ? AND (resource_id = ? OR resource_id = '*'))", op.resourceType, op.resourceID).Find(&rules).Error
 	} else {
-		err = storage.DB.Where("resource_type = ? AND resource_id = ?", op.resourceType, op.resourceID).Find(&rules).Error
+		err = storage.DB.Where("(resource_type = ? AND (resource_id = ? OR resource_id = '*'))", op.resourceType, op.resourceID).Find(&rules).Error
 	}
 
 	return rules, err

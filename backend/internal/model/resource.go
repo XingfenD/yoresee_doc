@@ -19,9 +19,6 @@ const (
 	ResourceTypeOrgStructure ResourceType = "org_structure" // 组织架构节点
 	ResourceTypeUserGroup    ResourceType = "user_group"    // 用户组
 	ResourceTypeUser         ResourceType = "user"          // 单一用户
-
-	// 系统资源
-	ResourceTypeNamespace ResourceType = "namespace" // 命名域本身
 )
 
 // JSONB 用于存储JSON数据
