@@ -20,6 +20,10 @@ func main() {
 		logrus.Fatalf("Init database failed: %v", err)
 	}
 
+	if err := storage.InitRedis(&config.GlobalConfig.Redis); err != nil {
+		logrus.Fatalf("Init redis failed: %v", err)
+	}
+
 	i18n.Init()
 
 	r := gin.Default()

@@ -8,7 +8,6 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 func (h *AuthLoginHandler) handle(ctx context.Context, req Request) (Response, error) {
@@ -37,7 +36,6 @@ func (h *AuthLoginHandler) GinHandle() gin.HandlerFunc {
 			return
 		}
 
-		logrus.Infof("AuthLoginRequest: %+v", req)
 		resp, err := h.handle(ctx, req)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, GenBaseRespWithErrAndCtx(ctx, err))

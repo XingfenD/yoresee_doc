@@ -57,8 +57,6 @@ var messages = map[string]MessageMap{
 }
 
 func Init() {
-	// 初始化国际化支持
-	// 由于我们使用简单的消息映射，这里不需要额外的初始化
 }
 
 func Translate(c *gin.Context, key string) string {
