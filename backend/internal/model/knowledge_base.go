@@ -10,7 +10,7 @@ type KnowledgeBase struct {
 	Name           string    `gorm:"size:100;not null" json:"name"`
 	Description    string    `gorm:"size:255" json:"description"`
 	Cover          string    `gorm:"size:255" json:"cover"`
-	UserID         int64     `gorm:"not null" json:"user_id"` // owner user id
+	CreatorUserID  int64     `gorm:"not null" json:"creator_user_id"` // creator user id
 	IsPublic       bool      `gorm:"default:false" json:"is_public"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`

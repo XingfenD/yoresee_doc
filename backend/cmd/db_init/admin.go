@@ -42,7 +42,7 @@ func createAdminUserInTx(tx *gorm.DB) error {
 
 	if err := tx.Exec(`
 		INSERT INTO permission_rules (
-			resource_type, resource_id, resource_path, 
+			resource_type, resource_id, resource_path,
 			subject_type, subject_id, permissions, scope_type,
 			is_deny, priority, created_by, created_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())

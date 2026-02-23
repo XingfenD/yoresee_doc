@@ -10,7 +10,7 @@ func initializePermissionsInTx(tx *gorm.DB) error {
 	logrus.Println("Starting permission initialization in transaction...")
 
 	adminSubject := model.Subject{
-		ID:   "admin",
+		ID:   "1",
 		Type: model.SubjectTypeUser,
 	}
 

@@ -13,17 +13,22 @@ func runMigration() error {
 	logrus.Println("ltree extension created successfully")
 
 	err := storage.DB.AutoMigrate(
-		&model.User{},
+		&model.Attachment{},
+		&model.Content{},
 		&model.DocumentMeta{},
 		&model.DocumentVersion{},
-		&model.Content{},
+		&model.Invitation{},
 		&model.KnowledgeBase{},
 		&model.RecentKnowledgeBase{},
-		&model.Invitation{},
-		&model.SystemConfig{},
+		&model.Membership{},
+		&model.OrgNodeMeta{},
+		&model.PermissionRule{},
 		&model.Resource{},
 		&model.Subject{},
-		&model.PermissionRule{},
+		&model.SystemConfig{},
+		&model.TemplateMeta{},
+		&model.UserGroupMeta{},
+		&model.User{},
 	)
 
 	return err

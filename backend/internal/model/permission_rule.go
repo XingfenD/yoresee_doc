@@ -35,30 +35,24 @@ const (
 	ScopeTypeRecursive ScopeType = "recursive" // 递归所有层级（用于组织架构）
 )
 
-// PermissionRule 权限规则模型
 type PermissionRule struct {
 	ID int `gorm:"primaryKey;autoIncrement" json:"id"`
 
-	// 资源维度
 	ResourceType ResourceType `gorm:"size:32;not null;index:idx_resource,priority:2" json:"resource_type"`
 	ResourceID   string       `gorm:"size:64;not null;index:idx_resource,priority:3" json:"resource_id"`
 	ResourcePath string       `gorm:"type:ltree" json:"resource_path"` // 用于树形权限范围
 
-	// 主体维度
 	SubjectType SubjectType `gorm:"size:32;not null;index:idx_subject,priority:2" json:"subject_type"`
 	SubjectID   string      `gorm:"size:64;not null;index:idx_subject,priority:3" json:"subject_id"`
 
-	// 权限内容
 	Permissions string    `gorm:"type:text;not null" json:"permissions"`   // 权限列表（逗号分隔）
 	ScopeType   ScopeType `gorm:"size:32;default:exact" json:"scope_type"` // 权限范围类型
 	IsDeny      bool      `gorm:"default:false" json:"is_deny"`            // 是否显式拒绝
 	Priority    int       `gorm:"default:100" json:"priority"`             // 优先级（数字越小优先级越高）
 
-	// 有效期
 	ValidFrom  *time.Time `json:"valid_from"`  // 生效时间
 	ValidUntil *time.Time `json:"valid_until"` // 失效时间
 
-	// 审计信息
 	CreatedBy string    `gorm:"size:64" json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
 }

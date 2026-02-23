@@ -16,7 +16,6 @@ type DocumentMeta struct {
 	UserID      int64          `gorm:"not null;index" json:"user_id"`
 	KnowledgeID *int64         `gorm:"index" json:"knowledge_id"`
 	Status      int            `gorm:"default:1" json:"status"`
-	IsPublic    bool           `gorm:"default:false" json:"is_public"`
 	Tags        []string       `gorm:"serializer:json" json:"tags"`
 	ViewCount   int            `gorm:"default:0" json:"view_count"`
 	EditCount   int            `gorm:"default:0" json:"edit_count"`
@@ -24,10 +23,6 @@ type DocumentMeta struct {
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
-
-	// virtual field for children (used in API response)
-	Children    []*DocumentMeta `gorm:"-" json:"children,omitempty"`
-	HasChildren bool            `gorm:"-" json:"hasChildren,omitempty"` // For lazy loading
 }
 
 func (DocumentMeta) TableName() string {

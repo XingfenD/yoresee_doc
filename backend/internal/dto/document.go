@@ -35,7 +35,6 @@ func NewDocumentResponseFromModel(doc *model.DocumentMeta) *DocumentResponse {
 			Type:       doc.Type,
 			Summary:    doc.Summary,
 			Status:     doc.Status,
-			IsPublic:   doc.IsPublic,
 			Tags:       doc.Tags,
 			ViewCount:  doc.ViewCount,
 			EditCount:  doc.EditCount,
@@ -43,15 +42,6 @@ func NewDocumentResponseFromModel(doc *model.DocumentMeta) *DocumentResponse {
 			CreatedAt:  doc.CreatedAt,
 			UpdatedAt:  doc.UpdatedAt,
 		},
-		HasChildren: doc.HasChildren,
-	}
-
-	// 递归转换子文档
-	if len(doc.Children) > 0 {
-		response.Children = make([]*DocumentResponse, len(doc.Children))
-		for i, child := range doc.Children {
-			response.Children[i] = NewDocumentResponseFromModel(child)
-		}
 	}
 
 	return response
