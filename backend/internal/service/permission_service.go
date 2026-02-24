@@ -103,7 +103,7 @@ func (s *PermissionService) CheckPermission(userID int64, check *dto.PermissionC
 func (s *PermissionService) getUserSubjects(userID int64) ([]model.Subject, error) {
 	// Get user subject
 	userSubject := model.Subject{
-		ID:   fmt.Sprintf("%d", userID),
+		ID:   userID
 		Type: model.SubjectTypeUser,
 	}
 

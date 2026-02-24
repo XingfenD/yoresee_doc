@@ -8,18 +8,15 @@ import (
 type Permission string
 
 const (
-	// 文档类权限
 	PermissionRead   Permission = "read"    // 可阅读
 	PermissionNoRead Permission = "no_read" // 不可阅读（显式拒绝）
 	PermissionEdit   Permission = "edit"    // 可编辑（增删改内容）
 	PermissionManage Permission = "manage"  // 可管理（元数据、权限、删除）
 
-	// 组织类权限
 	PermissionAdmin       Permission = "admin"        // 完全管理（增删改用户/组织）
 	PermissionEditMembers Permission = "edit_members" // 成员管理（添加/移除成员）
 	PermissionViewMembers Permission = "view_members" // 查看成员列表
 
-	// 系统权限
 	PermissionCreate   Permission = "create"   // 创建子资源
 	PermissionTransfer Permission = "transfer" // 转移所有权
 	PermissionAudit    Permission = "audit"    // 审计查看
@@ -42,8 +39,7 @@ type PermissionRule struct {
 	ResourceID   string       `gorm:"size:64;not null;index:idx_resource,priority:3" json:"resource_id"`
 	ResourcePath string       `gorm:"type:ltree" json:"resource_path"` // 用于树形权限范围
 
-	SubjectType SubjectType `gorm:"size:32;not null;index:idx_subject,priority:2" json:"subject_type"`
-	SubjectID   string      `gorm:"size:64;not null;index:idx_subject,priority:3" json:"subject_id"`
+	RoleID int64 `gorm:"not null;index:idx_role_subject" json:"role_id"`
 
 	Permissions string    `gorm:"type:text;not null" json:"permissions"`   // 权限列表（逗号分隔）
 	ScopeType   ScopeType `gorm:"size:32;default:exact" json:"scope_type"` // 权限范围类型
