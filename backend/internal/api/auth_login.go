@@ -4,10 +4,22 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
 )
+
+type AuthLoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AuthLoginResponse struct {
+	BaseResponse
+	Token string           `json:"token"`
+	User  dto.UserResponse `json:"user"`
+}
 
 func (h *AuthLoginHandler) handle(ctx context.Context, req Request) (Response, error) {
 	authLoginReq, ok := req.(*AuthLoginRequest)

@@ -8,6 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type TestProtectedRequest struct{}
+
+type TestProtectedResponse struct {
+	BaseResponse
+	Message string `json:"message"`
+}
+
 func (h *TestProtectedHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
 	return &TestProtectedResponse{
 		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),

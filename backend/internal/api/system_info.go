@@ -10,6 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type SystemInfoRequest struct{}
+
+type SystemInfoResponse struct {
+	BaseResponse
+	SystemName         string `json:"system_name"`
+	SystemRegisterMode string `json:"system_register_mode"`
+}
+
 func (h *SystemInfoHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
 	return &SystemInfoResponse{
 		BaseResponse:       GenBaseRespWithErr(status.StatusSuccess),

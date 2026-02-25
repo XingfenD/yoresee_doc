@@ -10,6 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type AuthRegisterRequest struct {
+	Username       string  `json:"username"`
+	Password       string  `json:"password"`
+	Email          string  `json:"email"`
+	InvitationCode *string `json:"invitation_code"`
+}
+
+type AuthRegisterResponse struct {
+	BaseResponse
+}
+
 func (h *AuthRegisterHandler) handle(ctx context.Context, req Request) (Response, error) {
 	authRegisterReq, ok := req.(*AuthRegisterRequest)
 	if !ok {

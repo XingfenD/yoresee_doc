@@ -8,6 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type TestPostRequest struct {
+	Message string `json:"message"`
+}
+
+type TestPostResponse struct {
+	BaseResponse
+	Message string `json:"message"`
+}
+
 func (h *TestPostHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
 	testPostReq, ok := req.(*TestPostRequest)
 	if !ok {

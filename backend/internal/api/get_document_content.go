@@ -4,10 +4,21 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
 )
+
+type GetDocumentContentRequest struct {
+	DocumentExternalID string `json:"document_external_id" form:"document_external_id" uri:"documentExternalID"`
+}
+
+type GetDocumentContentResponse struct {
+	BaseResponse
+	Document *dto.DocumentResponse `json:"document"`
+	Content  string                `json:"content"`
+}
 
 func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
 	getDocReq, ok := req.(*GetDocumentContentRequest)

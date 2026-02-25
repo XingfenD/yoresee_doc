@@ -9,6 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type HealthRequest struct{}
+
+type HealthResponse struct {
+	BaseResponse
+	Timestamp string `json:"timestamp"`
+	Status    string `json:"status"`
+	Version   string `json:"version"`
+}
+
 func (h *HealthHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
 	return &HealthResponse{
 		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),
