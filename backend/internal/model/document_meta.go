@@ -8,7 +8,7 @@ import (
 
 type DocumentMeta struct {
 	ID          int64          `gorm:"primaryKey;autoIncrement" json:"id"`
-	ExternalID  string         `gorm:"size:100;unique;not null" json:"external_id"`
+	ExternalID  string         `gorm:"size:100;unique;index;not null" json:"external_id"`
 	Title       string         `gorm:"size:200;not null" json:"title"`
 	Type        string         `gorm:"size:20;default:'markdown'" json:"type"`
 	Summary     string         `gorm:"type:text" json:"summary"`

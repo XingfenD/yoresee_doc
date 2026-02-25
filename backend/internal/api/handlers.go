@@ -9,6 +9,7 @@ var AuthRegisterHandlerImpl = &AuthRegisterHandler{}
 var AuthLoginHandlerImpl = &AuthLoginHandler{}
 var SystemInfoHandlerImpl = &SystemInfoHandler{}
 var GetDocumentContentHandlerImpl = &GetDocumentContentHandler{}
+var ListDocumentsHandlerImpl = &ListDocumentsHandler{}
 
 type HealthHandler struct{}
 type TestProtectedHandler struct{}
@@ -17,6 +18,7 @@ type AuthRegisterHandler struct{}
 type AuthLoginHandler struct{}
 type SystemInfoHandler struct{}
 type GetDocumentContentHandler struct{}
+type ListDocumentsHandler struct{}
 
 type HealthResponse struct {
 	BaseResponse
@@ -25,18 +27,14 @@ type HealthResponse struct {
 	Version   string `json:"version"`
 }
 
-type HealthRequest struct {
-	BaseRequest
-}
+type HealthRequest struct{}
 
 type TestProtectedResponse struct {
 	BaseResponse
 	Message string `json:"message"`
 }
 
-type TestProtectedRequest struct {
-	BaseRequest
-}
+type TestProtectedRequest struct{}
 
 type TestPostResponse struct {
 	BaseResponse
@@ -44,7 +42,6 @@ type TestPostResponse struct {
 }
 
 type TestPostRequest struct {
-	BaseRequest
 	Message string `json:"message"`
 }
 
@@ -53,7 +50,6 @@ type AuthRegisterResponse struct {
 }
 
 type AuthRegisterRequest struct {
-	BaseRequest
 	Username       string  `json:"username"`
 	Password       string  `json:"password"`
 	Email          string  `json:"email"`
@@ -67,7 +63,6 @@ type AuthLoginResponse struct {
 }
 
 type AuthLoginRequest struct {
-	BaseRequest
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -78,9 +73,7 @@ type SystemInfoResponse struct {
 	SystemRegisterMode string `json:"system_register_mode"`
 }
 
-type SystemInfoRequest struct {
-	BaseRequest
-}
+type SystemInfoRequest struct{}
 
 type GetDocumentContentResponse struct {
 	BaseResponse
@@ -89,6 +82,5 @@ type GetDocumentContentResponse struct {
 }
 
 type GetDocumentContentRequest struct {
-	BaseRequest
 	DocumentExternalID string `json:"document_external_id" form:"document_external_id" uri:"documentExternalID"`
 }

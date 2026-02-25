@@ -13,8 +13,9 @@ type Role struct {
 	ID           int64  `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name         string `gorm:"size:64;not null;unique" json:"name"`
 	ParentRoleID *int64 `json:"parent_role_id"`
-	CreatedBy    int64  `gorm:"not null" json:"created_by"`
-	CreatedAt    int64  `json:"created_at"`
+	IsSystem     bool   `gorm:"not null;default:false" json:"is_system"`
+	CreatedBy    *int64 `json:"created_by"`
+	CreatedAt    *int64 `json:"created_at"`
 }
 
 func (Role) TableName() string {

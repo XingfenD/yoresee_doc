@@ -20,10 +20,10 @@ type Request interface {
 type Response interface {
 }
 
-type BaseRequest struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
+// type BaseRequest struct {
+// 	Code    int    `json:"code"`
+// 	Message string `json:"message"`
+// }
 
 type BaseResponse struct {
 	Code    int    `json:"code"`

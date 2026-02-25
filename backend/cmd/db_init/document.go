@@ -38,11 +38,11 @@ func initializeDocumentsInTx(tx *gorm.DB) error {
 		ParentID:   0,
 		UserID:     adminUser.ID,
 		Status:     1,
-		IsPublic:   true,
-		Tags:       []string{"guide", "welcome"},
-		ViewCount:  0,
-		EditCount:  0,
-		Version:    1,
+		// IsPublic:   true,
+		Tags:      []string{"guide", "welcome"},
+		ViewCount: 0,
+		EditCount: 0,
+		Version:   1,
 	}
 
 	if err := tx.Create(&document).Error; err != nil {

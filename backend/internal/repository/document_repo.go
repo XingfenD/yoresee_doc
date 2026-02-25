@@ -6,12 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// DocumentRepository 文档仓库
 type DocumentRepository struct{}
 
 var DocumentRepo = &DocumentRepository{}
 
-// DocumentGetByExternalIDOperation 根据ExternalID获取文档操作
 type DocumentGetByExternalIDOperation struct {
 	repo       *DocumentRepository
 	externalID string
@@ -43,7 +41,6 @@ func (op *DocumentGetByExternalIDOperation) Exec() (*model.DocumentMeta, error) 
 	return &document, err
 }
 
-// DocumentGetContentOperation 获取文档内容操作
 type DocumentGetContentOperation struct {
 	repo       *DocumentRepository
 	documentID int64
@@ -72,17 +69,50 @@ func (op *DocumentGetContentOperation) Exec() (string, error) {
 		db = op.tx
 	}
 
-	// 获取最新版本
 	err = db.Where("document_id = ?", op.documentID).Order("version DESC").First(&version).Error
 	if err != nil {
 		return "", err
 	}
 
-	// 获取内容
 	err = db.First(&content, version.ContentID).Error
 	if err != nil {
 		return "", err
 	}
 
 	return content.Content, nil
+}
+
+type ListDocumentsOperation struct {
+	repo  *DocumentRepository
+	model *model.DocumentMeta
+	tx    *gorm.DB
+}
+
+func (r *DocumentRepository) ListDocuments(documentModel *model.DocumentMeta) *ListDocumentsOperation {
+	return &ListDocumentsOperation{
+		repo:  r,
+		model: documentModel,
+	}
+}
+
+func (op *ListDocumentsOperation) WithTx(tx *gorm.DB) *ListDocumentsOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *ListDocumentsOperation) Exec() ([]model.DocumentMeta, error) {
+	var documents []model.DocumentMeta
+	var err error
+
+	db := storage.DB
+	if op.tx != nil {
+		db = op.tx
+	}
+
+	err = db.Where(op.model).Find(&documents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return documents, nil
 }

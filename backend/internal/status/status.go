@@ -42,6 +42,9 @@ var (
 	StatusInvalidPassword   = NewStatusErr(40102, "invalid password")
 	StatusDocumentNotFound  = NewStatusErr(40120, "document not found")
 
+	StatusMembershipMetaNotFound = NewStatusErr(40140, "membership meta not found")
+	StatusInvalidMembershipType  = NewStatusErr(40141, "invalid membership type")
+
 	StatusInvitationInvalid = NewStatusErr(40200, "invitation invalid")
 
 	StatusPermissionDenied_DocumentRead = NewStatusErr(40300, "permission denied for reading document")

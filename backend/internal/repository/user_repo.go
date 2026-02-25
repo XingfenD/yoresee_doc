@@ -228,16 +228,16 @@ func (op *UserGetIDByExternalIDOperation) WithTx(tx *gorm.DB) *UserGetIDByExtern
 }
 
 func (op *UserGetIDByExternalIDOperation) Exec() (int64, error) {
-	var user model.User
+	var id int64
 	var err error
 
 	if op.tx != nil {
-		err = op.tx.Where("external_id = ?", op.externalID).First(&user).Error
+		err = op.tx.Model(&model.User{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	} else {
-		err = storage.DB.Where("external_id = ?", op.externalID).First(&user).Error
+		err = storage.DB.Model(&model.User{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	}
 
-	return user.ID, err
+	return id, err
 }
 
 type UserGetByExternalIDOperation struct {
@@ -269,4 +269,35 @@ func (op *UserGetByExternalIDOperation) Exec() (*model.User, error) {
 	}
 
 	return &user, err
+}
+
+type ListUserByExternalIDOperation struct {
+	repo           *UserRepository
+	externalIDList []string
+	tx             *gorm.DB
+}
+
+func (r *UserRepository) ListByExternalID(externalIDList []string) *ListUserByExternalIDOperation {
+	return &ListUserByExternalIDOperation{
+		repo:           r,
+		externalIDList: externalIDList,
+	}
+}
+
+func (op *ListUserByExternalIDOperation) WithTx(tx *gorm.DB) *ListUserByExternalIDOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *ListUserByExternalIDOperation) Exec() ([]model.User, error) {
+	var users []model.User
+	var err error
+
+	if op.tx != nil {
+		err = op.tx.Where("external_id IN ?", op.externalIDList).Find(&users).Error
+	} else {
+		err = storage.DB.Where("external_id IN ?", op.externalIDList).Find(&users).Error
+	}
+
+	return users, err
 }

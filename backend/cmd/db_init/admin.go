@@ -38,21 +38,21 @@ func createAdminUserInTx(tx *gorm.DB) error {
 	}
 
 	// 为管理员创建文档级别的权限规则，确保能访问所有文档
-	permissionsString := "read,edit,manage,admin,create,transfer,audit"
+	// permissionsString := "read,edit,manage,admin,create,transfer,audit"
 
-	if err := tx.Exec(`
-		INSERT INTO permission_rules (
-			resource_type, resource_id, resource_path,
-			subject_type, subject_id, permissions, scope_type,
-			is_deny, priority, created_by, created_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-	`,
-		model.ResourceTypeDocument, "*", "", // 使用通配符*表示所有文档
-		model.SubjectTypeUser, adminUser.ExternalID,
-		permissionsString, model.ScopeTypeRecursive, false, 1, "",
-	).Error; err != nil {
-		return err
-	}
+	// if err := tx.Exec(`
+	// 	INSERT INTO permission_rules (
+	// 		resource_type, resource_id, resource_path,
+	// 		subject_type, subject_id, permissions, scope_type,
+	// 		is_deny, priority, created_by, created_at
+	// 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+	// `,
+	// 	model.ResourceTypeDocument, "*", "", // 使用通配符*表示所有文档
+	// 	model.SubjectTypeUser, adminUser.ExternalID,
+	// 	permissionsString, model.ScopeTypeRecursive, false, 1, "",
+	// ).Error; err != nil {
+	// 	return err
+	// }
 
 	logrus.Println("Admin permission granted successfully in transaction.")
 	return nil
