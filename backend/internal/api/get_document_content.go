@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	api_base "github.com/XingfenD/yoresee_doc/internal/api/base"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -15,12 +16,12 @@ type GetDocumentContentRequest struct {
 }
 
 type GetDocumentContentResponse struct {
-	BaseResponse
+	api_base.BaseResponse
 	Document *dto.DocumentResponse `json:"document"`
 	Content  string                `json:"content"`
 }
 
-func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
+func (h *GetDocumentContentHandler) handle(ctx context.Context, req api_base.Request) (resp api_base.Response, err error) {
 	getDocReq, ok := req.(*GetDocumentContentRequest)
 	if !ok {
 		return nil, status.StatusParamError
@@ -51,13 +52,13 @@ func (h *GetDocumentContentHandler) handle(ctx context.Context, req Request) (re
 	}
 
 	return &GetDocumentContentResponse{
-		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),
+		BaseResponse: api_base.GenBaseRespWithErr(status.StatusSuccess),
 		Document:     service.DocumentSvc.ConvertToDocumentResponse(document),
 		Content:      content,
 	}, nil
 }
 
 func (h *GetDocumentContentHandler) GinHandle() gin.HandlerFunc {
-	baseHandler := &BaseHandler{}
+	baseHandler := &api_base.BaseHandler{}
 	return baseHandler.GinHandle(reflect.TypeOf(GetDocumentContentRequest{}), h.handle)
 }

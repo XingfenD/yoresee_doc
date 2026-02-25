@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	api_base "github.com/XingfenD/yoresee_doc/internal/api/base"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -16,12 +17,12 @@ type AuthLoginRequest struct {
 }
 
 type AuthLoginResponse struct {
-	BaseResponse
+	api_base.BaseResponse
 	Token string           `json:"token"`
 	User  dto.UserResponse `json:"user"`
 }
 
-func (h *AuthLoginHandler) handle(ctx context.Context, req Request) (Response, error) {
+func (h *AuthLoginHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
 	authLoginReq, ok := req.(*AuthLoginRequest)
 	if !ok {
 		return nil, status.StatusParamError
@@ -36,13 +37,13 @@ func (h *AuthLoginHandler) handle(ctx context.Context, req Request) (Response, e
 	}
 
 	return &AuthLoginResponse{
-		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),
+		BaseResponse: api_base.GenBaseRespWithErr(status.StatusSuccess),
 		Token:        token,
 		User:         *user,
 	}, nil
 }
 
 func (h *AuthLoginHandler) GinHandle() gin.HandlerFunc {
-	baseHandler := &BaseHandler{}
+	baseHandler := &api_base.BaseHandler{}
 	return baseHandler.GinHandle(reflect.TypeOf(AuthLoginRequest{}), h.handle)
 }

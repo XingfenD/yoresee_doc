@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	api_base "github.com/XingfenD/yoresee_doc/internal/api/base"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/gin-gonic/gin"
 )
@@ -13,11 +14,11 @@ type TestPostRequest struct {
 }
 
 type TestPostResponse struct {
-	BaseResponse
+	api_base.BaseResponse
 	Message string `json:"message"`
 }
 
-func (h *TestPostHandler) handle(ctx context.Context, req Request) (resp Response, err error) {
+func (h *TestPostHandler) handle(ctx context.Context, req api_base.Request) (resp api_base.Response, err error) {
 	testPostReq, ok := req.(*TestPostRequest)
 	if !ok {
 		return nil, status.StatusParamError
@@ -26,12 +27,12 @@ func (h *TestPostHandler) handle(ctx context.Context, req Request) (resp Respons
 		return nil, status.StatusParamError
 	}
 	return &TestPostResponse{
-		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),
+		BaseResponse: api_base.GenBaseRespWithErr(status.StatusSuccess),
 		Message:      testPostReq.Message,
 	}, nil
 }
 
 func (h *TestPostHandler) GinHandle() gin.HandlerFunc {
-	baseHandler := &BaseHandler{}
+	baseHandler := &api_base.BaseHandler{}
 	return baseHandler.GinHandle(reflect.TypeOf(TestPostRequest{}), h.handle)
 }

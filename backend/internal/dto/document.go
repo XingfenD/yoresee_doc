@@ -12,7 +12,6 @@ type DocumentBase struct {
 	Type       string    `json:"type"`
 	Summary    string    `json:"summary"`
 	Status     int       `json:"status"`
-	IsPublic   bool      `json:"is_public"`
 	Tags       []string  `json:"tags"`
 	ViewCount  int       `json:"view_count"`
 	EditCount  int       `json:"edit_count"`

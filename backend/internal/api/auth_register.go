@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	api_base "github.com/XingfenD/yoresee_doc/internal/api/base"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -18,10 +19,10 @@ type AuthRegisterRequest struct {
 }
 
 type AuthRegisterResponse struct {
-	BaseResponse
+	api_base.BaseResponse
 }
 
-func (h *AuthRegisterHandler) handle(ctx context.Context, req Request) (Response, error) {
+func (h *AuthRegisterHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
 	authRegisterReq, ok := req.(*AuthRegisterRequest)
 	if !ok {
 		return nil, status.StatusParamError
@@ -43,11 +44,11 @@ func (h *AuthRegisterHandler) handle(ctx context.Context, req Request) (Response
 	}
 
 	return &AuthRegisterResponse{
-		BaseResponse: GenBaseRespWithErr(status.StatusSuccess),
+		BaseResponse: api_base.GenBaseRespWithErr(status.StatusSuccess),
 	}, nil
 }
 
 func (h *AuthRegisterHandler) GinHandle() gin.HandlerFunc {
-	baseHandler := &BaseHandler{}
+	baseHandler := &api_base.BaseHandler{}
 	return baseHandler.GinHandle(reflect.TypeOf(AuthRegisterRequest{}), h.handle)
 }
