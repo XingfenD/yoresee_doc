@@ -21,6 +21,7 @@ func SetupRouter(r *gin.Engine) {
 	protected.Use(middleware.JWTAuth.GinHandle())
 	{
 		protected.GET("/document/:documentExternalID/content", api.GetDocumentContentHandlerImpl.GinHandle())
+		protected.GET("/documents", api.ListDocumentsHandlerImpl.GinHandle())
 		protected.GET("/test/protected", api.TestProtectedHandlerImpl.GinHandle())
 	}
 }

@@ -65,9 +65,8 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 		return nil, status.StatusParamError
 	}
 
-	// 处理排序
-	sortField := "created_at" // 默认排序
-	sortDesc := true          // 默认降序
+	sortField := "created_at"
+	sortDesc := true
 	if listDocsReq.OrderBy != nil {
 		switch listDocsReq.OrderBy.OrderBy {
 		case ListDocumentsArgs_OrderBy_CreatedAt:
@@ -78,10 +77,8 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 		sortDesc = listDocsReq.OrderBy.OrderDesc
 	}
 
-	// 转换为服务层选项
 	serviceOptions := convertListDocumentsOptions(listDocsReq.Options)
 
-	// 时间范围已为字符串格式，直接使用
 	var createTimeStart, createTimeEnd, updateTimeRangeStart, updateTimeRangeEnd *string
 	if listDocsReq.CreateTimeRange != nil {
 		createTimeStart = listDocsReq.CreateTimeRange.Start
@@ -92,7 +89,6 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 		updateTimeRangeEnd = listDocsReq.UpdateTimeRange.End
 	}
 
-	// 使用服务层查询文档（包含子文档）
 	responseDocsPtr, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternalID(
 		listDocsReq.UserExternalID,
 		listDocsReq.RootDocumentExternalID,
@@ -114,7 +110,6 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 		return nil, err
 	}
 
-	// 将 []*dto.DocumentResponse 转换为 []dto.DocumentResponse
 	responseDocs := make([]dto.DocumentResponse, len(responseDocsPtr))
 	for i, doc := range responseDocsPtr {
 		responseDocs[i] = *doc
@@ -126,8 +121,6 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 	}, nil
 }
 
-// 将子文档查询委托给服务层
-// API 层仅负责将 API 结构转换为服务层结构
 func convertListDocumentsOptions(apiOptions *ListDocumentsOptions) *service.ListDocumentsOptions {
 	if apiOptions == nil {
 		return nil

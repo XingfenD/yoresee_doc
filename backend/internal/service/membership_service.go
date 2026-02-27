@@ -65,35 +65,35 @@ func (s *MembershipService) GetOrgNodeMeta(externalID string) (*model.OrgNodeMet
 	return s.repo.GetOrgNodeByExternalID(externalID).Exec()
 }
 
-func (s *MembershipService) GetMembershipRelation(req *dto.MembershipBaseRequest) (*dto.MembershipRelationResponse, error) {
-	var membershipMetaResponse *dto.MembershipMetaResponse
-	var membershipID int64
-	switch req.Type {
-	case model.MembershipType_UserGroup:
-		userGroupMeta, err := s.GetUserGroupMeta(req.MembershipExternalID)
-		if err != nil {
-			return nil, err
-		}
-		membershipMetaResponse = dto.NewMembershipMetaResponseFromUserGroupMetaModel(userGroupMeta)
-		membershipID = userGroupMeta.ID
-	case model.MembershipType_OrgNode:
-		orgNodeMeta, err := s.GetOrgNodeMeta(req.MembershipExternalID)
-		if err != nil {
-			return nil, err
-		}
-		membershipMetaResponse = dto.NewMembershipMetaResponseFromOrgNodeMetaModel(orgNodeMeta)
-		membershipID = orgNodeMeta.ID
-	default:
-		return nil, status.StatusInvalidMembershipType
-	}
-	model := &model.MembershipRelation{
-		Type:         req.Type,
-		MembershipID: membershipID,
-	}
-	memberships, err := s.repo.ListMembership(model).Exec()
-	if err != nil {
-		return nil, err
-	}
-}
+// func (s *MembershipService) GetMembershipRelation(req *dto.MembershipBaseRequest) (*dto.MembershipRelationResponse, error) {
+// 	var membershipMetaResponse *dto.MembershipMetaResponse
+// 	var membershipID int64
+// 	switch req.Type {
+// 	case model.MembershipType_UserGroup:
+// 		userGroupMeta, err := s.GetUserGroupMeta(req.MembershipExternalID)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		membershipMetaResponse = dto.NewMembershipMetaResponseFromUserGroupMetaModel(userGroupMeta)
+// 		membershipID = userGroupMeta.ID
+// 	case model.MembershipType_OrgNode:
+// 		orgNodeMeta, err := s.GetOrgNodeMeta(req.MembershipExternalID)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		membershipMetaResponse = dto.NewMembershipMetaResponseFromOrgNodeMetaModel(orgNodeMeta)
+// 		membershipID = orgNodeMeta.ID
+// 	default:
+// 		return nil, status.StatusInvalidMembershipType
+// 	}
+// 	model := &model.MembershipRelation{
+// 		Type:         req.Type,
+// 		MembershipID: membershipID,
+// 	}
+// 	memberships, err := s.repo.ListMembership(model).Exec()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// }
 
 var MembershipSvc = NewMembershipService()

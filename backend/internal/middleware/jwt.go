@@ -3,7 +3,7 @@ package middleware
 import (
 	"strings"
 
-	"github.com/XingfenD/yoresee_doc/internal/api"
+	api_base "github.com/XingfenD/yoresee_doc/internal/api/base"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -43,7 +43,7 @@ func (m *JWTAuthMiddleware) GinHandle() gin.HandlerFunc {
 		logrus.Infof("authHeader: %s", authHeader)
 		claims, err := m.handle(authHeader)
 		if err != nil {
-			c.JSON(401, api.GenBaseRespWithErr(err))
+			c.JSON(401, api_base.GenBaseRespWithErr(err))
 			c.Abort()
 			return
 		}
