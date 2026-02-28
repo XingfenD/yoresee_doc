@@ -92,6 +92,7 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 	responseDocsPtr, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternalID(
 		listDocsReq.UserExternalID,
 		listDocsReq.RootDocumentExternalID,
+		nil, // knowledge base external id
 		listDocsReq.TitleKeyword,
 		listDocsReq.Type,
 		listDocsReq.Status,

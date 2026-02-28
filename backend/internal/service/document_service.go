@@ -76,6 +76,7 @@ func (s *DocumentService) GetDocumentWithContent(docExternalID string) (*model.D
 func (s *DocumentService) ListDocuments(
 	userID *int64,
 	parentID *int64,
+	knowledgeID *int64,
 	titleKeyword *string,
 	docType *string,
 	status *int,
@@ -93,6 +94,7 @@ func (s *DocumentService) ListDocuments(
 	models, total, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
 		WithUserID(userID).
 		WithParentID(parentID).
+		WithKnowledgeID(knowledgeID).
 		WithTitleKeyword(titleKeyword).
 		WithType(docType).
 		WithStatus(status).
@@ -154,6 +156,7 @@ func (s *DocumentService) GetChildDocuments(parentID int64, options *ListDocumen
 func (s *DocumentService) ListDocumentsWithChildren(
 	userID *int64,
 	parentID *int64,
+	knowledgeID *int64,
 	titleKeyword *string,
 	docType *string,
 	status *int,
@@ -172,6 +175,7 @@ func (s *DocumentService) ListDocumentsWithChildren(
 	docs, total, err := s.ListDocuments(
 		userID,
 		parentID,
+		knowledgeID,
 		titleKeyword,
 		docType,
 		status,
@@ -223,6 +227,7 @@ func (s *DocumentService) ListDocumentsWithChildren(
 func (s *DocumentService) ListDocumentsWithChildrenByExternalID(
 	userExternalID *string,
 	rootDocumentExternalID *string,
+	knowledgeExternalID *string,
 	titleKeyword *string,
 	docType *string,
 	status *int,
@@ -256,9 +261,15 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternalID(
 		parentID = &doc.ID
 	}
 
+	var knowledgeID *int64
+	if knowledgeExternalID != nil && *knowledgeExternalID != "" {
+
+	}
+
 	return s.ListDocumentsWithChildren(
 		userID,
 		parentID,
+		knowledgeID,
 		titleKeyword,
 		docType,
 		status,

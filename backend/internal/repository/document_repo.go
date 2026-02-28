@@ -82,11 +82,43 @@ func (op *DocumentGetContentOperation) Exec() (string, error) {
 	return content.Content, nil
 }
 
-type ListDocumentsOperation struct {
+type DocumentGetIDByExternalIDOperation struct {
+	repo       *DocumentRepository
+	externalID string
+	tx         *gorm.DB
+}
+
+func (r *DocumentRepository) GetIDByExternalID(externalID string) *DocumentGetIDByExternalIDOperation {
+	return &DocumentGetIDByExternalIDOperation{
+		repo:       r,
+		externalID: externalID,
+	}
+}
+
+func (op *DocumentGetIDByExternalIDOperation) WithTx(tx *gorm.DB) *DocumentGetIDByExternalIDOperation {
+	op.tx = tx
+	return op
+}
+
+func (op DocumentGetIDByExternalIDOperation) Exec() (int64, error) {
+	var id int64
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	err := op.tx.First(&model.DocumentMeta{}).Where("external_id = ?").First(op.externalID).Pluck("id", &id).Error
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+type DocumentsListOperation struct {
 	repo                 *DocumentRepository
 	model                *model.DocumentMeta
 	userID               *int64
 	parentID             *int64
+	knowledgeID          *int64
 	titleKeyword         *string
 	docType              *string
 	status               *int
@@ -102,73 +134,78 @@ type ListDocumentsOperation struct {
 	tx                   *gorm.DB
 }
 
-func (r *DocumentRepository) ListDocuments(documentModel *model.DocumentMeta) *ListDocumentsOperation {
-	return &ListDocumentsOperation{
+func (r *DocumentRepository) ListDocuments(documentModel *model.DocumentMeta) *DocumentsListOperation {
+	return &DocumentsListOperation{
 		repo:  r,
 		model: documentModel,
 	}
 }
 
-func (op *ListDocumentsOperation) WithUserID(userID *int64) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithUserID(userID *int64) *DocumentsListOperation {
 	op.userID = userID
 	return op
 }
 
-func (op *ListDocumentsOperation) WithParentID(parentID *int64) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithParentID(parentID *int64) *DocumentsListOperation {
 	op.parentID = parentID
 	return op
 }
 
-func (op *ListDocumentsOperation) WithTitleKeyword(titleKeyword *string) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithKnowledgeID(knowledgeID *int64) *DocumentsListOperation {
+	op.knowledgeID = knowledgeID
+	return op
+}
+
+func (op *DocumentsListOperation) WithTitleKeyword(titleKeyword *string) *DocumentsListOperation {
 	op.titleKeyword = titleKeyword
 	return op
 }
 
-func (op *ListDocumentsOperation) WithType(docType *string) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithType(docType *string) *DocumentsListOperation {
 	op.docType = docType
 	return op
 }
 
-func (op *ListDocumentsOperation) WithStatus(status *int) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithStatus(status *int) *DocumentsListOperation {
 	op.status = status
 	return op
 }
 
-func (op *ListDocumentsOperation) WithTags(tags []string) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithTags(tags []string) *DocumentsListOperation {
 	op.tags = tags
 	return op
 }
 
-func (op *ListDocumentsOperation) WithCreateTimeRange(start, end *string) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithCreateTimeRange(start, end *string) *DocumentsListOperation {
 	op.createTimeRangeStart = start
 	op.createTimeRangeEnd = end
 	return op
 }
 
-func (op *ListDocumentsOperation) WithUpdateTimeRange(start, end *string) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithUpdateTimeRange(start, end *string) *DocumentsListOperation {
 	op.updateTimeRangeStart = start
 	op.updateTimeRangeEnd = end
 	return op
 }
 
-func (op *ListDocumentsOperation) WithPagination(page, pageSize int) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithPagination(page, pageSize int) *DocumentsListOperation {
 	op.page = page
 	op.pageSize = pageSize
 	return op
 }
 
-func (op *ListDocumentsOperation) WithSort(field string, desc bool) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithSort(field string, desc bool) *DocumentsListOperation {
 	op.sortField = field
 	op.sortDesc = desc
 	return op
 }
 
-func (op *ListDocumentsOperation) WithTx(tx *gorm.DB) *ListDocumentsOperation {
+func (op *DocumentsListOperation) WithTx(tx *gorm.DB) *DocumentsListOperation {
 	op.tx = tx
 	return op
 }
 
-func (op *ListDocumentsOperation) Exec() ([]model.DocumentMeta, error) {
+func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
 	db := storage.DB
 	if op.tx != nil {
 		db = op.tx
@@ -253,7 +290,7 @@ func (op *ListDocumentsOperation) Exec() ([]model.DocumentMeta, error) {
 	return documents, nil
 }
 
-func (op *ListDocumentsOperation) ExecWithTotal() ([]model.DocumentMeta, int64, error) {
+func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, error) {
 	db := storage.DB
 	if op.tx != nil {
 		db = op.tx

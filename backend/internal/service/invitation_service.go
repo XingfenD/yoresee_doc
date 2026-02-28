@@ -45,7 +45,7 @@ func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt 
 }
 
 func (s *InvitationService) ListByCreator(userID int64) ([]model.Invitation, error) {
-	return s.invitationRepo.ListByCreatedBy(userID).Exec()
+	return s.invitationRepo.List(&model.Invitation{CreatedBy: userID}).Exec()
 }
 
 func (s *InvitationService) ValidateAndUse(code string) error {

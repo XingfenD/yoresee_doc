@@ -101,12 +101,14 @@ func (op *InvitationGetByIDOperation) Exec() (*model.Invitation, error) {
 
 type InvitationListOperation struct {
 	repo *InvitationRepository
+	m    *model.Invitation
 	tx   *gorm.DB
 }
 
-func (r *InvitationRepository) List() *InvitationListOperation {
+func (r *InvitationRepository) List(m *model.Invitation) *InvitationListOperation {
 	return &InvitationListOperation{
 		repo: r,
+		m:    &model.Invitation{},
 	}
 }
 
@@ -120,44 +122,44 @@ func (op *InvitationListOperation) Exec() ([]model.Invitation, error) {
 	var err error
 
 	if op.tx != nil {
-		err = op.tx.Find(&invitations).Error
-	} else {
-		err = storage.DB.Find(&invitations).Error
+		op.tx = storage.DB
 	}
+
+	err = op.tx.Where(op.m).Find(&invitations).Error
 
 	return invitations, err
 }
 
-type InvitationListByCreatedByOperation struct {
-	repo      *InvitationRepository
-	createdBy int64
-	tx        *gorm.DB
-}
+// type InvitationListByCreatedByOperation struct {
+// 	repo      *InvitationRepository
+// 	createdBy int64
+// 	tx        *gorm.DB
+// }
 
-func (r *InvitationRepository) ListByCreatedBy(createdBy int64) *InvitationListByCreatedByOperation {
-	return &InvitationListByCreatedByOperation{
-		repo:      r,
-		createdBy: createdBy,
-	}
-}
+// func (r *InvitationRepository) ListByCreatedBy(createdBy int64) *InvitationListByCreatedByOperation {
+// 	return &InvitationListByCreatedByOperation{
+// 		repo:      r,
+// 		createdBy: createdBy,
+// 	}
+// }
 
-func (op *InvitationListByCreatedByOperation) WithTx(tx *gorm.DB) *InvitationListByCreatedByOperation {
-	op.tx = tx
-	return op
-}
+// func (op *InvitationListByCreatedByOperation) WithTx(tx *gorm.DB) *InvitationListByCreatedByOperation {
+// 	op.tx = tx
+// 	return op
+// }
 
-func (op *InvitationListByCreatedByOperation) Exec() ([]model.Invitation, error) {
-	var invitations []model.Invitation
-	var err error
+// func (op *InvitationListByCreatedByOperation) Exec() ([]model.Invitation, error) {
+// 	var invitations []model.Invitation
+// 	var err error
 
-	if op.tx != nil {
-		err = op.tx.Where("created_by = ?", op.createdBy).Find(&invitations).Error
-	} else {
-		err = storage.DB.Where("created_by = ?", op.createdBy).Find(&invitations).Error
-	}
+// 	if op.tx != nil {
+// 		err = op.tx.Where("created_by = ?", op.createdBy).Find(&invitations).Error
+// 	} else {
+// 		err = storage.DB.Where("created_by = ?", op.createdBy).Find(&invitations).Error
+// 	}
 
-	return invitations, err
-}
+// 	return invitations, err
+// }
 
 type InvitationDeleteOperation struct {
 	repo *InvitationRepository
@@ -178,11 +180,10 @@ func (op *InvitationDeleteOperation) WithTx(tx *gorm.DB) *InvitationDeleteOperat
 }
 
 func (op *InvitationDeleteOperation) Exec() error {
-	now := time.Now()
 	if op.tx != nil {
-		return op.tx.Model(&model.Invitation{}).Where("id = ?", op.id).Update("deleted_at", &now).Error
+		op.tx = storage.DB
 	}
-	return storage.DB.Model(&model.Invitation{}).Where("id = ?", op.id).Update("deleted_at", &now).Error
+	return op.tx.Delete(&model.Invitation{}, op.id).Error
 }
 
 type InvitationUpdateOperation struct {

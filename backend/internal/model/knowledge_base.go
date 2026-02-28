@@ -5,16 +5,16 @@ import (
 )
 
 type KnowledgeBase struct {
-	ID             int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	ExternalID     string    `gorm:"size:100;unique;not null;index" json:"external_id"`
-	Name           string    `gorm:"size:100;not null" json:"name"`
-	Description    string    `gorm:"size:255" json:"description"`
-	Cover          string    `gorm:"size:255" json:"cover"`
-	CreatorUserID  int64     `gorm:"not null" json:"creator_user_id"` // creator user id
-	IsPublic       bool      `gorm:"default:false" json:"is_public"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	LastAccessedAt time.Time `gorm:"-" json:"last_accessed_at"` // Auxiliary for recent
+	ID            int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	ExternalID    string    `gorm:"size:100;unique;not null;index" json:"external_id"`
+	Name          string    `gorm:"size:100;not null" json:"name"`
+	Description   string    `gorm:"size:255" json:"description"`
+	Cover         string    `gorm:"size:255" json:"cover"`
+	CreatorUserID int64     `gorm:"not null" json:"creator_user_id"` // creator user id
+	IsPublic      bool      `gorm:"default:false" json:"is_public"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	DeletedAt     time.Time `gorm:"index" json:"deleted_at"`
 }
 
 type RecentKnowledgeBase struct {
