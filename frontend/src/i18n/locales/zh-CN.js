@@ -42,8 +42,11 @@ export default {
     invitationCodeRequired: '请输入邀请码'
   },
   home: {
-    welcome: '欢迎使用 Yoresee',
+    welcome: '首页',
     recentDocuments: '最近文档',
+    recentKnowledgeBases: '最近知识库',
+    noRecentDocuments: '暂无最近文档',
+    noRecentKnowledgeBases: '暂无最近知识库',
     myDocuments: '我的文档',
     sharedWithMe: '与我共享',
     createDocument: '创建文档',
@@ -58,6 +61,7 @@ export default {
     delete: '删除',
     edit: '编辑',
     view: '查看',
+    views: '次查看',
     comments: '评论',
     collaborators: '协作者',
     status: '状态',
@@ -124,6 +128,7 @@ export default {
     no: '否',
     search: '搜索',
     view: '查看',
+    viewAll: '查看全部',
     unknown: '未知'
   }
 };

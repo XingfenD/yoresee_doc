@@ -57,107 +57,38 @@
     <!-- 主内容区 -->
     <div class="main-content">
       <!-- 左侧导航 -->
-      <aside class="side-nav">
-        <el-menu :default-active="activeMenu" class="side-menu" @select="handleMenuSelect">
-          <el-menu-item index="documents">
-            <el-icon>
-              <Document />
-            </el-icon>
-            <span>{{ t('navigation.documents') }}</span>
-          </el-menu-item>
-          <el-menu-item index="knowledge-base">
-            <el-icon>
-              <Collection />
-            </el-icon>
-            <span>{{ t('navigation.knowledgeBase') }}</span>
-          </el-menu-item>
-          <el-menu-item index="folders">
-            <el-icon>
-              <Folder />
-            </el-icon>
-            <span>{{ t('navigation.folders') }}</span>
-          </el-menu-item>
-          <el-menu-item index="trash">
-            <el-icon>
-              <Delete />
-            </el-icon>
-            <span>{{ t('navigation.trash') }}</span>
-          </el-menu-item>
-        </el-menu>
-      </aside>
+      <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
 
       <!-- 右侧内容 -->
       <div class="content-area">
         <!-- 操作栏 -->
         <div class="action-bar">
-          <h2 class="page-title">{{ t('navigation.documents') }}</h2>
-          <div class="action-buttons">
-            <el-button type="primary" class="primary-btn">
-              <el-icon>
-                <Plus />
-              </el-icon>
-              {{ t('home.createDocument') }}
-            </el-button>
-            <el-button class="secondary-btn">
-              <el-icon>
-                <Upload />
-              </el-icon>
-              {{ t('home.uploadFile') }}
-            </el-button>
-          </div>
+          <h2 class="page-title">{{ t('home.welcome') }}</h2>
         </div>
 
-        <!-- 搜索和筛选 -->
-        <div class="search-filter">
-          <el-input v-model="searchKeyword" :placeholder="t('home.searchPlaceholder')" prefix-icon="Search"
-            class="search-input" />
-          <el-select v-model="filterStatus" :placeholder="t('document.status')" class="filter-select">
-            <el-option label="全部" value="all"></el-option>
-            <el-option label="草稿" value="draft"></el-option>
-            <el-option label="已发布" value="published"></el-option>
-          </el-select>
-        </div>
+        <!-- 垂直布局：最近文档和最近知识库 -->
+        <div class="home-vertical-layout">
+          <!-- 最近文档部分 -->
+          <RecentDocumentsSection
+            :title="t('home.recentDocuments')"
+            :items="recentDocuments"
+            :empty-text="t('home.noRecentDocuments')"
+            :show-view-all="true"
+            @view-all="goToDocuments"
+            @view-item="viewDocument"
+            @edit-item="editDocument"
+          />
 
-        <!-- 文档列表 -->
-        <div class="document-list">
-          <el-card v-for="doc in documents" :key="doc.id" class="document-card" hover>
-            <div class="document-card-header">
-              <h3 class="document-title">{{ doc.title }}</h3>
-              <span class="document-status" :class="`status-${doc.status}`">
-                {{ doc.status === 'draft' ? '草稿' : '已发布' }}
-              </span>
-            </div>
-            <div class="document-meta">
-              <span class="meta-item">
-                <el-icon>
-                  <User />
-                </el-icon>
-                {{ doc.author }}
-              </span>
-              <span class="meta-item">
-                <el-icon>
-                  <Timer />
-                </el-icon>
-                {{ formatDate(doc.updatedAt) }}
-              </span>
-              <span class="meta-item">
-                <el-icon>
-                  <View />
-                </el-icon>
-                {{ doc.views }} 次查看
-              </span>
-            </div>
-            <div class="document-actions">
-              <el-button size="small" text>{{ t('document.view') }}</el-button>
-              <el-button size="small" text>{{ t('document.edit') }}</el-button>
-              <el-button size="small" text>{{ t('document.share') }}</el-button>
-            </div>
-          </el-card>
-        </div>
-
-        <!-- 空状态 -->
-        <div v-if="documents.length === 0" class="empty-state">
-          <el-empty :description="t('message.empty')" />
+          <!-- 最近知识库部分 -->
+          <RecentKnowledgeBaseSection
+            :title="t('home.recentKnowledgeBases')"
+            :items="recentKnowledgeBases"
+            :empty-text="t('home.noRecentKnowledgeBases')"
+            :show-view-all="true"
+            @view-all="goToKnowledgeBases"
+            @view-item="viewKnowledgeBase"
+            @access-item="accessKnowledgeBase"
+          />
         </div>
       </div>
     </div>
@@ -169,14 +100,17 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
-import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View, Flag, ChatLineRound, Moon, Sunny, Collection } from '@element-plus/icons-vue';
+import SideNav from '@/components/SideNav.vue';
+import RecentDocumentsSection from '@/components/RecentDocumentsSection.vue';
+import RecentKnowledgeBaseSection from '@/components/RecentKnowledgeBaseSection.vue';
+import { ArrowDown, House, Plus, Upload, Search, User, Timer, View, Flag, ChatLineRound, Moon, Sunny, Collection } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
-const activeMenu = ref('documents');
+const activeMenu = ref('home');
 const searchKeyword = ref('');
 const filterStatus = ref('all');
 const isDarkMode = ref(false);
@@ -227,8 +161,8 @@ const initLanguage = () => {
   }
 };
 
-// 模拟文档数据
-const documents = ref([
+// 最近文档数据
+const recentDocuments = ref([
   {
     id: 1,
     title: '产品需求文档',
@@ -263,11 +197,70 @@ const documents = ref([
   }
 ]);
 
+// 最近知识库数据
+const recentKnowledgeBases = ref([
+  {
+    externalId: 'kb1',
+    name: '项目知识库',
+    description: '项目相关的技术文档和规范',
+    creatorName: '张三',
+    updatedAt: '2024-01-15T09:00:00Z',
+    isPublic: true,
+    documentsCount: 24
+  },
+  {
+    externalId: 'kb2',
+    name: '公司规章制度',
+    description: '公司各项规章制度和政策',
+    creatorName: '李四',
+    updatedAt: '2024-01-14T15:30:00Z',
+    isPublic: true,
+    documentsCount: 15
+  },
+  {
+    externalId: 'kb3',
+    name: '技术分享',
+    description: '团队技术分享资料',
+    creatorName: '王五',
+    updatedAt: '2024-01-13T11:20:00Z',
+    isPublic: false,
+    documentsCount: 8
+  }
+]);
+
+// 页面跳转方法
+const goToDocuments = () => {
+  router.push('/');
+};
+
+const goToKnowledgeBases = () => {
+  router.push('/knowledge-base');
+};
+
+// 文档相关方法
+const viewDocument = (doc) => {
+  console.log('View document:', doc);
+  // TODO: 实现查看文档功能
+};
+
+const editDocument = (doc) => {
+  console.log('Edit document:', doc);
+  // TODO: 实现编辑文档功能
+};
+
+// 知识库相关方法
+const viewKnowledgeBase = (kb) => {
+  console.log('View knowledge base:', kb);
+  // TODO: 实现查看知识库功能
+};
+
+const accessKnowledgeBase = (kb) => {
+  console.log('Access knowledge base:', kb);
+  // TODO: 实现访问知识库功能
+};
+
 const handleMenuSelect = (key) => {
   activeMenu.value = key;
-  if (key === 'knowledge-base') {
-    router.push('/knowledge-base');
-  }
 };
 
 const handleLogout = () => {
@@ -428,12 +421,22 @@ onMounted(() => {
   overflow-y: auto;
 }
 
+/* 垂直布局 */
+.home-vertical-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  height: auto;
+}
+
 /* 操作栏 */
 .action-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .page-title {

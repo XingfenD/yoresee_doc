@@ -57,34 +57,7 @@
     <!-- 主内容区 -->
     <div class="main-content">
       <!-- 左侧导航 -->
-      <aside class="side-nav">
-        <el-menu :default-active="activeMenu" class="side-menu" @select="handleMenuSelect">
-          <el-menu-item index="documents">
-            <el-icon>
-              <Document />
-            </el-icon>
-            <span>{{ t('navigation.documents') }}</span>
-          </el-menu-item>
-          <el-menu-item index="knowledge-base">
-            <el-icon>
-              <Collection />
-            </el-icon>
-            <span>{{ t('navigation.knowledgeBase') }}</span>
-          </el-menu-item>
-          <el-menu-item index="folders">
-            <el-icon>
-              <Folder />
-            </el-icon>
-            <span>{{ t('navigation.folders') }}</span>
-          </el-menu-item>
-          <el-menu-item index="trash">
-            <el-icon>
-              <Delete />
-            </el-icon>
-            <span>{{ t('navigation.trash') }}</span>
-          </el-menu-item>
-        </el-menu>
-      </aside>
+      <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
 
       <!-- 右侧内容 -->
       <div class="content-area">
@@ -231,8 +204,9 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import SideNav from '@/components/SideNav.vue'
 import * as api from '@/services/api'
-import { ArrowDown, Document, Folder, Delete, Collection, Flag, ChatLineRound, Moon, Sunny, Plus } from '@element-plus/icons-vue'
+import { ArrowDown, House, Collection, Flag, ChatLineRound, Moon, Sunny, Plus } from '@element-plus/icons-vue'
 
 // 国际化
 const { locale, t } = useI18n()
@@ -257,8 +231,36 @@ const currentLanguage = computed({
 const userInfo = computed(() => userStore.userInfo)
 const userAvatar = ref('')
 
-// 最近访问的知识库（API尚未实现，暂时为空）
-const recentKnowledgeBases = ref([])
+// 最近访问的知识库（API尚未实现，使用模拟数据）
+const recentKnowledgeBases = ref([
+  {
+    externalId: 'kb1',
+    name: '项目知识库',
+    description: '项目相关的技术文档和规范',
+    creatorName: '张三',
+    updatedAt: '2024-01-15T09:00:00Z',
+    isPublic: true,
+    documentsCount: 24
+  },
+  {
+    externalId: 'kb2',
+    name: '公司规章制度',
+    description: '公司各项规章制度和政策',
+    creatorName: '李四',
+    updatedAt: '2024-01-14T15:30:00Z',
+    isPublic: true,
+    documentsCount: 15
+  },
+  {
+    externalId: 'kb3',
+    name: '技术分享',
+    description: '团队技术分享资料',
+    creatorName: '王五',
+    updatedAt: '2024-01-13T11:20:00Z',
+    isPublic: false,
+    documentsCount: 8
+  }
+])
 
 // 我的知识库
 const myKnowledgeBases = ref([])
@@ -385,13 +387,6 @@ const accessKnowledgeBase = (kb) => {
 // 处理菜单选择
 const handleMenuSelect = (key) => {
   activeMenu.value = key
-  if (key === 'documents') {
-    router.push('/')
-  } else if (key === 'folders') {
-    // TODO: 实现文件夹页面
-  } else if (key === 'trash') {
-    // TODO: 实现回收站页面
-  }
 }
 
 // 处理语言切换
@@ -599,9 +594,9 @@ onMounted(async () => {
 
 .page-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-dark);
 }
 
 /* 垂直布局 */
@@ -710,6 +705,22 @@ onMounted(async () => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .top-nav {
+    padding: 0 var(--spacing-md);
+  }
+
+  .system-title {
+    font-size: 16px;
+  }
+
+  .side-nav {
+    width: 60px;
+  }
+
+  .side-menu .el-menu-item span {
+    display: none;
+  }
+
   .content-area {
     padding: var(--spacing-md);
   }

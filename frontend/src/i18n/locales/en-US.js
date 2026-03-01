@@ -44,8 +44,11 @@ export default {
 
   // 首页
   home: {
-    welcome: 'Welcome to Yoresee',
+    welcome: 'Home',
     recentDocuments: 'Recent Documents',
+    recentKnowledgeBases: 'Recent Knowledge Bases',
+    noRecentDocuments: 'No recent documents',
+    noRecentKnowledgeBases: 'No recent knowledge bases',
     myDocuments: 'My Documents',
     sharedWithMe: 'Shared with Me',
     createDocument: 'Create Document',
@@ -60,6 +63,7 @@ export default {
     delete: 'Delete',
     edit: 'Edit',
     view: 'View',
+    views: 'views',
     comments: 'Comments',
     collaborators: 'Collaborators',
     status: 'Status',
@@ -126,6 +130,7 @@ export default {
     no: 'No',
     search: 'Search',
     view: 'View',
+    viewAll: 'View All',
     unknown: 'Unknown'
   }
 };
