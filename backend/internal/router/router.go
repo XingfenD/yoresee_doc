@@ -12,7 +12,7 @@ func SetupRouter(r *gin.Engine) {
 	root.GET("/health", api.HealthHandlerImpl.GinHandle())
 
 	root.GET("/system-info", api.SystemInfoHandlerImpl.GinHandle())
-	root.POST("/test/post", api.TestPostHandlerImpl.GinHandle())
+	// root.POST("/test/post", api.TestPostHandlerImpl.GinHandle())
 	root.POST("/login", api.AuthLoginHandlerImpl.GinHandle())
 	root.POST("/register", api.AuthRegisterHandlerImpl.GinHandle())
 
@@ -22,6 +22,7 @@ func SetupRouter(r *gin.Engine) {
 	{
 		protected.GET("/document/:documentExternalID/content", api.GetDocumentContentHandlerImpl.GinHandle())
 		protected.GET("/documents", api.ListDocumentsHandlerImpl.GinHandle())
-		protected.GET("/test/protected", api.TestProtectedHandlerImpl.GinHandle())
+		// protected.GET("/test/protected", api.TestProtectedHandlerImpl.GinHandle())
+		protected.GET("/knowledge-bases", api.ListKnowledgeBasesHandlerImpl.GinHandle())
 	}
 }

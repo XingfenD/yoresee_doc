@@ -20,6 +20,7 @@ func runMigration() error {
 		&model.Invitation{},
 		&model.KnowledgeBase{},
 		&model.RecentKnowledgeBase{},
+		&model.DocKnowledgeRelation{},
 		&model.MembershipRelation{},
 		&model.OrgNodeMeta{},
 		&model.PermissionRule{},

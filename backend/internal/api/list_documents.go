@@ -31,24 +31,24 @@ const (
 )
 
 type ListDocumentsRequest struct {
-	UserExternalID         *string `json:"user_external_id"`
-	RootDocumentExternalID *string `json:"root_document_external_id"`
+	UserExternalID         *string `json:"user_external_id" form:"user_external_id"`
+	RootDocumentExternalID *string `json:"root_document_external_id" form:"root_document_external_id"`
 
-	TitleKeyword *string  `json:"title_keyword,omitempty"`
-	Type         *string  `json:"type,omitempty"`
-	Status       *int     `json:"status,omitempty"`
-	Tags         []string `json:"tags,omitempty"`
+	TitleKeyword *string  `json:"title_keyword,omitempty" form:"title_keyword"`
+	Type         *string  `json:"type,omitempty" form:"type"`
+	Status       *int     `json:"status,omitempty" form:"status"`
+	Tags         []string `json:"tags,omitempty" form:"tags"`
 
-	CreateTimeRange *types.TimeRange `json:"create_time_range,omitempty"`
-	UpdateTimeRange *types.TimeRange `json:"update_time_range,omitempty"`
+	CreateTimeRange *types.TimeRange `json:"create_time_range,omitempty" form:"create_time_range"`
+	UpdateTimeRange *types.TimeRange `json:"update_time_range,omitempty" form:"update_time_range"`
 
-	OrderBy   *ListDocumentsArgs_OrderBy `json:"order_by"`
-	OrderDesc *bool                      `json:"order_desc"`
+	OrderBy   *ListDocumentsArgs_OrderBy `json:"order_by" form:"order_by"`
+	OrderDesc *bool                      `json:"order_desc" form:"order_desc"`
 
-	Page     int `json:"page,omitempty"`
-	PageSize int `json:"page_size,omitempty"`
+	Page     int `json:"page,omitempty" form:"page"`
+	PageSize int `json:"page_size,omitempty" form:"page_size"`
 
-	Options *ListDocumentsOptions `json:"options,omitempty"`
+	Options *ListDocumentsOptions `json:"options,omitempty" form:"options"`
 }
 
 func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExternalReq {

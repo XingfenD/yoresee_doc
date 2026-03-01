@@ -14,7 +14,7 @@ import (
 
 type ListKnowledgeBasesResponse struct {
 	api_base.BaseResponse
-	KnowledgeBases []dto.KnowledgeBaseResponse `json:"knowledge_bases"`
+	KnowledgeBases []*dto.KnowledgeBaseResponse `json:"knowledge_bases"`
 }
 
 type ListKnowledgeBasesOptions struct {
@@ -31,20 +31,20 @@ const (
 )
 
 type ListKnowledgeBasesRequest struct {
-	UserExternalID *string `json:"user_external_id"`
+	UserExternalID *string `json:"user_external_id" form:"user_external_id"`
 
-	NameKeyword *string  `json:"name_keyword,omitempty"`
-	IsPublic    *bool    `json:"is_public,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
+	NameKeyword *string  `json:"name_keyword,omitempty" form:"name_keyword"`
+	IsPublic    *bool    `json:"is_public,omitempty" form:"is_public"`
+	Tags        []string `json:"tags,omitempty" form:"tags"`
 
-	CreateTimeRange *types.TimeRange `json:"create_time_range,omitempty"`
-	UpdateTimeRange *types.TimeRange `json:"update_time_range,omitempty"`
+	CreateTimeRange *types.TimeRange `json:"create_time_range,omitempty" form:"create_time_range"`
+	UpdateTimeRange *types.TimeRange `json:"update_time_range,omitempty" form:"update_time_range"`
 
-	OrderBy   *ListKnowledgeBasesArgs_OrderBy `json:"order_by"`
-	OrderDesc *bool                           `json:"order_desc"`
+	OrderBy   *ListKnowledgeBasesArgs_OrderBy `json:"order_by" form:"order_by"`
+	OrderDesc *bool                           `json:"order_desc" form:"order_desc"`
 
-	Page     int `json:"page,omitempty"`
-	PageSize int `json:"page_size,omitempty"`
+	Page     int `json:"page,omitempty" form:"page"`
+	PageSize int `json:"page_size,omitempty" form:"page_size"`
 
 	// Options *ListKnowledgeBasesOptions `json:"options,omitempty"`
 }
@@ -91,9 +91,7 @@ func (r *ListKnowledgeBasesRequest) BuildServiceReq() *service.KnowledgeBaseList
 	return req
 }
 
-type ListKnowledgeBasesAPIHandler struct{}
-
-func (h *ListKnowledgeBasesAPIHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
+func (h *ListKnowledgeBasesHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
 	listKBsReq, ok := req.(*ListKnowledgeBasesRequest)
 	if !ok {
 		return nil, status.StatusParamError
@@ -106,18 +104,13 @@ func (h *ListKnowledgeBasesAPIHandler) handle(ctx context.Context, req api_base.
 		return nil, err
 	}
 
-	responseKBs := make([]dto.KnowledgeBaseResponse, len(kbModels))
-	for i, kb := range kbModels {
-		responseKBs[i] = *kb
-	}
-
 	return &ListKnowledgeBasesResponse{
 		BaseResponse:   api_base.GenBaseRespWithErr(status.StatusSuccess),
-		KnowledgeBases: responseKBs,
+		KnowledgeBases: kbModels,
 	}, nil
 }
 
-func (h *ListKnowledgeBasesAPIHandler) GinHandle() gin.HandlerFunc {
+func (h *ListKnowledgeBasesHandler) GinHandle() gin.HandlerFunc {
 	baseHandler := &api_base.BaseHandler{}
 	return baseHandler.GinHandle(reflect.TypeOf(ListKnowledgeBasesRequest{}), h.handle)
 }

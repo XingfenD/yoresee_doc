@@ -68,6 +68,14 @@ func initializeDatabaseInTransaction() error {
 			return err
 		}
 
+		if err := initializeKnowledgeBasesInTx(tx); err != nil {
+			return err
+		}
+
+		if err := createUser2InTx(tx); err != nil {
+			return err
+		}
+
 		// 标记数据库已初始化
 		initializedConfig := &model.SystemConfig{
 			Key: utils.GenConfigKey(
