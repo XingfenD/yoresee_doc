@@ -19,6 +19,12 @@ const router = createRouter({
       name: 'Home',
       component: () => import('../views/Home.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/knowledge-base',
+      name: 'KnowledgeBase',
+      component: () => import('../views/KnowledgeBase.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 });
@@ -26,7 +32,7 @@ const router = createRouter({
 router.beforeEach((to, from) => {
   const userStore = useUserStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
+
   if (requiresAuth && !userStore.token) {
     return '/login';
   }

@@ -69,4 +69,9 @@ api.interceptors.response.use(
   }
 );
 
+// 获取知识库列表
+export const getKnowledgeBases = (params) => {
+  return api.get('/api/knowledge-bases', { params });
+};
+
 export default api;

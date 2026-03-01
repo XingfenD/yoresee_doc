@@ -96,5 +96,34 @@ export default {
   theme: {
     light: '浅色模式',
     dark: '深色模式'
+  },
+  knowledgeBase: {
+    title: '知识库',
+    searchPlaceholder: '搜索知识库...',
+    publicFilter: '公开状态',
+    public: '公开',
+    private: '私有',
+    noDescription: '暂无描述',
+    documentsCount: '文档数量',
+    createdAt: '创建时间',
+    updatedAt: '更新时间',
+    owner: '所有者: {owner}',
+    access: '访问',
+    view: '查看详情',
+    fetchError: '获取知识库失败',
+    viewInfo: '功能即将推出！',
+    accessSuccess: '成功访问 {name}',
+    createNew: '创建新知识库',
+    recent: '最近访问',
+    my: '我的知识库',
+    noRecent: '暂无最近访问的知识库',
+    createComingSoon: '创建功能即将上线！'
+  },
+  common: {
+    yes: '是',
+    no: '否',
+    search: '搜索',
+    view: '查看',
+    unknown: '未知'
   }
 };

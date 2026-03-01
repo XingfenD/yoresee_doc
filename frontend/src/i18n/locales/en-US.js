@@ -98,5 +98,34 @@ export default {
   theme: {
     light: 'Light Mode',
     dark: 'Dark Mode'
+  },
+  knowledgeBase: {
+    title: 'Knowledge Bases',
+    searchPlaceholder: 'Search knowledge bases...',
+    publicFilter: 'Public status',
+    public: 'Public',
+    private: 'Private',
+    noDescription: 'No description',
+    documentsCount: 'Documents Count',
+    createdAt: 'Created At',
+    updatedAt: 'Updated At',
+    owner: 'Owner: {owner}',
+    access: 'Access',
+    view: 'View Details',
+    fetchError: 'Failed to fetch knowledge bases',
+    viewInfo: 'Feature coming soon!',
+    accessSuccess: 'Successfully accessed {name}',
+    createNew: 'Create New Knowledge Base',
+    recent: 'Recent Access',
+    my: 'My Knowledge Bases',
+    noRecent: 'No recent knowledge bases',
+    createComingSoon: 'Create feature coming soon!'
+  },
+  common: {
+    yes: 'Yes',
+    no: 'No',
+    search: 'Search',
+    view: 'View',
+    unknown: 'Unknown'
   }
 };

@@ -9,7 +9,10 @@
         <!-- 语言切换 -->
         <el-dropdown trigger="click" @command="handleLanguageChange" class="nav-item">
           <span class="nav-link">
-            <el-icon :size="18"><Flag v-if="currentLanguage === 'en'" /><ChatLineRound v-else /></el-icon>
+            <el-icon :size="18">
+              <Flag v-if="currentLanguage === 'en'" />
+              <ChatLineRound v-else />
+            </el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -22,20 +25,25 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        
+
         <!-- 主题切换 -->
         <div class="nav-item theme-switch">
           <span class="nav-link" @click="toggleTheme">
-            <el-icon :size="18"><Moon v-if="isDarkMode" /><Sunny v-else /></el-icon>
+            <el-icon :size="18">
+              <Moon v-if="isDarkMode" />
+              <Sunny v-else />
+            </el-icon>
           </span>
         </div>
-        
+
         <!-- 用户菜单 -->
         <el-dropdown trigger="click" class="nav-item">
           <span class="user-info">
             <el-avatar size="small" :src="userAvatar"></el-avatar>
             <span class="username">{{ userInfo?.username || '用户' }}</span>
-            <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            <el-icon class="el-icon--right">
+              <ArrowDown />
+            </el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -50,21 +58,29 @@
     <div class="main-content">
       <!-- 左侧导航 -->
       <aside class="side-nav">
-        <el-menu
-          :default-active="activeMenu"
-          class="side-menu"
-          @select="handleMenuSelect"
-        >
+        <el-menu :default-active="activeMenu" class="side-menu" @select="handleMenuSelect">
           <el-menu-item index="documents">
-            <el-icon><Document /></el-icon>
+            <el-icon>
+              <Document />
+            </el-icon>
             <span>{{ t('navigation.documents') }}</span>
           </el-menu-item>
+          <el-menu-item index="knowledge-base">
+            <el-icon>
+              <Collection />
+            </el-icon>
+            <span>{{ t('navigation.knowledgeBase') }}</span>
+          </el-menu-item>
           <el-menu-item index="folders">
-            <el-icon><Folder /></el-icon>
+            <el-icon>
+              <Folder />
+            </el-icon>
             <span>{{ t('navigation.folders') }}</span>
           </el-menu-item>
           <el-menu-item index="trash">
-            <el-icon><Delete /></el-icon>
+            <el-icon>
+              <Delete />
+            </el-icon>
             <span>{{ t('navigation.trash') }}</span>
           </el-menu-item>
         </el-menu>
@@ -77,11 +93,15 @@
           <h2 class="page-title">{{ t('navigation.documents') }}</h2>
           <div class="action-buttons">
             <el-button type="primary" class="primary-btn">
-              <el-icon><Plus /></el-icon>
+              <el-icon>
+                <Plus />
+              </el-icon>
               {{ t('home.createDocument') }}
             </el-button>
             <el-button class="secondary-btn">
-              <el-icon><Upload /></el-icon>
+              <el-icon>
+                <Upload />
+              </el-icon>
               {{ t('home.uploadFile') }}
             </el-button>
           </div>
@@ -89,12 +109,8 @@
 
         <!-- 搜索和筛选 -->
         <div class="search-filter">
-          <el-input
-            v-model="searchKeyword"
-            :placeholder="t('home.searchPlaceholder')"
-            prefix-icon="Search"
-            class="search-input"
-          />
+          <el-input v-model="searchKeyword" :placeholder="t('home.searchPlaceholder')" prefix-icon="Search"
+            class="search-input" />
           <el-select v-model="filterStatus" :placeholder="t('document.status')" class="filter-select">
             <el-option label="全部" value="all"></el-option>
             <el-option label="草稿" value="draft"></el-option>
@@ -104,12 +120,7 @@
 
         <!-- 文档列表 -->
         <div class="document-list">
-          <el-card
-            v-for="doc in documents"
-            :key="doc.id"
-            class="document-card"
-            hover
-          >
+          <el-card v-for="doc in documents" :key="doc.id" class="document-card" hover>
             <div class="document-card-header">
               <h3 class="document-title">{{ doc.title }}</h3>
               <span class="document-status" :class="`status-${doc.status}`">
@@ -118,15 +129,21 @@
             </div>
             <div class="document-meta">
               <span class="meta-item">
-                <el-icon><User /></el-icon>
+                <el-icon>
+                  <User />
+                </el-icon>
                 {{ doc.author }}
               </span>
               <span class="meta-item">
-                <el-icon><Timer /></el-icon>
+                <el-icon>
+                  <Timer />
+                </el-icon>
                 {{ formatDate(doc.updatedAt) }}
               </span>
               <span class="meta-item">
-                <el-icon><View /></el-icon>
+                <el-icon>
+                  <View />
+                </el-icon>
                 {{ doc.views }} 次查看
               </span>
             </div>
@@ -152,7 +169,7 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
-import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View, Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
+import { ArrowDown, Document, Folder, Delete, Plus, Upload, Search, User, Timer, View, Flag, ChatLineRound, Moon, Sunny, Collection } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -248,6 +265,9 @@ const documents = ref([
 
 const handleMenuSelect = (key) => {
   activeMenu.value = key;
+  if (key === 'knowledge-base') {
+    router.push('/knowledge-base');
+  }
 };
 
 const handleLogout = () => {
@@ -331,7 +351,7 @@ onMounted(() => {
   color: var(--text-medium);
   transition: all 0.3s ease;
   cursor: pointer;
-  
+
   &:hover {
     background-color: var(--bg-medium);
     color: var(--primary-color);
@@ -551,7 +571,7 @@ onMounted(() => {
   .side-nav {
     width: 200px;
   }
-  
+
   .document-list {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
@@ -561,38 +581,38 @@ onMounted(() => {
   .top-nav {
     padding: 0 var(--spacing-md);
   }
-  
+
   .system-title {
     font-size: 16px;
   }
-  
+
   .side-nav {
     width: 60px;
   }
-  
+
   .side-menu .el-menu-item span {
     display: none;
   }
-  
+
   .content-area {
     padding: var(--spacing-md);
   }
-  
+
   .action-bar {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-md);
   }
-  
+
   .search-filter {
     flex-direction: column;
   }
-  
+
   .search-input,
   .filter-select {
     width: 100%;
   }
-  
+
   .document-list {
     grid-template-columns: 1fr;
   }
