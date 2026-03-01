@@ -8,6 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -38,8 +39,8 @@ type ListDocumentsRequest struct {
 	Status       *int     `json:"status,omitempty"`
 	Tags         []string `json:"tags,omitempty"`
 
-	CreateTimeRange *TimeRange `json:"create_time_range,omitempty"`
-	UpdateTimeRange *TimeRange `json:"update_time_range,omitempty"`
+	CreateTimeRange *types.TimeRange `json:"create_time_range,omitempty"`
+	UpdateTimeRange *types.TimeRange `json:"update_time_range,omitempty"`
 
 	OrderBy   *ListDocumentsArgs_OrderBy `json:"order_by"`
 	OrderDesc *bool                      `json:"order_desc"`
@@ -50,12 +51,7 @@ type ListDocumentsRequest struct {
 	Options *ListDocumentsOptions `json:"options,omitempty"`
 }
 
-type TimeRange struct {
-	Start *string `json:"start"`
-	End   *string `json:"end"`
-}
-
-func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExternalIDReq {
+func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExternalReq {
 	if r == nil {
 		return nil
 	}
@@ -90,7 +86,7 @@ func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExterna
 		filterArgs.UpdateTimeRangeStart = r.UpdateTimeRange.Start
 		filterArgs.UpdateTimeRangeEnd = r.UpdateTimeRange.End
 	}
-	req := &service.ListDocumentsByExternalIDReq{
+	req := &service.ListDocumentsByExternalReq{
 		ExternalArgs: &service.DocumentsListExternalArgs{
 			UserExternalID:         r.UserExternalID,
 			RootDocumentExternalID: r.RootDocumentExternalID,
@@ -112,7 +108,7 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 		return nil, status.StatusParamError
 	}
 
-	responseDocsPtr, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternalID(
+	responseDocsPtr, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(
 		listDocsReq.BuildServiceReq(),
 	)
 	if err != nil {

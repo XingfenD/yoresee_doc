@@ -1,8 +1,10 @@
 package service
 
 import (
+	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
+	"github.com/XingfenD/yoresee_doc/internal/status"
 )
 
 type KnowledgeBaseService struct {
@@ -26,8 +28,21 @@ type KnowledgeBaseListReq struct {
 	Pagination Pagination                   `json:"pagination"`
 }
 
-func (s *KnowledgeBaseService) List(req *KnowledgeBaseListReq) ([]model.KnowledgeBase, error) {
-	var knowledgeBases []model.KnowledgeBase
+func (s *KnowledgeBaseService) List(req *KnowledgeBaseListReq) ([]*dto.KnowledgeBaseResponse, error) {
+	kbModels, _, err := s.knowledgeBaseRepo.List(&model.KnowledgeBase{}).
+		WithCreatorID(req.CreatorID).
+		WithIsPublic(req.FilterArgs.IsPublic).
+		WithSort(req.SortArgs.Field, req.SortArgs.Desc).
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
+		ExecWithTotal()
+	if err != nil {
+		return nil, err
+	}
+
+	knowledgeBases := make([]*dto.KnowledgeBaseResponse, 0, len(kbModels))
+	for _, kb := range kbModels {
+		knowledgeBases = append(knowledgeBases, dto.NewKnowledgeBaseResponseFromModel(kb))
+	}
 
 	return knowledgeBases, nil
 }
@@ -39,8 +54,22 @@ type KnowledgeBaseListByExternalReq struct {
 	Pagination        Pagination                   `json:"pagination"`
 }
 
-func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalReq) ([]model.KnowledgeBase, error) {
-	return nil, nil
+func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, error) {
+	var creatorID *int64
+	if req.CreatorExternalID != "" {
+		id, err := repository.UserRepo.GetIDByExternalID(req.CreatorExternalID).Exec()
+		if err != nil {
+			return nil, status.StatusUserNotFound
+		}
+		creatorID = &id
+	}
+
+	return s.List(&KnowledgeBaseListReq{
+		CreatorID:  creatorID,
+		FilterArgs: req.FilterArgs,
+		SortArgs:   req.SortArgs,
+		Pagination: req.Pagination,
+	})
 }
 
 var KnowledgeBaseSvc = NewKnowledgeBaseService()

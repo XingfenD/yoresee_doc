@@ -203,7 +203,7 @@ func (s *DocumentService) ListDocumentsWithChildren(req *DocumentsListReq) ([]*d
 	return docs, total, nil
 }
 
-type ListDocumentsByExternalIDReq struct {
+type ListDocumentsByExternalReq struct {
 	ExternalArgs *DocumentsListExternalArgs `json:"external_args"`
 	FilterArgs   *DocumentsListFilterArgs   `json:"filter_args"`
 	SortArgs     SortArgs                   `json:"sort_args"`
@@ -211,7 +211,7 @@ type ListDocumentsByExternalIDReq struct {
 	Options      *ListDocumentsOptions      `json:"options"`
 }
 
-func (s *DocumentService) ListDocumentsWithChildrenByExternalID(req *ListDocumentsByExternalIDReq) ([]*dto.DocumentResponse, int64, error) {
+func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *ListDocumentsByExternalReq) ([]*dto.DocumentResponse, int64, error) {
 	var userID *int64
 	if req.ExternalArgs.UserExternalID != nil && *req.ExternalArgs.UserExternalID != "" {
 		id, err := repository.UserRepo.GetIDByExternalID(*req.ExternalArgs.UserExternalID).Exec()

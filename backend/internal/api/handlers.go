@@ -8,6 +8,7 @@ var AuthLoginHandlerImpl = &AuthLoginHandler{}
 var SystemInfoHandlerImpl = &SystemInfoHandler{}
 var GetDocumentContentHandlerImpl = &GetDocumentContentHandler{}
 var ListDocumentsHandlerImpl = &ListDocumentsHandler{}
+var ListKnowledgeBasesHandlerImpl = &ListKnowledgeBasesHandler{}
 
 type HealthHandler struct{}
 type TestProtectedHandler struct{}
@@ -17,3 +18,4 @@ type AuthLoginHandler struct{}
 type SystemInfoHandler struct{}
 type GetDocumentContentHandler struct{}
 type ListDocumentsHandler struct{}
+type ListKnowledgeBasesHandler struct{}

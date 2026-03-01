@@ -29,9 +29,9 @@ func (h *GetDocumentContentHandler) handle(ctx context.Context, req api_base.Req
 
 	// userExternalID, _ := ctx.Value("user_external_id").(string)
 	// userID, err := service.UserSvc.GetIDByExternalID(userExternalID)
-	if err != nil {
-		return nil, status.StatusUserNotFound
-	}
+	// if err != nil {
+	// 	return nil, status.StatusUserNotFound
+	// }
 
 	document, err := service.DocumentSvc.GetDocumentByExternalID(getDocReq.DocumentExternalID)
 	if err != nil {
