@@ -73,36 +73,50 @@ func (s *DocumentService) GetDocumentWithContent(docExternalID string) (*model.D
 	return document, content, nil
 }
 
-func (s *DocumentService) ListDocuments(
-	userID *int64,
-	parentID *int64,
-	knowledgeID *int64,
-	titleKeyword *string,
-	docType *string,
-	status *int,
-	tags []string,
-	createTimeRangeStart *string,
-	createTimeRangeEnd *string,
-	updateTimeRangeStart *string,
-	updateTimeRangeEnd *string,
-	sortField string,
-	sortDesc bool,
-	page int,
-	pageSize int,
-) ([]*dto.DocumentResponse, int64, error) {
+type DocumentsListReq struct {
+	MetaArgs   *DocumentsListMetaArgs   `json:"meta_args"`
+	FilterArgs *DocumentsListFilterArgs `json:"filter_args"`
+	SortArgs   SortArgs                 `json:"sort_args"`
+	Pagination Pagination               `json:"pagination"`
+	Options    *ListDocumentsOptions    `json:"options"`
+}
 
+type DocumentsListMetaArgs struct {
+	UserID      *int64 `json:"user_id"`
+	ParentID    *int64 `json:"parent_id"`
+	KnowledgeID *int64 `json:"knowledge_id"`
+}
+
+type DocumentsListExternalArgs struct {
+	UserExternalID         *string `json:"user_external_id"`
+	RootDocumentExternalID *string `json:"root_document_external_id"`
+	KnowledgeExternalID    *string `json:"knowledge_external_id"`
+}
+
+type DocumentsListFilterArgs struct {
+	TitleKeyword         *string  `json:"title_keyword"`
+	DocType              *string  `json:"doc_type"`
+	Status               *int     `json:"status"`
+	Tags                 []string `json:"tags"`
+	CreateTimeRangeStart *string  `json:"create_time_range_start"`
+	CreateTimeRangeEnd   *string  `json:"create_time_range_end"`
+	UpdateTimeRangeStart *string  `json:"update_time_range_start"`
+	UpdateTimeRangeEnd   *string  `json:"update_time_range_end"`
+}
+
+func (s *DocumentService) ListDocuments(req *DocumentsListReq) ([]*dto.DocumentResponse, int64, error) {
 	models, total, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
-		WithUserID(userID).
-		WithParentID(parentID).
-		WithKnowledgeID(knowledgeID).
-		WithTitleKeyword(titleKeyword).
-		WithType(docType).
-		WithStatus(status).
-		WithTags(tags).
-		WithCreateTimeRange(createTimeRangeStart, createTimeRangeEnd).
-		WithUpdateTimeRange(updateTimeRangeStart, updateTimeRangeEnd).
-		WithSort(sortField, sortDesc).
-		WithPagination(page, pageSize).
+		WithUserID(req.MetaArgs.UserID).
+		WithParentID(req.MetaArgs.ParentID).
+		WithKnowledgeID(req.MetaArgs.KnowledgeID).
+		WithTitleKeyword(req.FilterArgs.TitleKeyword).
+		WithType(req.FilterArgs.DocType).
+		WithStatus(req.FilterArgs.Status).
+		WithTags(req.FilterArgs.Tags).
+		WithCreateTimeRange(req.FilterArgs.CreateTimeRangeStart, req.FilterArgs.CreateTimeRangeEnd).
+		WithUpdateTimeRange(req.FilterArgs.UpdateTimeRangeStart, req.FilterArgs.UpdateTimeRangeEnd).
+		WithSort(req.SortArgs.Field, req.SortArgs.Desc).
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 		ExecWithTotal()
 
 	if err != nil {
@@ -153,65 +167,30 @@ func (s *DocumentService) GetChildDocuments(parentID int64, options *ListDocumen
 	return childResponses, nil
 }
 
-func (s *DocumentService) ListDocumentsWithChildren(
-	userID *int64,
-	parentID *int64,
-	knowledgeID *int64,
-	titleKeyword *string,
-	docType *string,
-	status *int,
-	tags []string,
-	createTimeRangeStart *string,
-	createTimeRangeEnd *string,
-	updateTimeRangeStart *string,
-	updateTimeRangeEnd *string,
-	sortField string,
-	sortDesc bool,
-	page int,
-	pageSize int,
-	options *ListDocumentsOptions,
-) ([]*dto.DocumentResponse, int64, error) {
-
-	docs, total, err := s.ListDocuments(
-		userID,
-		parentID,
-		knowledgeID,
-		titleKeyword,
-		docType,
-		status,
-		tags,
-		createTimeRangeStart,
-		createTimeRangeEnd,
-		updateTimeRangeStart,
-		updateTimeRangeEnd,
-		sortField,
-		sortDesc,
-		page,
-		pageSize,
-	)
+func (s *DocumentService) ListDocumentsWithChildren(req *DocumentsListReq) ([]*dto.DocumentResponse, int64, error) {
+	docs, total, err := s.ListDocuments(req)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	if options != nil && options.IncludeChildren {
+	if req.Options != nil && req.Options.IncludeChildren {
 		models, _, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
-			WithUserID(userID).
-			WithParentID(parentID).
-			WithTitleKeyword(titleKeyword).
-			WithType(docType).
-			WithStatus(status).
-			WithTags(tags).
-			WithCreateTimeRange(createTimeRangeStart, createTimeRangeEnd).
-			WithUpdateTimeRange(updateTimeRangeStart, updateTimeRangeEnd).
-			WithSort(sortField, sortDesc).
-			WithPagination(page, pageSize).
+			WithUserID(req.MetaArgs.UserID).
+			WithParentID(req.MetaArgs.ParentID).
+			WithTitleKeyword(req.FilterArgs.TitleKeyword).
+			WithType(req.FilterArgs.DocType).
+			WithStatus(req.FilterArgs.Status).
+			WithTags(req.FilterArgs.Tags).
+			WithCreateTimeRange(req.FilterArgs.CreateTimeRangeStart, req.FilterArgs.CreateTimeRangeEnd).
+			WithUpdateTimeRange(req.FilterArgs.UpdateTimeRangeStart, req.FilterArgs.UpdateTimeRangeEnd).
+			WithSort(req.SortArgs.Field, req.SortArgs.Desc).
+			WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 			ExecWithTotal()
 		if err != nil {
 			return nil, 0, err
 		}
 
 		for i := range docs {
-			childDocs, err := s.GetChildDocuments(models[i].ID, options)
+			childDocs, err := s.GetChildDocuments(models[i].ID, req.Options)
 			if err == nil {
 				docs[i].Children = childDocs
 				if len(childDocs) > 0 {
@@ -224,28 +203,18 @@ func (s *DocumentService) ListDocumentsWithChildren(
 	return docs, total, nil
 }
 
-func (s *DocumentService) ListDocumentsWithChildrenByExternalID(
-	userExternalID *string,
-	rootDocumentExternalID *string,
-	knowledgeExternalID *string,
-	titleKeyword *string,
-	docType *string,
-	status *int,
-	tags []string,
-	createTimeRangeStart *string,
-	createTimeRangeEnd *string,
-	updateTimeRangeStart *string,
-	updateTimeRangeEnd *string,
-	sortField string,
-	sortDesc bool,
-	page int,
-	pageSize int,
-	options *ListDocumentsOptions,
-) ([]*dto.DocumentResponse, int64, error) {
+type ListDocumentsByExternalIDReq struct {
+	ExternalArgs *DocumentsListExternalArgs `json:"external_args"`
+	FilterArgs   *DocumentsListFilterArgs   `json:"filter_args"`
+	SortArgs     SortArgs                   `json:"sort_args"`
+	Pagination   Pagination                 `json:"pagination"`
+	Options      *ListDocumentsOptions      `json:"options"`
+}
 
+func (s *DocumentService) ListDocumentsWithChildrenByExternalID(req *ListDocumentsByExternalIDReq) ([]*dto.DocumentResponse, int64, error) {
 	var userID *int64
-	if userExternalID != nil && *userExternalID != "" {
-		id, err := repository.UserRepo.GetIDByExternalID(*userExternalID).Exec()
+	if req.ExternalArgs.UserExternalID != nil && *req.ExternalArgs.UserExternalID != "" {
+		id, err := repository.UserRepo.GetIDByExternalID(*req.ExternalArgs.UserExternalID).Exec()
 		if err != nil {
 			return nil, 0, err
 		}
@@ -253,8 +222,8 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternalID(
 	}
 
 	var parentID *int64
-	if rootDocumentExternalID != nil && *rootDocumentExternalID != "" {
-		doc, err := s.GetDocumentByExternalID(*rootDocumentExternalID)
+	if req.ExternalArgs.RootDocumentExternalID != nil && *req.ExternalArgs.RootDocumentExternalID != "" {
+		doc, err := s.GetDocumentByExternalID(*req.ExternalArgs.RootDocumentExternalID)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -262,26 +231,25 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternalID(
 	}
 
 	var knowledgeID *int64
-	if knowledgeExternalID != nil && *knowledgeExternalID != "" {
-
+	if req.ExternalArgs.KnowledgeExternalID != nil && *req.ExternalArgs.KnowledgeExternalID != "" {
+		id, err := repository.KnowledgeBaseRepo.GetIDByExternalID(*req.ExternalArgs.KnowledgeExternalID).Exec()
+		if err != nil {
+			return nil, 0, err
+		}
+		knowledgeID = &id
 	}
 
 	return s.ListDocumentsWithChildren(
-		userID,
-		parentID,
-		knowledgeID,
-		titleKeyword,
-		docType,
-		status,
-		tags,
-		createTimeRangeStart,
-		createTimeRangeEnd,
-		updateTimeRangeStart,
-		updateTimeRangeEnd,
-		sortField,
-		sortDesc,
-		page,
-		pageSize,
-		options,
+		&DocumentsListReq{
+			MetaArgs: &DocumentsListMetaArgs{
+				UserID:      userID,
+				ParentID:    parentID,
+				KnowledgeID: knowledgeID,
+			},
+			FilterArgs: req.FilterArgs,
+			SortArgs:   req.SortArgs,
+			Pagination: req.Pagination,
+			Options:    req.Options,
+		},
 	)
 }

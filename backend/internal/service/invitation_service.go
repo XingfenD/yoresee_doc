@@ -24,7 +24,6 @@ func NewInvitationService() *InvitationService {
 }
 
 func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt *time.Time) (*model.Invitation, error) {
-	// Simple random code
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
 		return nil, err
@@ -46,6 +45,31 @@ func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt 
 
 func (s *InvitationService) ListByCreator(userID int64) ([]model.Invitation, error) {
 	return s.invitationRepo.List(&model.Invitation{CreatedBy: userID}).Exec()
+}
+
+type ListInvitationsReq struct {
+	CreatorID      *int64     `json:"creator_id"`
+	MaxUsedCnt     *int64     `json:"max_used_cnt"`
+	ExpiresAtStart *string    `json:"expires_at_start"`
+	ExpiresAtEnd   *string    `json:"expires_at_end"`
+	CreatedAtStart *string    `json:"created_at_start"`
+	CreatedAtEnd   *string    `json:"created_at_end"`
+	Disabled       *bool      `json:"disabled"`
+	SortArgs       *SortArgs  `json:"sort_args"`
+	Pagination     Pagination `json:"pagination"`
+}
+
+func (s *InvitationService) ListInvitations(req *ListInvitationsReq) ([]model.Invitation, int64, error) {
+
+	return s.invitationRepo.List(&model.Invitation{}).
+		WithCreatorID(req.CreatorID).
+		WithMaxUsedCnt(req.MaxUsedCnt).
+		WithExpiresAtRange(req.ExpiresAtStart, req.ExpiresAtEnd).
+		WithCreatedAtRange(req.CreatedAtStart, req.CreatedAtEnd).
+		WithDisabled(req.Disabled).
+		WithSort(req.SortArgs.Field, req.SortArgs.Desc).
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
+		ExecWithTotal()
 }
 
 func (s *InvitationService) ValidateAndUse(code string) error {
@@ -71,7 +95,6 @@ func (s *InvitationService) ValidateAndUse(code string) error {
 	return s.invitationRepo.Update(invitation).Exec()
 }
 
-// 事务版本：验证并使用邀请码
 func (s *InvitationService) ValidateAndUseWithTx(tx *gorm.DB, code string) error {
 	invitation, err := s.invitationRepo.GetByCode(code).WithTx(tx).Exec()
 	if err != nil {

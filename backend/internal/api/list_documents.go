@@ -29,11 +29,6 @@ const (
 	ListDocumentsArgs_OrderBy_UpdatedAt ListDocumentsArgs_OrderBy = "updated_at"
 )
 
-type ListDocumentsArgs struct {
-	OrderBy   ListDocumentsArgs_OrderBy `json:"order_by"`
-	OrderDesc bool                      `json:"order_desc"`
-}
-
 type ListDocumentsRequest struct {
 	UserExternalID         *string `json:"user_external_id"`
 	RootDocumentExternalID *string `json:"root_document_external_id"`
@@ -46,7 +41,8 @@ type ListDocumentsRequest struct {
 	CreateTimeRange *TimeRange `json:"create_time_range,omitempty"`
 	UpdateTimeRange *TimeRange `json:"update_time_range,omitempty"`
 
-	OrderBy *ListDocumentsArgs `json:"order_by,omitempty"`
+	OrderBy   *ListDocumentsArgs_OrderBy `json:"order_by"`
+	OrderDesc *bool                      `json:"order_desc"`
 
 	Page     int `json:"page,omitempty"`
 	PageSize int `json:"page_size,omitempty"`
@@ -59,53 +55,65 @@ type TimeRange struct {
 	End   *string `json:"end"`
 }
 
+func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExternalIDReq {
+	if r == nil {
+		return nil
+	}
+
+	sortArgs := service.SortArgs{
+		Field: "created_at",
+		Desc:  true,
+	}
+	if r.OrderBy != nil {
+		switch *r.OrderBy {
+		case ListDocumentsArgs_OrderBy_CreatedAt:
+			sortArgs.Field = "created_at"
+		case ListDocumentsArgs_OrderBy_UpdatedAt:
+			sortArgs.Field = "updated_at"
+		}
+	}
+	if r.OrderDesc != nil {
+		sortArgs.Desc = *r.OrderDesc
+	}
+
+	filterArgs := &service.DocumentsListFilterArgs{
+		TitleKeyword: r.TitleKeyword,
+		DocType:      r.Type,
+		Status:       r.Status,
+		Tags:         r.Tags,
+	}
+	if r.CreateTimeRange != nil {
+		filterArgs.CreateTimeRangeStart = r.CreateTimeRange.Start
+		filterArgs.CreateTimeRangeEnd = r.CreateTimeRange.End
+	}
+	if r.UpdateTimeRange != nil {
+		filterArgs.UpdateTimeRangeStart = r.UpdateTimeRange.Start
+		filterArgs.UpdateTimeRangeEnd = r.UpdateTimeRange.End
+	}
+	req := &service.ListDocumentsByExternalIDReq{
+		ExternalArgs: &service.DocumentsListExternalArgs{
+			UserExternalID:         r.UserExternalID,
+			RootDocumentExternalID: r.RootDocumentExternalID,
+		},
+		FilterArgs: filterArgs,
+		SortArgs:   sortArgs,
+		Pagination: service.Pagination{
+			Page:     r.Page,
+			PageSize: r.PageSize,
+		},
+		Options: r.Options.ToServiceOptions(),
+	}
+	return req
+}
+
 func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
 	listDocsReq, ok := req.(*ListDocumentsRequest)
 	if !ok {
 		return nil, status.StatusParamError
 	}
 
-	sortField := "created_at"
-	sortDesc := true
-	if listDocsReq.OrderBy != nil {
-		switch listDocsReq.OrderBy.OrderBy {
-		case ListDocumentsArgs_OrderBy_CreatedAt:
-			sortField = "created_at"
-		case ListDocumentsArgs_OrderBy_UpdatedAt:
-			sortField = "updated_at"
-		}
-		sortDesc = listDocsReq.OrderBy.OrderDesc
-	}
-
-	serviceOptions := convertListDocumentsOptions(listDocsReq.Options)
-
-	var createTimeStart, createTimeEnd, updateTimeRangeStart, updateTimeRangeEnd *string
-	if listDocsReq.CreateTimeRange != nil {
-		createTimeStart = listDocsReq.CreateTimeRange.Start
-		createTimeEnd = listDocsReq.CreateTimeRange.End
-	}
-	if listDocsReq.UpdateTimeRange != nil {
-		updateTimeRangeStart = listDocsReq.UpdateTimeRange.Start
-		updateTimeRangeEnd = listDocsReq.UpdateTimeRange.End
-	}
-
 	responseDocsPtr, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternalID(
-		listDocsReq.UserExternalID,
-		listDocsReq.RootDocumentExternalID,
-		nil, // knowledge base external id
-		listDocsReq.TitleKeyword,
-		listDocsReq.Type,
-		listDocsReq.Status,
-		listDocsReq.Tags,
-		createTimeStart,
-		createTimeEnd,
-		updateTimeRangeStart,
-		updateTimeRangeEnd,
-		sortField,
-		sortDesc,
-		listDocsReq.Page,
-		listDocsReq.PageSize,
-		serviceOptions,
+		listDocsReq.BuildServiceReq(),
 	)
 	if err != nil {
 		return nil, err
@@ -122,7 +130,7 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 	}, nil
 }
 
-func convertListDocumentsOptions(apiOptions *ListDocumentsOptions) *service.ListDocumentsOptions {
+func (apiOptions *ListDocumentsOptions) ToServiceOptions() *service.ListDocumentsOptions {
 	if apiOptions == nil {
 		return nil
 	}

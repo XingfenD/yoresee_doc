@@ -271,25 +271,25 @@ func (op *UserGetByExternalIDOperation) Exec() (*model.User, error) {
 	return &user, err
 }
 
-type ListUserByExternalIDOperation struct {
+type ListUserByExternalOperation struct {
 	repo           *UserRepository
 	externalIDList []string
 	tx             *gorm.DB
 }
 
-func (r *UserRepository) ListByExternalID(externalIDList []string) *ListUserByExternalIDOperation {
-	return &ListUserByExternalIDOperation{
+func (r *UserRepository) ListByExternal(externalIDList []string) *ListUserByExternalOperation {
+	return &ListUserByExternalOperation{
 		repo:           r,
 		externalIDList: externalIDList,
 	}
 }
 
-func (op *ListUserByExternalIDOperation) WithTx(tx *gorm.DB) *ListUserByExternalIDOperation {
+func (op *ListUserByExternalOperation) WithTx(tx *gorm.DB) *ListUserByExternalOperation {
 	op.tx = tx
 	return op
 }
 
-func (op *ListUserByExternalIDOperation) Exec() ([]model.User, error) {
+func (op *ListUserByExternalOperation) Exec() ([]model.User, error) {
 	var users []model.User
 	var err error
 
