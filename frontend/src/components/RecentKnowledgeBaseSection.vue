@@ -190,4 +190,21 @@ const handleAccess = (kb) => {
   gap: 10px;
   margin-top: 15px;
 }
+
+/* 深色模式支持 */
+.dark-mode .kb-name {
+  color: var(--text-dark); /* 使用更亮的文字颜色，确保在深色背景下清晰可见 */
+}
+
+.dark-mode .kb-description {
+  color: var(--text-medium); /* 确保描述文字在深色背景下也清晰可见 */
+}
+
+.dark-mode .detail-label {
+  color: var(--text-light); /* 确保详情标签在深色背景下也清晰可见 */
+}
+
+.dark-mode .detail-value {
+  color: var(--text-medium); /* 确保详情值在深色背景下也清晰可见 */
+}
 </style>

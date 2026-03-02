@@ -180,4 +180,13 @@ const handleEdit = (doc) => {
   gap: 10px;
   margin-top: 15px;
 }
+
+/* 深色模式支持 */
+.dark-mode .item-title {
+  color: var(--text-dark); /* 使用更亮的文字颜色，确保在深色背景下清晰可见 */
+}
+
+.dark-mode .meta-item {
+  color: var(--text-light); /* 确保元数据文字在深色背景下也清晰可见 */
+}
 </style>
