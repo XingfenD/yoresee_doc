@@ -99,6 +99,38 @@ export default {
     english: 'English',
     chinese: '中文'
   },
+  knowledgeBase: {
+    title: 'Knowledge Base',
+    recent: 'Recent Access',
+    my: 'My Knowledge Bases',
+    public: 'Public Knowledge Bases',
+    noRecent: 'No recently accessed knowledge bases',
+    noDescription: 'No description',
+    access: 'Access',
+    createNew: 'Create',
+    private: 'Private',
+    documentsCount: 'Documents Count',
+    updatedAt: 'Last Updated',
+    owner: 'Owner',
+    view: 'View',
+    accessSuccess: 'Accessed {name}',
+    createComingSoon: 'This feature is coming soon',
+    viewInfo: 'View knowledge base details',
+    fetchError: 'Failed to fetch knowledge base',
+    createDocument: 'Create Document',
+    documentStructure: 'Document Structure',
+    searchDocuments: 'Search documents...',
+    sortBy: 'Sort by',
+    sortByName: 'By Name',
+    sortByDate: 'By Date',
+    sortByType: 'By Type',
+    lastUpdated: 'Last Updated',
+    createDocumentSuccess: 'Document created successfully',
+    treeRefreshed: 'Document tree refreshed',
+    refresh: 'Refresh',
+    open: 'Open',
+    size: 'Size'
+  },
   theme: {
     light: 'Light Mode',
     dark: 'Dark Mode'
@@ -131,6 +163,11 @@ export default {
     search: 'Search',
     view: 'View',
     viewAll: 'View All',
-    unknown: 'Unknown'
+    unknown: 'Unknown',
+    refresh: 'Refresh',
+    open: 'Open',
+    rename: 'Rename',
+    actions: 'Actions',
+    size: 'Size'
   }
 };

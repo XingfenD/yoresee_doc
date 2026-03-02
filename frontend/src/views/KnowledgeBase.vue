@@ -372,15 +372,15 @@ const formatDate = (dateString) => {
 
 // 查看知识库详情
 const viewKnowledgeBase = (kb) => {
-  // 这里可以跳转到知识库详情页面
-  console.log('View knowledge base:', kb)
+  // 跳转到知识库详情页面
+  router.push(`/knowledge-base/${kb.externalId}`)
   ElMessage.info(t('knowledgeBase.viewInfo'))
 }
 
 // 访问知识库
 const accessKnowledgeBase = (kb) => {
-  // 这里可以跳转到知识库内容页面
-  console.log('Access knowledge base:', kb)
+  // 跳转到知识库详情页面
+  router.push(`/knowledge-base/${kb.externalId}`)
   ElMessage.success(t('knowledgeBase.accessSuccess', { name: kb.name }))
 }
 

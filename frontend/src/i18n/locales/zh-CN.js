@@ -97,6 +97,38 @@ export default {
     english: 'English',
     chinese: '中文'
   },
+  knowledgeBase: {
+    title: '知识库',
+    recent: '最近访问',
+    my: '我的知识库',
+    public: '公开知识库',
+    noRecent: '暂无最近访问的知识库',
+    noDescription: '暂无描述',
+    access: '访问',
+    createNew: '创建',
+    private: '私有',
+    documentsCount: '文档数',
+    updatedAt: '更新时间',
+    owner: '所有者',
+    view: '查看',
+    accessSuccess: '已访问 {name}',
+    createComingSoon: '此功能即将推出',
+    viewInfo: '查看知识库详情',
+    fetchError: '获取知识库失败',
+    createDocument: '创建文档',
+    documentStructure: '文档结构',
+    searchDocuments: '搜索文档...',
+    sortBy: '排序方式',
+    sortByName: '按名称',
+    sortByDate: '按日期',
+    sortByType: '按类型',
+    lastUpdated: '最后更新',
+    createDocumentSuccess: '创建文档成功',
+    treeRefreshed: '文档树已刷新',
+    refresh: '刷新',
+    open: '打开',
+    size: '大小'
+  },
   theme: {
     light: '浅色模式',
     dark: '深色模式'
@@ -129,6 +161,11 @@ export default {
     search: '搜索',
     view: '查看',
     viewAll: '查看全部',
-    unknown: '未知'
+    unknown: '未知',
+    refresh: '刷新',
+    open: '打开',
+    rename: '重命名',
+    actions: '操作',
+    size: '大小'
   }
 };

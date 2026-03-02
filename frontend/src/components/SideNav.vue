@@ -71,6 +71,10 @@ const handleMenuSelect = (key) => {
   border-radius: 0;
   color: var(--text-medium);
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  /* 添加图标和文字之间的间距 */
 }
 
 .side-menu .el-menu-item:hover {
@@ -92,6 +96,12 @@ const handleMenuSelect = (key) => {
 
   .side-menu .el-menu-item span {
     display: none;
+  }
+
+  /* 在折叠状态下，确保图标居中 */
+  .side-menu .el-menu-item {
+    justify-content: center;
+    gap: 0;
   }
 }
 </style>
