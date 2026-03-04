@@ -325,3 +325,38 @@ func (op *CreateRecentKnowledgeBaseOperation) Exec() error {
 
 	return op.tx.Create(op.m).Error
 }
+
+type GetKnowledgeBaseDocumentsCountOperation struct {
+	repo            *KnowledgeBaseRepository
+	knowledgeBaseID int64
+	tx              *gorm.DB
+}
+
+func (r *KnowledgeBaseRepository) GetKnowledgeBaseDocumentsCount(knowledgeBaseID int64) *GetKnowledgeBaseDocumentsCountOperation {
+	return &GetKnowledgeBaseDocumentsCountOperation{
+		repo:            r,
+		knowledgeBaseID: knowledgeBaseID,
+	}
+}
+
+func (op *GetKnowledgeBaseDocumentsCountOperation) WithTx(tx *gorm.DB) *GetKnowledgeBaseDocumentsCountOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *GetKnowledgeBaseDocumentsCountOperation) Exec() (int64, error) {
+	var count int64
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	err := op.tx.Model(&model.DocKnowledgeRelation{}).
+		Where("knowledge_id = ?", op.knowledgeBaseID).
+		Count(&count).Error
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

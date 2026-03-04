@@ -34,7 +34,7 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 
 	knowledgeBaseDTO, err := service.KnowledgeBaseSvc.GetByExternalID(&service.KnowledgeBaseGetByExternalIDReq{
 		KnowledgeBaseExternalID: getKnowledgeBaseReq.KnowledgeBaseExternalID,
-	})
+	}).Exec()
 	if err != nil {
 		return nil, status.StatusKnowledgeBaseNotFound
 	}

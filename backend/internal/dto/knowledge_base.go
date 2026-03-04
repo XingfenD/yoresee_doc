@@ -20,7 +20,7 @@ type KnowledgeBaseBase struct {
 type KnowledgeBaseExtend struct {
 	CreatorUserExternalID string `json:"creator_user_external_id"`
 	CreatorName           string `json:"creator_name"`
-	DocumentsCount        int    `json:"documents_count"`
+	DocumentsCount        int64  `json:"documents_count"`
 }
 
 type KnowledgeBaseResponse struct {
@@ -28,7 +28,7 @@ type KnowledgeBaseResponse struct {
 	KnowledgeBaseExtend
 }
 
-func NewKnowledgeBaseResponseFromModel(kb *model.KnowledgeBase, kbExtend *KnowledgeBaseResponse) *KnowledgeBaseResponse {
+func NewKnowledgeBaseResponseFromModel(kb *model.KnowledgeBase, kbExtend *KnowledgeBaseExtend) *KnowledgeBaseResponse {
 	response := &KnowledgeBaseResponse{
 		KnowledgeBaseBase: KnowledgeBaseBase{
 			ExternalID:  kb.ExternalID,

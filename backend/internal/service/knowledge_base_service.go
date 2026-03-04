@@ -108,16 +108,14 @@ func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalRe
 	for _, kb := range kbModels {
 		kbResp := dto.NewKnowledgeBaseResponseFromModel(kb, nil)
 
-		// 获取创建者姓名
 		user, err := s.userSrvc.GetByID(kb.CreatorUserID)
 		if err == nil && user != nil {
 			kbResp.CreatorName = user.Username
 		}
 
-		// 获取文档数量
 		docCount, err := repository.DocKnowledgeRelationRepo.CountDocsByKnowledgeID(kb.ID).Exec()
 		if err == nil {
-			kbResp.DocumentsCount = int(docCount)
+			kbResp.DocumentsCount = docCount
 		}
 
 		knowledgeBases = append(knowledgeBases, kbResp)
@@ -138,13 +136,60 @@ type KnowledgeBaseGetByExternalIDReq struct {
 	KnowledgeBaseExternalID string `json:"knowledge_base_external_id"`
 }
 
-func (s *KnowledgeBaseService) GetByExternalID(req *KnowledgeBaseGetByExternalIDReq) (*dto.KnowledgeBaseResponse, error) {
-	kbModel, err := s.knowledgeBaseRepo.GetByExternalID(req.KnowledgeBaseExternalID).Exec()
+type KnowledgeBaseGetByExternalIDOperation struct {
+	withUserExtend     bool
+	withDocumentExtend bool
+	req                *KnowledgeBaseGetByExternalIDReq
+	srvc               *KnowledgeBaseService
+}
+
+func (s *KnowledgeBaseService) GetByExternalID(req *KnowledgeBaseGetByExternalIDReq) *KnowledgeBaseGetByExternalIDOperation {
+	return &KnowledgeBaseGetByExternalIDOperation{
+		req:  req,
+		srvc: s,
+	}
+}
+
+func (op *KnowledgeBaseGetByExternalIDOperation) WithExtend() {
+	op.withUserExtend = true
+	op.withDocumentExtend = true
+}
+
+func (op *KnowledgeBaseGetByExternalIDOperation) WithUserExtend() {
+	op.withUserExtend = true
+}
+
+func (op *KnowledgeBaseGetByExternalIDOperation) WithDocumentExtend() {
+	op.withDocumentExtend = true
+}
+
+func (op *KnowledgeBaseGetByExternalIDOperation) Exec() (*dto.KnowledgeBaseResponse, error) {
+	kbModel, err := op.srvc.knowledgeBaseRepo.GetByExternalID(op.req.KnowledgeBaseExternalID).Exec()
 	if err != nil {
 		return nil, err
 	}
+	extendDTO := &dto.KnowledgeBaseExtend{}
 
-	return dto.NewKnowledgeBaseResponseFromModel(kbModel, nil), nil
+	if op.withUserExtend {
+		userModel, err := op.srvc.userSrvc.GetByID(kbModel.CreatorUserID)
+		if err != nil {
+			return nil, err
+		}
+		extendDTO.CreatorUserExternalID = userModel.ExternalID
+		extendDTO.CreatorName = userModel.Username
+	}
+
+	if op.withDocumentExtend {
+		count, err := op.srvc.knowledgeBaseRepo.GetKnowledgeBaseDocumentsCount(kbModel.ID).Exec()
+		if err != nil {
+			return nil, err
+		}
+		extendDTO.DocumentsCount = count
+	}
+
+	return dto.NewKnowledgeBaseResponseFromModel(
+		kbModel, extendDTO,
+	), nil
 }
 
 func (s *KnowledgeBaseService) CreateRecentKnowledgeBase(req *dto.CreateRecentKnowledgeBaseRequest) error {
