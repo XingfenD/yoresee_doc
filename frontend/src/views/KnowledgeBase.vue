@@ -17,10 +17,10 @@
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="en" :icon="'Flag'">
-                {{ t('language.english') }}
+                {{ t("language.english") }}
               </el-dropdown-item>
               <el-dropdown-item command="zh" :icon="'ChatLineRound'">
-                {{ t('language.chinese') }}
+                {{ t("language.chinese") }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -40,14 +40,16 @@
         <el-dropdown trigger="click" class="nav-item">
           <span class="user-info">
             <el-avatar size="small" :src="userAvatar"></el-avatar>
-            <span class="username">{{ userInfo?.username || t('common.unknown') }}</span>
+            <span class="username">{{ userInfo?.username || t("common.unknown") }}</span>
             <el-icon class="el-icon--right">
               <ArrowDown />
             </el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="handleLogout">{{ t('button.logout') }}</el-dropdown-item>
+              <el-dropdown-item @click="handleLogout">{{
+                t("button.logout")
+              }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -63,7 +65,7 @@
       <div class="content-area">
         <!-- 操作栏 -->
         <div class="action-bar">
-          <h2 class="page-title">{{ t('knowledgeBase.title') }}</h2>
+          <h2 class="page-title">{{ t("knowledgeBase.title") }}</h2>
         </div>
 
         <!-- 垂直布局 -->
@@ -71,25 +73,34 @@
           <!-- 第一部分：最近访问的知识库 -->
           <div class="vertical-section">
             <div class="section-header">
-              <h3 class="section-title">{{ t('knowledgeBase.recent') }}</h3>
+              <h3 class="section-title">{{ t("knowledgeBase.recent") }}</h3>
             </div>
             <div class="section-content">
-              <el-empty :description="t('knowledgeBase.noRecent')" v-if="recentKnowledgeBases.length === 0" />
-              <el-card v-for="kb in recentKnowledgeBases" :key="kb.externalId" class="knowledge-base-item">
+              <el-empty
+                :description="t('knowledgeBase.noRecent')"
+                v-if="recentKnowledgeBases.length === 0"
+              />
+              <el-card
+                v-for="kb in recentKnowledgeBases"
+                :key="kb.externalId"
+                class="knowledge-base-item"
+              >
                 <template #header>
                   <div class="card-header">
                     <span class="kb-name">{{ kb.name }}</span>
                     <el-tag v-if="kb.isPublic" type="success" size="small">
-                      {{ t('knowledgeBase.public') }}
+                      {{ t("knowledgeBase.public") }}
                     </el-tag>
                   </div>
                 </template>
 
-                <p class="kb-description">{{ kb.description || t('knowledgeBase.noDescription') }}</p>
+                <p class="kb-description">
+                  {{ kb.description || t("knowledgeBase.noDescription") }}
+                </p>
 
                 <div class="kb-actions">
                   <el-button size="small" @click="accessKnowledgeBase(kb)">
-                    {{ t('knowledgeBase.access') }}
+                    {{ t("knowledgeBase.access") }}
                   </el-button>
                 </div>
               </el-card>
@@ -99,48 +110,56 @@
           <!-- 第二部分：我的知识库 -->
           <div class="vertical-section">
             <div class="section-header">
-              <h3 class="section-title">{{ t('knowledgeBase.my') }}</h3>
+              <h3 class="section-title">{{ t("knowledgeBase.my") }}</h3>
               <el-button type="primary" size="small" @click="createKnowledgeBase">
-                {{ t('knowledgeBase.createNew') }}
+                {{ t("knowledgeBase.createNew") }}
               </el-button>
             </div>
             <div class="section-content">
-              <el-card v-for="kb in myKnowledgeBases" :key="kb.externalId" class="knowledge-base-item">
+              <el-card
+                v-for="kb in myKnowledgeBases"
+                :key="kb.externalId"
+                class="knowledge-base-item"
+              >
                 <template #header>
                   <div class="card-header">
                     <span class="kb-name">{{ kb.name }}</span>
                     <el-tag v-if="!kb.isPublic" type="info" size="small">
-                      {{ t('knowledgeBase.private') }}
+                      {{ t("knowledgeBase.private") }}
                     </el-tag>
                   </div>
                 </template>
 
-                <p class="kb-description">{{ kb.description || t('knowledgeBase.noDescription') }}</p>
+                <p class="kb-description">
+                  {{ kb.description || t("knowledgeBase.noDescription") }}
+                </p>
 
                 <div class="kb-details">
                   <div class="detail-item">
-                    <span class="detail-label">{{ t('knowledgeBase.documentsCount') }}:</span>
-                    <span class="detail-value">{{ kb.documentsCount || 0 }}</span>
+                    <span class="detail-label"
+                      >{{ t("knowledgeBase.documentsCount") }}:</span
+                    >
+                    <span class="detail-value">{{ kb.documents_count || 0 }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">{{ t('knowledgeBase.updatedAt') }}:</span>
-                    <span class="detail-value">{{ formatDate(kb.updatedAt) }}</span>
+                    <span class="detail-label">{{ t("knowledgeBase.updatedAt") }}:</span>
+                    <span class="detail-value">{{ formatDate(kb.updated_at) }}</span>
                   </div>
                 </div>
 
                 <div class="kb-actions">
                   <el-button size="small" @click="viewKnowledgeBase(kb)">
-                    {{ t('common.view') }}
+                    {{ t("common.view") }}
                   </el-button>
                   <el-button size="small" type="primary" @click="accessKnowledgeBase(kb)">
-                    {{ t('knowledgeBase.access') }}
+                    {{ t("knowledgeBase.access") }}
                   </el-button>
                 </div>
               </el-card>
 
               <div class="load-more" v-if="myHasMore">
                 <el-button @click="loadMoreMyKnowledgeBases" :loading="myLoading" plain>
-                  {{ myLoading ? t('common.loading') : t('common.loadMore') }}
+                  {{ myLoading ? t("common.loading") : t("common.loadMore") }}
                 </el-button>
               </div>
             </div>
@@ -149,45 +168,59 @@
           <!-- 第三部分：公开知识库 -->
           <div class="vertical-section">
             <div class="section-header">
-              <h3 class="section-title">{{ t('knowledgeBase.public') }}</h3>
+              <h3 class="section-title">{{ t("knowledgeBase.public") }}</h3>
             </div>
             <div class="section-content">
-              <el-card v-for="kb in publicKnowledgeBases" :key="kb.externalId" class="knowledge-base-item">
+              <el-card
+                v-for="kb in publicKnowledgeBases"
+                :key="kb.externalId"
+                class="knowledge-base-item"
+              >
                 <template #header>
                   <div class="card-header">
                     <span class="kb-name">{{ kb.name }}</span>
                     <el-tag type="success" size="small">
-                      {{ t('knowledgeBase.public') }}
+                      {{ t("knowledgeBase.public") }}
                     </el-tag>
                   </div>
                 </template>
 
-                <p class="kb-description">{{ kb.description || t('knowledgeBase.noDescription') }}</p>
+                <p class="kb-description">
+                  {{ kb.description || t("knowledgeBase.noDescription") }}
+                </p>
 
                 <div class="kb-details">
                   <div class="detail-item">
-                    <span class="detail-label">{{ t('knowledgeBase.documentsCount') }}:</span>
-                    <span class="detail-value">{{ kb.documentsCount || 0 }}</span>
+                    <span class="detail-label"
+                      >{{ t("knowledgeBase.documentsCount") }}:</span
+                    >
+                    <span class="detail-value">{{ kb.documents_count || 0 }}</span>
                   </div>
                   <div class="detail-item">
-                    <span class="detail-label">{{ t('knowledgeBase.owner') }}:</span>
-                    <span class="detail-value">{{ kb.creatorName || t('common.unknown') }}</span>
+                    <span class="detail-label">{{ t("knowledgeBase.owner") }}:</span>
+                    <span class="detail-value">{{
+                      kb.creator_name || t("common.unknown")
+                    }}</span>
                   </div>
                 </div>
 
                 <div class="kb-actions">
                   <el-button size="small" @click="viewKnowledgeBase(kb)">
-                    {{ t('common.view') }}
+                    {{ t("common.view") }}
                   </el-button>
                   <el-button size="small" type="primary" @click="accessKnowledgeBase(kb)">
-                    {{ t('knowledgeBase.access') }}
+                    {{ t("knowledgeBase.access") }}
                   </el-button>
                 </div>
               </el-card>
 
               <div class="load-more" v-if="publicHasMore">
-                <el-button @click="loadMorePublicKnowledgeBases" :loading="publicLoading" plain>
-                  {{ publicLoading ? t('common.loading') : t('common.loadMore') }}
+                <el-button
+                  @click="loadMorePublicKnowledgeBases"
+                  :loading="publicLoading"
+                  plain
+                >
+                  {{ publicLoading ? t("common.loading") : t("common.loadMore") }}
                 </el-button>
               </div>
             </div>
@@ -199,257 +232,268 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/store/user'
-import { ElMessage } from 'element-plus'
-import { useI18n } from 'vue-i18n'
-import SideNav from '@/components/SideNav.vue'
-import * as api from '@/services/api'
-import { ArrowDown, House, Collection, Flag, ChatLineRound, Moon, Sunny, Plus } from '@element-plus/icons-vue'
+import { ref, onMounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/store/user";
+import { ElMessage } from "element-plus";
+import { useI18n } from "vue-i18n";
+import SideNav from "@/components/SideNav.vue";
+import * as api from "@/services/api";
+import {
+  ArrowDown,
+  House,
+  Collection,
+  Flag,
+  ChatLineRound,
+  Moon,
+  Sunny,
+  Plus,
+} from "@element-plus/icons-vue";
 
 // 国际化
-const { locale, t } = useI18n()
-const router = useRouter()
-const userStore = useUserStore()
+const { locale, t } = useI18n();
+const router = useRouter();
+const userStore = useUserStore();
 
 // 系统信息
-const systemName = ref('Yoresee')
+const systemName = ref("Yoresee");
 
 // 导航相关
-const activeMenu = ref('knowledge-base')
-const isDarkMode = ref(false)
+const activeMenu = ref("knowledge-base");
+const isDarkMode = ref(false);
 const currentLanguage = computed({
   get: () => locale.value,
   set: (value) => {
-    locale.value = value
-    localStorage.setItem('language', value)
-  }
-})
+    locale.value = value;
+    localStorage.setItem("language", value);
+  },
+});
 
 // 用户信息
-const userInfo = computed(() => userStore.userInfo)
-const userAvatar = ref('')
+const userInfo = computed(() => userStore.userInfo);
+const userAvatar = ref("");
 
 // 最近访问的知识库（API尚未实现，使用模拟数据）
 const recentKnowledgeBases = ref([
   {
-    externalId: 'kb1',
-    name: '项目知识库',
-    description: '项目相关的技术文档和规范',
-    creatorName: '张三',
-    updatedAt: '2024-01-15T09:00:00Z',
+    externalId: "kb1",
+    name: "项目知识库",
+    description: "项目相关的技术文档和规范",
+    creatorName: "张三",
+    updatedAt: "2024-01-15T09:00:00Z",
     isPublic: true,
-    documentsCount: 24
+    documentsCount: 24,
   },
   {
-    externalId: 'kb2',
-    name: '公司规章制度',
-    description: '公司各项规章制度和政策',
-    creatorName: '李四',
-    updatedAt: '2024-01-14T15:30:00Z',
+    externalId: "kb2",
+    name: "公司规章制度",
+    description: "公司各项规章制度和政策",
+    creatorName: "李四",
+    updatedAt: "2024-01-14T15:30:00Z",
     isPublic: true,
-    documentsCount: 15
+    documentsCount: 15,
   },
   {
-    externalId: 'kb3',
-    name: '技术分享',
-    description: '团队技术分享资料',
-    creatorName: '王五',
-    updatedAt: '2024-01-13T11:20:00Z',
+    externalId: "kb3",
+    name: "技术分享",
+    description: "团队技术分享资料",
+    creatorName: "王五",
+    updatedAt: "2024-01-13T11:20:00Z",
     isPublic: false,
-    documentsCount: 8
-  }
-])
+    documentsCount: 8,
+  },
+]);
 
 // 我的知识库
-const myKnowledgeBases = ref([])
-const myPage = ref(1)
-const myPageSize = ref(10)
-const myTotal = ref(0)
-const myLoading = ref(false)
-const myHasMore = computed(() => myKnowledgeBases.value.length < myTotal.value)
+const myKnowledgeBases = ref([]);
+const myPage = ref(1);
+const myPageSize = ref(10);
+const myTotal = ref(0);
+const myLoading = ref(false);
+const myHasMore = computed(() => myKnowledgeBases.value.length < myTotal.value);
 
 // 公开知识库
-const publicKnowledgeBases = ref([])
-const publicPage = ref(1)
-const publicPageSize = ref(10)
-const publicTotal = ref(0)
-const publicLoading = ref(false)
-const publicHasMore = computed(() => publicKnowledgeBases.value.length < publicTotal.value)
+const publicKnowledgeBases = ref([]);
+const publicPage = ref(1);
+const publicPageSize = ref(10);
+const publicTotal = ref(0);
+const publicLoading = ref(false);
+const publicHasMore = computed(
+  () => publicKnowledgeBases.value.length < publicTotal.value
+);
 
 // 获取我的知识库
 const fetchMyKnowledgeBases = async (page = 1, pageSize = 10) => {
-  if (myLoading.value) return
+  if (myLoading.value) return;
 
-  myLoading.value = true
+  myLoading.value = true;
 
   try {
     const params = {
       page: page,
       page_size: pageSize,
       only_mine: true,
-    }
+    };
 
-    const data = await api.getKnowledgeBases(params)
+    const data = await api.getKnowledgeBases(params);
 
     if (page === 1) {
-      myKnowledgeBases.value = data.knowledge_bases || []
+      myKnowledgeBases.value = data.knowledge_bases || [];
     } else {
-      myKnowledgeBases.value.push(...(data.knowledge_bases || []))
+      myKnowledgeBases.value.push(...(data.knowledge_bases || []));
     }
 
-    myTotal.value = data.total || 0
+    myTotal.value = data.total || 0;
   } catch (error) {
-    console.error('Failed to fetch my knowledge bases:', error)
-    ElMessage.error(t('knowledgeBase.fetchError'))
+    console.error("Failed to fetch my knowledge bases:", error);
+    ElMessage.error(t("knowledgeBase.fetchError"));
   } finally {
-    myLoading.value = false
+    myLoading.value = false;
   }
-}
+};
 
 // 获取公开知识库
 const fetchPublicKnowledgeBases = async (page = 1, pageSize = 10) => {
-  if (publicLoading.value) return
+  if (publicLoading.value) return;
 
-  publicLoading.value = true
+  publicLoading.value = true;
 
   try {
     const params = {
       page: page,
       page_size: pageSize,
-      is_public: true  // 获取公开知识库
-    }
+      is_public: true, // 获取公开知识库
+    };
 
-    const data = await api.getKnowledgeBases(params)
+    const data = await api.getKnowledgeBases(params);
 
     if (page === 1) {
-      publicKnowledgeBases.value = data.knowledge_bases || []
+      publicKnowledgeBases.value = data.knowledge_bases || [];
     } else {
-      publicKnowledgeBases.value.push(...(data.knowledge_bases || []))
+      publicKnowledgeBases.value.push(...(data.knowledge_bases || []));
     }
 
-    publicTotal.value = data.total || 0
+    publicTotal.value = data.total || 0;
   } catch (error) {
-    console.error('Failed to fetch public knowledge bases:', error)
-    ElMessage.error(t('knowledgeBase.fetchError'))
+    console.error("Failed to fetch public knowledge bases:", error);
+    ElMessage.error(t("knowledgeBase.fetchError"));
   } finally {
-    publicLoading.value = false
+    publicLoading.value = false;
   }
-}
+};
 
 // 加载更多我的知识库
 const loadMoreMyKnowledgeBases = async () => {
-  if (!myHasMore.value || myLoading.value) return
+  if (!myHasMore.value || myLoading.value) return;
 
-  myPage.value++
-  await fetchMyKnowledgeBases(myPage.value, myPageSize.value)
-}
+  myPage.value++;
+  await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
+};
 
 // 加载更多公开知识库
 const loadMorePublicKnowledgeBases = async () => {
-  if (!publicHasMore.value || publicLoading.value) return
+  if (!publicHasMore.value || publicLoading.value) return;
 
-  publicPage.value++
-  await fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value)
-}
+  publicPage.value++;
+  await fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value);
+};
 
 // 创建知识库
 const createKnowledgeBase = () => {
   // TODO: 实现创建知识库功能
-  ElMessage.info(t('knowledgeBase.createComingSoon'))
-}
+  ElMessage.info(t("knowledgeBase.createComingSoon"));
+};
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return t('common.unknown')
+  if (!dateString) return t("common.unknown");
 
-  const date = new Date(dateString)
-  return date.toLocaleDateString()
-}
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+};
 
 // 查看知识库详情
 const viewKnowledgeBase = (kb) => {
   // 跳转到知识库详情页面
-  router.push(`/knowledge-base/${kb.externalId}`)
-  ElMessage.info(t('knowledgeBase.viewInfo'))
-}
+  router.push(`/knowledge-base/${kb.external_id}`);
+  ElMessage.info(t("knowledgeBase.viewInfo"));
+};
 
 // 访问知识库
 const accessKnowledgeBase = (kb) => {
   // 跳转到知识库详情页面
-  router.push(`/knowledge-base/${kb.externalId}`)
-}
+  router.push(`/knowledge-base/${kb.external_id}`);
+};
 
 // 处理菜单选择
 const handleMenuSelect = (key) => {
-  activeMenu.value = key
-}
+  activeMenu.value = key;
+};
 
 // 处理语言切换
 const handleLanguageChange = (command) => {
-  currentLanguage.value = command
-}
+  currentLanguage.value = command;
+};
 
 // 处理主题切换
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value
+  isDarkMode.value = !isDarkMode.value;
   if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-mode')
-    localStorage.setItem('darkMode', 'true')
+    document.documentElement.classList.add("dark-mode");
+    localStorage.setItem("darkMode", "true");
   } else {
-    document.documentElement.classList.remove('dark-mode')
-    localStorage.setItem('darkMode', 'false')
+    document.documentElement.classList.remove("dark-mode");
+    localStorage.setItem("darkMode", "false");
   }
-}
+};
 
 // 初始化主题
 const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode')
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true
-    document.documentElement.classList.add('dark-mode')
+  const savedDarkMode = localStorage.getItem("darkMode");
+  if (savedDarkMode === "true") {
+    isDarkMode.value = true;
+    document.documentElement.classList.add("dark-mode");
   }
-}
+};
 
 // 初始化语言
 const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language')
+  const savedLanguage = localStorage.getItem("language");
   if (savedLanguage) {
-    currentLanguage.value = savedLanguage
+    currentLanguage.value = savedLanguage;
   }
-}
+};
 
 // 获取系统信息
 const fetchSystemInfo = async () => {
   try {
-    const info = await userStore.fetchSystemInfo()
-    systemName.value = info.system_name
+    const info = await userStore.fetchSystemInfo();
+    systemName.value = info.system_name;
   } catch (err) {
-    console.error('获取系统信息失败:', err)
+    console.error("获取系统信息失败:", err);
   }
-}
+};
 
 // 登出处理
 const handleLogout = () => {
-  userStore.logout()
-  router.push('/login')
-}
+  userStore.logout();
+  router.push("/login");
+};
 
 onMounted(async () => {
   // 获取系统信息
-  await fetchSystemInfo()
+  await fetchSystemInfo();
 
   // 初始化主题和语言
-  initTheme()
-  initLanguage()
+  initTheme();
+  initLanguage();
 
   // 获取知识库数据
   await Promise.all([
     fetchMyKnowledgeBases(myPage.value, myPageSize.value),
-    fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value)
-  ])
-})
+    fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value),
+  ]);
+});
 </script>
 
 <style scoped>

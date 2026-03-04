@@ -1,942 +1,974 @@
 <template>
-    <div class="knowledge-base-detail-container">
-        <!-- 顶部导航栏 -->
-        <header class="top-nav">
-            <div class="nav-left">
-                <h1 class="system-title">{{ systemName }}</h1>
-            </div>
-            <div class="nav-right">
-                <!-- 语言切换 -->
-                <el-dropdown trigger="click" @command="handleLanguageChange" class="nav-item">
-                    <span class="nav-link">
-                        <el-icon :size="18">
-                            <Flag v-if="currentLanguage === 'en'" />
-                            <ChatLineRound v-else />
-                        </el-icon>
-                    </span>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item command="en" :icon="'Flag'">
-                                {{ t('language.english') }}
-                            </el-dropdown-item>
-                            <el-dropdown-item command="zh" :icon="'ChatLineRound'">
-                                {{ t('language.chinese') }}
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+  <div class="knowledge-base-detail-container">
+    <!-- 顶部导航栏 -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <h1 class="system-title">{{ systemName }}</h1>
+      </div>
+      <div class="nav-right">
+        <!-- 语言切换 -->
+        <el-dropdown trigger="click" @command="handleLanguageChange" class="nav-item">
+          <span class="nav-link">
+            <el-icon :size="18">
+              <Flag v-if="currentLanguage === 'en'" />
+              <ChatLineRound v-else />
+            </el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="en" :icon="'Flag'">
+                {{ t("language.english") }}
+              </el-dropdown-item>
+              <el-dropdown-item command="zh" :icon="'ChatLineRound'">
+                {{ t("language.chinese") }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
 
-                <!-- 主题切换 -->
-                <div class="nav-item theme-switch">
-                    <span class="nav-link" @click="toggleTheme">
-                        <el-icon :size="18">
-                            <Moon v-if="isDarkMode" />
-                            <Sunny v-else />
-                        </el-icon>
-                    </span>
-                </div>
-
-                <!-- 用户菜单 -->
-                <el-dropdown trigger="click" class="nav-item">
-                    <span class="user-info">
-                        <el-avatar size="small" :src="userAvatar"></el-avatar>
-                        <span class="username">{{ userInfo?.username || t('common.unknown') }}</span>
-                        <el-icon class="el-icon--right">
-                            <ArrowDown />
-                        </el-icon>
-                    </span>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item @click="handleLogout">{{ t('button.logout') }}</el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
-            </div>
-        </header>
-
-        <!-- 主内容区 -->
-        <div class="main-content">
-            <!-- 左侧导航 -->
-            <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
-
-            <!-- 右侧内容 -->
-            <div class="content-area">
-                <!-- 操作栏 -->
-                <div class="action-bar">
-                    <div class="breadcrumb">
-                        <el-breadcrumb separator="/">
-                            <el-breadcrumb-item>
-                                <div class="breadcrumb-home">
-                                    <el-icon class="home-icon">
-                                        <House />
-                                    </el-icon>
-                                    <span class="home-text">{{ t('navigation.home') }}</span>
-                                </div>
-                            </el-breadcrumb-item>
-                            <el-breadcrumb-item>
-                                <span>{{ t('navigation.knowledgeBase') }}</span>
-                            </el-breadcrumb-item>
-                            <el-breadcrumb-item>
-                                <span>{{ knowledgeBaseName }}</span>
-                            </el-breadcrumb-item>
-                        </el-breadcrumb>
-                    </div>
-
-                    <div class="actions">
-                        <el-button type="primary" @click="createDocument">
-                            {{ t('knowledgeBase.createDocument') }}
-                        </el-button>
-                        <el-button @click="refreshTree" :icon="Refresh" />
-                    </div>
-                </div>
-
-                <!-- 知识库详情内容 -->
-                <div class="detail-content" v-loading="loading">
-                    <div class="kb-info-card" v-if="knowledgeBaseData">
-                        <h2 class="kb-title">{{ knowledgeBaseName }}</h2>
-                        <p class="kb-description">{{ knowledgeBaseDescription }}</p>
-
-                        <div class="kb-stats">
-                            <div class="stat-item">
-                                <el-icon>
-                                    <Document />
-                                </el-icon>
-                                <span>{{ t('knowledgeBase.documentsCount') }}: {{ totalDocuments }}</span>
-                            </div>
-                            <div class="stat-item">
-                                <el-icon>
-                                    <Clock />
-                                </el-icon>
-                                <span>{{ t('knowledgeBase.lastUpdated') }}: {{ formatDate(lastUpdated) }}</span>
-                            </div>
-                            <div class="stat-item">
-                                <el-icon>
-                                    <User />
-                                </el-icon>
-                                <span>{{ t('knowledgeBase.owner') }}: {{ ownerName }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else-if="!loading" class="empty-state">
-                        <el-empty :description="t('message.empty')" />
-                    </div>
-
-                    <!-- 文档树形结构 -->
-                    <div class="document-tree-section">
-                        <div class="section-header">
-                            <h3 class="section-title">{{ t('knowledgeBase.documentStructure') }}</h3>
-
-                            <div class="tree-controls">
-                                <el-input v-model="searchKeyword" :placeholder="t('knowledgeBase.searchDocuments')"
-                                    prefix-icon="Search" clearable class="search-input" />
-
-                                <el-select v-model="sortBy" :placeholder="t('knowledgeBase.sortBy')"
-                                    class="sort-select">
-                                    <el-option v-for="option in sortOptions" :key="option.value" :label="option.label"
-                                        :value="option.value" />
-                                </el-select>
-                            </div>
-                        </div>
-
-                        <div class="tree-content" v-loading="loading">
-                            <el-tree v-if="documentTreeData.length > 0" :data="documentTreeData" :props="treeProps"
-                                node-key="id" :default-expand-all="false" :expand-on-click-node="false"
-                                :accordion="true" @node-click="handleTreeNodeClick" class="custom-tree">
-                                <template #default="{ node, data }">
-                                    <div class="tree-node-content">
-                                        <div class="node-icon">
-                                            <el-icon v-if="data.isParent">
-                                                <FolderOpened v-if="node.expanded" />
-                                                <Folder v-else />
-                                            </el-icon>
-                                            <el-icon v-else>
-                                                <Document />
-                                            </el-icon>
-                                        </div>
-
-                                        <div class="node-info">
-                                            <span class="node-label">{{ node.label }}</span>
-                                            <el-tag v-if="data.tags && data.tags.length > 0" size="small" type="info"
-                                                class="node-tag">
-                                                {{ data.tags[0] }}
-                                            </el-tag>
-                                        </div>
-
-                                        <div class="node-actions">
-                                            <el-button size="small" type="primary" text
-                                                @click.stop="openDocument(data)">
-                                                {{ t('common.open') }}
-                                            </el-button>
-
-                                            <el-dropdown trigger="click" @command="handleNodeAction($event, data)">
-                                                <el-button size="small" text @click.stop>
-                                                    <el-icon>
-                                                        <MoreFilled />
-                                                    </el-icon>
-                                                </el-button>
-                                                <template #dropdown>
-                                                    <el-dropdown-menu>
-                                                        <el-dropdown-item command="rename">
-                                                            {{ t('common.rename') }}
-                                                        </el-dropdown-item>
-                                                        <el-dropdown-item command="share" divided>
-                                                            {{ t('document.share') }}
-                                                        </el-dropdown-item>
-                                                        <el-dropdown-item command="delete" divided>
-                                                            {{ t('common.delete') }}
-                                                        </el-dropdown-item>
-                                                    </el-dropdown-menu>
-                                                </template>
-                                            </el-dropdown>
-                                        </div>
-                                    </div>
-                                </template>
-                            </el-tree>
-                            <div v-else-if="!loading" class="empty-tree-state">
-                                <el-empty :description="t('knowledgeBase.noDocuments')" :image-size="64" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- 主题切换 -->
+        <div class="nav-item theme-switch">
+          <span class="nav-link" @click="toggleTheme">
+            <el-icon :size="18">
+              <Moon v-if="isDarkMode" />
+              <Sunny v-else />
+            </el-icon>
+          </span>
         </div>
+
+        <!-- 用户菜单 -->
+        <el-dropdown trigger="click" class="nav-item">
+          <span class="user-info">
+            <el-avatar size="small" :src="userAvatar"></el-avatar>
+            <span class="username">{{ userInfo?.username || t("common.unknown") }}</span>
+            <el-icon class="el-icon--right">
+              <ArrowDown />
+            </el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="handleLogout">{{
+                t("button.logout")
+              }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <!-- 左侧导航 -->
+      <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
+
+      <!-- 右侧内容 -->
+      <div class="content-area">
+        <!-- 操作栏 -->
+        <div class="action-bar">
+          <div class="breadcrumb">
+            <el-breadcrumb separator="/">
+              <el-breadcrumb-item>
+                <div class="breadcrumb-home">
+                  <el-icon class="home-icon">
+                    <House />
+                  </el-icon>
+                  <span class="home-text">{{ t("navigation.home") }}</span>
+                </div>
+              </el-breadcrumb-item>
+              <el-breadcrumb-item>
+                <span>{{ t("navigation.knowledgeBase") }}</span>
+              </el-breadcrumb-item>
+              <el-breadcrumb-item>
+                <span>{{ knowledgeBaseName }}</span>
+              </el-breadcrumb-item>
+            </el-breadcrumb>
+          </div>
+
+          <div class="actions">
+            <el-button type="primary" @click="createDocument">
+              {{ t("knowledgeBase.createDocument") }}
+            </el-button>
+            <el-button @click="refreshTree" :icon="Refresh" />
+          </div>
+        </div>
+
+        <!-- 知识库详情内容 -->
+        <div class="detail-content" v-loading="loading">
+          <div class="kb-info-card" v-if="knowledgeBaseData">
+            <h2 class="kb-title">{{ knowledgeBaseName }}</h2>
+            <p class="kb-description">{{ knowledgeBaseDescription }}</p>
+
+            <div class="kb-stats">
+              <div class="stat-item">
+                <el-icon>
+                  <Document />
+                </el-icon>
+                <span>{{ t("knowledgeBase.documentsCount") }}: {{ totalDocuments }}</span>
+              </div>
+              <div class="stat-item">
+                <el-icon>
+                  <Clock />
+                </el-icon>
+                <span
+                  >{{ t("knowledgeBase.lastUpdated") }}:
+                  {{ formatDate(lastUpdated) }}</span
+                >
+              </div>
+              <div class="stat-item">
+                <el-icon>
+                  <User />
+                </el-icon>
+                <span>{{ t("knowledgeBase.owner") }}: {{ ownerName }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="!loading" class="empty-state">
+            <el-empty :description="t('message.empty')" />
+          </div>
+
+          <!-- 文档树形结构 -->
+          <div class="document-tree-section">
+            <div class="section-header">
+              <h3 class="section-title">{{ t("knowledgeBase.documentStructure") }}</h3>
+
+              <div class="tree-controls">
+                <el-input
+                  v-model="searchKeyword"
+                  :placeholder="t('knowledgeBase.searchDocuments')"
+                  prefix-icon="Search"
+                  clearable
+                  class="search-input"
+                />
+
+                <el-select
+                  v-model="sortBy"
+                  :placeholder="t('knowledgeBase.sortBy')"
+                  class="sort-select"
+                >
+                  <el-option
+                    v-for="option in sortOptions"
+                    :key="option.value"
+                    :label="option.label"
+                    :value="option.value"
+                  />
+                </el-select>
+              </div>
+            </div>
+
+            <div class="tree-content" v-loading="loading">
+              <el-tree
+                v-if="documentTreeData.length > 0"
+                :data="documentTreeData"
+                :props="treeProps"
+                node-key="id"
+                :default-expand-all="false"
+                :expand-on-click-node="false"
+                :accordion="true"
+                @node-click="handleTreeNodeClick"
+                class="custom-tree"
+              >
+                <template #default="{ node, data }">
+                  <div class="tree-node-content">
+                    <div class="node-icon">
+                      <el-icon v-if="data.isParent">
+                        <FolderOpened v-if="node.expanded" />
+                        <Folder v-else />
+                      </el-icon>
+                      <el-icon v-else>
+                        <Document />
+                      </el-icon>
+                    </div>
+
+                    <div class="node-info">
+                      <span class="node-label">{{ node.label }}</span>
+                      <el-tag
+                        v-if="data.tags && data.tags.length > 0"
+                        size="small"
+                        type="info"
+                        class="node-tag"
+                      >
+                        {{ data.tags[0] }}
+                      </el-tag>
+                    </div>
+
+                    <div class="node-actions">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        text
+                        @click.stop="openDocument(data)"
+                      >
+                        {{ t("common.open") }}
+                      </el-button>
+
+                      <el-dropdown
+                        trigger="click"
+                        @command="handleNodeAction($event, data)"
+                      >
+                        <el-button size="small" text @click.stop>
+                          <el-icon>
+                            <MoreFilled />
+                          </el-icon>
+                        </el-button>
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item command="rename">
+                              {{ t("common.rename") }}
+                            </el-dropdown-item>
+                            <el-dropdown-item command="share" divided>
+                              {{ t("document.share") }}
+                            </el-dropdown-item>
+                            <el-dropdown-item command="delete" divided>
+                              {{ t("common.delete") }}
+                            </el-dropdown-item>
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </div>
+                  </div>
+                </template>
+              </el-tree>
+              <div v-else-if="!loading" class="empty-tree-state">
+                <el-empty
+                  :description="t('knowledgeBase.noDocuments')"
+                  :image-size="64"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useUserStore } from '@/store/user'
-import { ElMessage } from 'element-plus'
-import { useI18n } from 'vue-i18n'
-import SideNav from '@/components/SideNav.vue'
-import { getKnowledgeBaseDetail } from '@/services/api.js'
+import { ref, onMounted, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useUserStore } from "@/store/user";
+import { ElMessage } from "element-plus";
+import { useI18n } from "vue-i18n";
+import SideNav from "@/components/SideNav.vue";
+import { getKnowledgeBaseDetail } from "@/services/api.js";
 import {
-    ArrowDown,
-    House,
-    Flag,
-    ChatLineRound,
-    Moon,
-    Sunny,
-    Document,
-    Clock,
-    User,
-    Folder,
-    FolderOpened,
-    MoreFilled,
-    Refresh,
-    Search
-} from '@element-plus/icons-vue'
+  ArrowDown,
+  House,
+  Flag,
+  ChatLineRound,
+  Moon,
+  Sunny,
+  Document,
+  Clock,
+  User,
+  Folder,
+  FolderOpened,
+  MoreFilled,
+  Refresh,
+  Search,
+} from "@element-plus/icons-vue";
 
 // 国际化
-const { locale, t } = useI18n()
-const router = useRouter()
-const route = useRoute()
-const userStore = useUserStore()
+const { locale, t } = useI18n();
+const router = useRouter();
+const route = useRoute();
+const userStore = useUserStore();
 
 // 系统信息
-const systemName = ref('Yoresee')
+const systemName = ref("Yoresee");
 
 // 导航相关
-const activeMenu = ref('knowledge-base')
-const isDarkMode = ref(false)
+const activeMenu = ref("knowledge-base");
+const isDarkMode = ref(false);
 const currentLanguage = computed({
-    get: () => locale.value,
-    set: (value) => {
-        locale.value = value
-        localStorage.setItem('language', value)
-    }
-})
+  get: () => locale.value,
+  set: (value) => {
+    locale.value = value;
+    localStorage.setItem("language", value);
+  },
+});
 
 // 用户信息
-const userInfo = computed(() => userStore.userInfo)
-const userAvatar = ref('')
+const userInfo = computed(() => userStore.userInfo);
+const userAvatar = ref("");
 
 // 知识库信息
-const knowledgeBaseName = ref('')
-const knowledgeBaseDescription = ref('')
-const totalDocuments = ref(0)
-const lastUpdated = ref('')
-const ownerName = ref('')
-const knowledgeBaseData = ref(null)
-const loading = ref(false)
+const knowledgeBaseName = ref("");
+const knowledgeBaseDescription = ref("");
+const totalDocuments = ref(0);
+const lastUpdated = ref("");
+const ownerName = ref("");
+const knowledgeBaseData = ref(null);
+const loading = ref(false);
 
 // 文档树相关
-const searchKeyword = ref('')
-const sortBy = ref('name')
+const searchKeyword = ref("");
+const sortBy = ref("name");
 const sortOptions = ref([
-    { value: 'name', label: t('knowledgeBase.sortByName') },
-    { value: 'date', label: t('knowledgeBase.sortByDate') },
-    { value: 'type', label: t('knowledgeBase.sortByType') }
-])
-
-
+  { value: "name", label: t("knowledgeBase.sortByName") },
+  { value: "date", label: t("knowledgeBase.sortByDate") },
+  { value: "type", label: t("knowledgeBase.sortByType") },
+]);
 
 // 文档树数据 - 从API获取
 const documentTreeData = computed(() => {
-    if (!knowledgeBaseData.value || !knowledgeBaseData.value.documents) {
-        return []
-    }
+  if (!knowledgeBaseData.value || !knowledgeBaseData.value.documents) {
+    return [];
+  }
 
-    return knowledgeBaseData.value.documents.map(doc => ({
-        id: doc.external_id,
-        name: doc.title,
-        type: doc.type,
-        isParent: doc.hasChildren || (doc.children && doc.children.length > 0),
-        children: doc.children ? doc.children.map(child => ({
-            id: child.external_id,
-            name: child.title,
-            type: child.type,
-            isParent: false,
-            tags: child.tags || [],
-            size: '0 MB', // 后端没有返回大小信息
-            modified: child.updated_at,
-            external_id: child.external_id
-        })) : [],
-        tags: doc.tags || [],
-        size: '0 MB', // 后端没有返回大小信息
-        modified: doc.updated_at,
-        external_id: doc.external_id
-    }))
-})
+  return knowledgeBaseData.value.documents.map((doc) => ({
+    id: doc.external_id,
+    name: doc.title,
+    type: doc.type,
+    isParent: doc.hasChildren || (doc.children && doc.children.length > 0),
+    children: doc.children
+      ? doc.children.map((child) => ({
+          id: child.external_id,
+          name: child.title,
+          type: child.type,
+          isParent: false,
+          tags: child.tags || [],
+          size: "0 MB", // 后端没有返回大小信息
+          modified: child.updated_at,
+          external_id: child.external_id,
+        }))
+      : [],
+    tags: doc.tags || [],
+    size: "0 MB", // 后端没有返回大小信息
+    modified: doc.updated_at,
+    external_id: doc.external_id,
+  }));
+});
 
 const treeProps = {
-    children: 'children',
-    label: 'name'
-}
+  children: "children",
+  label: "name",
+};
 
 // 加载知识库详情数据
 const loadKnowledgeBaseDetail = async () => {
-    const knowledgeBaseExternalID = route.params.id
-    if (!knowledgeBaseExternalID) {
-        ElMessage.error(t('message.knowledgeBaseNotFound'))
-        return
+  const knowledgeBaseExternalID = route.params.id;
+  if (!knowledgeBaseExternalID) {
+    ElMessage.error(t("message.knowledgeBaseNotFound"));
+    return;
+  }
+
+  loading.value = true;
+  try {
+    // 调用API获取知识库详情，同时记录最近访问
+    const data = await getKnowledgeBaseDetail(knowledgeBaseExternalID, {
+      record_recent_log: true,
+    });
+
+    knowledgeBaseData.value = data;
+
+    // 更新知识库信息
+    if (data.knowledge_base) {
+      knowledgeBaseName.value = data.knowledge_base.name;
+      knowledgeBaseDescription.value = data.knowledge_base.description;
+      lastUpdated.value = data.knowledge_base.updated_at;
+      totalDocuments.value = data.documents ? data.documents.length : 0;
+      ownerName.value = data.knowledge_base.creator_name || "未知用户";
     }
-
-    loading.value = true
-    try {
-        // 调用API获取知识库详情，同时记录最近访问
-        const data = await getKnowledgeBaseDetail(knowledgeBaseExternalID, {
-            record_recent_log: true
-        })
-
-        knowledgeBaseData.value = data
-
-        // 更新知识库信息
-        if (data.knowledge_base) {
-            knowledgeBaseName.value = data.knowledge_base.name
-            knowledgeBaseDescription.value = data.knowledge_base.description
-            lastUpdated.value = data.knowledge_base.updated_at
-            totalDocuments.value = data.documents ? data.documents.length : 0
-            ownerName.value = data.knowledge_base.owner_name || '未知用户'
-        }
-
-
-    } catch (error) {
-        console.error('加载知识库详情失败:', error)
-        ElMessage.error(t('message.loadKnowledgeBaseError'))
-    } finally {
-        loading.value = false
-    }
-}
+  } catch (error) {
+    console.error("加载知识库详情失败:", error);
+    ElMessage.error(t("message.loadKnowledgeBaseError"));
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 创建文档
 const createDocument = () => {
-    ElMessage.success(t('knowledgeBase.createDocumentSuccess'))
-}
+  ElMessage.success(t("knowledgeBase.createDocumentSuccess"));
+};
 
 // 刷新树
 const refreshTree = () => {
-    loadKnowledgeBaseDetail()
-    ElMessage.success(t('knowledgeBase.treeRefreshed'))
-}
+  loadKnowledgeBaseDetail();
+  ElMessage.success(t("knowledgeBase.treeRefreshed"));
+};
 
 // 格式化日期
 const formatDate = (dateString) => {
-    if (!dateString) return t('common.unknown')
+  if (!dateString) return t("common.unknown");
 
-    const date = new Date(dateString)
-    return date.toLocaleDateString()
-}
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+};
 
 // 处理树节点点击
 const handleTreeNodeClick = (data) => {
-    console.log('Node clicked:', data)
-    openDocument(data)
-}
+  console.log("Node clicked:", data);
+  openDocument(data);
+};
 
 // 打开文档
 const openDocument = (data) => {
-    ElMessage.success(`${t('message.openDocument')}: ${data.name}`)
-    console.log('Opening document:', data)
-}
+  ElMessage.success(`${t("message.openDocument")}: ${data.name}`);
+  console.log("Opening document:", data);
+};
 
 // 处理节点操作
 const handleNodeAction = (command, data) => {
-    switch (command) {
-        case 'rename':
-            ElMessage.info(`${t('message.renameDocument')}: ${data.name}`)
-            break
-        case 'share':
-            ElMessage.info(`${t('message.shareDocument')}: ${data.name}`)
-            break
-        case 'delete':
-            ElMessage.confirm(
-                t('message.confirmDelete'),
-                t('common.warning'),
-                {
-                    confirmButtonText: t('button.confirm'),
-                    cancelButtonText: t('button.cancel'),
-                    type: 'warning'
-                }
-            )
-                .then(() => {
-                    ElMessage.success(t('message.deleteSuccess'))
-                })
-            break
-    }
-}
+  switch (command) {
+    case "rename":
+      ElMessage.info(`${t("message.renameDocument")}: ${data.name}`);
+      break;
+    case "share":
+      ElMessage.info(`${t("message.shareDocument")}: ${data.name}`);
+      break;
+    case "delete":
+      ElMessage.confirm(t("message.confirmDelete"), t("common.warning"), {
+        confirmButtonText: t("button.confirm"),
+        cancelButtonText: t("button.cancel"),
+        type: "warning",
+      }).then(() => {
+        ElMessage.success(t("message.deleteSuccess"));
+      });
+      break;
+  }
+};
 
 // 处理菜单选择
 const handleMenuSelect = (key) => {
-    activeMenu.value = key
-}
+  activeMenu.value = key;
+};
 
 // 处理语言切换
 const handleLanguageChange = (command) => {
-    currentLanguage.value = command
-}
+  currentLanguage.value = command;
+};
 
 // 处理主题切换
 const toggleTheme = () => {
-    isDarkMode.value = !isDarkMode.value
-    if (isDarkMode.value) {
-        document.documentElement.classList.add('dark-mode')
-        localStorage.setItem('darkMode', 'true')
-    } else {
-        document.documentElement.classList.remove('dark-mode')
-        localStorage.setItem('darkMode', 'false')
-    }
-}
+  isDarkMode.value = !isDarkMode.value;
+  if (isDarkMode.value) {
+    document.documentElement.classList.add("dark-mode");
+    localStorage.setItem("darkMode", "true");
+  } else {
+    document.documentElement.classList.remove("dark-mode");
+    localStorage.setItem("darkMode", "false");
+  }
+};
 
 // 初始化主题
 const initTheme = () => {
-    const savedDarkMode = localStorage.getItem('darkMode')
-    if (savedDarkMode === 'true') {
-        isDarkMode.value = true
-        document.documentElement.classList.add('dark-mode')
-    }
-}
+  const savedDarkMode = localStorage.getItem("darkMode");
+  if (savedDarkMode === "true") {
+    isDarkMode.value = true;
+    document.documentElement.classList.add("dark-mode");
+  }
+};
 
 // 初始化语言
 const initLanguage = () => {
-    const savedLanguage = localStorage.getItem('language')
-    if (savedLanguage) {
-        currentLanguage.value = savedLanguage
-    }
-}
+  const savedLanguage = localStorage.getItem("language");
+  if (savedLanguage) {
+    currentLanguage.value = savedLanguage;
+  }
+};
 
 // 获取系统信息
 const fetchSystemInfo = async () => {
-    try {
-        const info = await userStore.fetchSystemInfo()
-        systemName.value = info.system_name
-    } catch (err) {
-        console.error('获取系统信息失败:', err)
-    }
-}
+  try {
+    const info = await userStore.fetchSystemInfo();
+    systemName.value = info.system_name;
+  } catch (err) {
+    console.error("获取系统信息失败:", err);
+  }
+};
 
 // 登出处理
 const handleLogout = () => {
-    userStore.logout()
-    router.push('/login')
-}
+  userStore.logout();
+  router.push("/login");
+};
 
 onMounted(async () => {
-    // 获取系统信息
-    await fetchSystemInfo()
+  // 获取系统信息
+  await fetchSystemInfo();
 
-    // 初始化主题和语言
-    initTheme()
-    initLanguage()
+  // 初始化主题和语言
+  initTheme();
+  initLanguage();
 
-    // 加载知识库详情数据
-    await loadKnowledgeBaseDetail()
-})
+  // 加载知识库详情数据
+  await loadKnowledgeBaseDetail();
+});
 </script>
 
 <style scoped>
 .knowledge-base-detail-container {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-light);
-    transition: all 0.3s ease;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-light);
+  transition: all 0.3s ease;
 }
 
 /* 顶部导航栏 */
 .top-nav {
-    height: 60px;
-    background-color: var(--bg-white);
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 var(--spacing-xl);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
+  height: 60px;
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
 }
 
 .system-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0;
 }
 
 .nav-right {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .nav-item {
-    display: flex;
-    align-items: center;
-    margin-left: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  margin-left: var(--spacing-sm);
 }
 
 .nav-link {
-    display: flex;
-    align-items: center;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--border-radius-md);
-    color: var(--text-medium);
-    transition: all 0.3s ease;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  color: var(--text-medium);
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .nav-link:hover {
-    background-color: var(--bg-medium);
-    color: var(--primary-color);
+  background-color: var(--bg-medium);
+  color: var(--primary-color);
 }
 
 .theme-switch {
-    padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .user-info {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    transition: background-color 0.3s;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  transition: background-color 0.3s;
 }
 
 .user-info:hover {
-    background-color: var(--bg-medium);
+  background-color: var(--bg-medium);
 }
 
 .username {
-    margin-left: var(--spacing-sm);
-    margin-right: 4px;
-    color: var(--text-medium);
-    font-size: 14px;
+  margin-left: var(--spacing-sm);
+  margin-right: 4px;
+  color: var(--text-medium);
+  font-size: 14px;
 }
 
 /* 主内容区 */
 .main-content {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 /* 右侧内容区域 */
 .content-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--spacing-xl);
-    background-color: var(--bg-light);
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  background-color: var(--bg-light);
 }
 
 .action-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
-    padding-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .breadcrumb {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .breadcrumb-home {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
 }
 
 .home-icon {
-    vertical-align: middle;
+  vertical-align: middle;
 }
 
 .home-text {
-    vertical-align: middle;
+  vertical-align: middle;
 }
 
 .actions {
-    display: flex;
-    gap: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-sm);
 }
 
 .page-title {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-dark);
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-dark);
 }
 
 /* 知识库详情内容 */
 .detail-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
 }
 
 .kb-info-card {
-    background-color: var(--bg-white);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: var(--spacing-lg);
-    border: 1px solid var(--border-color);
+  background-color: var(--bg-white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
 }
 
 .kb-title {
-    margin: 0 0 var(--spacing-md) 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--text-dark);
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-dark);
 }
 
 .kb-description {
-    margin: 0 0 var(--spacing-lg) 0;
-    font-size: 16px;
-    color: var(--text-medium);
-    line-height: 1.6;
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: 16px;
+  color: var(--text-medium);
+  line-height: 1.6;
 }
 
 .kb-stats {
-    display: flex;
-    gap: var(--spacing-lg);
-    flex-wrap: wrap;
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
 }
 
 .stat-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    color: var(--text-medium);
-    font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-medium);
+  font-size: 14px;
 }
 
 .stat-item .el-icon {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 /* 文档树形结构区域 */
 .document-tree-section {
-    background-color: var(--bg-white);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-    flex: 1;
+  background-color: var(--bg-white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  flex: 1;
 }
 
 .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-md);
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--bg-white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-white);
 }
 
 .section-title {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .tree-controls {
-    display: flex;
-    gap: var(--spacing-md);
-    align-items: center;
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
 }
 
 .search-input {
-    width: 200px;
+  width: 200px;
 }
 
 .sort-select {
-    width: 150px;
+  width: 150px;
 }
 
 .tree-content {
-    padding: var(--spacing-md);
-    min-height: 400px;
-    max-height: 60vh;
-    overflow-y: auto;
+  padding: var(--spacing-md);
+  min-height: 400px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .custom-tree {
-    width: 100%;
+  width: 100%;
 }
 
 .tree-node-content {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: var(--spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-xs) 0;
 }
 
 .node-icon {
-    width: 24px;
-    margin-right: var(--spacing-sm);
-    color: var(--primary-color);
+  width: 24px;
+  margin-right: var(--spacing-sm);
+  color: var(--primary-color);
 }
 
 .node-info {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
 }
 
 .node-label {
-    color: var(--text-medium);
-    font-size: 14px;
+  color: var(--text-medium);
+  font-size: 14px;
 }
 
 .node-tag {
-    height: 22px;
-    padding: 0 var(--spacing-xs);
-    font-size: 12px;
-    line-height: 20px;
+  height: 22px;
+  padding: 0 var(--spacing-xs);
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .node-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    opacity: 0;
-    transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .custom-tree :deep(.el-tree-node__content):hover .node-actions {
-    opacity: 1;
+  opacity: 1;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-    .top-nav {
-        padding: 0 var(--spacing-md);
-    }
+  .top-nav {
+    padding: 0 var(--spacing-md);
+  }
 
-    .system-title {
-        font-size: 16px;
-    }
+  .system-title {
+    font-size: 16px;
+  }
 
-    .content-area {
-        padding: var(--spacing-md);
-    }
+  .content-area {
+    padding: var(--spacing-md);
+  }
 
-    .action-bar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: var(--spacing-md);
-    }
+  .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
 
-    .tree-controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
+  .tree-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-    .search-input {
-        width: 100%;
-    }
+  .search-input {
+    width: 100%;
+  }
 
-    .sort-select {
-        width: 100%;
-    }
+  .sort-select {
+    width: 100%;
+  }
 
-    .kb-stats {
-        flex-direction: column;
-    }
+  .kb-stats {
+    flex-direction: column;
+  }
 }
 
 /* 深色模式支持 */
 .dark-mode .search-input :deep(.el-input__wrapper) {
-    background-color: var(--input-bg);
-    border-color: var(--input-border);
-    color: var(--input-text);
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
 }
 
 .dark-mode .search-input :deep(.el-input__inner) {
-    background-color: var(--input-bg);
-    border-color: var(--input-border);
-    color: var(--input-text);
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
 }
 
 /* 空状态样式 */
 .empty-state {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 200px;
-    background-color: var(--bg-white);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  background-color: var(--bg-white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
 }
 
 .empty-tree-state {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 300px;
-    background-color: var(--bg-white);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background-color: var(--bg-white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
 }
 
 .dark-mode .sort-select :deep(.el-input__wrapper) {
-    background-color: var(--select-bg);
-    border-color: var(--select-border);
-    color: var(--select-text);
+  background-color: var(--select-bg);
+  border-color: var(--select-border);
+  color: var(--select-text);
 }
 
 .dark-mode .sort-select :deep(.el-input__inner) {
-    background-color: var(--select-bg);
-    border-color: var(--select-border);
-    color: var(--select-text);
+  background-color: var(--select-bg);
+  border-color: var(--select-border);
+  color: var(--select-text);
 }
 
 .dark-mode .sort-select :deep(.el-select__dropdown) {
-    background-color: var(--select-bg);
-    border-color: var(--select-border);
+  background-color: var(--select-bg);
+  border-color: var(--select-border);
 }
 
 .dark-mode .sort-select :deep(.el-popper) {
-    background-color: var(--select-bg);
-    border-color: var(--select-border);
-    color: var(--select-text);
+  background-color: var(--select-bg);
+  border-color: var(--select-border);
+  color: var(--select-text);
 }
 
 .dark-mode .sort-select :deep(.el-select-dropdown__item) {
-    background-color: var(--select-option-bg);
-    color: var(--select-text);
+  background-color: var(--select-option-bg);
+  color: var(--select-text);
 }
 
 .dark-mode .sort-select :deep(.el-select-dropdown__item:hover) {
-    background-color: var(--select-option-hover);
+  background-color: var(--select-option-hover);
 }
 
 /* 文档树的深色模式支持 */
 .dark-mode .document-tree-section {
-    background-color: var(--bg-medium);
-    border-color: var(--border-color);
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
 }
 
 .dark-mode .section-header {
-    background-color: var(--bg-medium);
-    border-color: var(--border-color);
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
 }
 
 .dark-mode .section-title {
-    color: var(--text-dark);
+  color: var(--text-dark);
 }
 
 .dark-mode .custom-tree :deep(.el-tree-node__content) {
-    background-color: var(--bg-medium);
-    color: var(--text-medium);
+  background-color: var(--bg-medium);
+  color: var(--text-medium);
 }
 
 .dark-mode .custom-tree :deep(.el-tree-node__content:hover) {
-    background-color: var(--bg-white);
-    color: var(--text-dark);
+  background-color: var(--bg-white);
+  color: var(--text-dark);
 }
 
 .dark-mode .node-label {
-    color: var(--text-medium);
+  color: var(--text-medium);
 }
 
 .dark-mode .node-icon {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .dark-mode .node-actions {
-    color: var(--text-medium);
+  color: var(--text-medium);
 }
 
 .dark-mode .kb-info-card {
-    background-color: var(--bg-medium);
-    border-color: var(--border-color);
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
 }
 
 .dark-mode .kb-title {
-    color: var(--text-dark);
+  color: var(--text-dark);
 }
 
 .dark-mode .kb-description {
-    color: var(--text-medium);
+  color: var(--text-medium);
 }
 
 .dark-mode .stat-item {
-    color: var(--text-medium);
+  color: var(--text-medium);
 }
 
 .dark-mode .stat-item .el-icon {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 /* 夜间模式下的标签样式 */
 .dark-mode .node-tag {
-    background-color: rgba(64, 128, 255, 0.1);
-    /* 更暗的背景色 */
-    border-color: rgba(64, 128, 255, 0.2);
-    /* 更暗的边框色 */
-    color: var(--text-light);
-    /* 调整文字颜色为更浅的灰色 */
+  background-color: rgba(64, 128, 255, 0.1);
+  /* 更暗的背景色 */
+  border-color: rgba(64, 128, 255, 0.2);
+  /* 更暗的边框色 */
+  color: var(--text-light);
+  /* 调整文字颜色为更浅的灰色 */
 }
 
 /* 夜间模式下的Element Plus标签样式 */
 .dark-mode :deep(.el-tag--info) {
-    background-color: rgba(64, 128, 255, 0.1);
-    border-color: rgba(64, 128, 255, 0.2);
-    color: var(--text-light);
+  background-color: rgba(64, 128, 255, 0.1);
+  border-color: rgba(64, 128, 255, 0.2);
+  color: var(--text-light);
 }
 
 .dark-mode :deep(.el-tag--success) {
-    background-color: rgba(51, 209, 122, 0.1);
-    border-color: rgba(51, 209, 122, 0.2);
-    color: var(--text-light);
+  background-color: rgba(51, 209, 122, 0.1);
+  border-color: rgba(51, 209, 122, 0.2);
+  color: var(--text-light);
 }
 
 .dark-mode :deep(.el-tag--warning) {
-    background-color: rgba(255, 152, 0, 0.1);
-    border-color: rgba(255, 152, 0, 0.2);
-    color: var(--text-light);
+  background-color: rgba(255, 152, 0, 0.1);
+  border-color: rgba(255, 152, 0, 0.2);
+  color: var(--text-light);
 }
 
 .dark-mode :deep(.el-tag--danger) {
-    background-color: rgba(255, 82, 82, 0.1);
-    border-color: rgba(255, 82, 82, 0.2);
-    color: var(--text-light);
+  background-color: rgba(255, 82, 82, 0.1);
+  border-color: rgba(255, 82, 82, 0.2);
+  color: var(--text-light);
 }
 </style>

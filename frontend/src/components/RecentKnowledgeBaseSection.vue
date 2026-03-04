@@ -3,7 +3,7 @@
     <div class="section-header">
       <h3 class="section-title">{{ title }}</h3>
       <el-button v-if="showViewAll" link type="primary" @click="handleViewAll">
-        {{ t('common.viewAll') }}
+        {{ t("common.viewAll") }}
       </el-button>
     </div>
     <div class="section-content">
@@ -13,33 +13,35 @@
           <div class="card-header">
             <span class="kb-name">{{ kb.name }}</span>
             <el-tag v-if="kb.isPublic" type="success" size="small">
-              {{ t('knowledgeBase.public') }}
+              {{ t("knowledgeBase.public") }}
             </el-tag>
             <el-tag v-else type="info" size="small">
-              {{ t('knowledgeBase.private') }}
+              {{ t("knowledgeBase.private") }}
             </el-tag>
           </div>
         </template>
 
-        <p class="kb-description">{{ kb.description || t('knowledgeBase.noDescription') }}</p>
+        <p class="kb-description">
+          {{ kb.description || t("knowledgeBase.noDescription") }}
+        </p>
 
         <div class="kb-details">
           <div class="detail-item">
-            <span class="detail-label">{{ t('knowledgeBase.documentsCount') }}:</span>
-            <span class="detail-value">{{ kb.documentsCount || 0 }}</span>
+            <span class="detail-label">{{ t("knowledgeBase.documentsCount") }}:</span>
+            <span class="detail-value">{{ kb.documents_count || 0 }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">{{ t('knowledgeBase.updatedAt') }}:</span>
-            <span class="detail-value">{{ formatDate(kb.updatedAt) }}</span>
+            <span class="detail-label">{{ t("knowledgeBase.updatedAt") }}:</span>
+            <span class="detail-value">{{ formatDate(kb.updated_at) }}</span>
           </div>
         </div>
 
         <div class="kb-actions">
           <el-button size="small" @click="handleView(kb)">
-            {{ t('common.view') }}
+            {{ t("common.view") }}
           </el-button>
           <el-button size="small" type="primary" @click="handleAccess(kb)">
-            {{ t('knowledgeBase.access') }}
+            {{ t("knowledgeBase.access") }}
           </el-button>
         </div>
       </el-card>
@@ -48,7 +50,7 @@
 </template>
 
 <script setup>
-import { useI18n } from 'vue-i18n';
+import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 
@@ -56,28 +58,28 @@ const { t } = useI18n();
 const props = defineProps({
   title: {
     type: String,
-    default: ''
+    default: "",
   },
   items: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   emptyText: {
     type: String,
-    default: ''
+    default: "",
   },
   showViewAll: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 // 定义事件
-const emit = defineEmits(['view-all', 'view-item', 'access-item']);
+const emit = defineEmits(["view-all", "view-item", "access-item"]);
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return t('common.unknown');
+  if (!dateString) return t("common.unknown");
 
   const date = new Date(dateString);
   return date.toLocaleDateString();
@@ -85,17 +87,17 @@ const formatDate = (dateString) => {
 
 // 处理查看全部
 const handleViewAll = () => {
-  emit('view-all');
+  emit("view-all");
 };
 
 // 处理查看项目
 const handleView = (kb) => {
-  emit('view-item', kb);
+  emit("view-item", kb);
 };
 
 // 处理访问项目
 const handleAccess = (kb) => {
-  emit('access-item', kb);
+  emit("access-item", kb);
 };
 </script>
 
