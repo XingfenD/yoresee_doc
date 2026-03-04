@@ -20,7 +20,12 @@ func NewKnowledgeBaseService() *KnowledgeBaseService {
 }
 
 type KnowledgeBaseListFilterArgs struct {
-	IsPublic *bool `json:"is_public"`
+	IsPublic             *bool   `json:"is_public"`
+	NameKeyword          *string `json:"name_keyword"`
+	CreateTimeRangeStart *string `json:"create_time_range_start"`
+	CreateTimeRangeEnd   *string `json:"create_time_range_end"`
+	UpdateTimeRangeStart *string `json:"update_time_range_start"`
+	UpdateTimeRangeEnd   *string `json:"update_time_range_end"`
 }
 
 type KnowledgeBaseListReq struct {
@@ -39,7 +44,10 @@ func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *KnowledgeBas
 	}
 	op := s.knowledgeBaseRepo.List(&model.KnowledgeBase{}).WithCreatorID(req.CreatorID)
 	if req.FilterArgs != nil {
-		op = op.WithIsPublic(req.FilterArgs.IsPublic)
+		op = op.WithIsPublic(req.FilterArgs.IsPublic).
+			WithNameKeyword(req.FilterArgs.NameKeyword).
+			WithCreateTimeRange(req.FilterArgs.CreateTimeRangeStart, req.FilterArgs.CreateTimeRangeEnd).
+			WithUpdateTimeRange(req.FilterArgs.UpdateTimeRangeStart, req.FilterArgs.UpdateTimeRangeEnd)
 	}
 	op = op.WithSort(req.SortArgs.Field, req.SortArgs.Desc).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize)

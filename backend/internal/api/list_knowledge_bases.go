@@ -17,12 +17,6 @@ type ListKnowledgeBasesResponse struct {
 	KnowledgeBases []*dto.KnowledgeBaseResponse `json:"knowledge_bases"`
 }
 
-type ListKnowledgeBasesOptions struct {
-	IncludeChildren bool `json:"include_children"`
-	Recursive       bool `json:"recursive"`
-	Depth           int  `json:"depth"`
-}
-
 type ListKnowledgeBasesArgs_OrderBy string
 
 const (
@@ -31,11 +25,10 @@ const (
 )
 
 type ListKnowledgeBasesRequest struct {
-	UserExternalID *string `json:"user_external_id" form:"user_external_id"`
+	OnlyMine bool `json:"only_mine,omitempty" form:"only_mine"`
 
-	NameKeyword *string  `json:"name_keyword,omitempty" form:"name_keyword"`
-	IsPublic    *bool    `json:"is_public,omitempty" form:"is_public"`
-	Tags        []string `json:"tags,omitempty" form:"tags"`
+	NameKeyword *string `json:"name_keyword,omitempty" form:"name_keyword"`
+	IsPublic    *bool   `json:"is_public,omitempty" form:"is_public"`
 
 	CreateTimeRange *types.TimeRange `json:"create_time_range,omitempty" form:"create_time_range"`
 	UpdateTimeRange *types.TimeRange `json:"update_time_range,omitempty" form:"update_time_range"`
@@ -45,11 +38,9 @@ type ListKnowledgeBasesRequest struct {
 
 	Page     int `json:"page,omitempty" form:"page"`
 	PageSize int `json:"page_size,omitempty" form:"page_size"`
-
-	// Options *ListKnowledgeBasesOptions `json:"options,omitempty"`
 }
 
-func (r *ListKnowledgeBasesRequest) BuildServiceReq() *service.KnowledgeBaseListByExternalReq {
+func (r *ListKnowledgeBasesRequest) BuildServiceReq(userExternalID string) *service.KnowledgeBaseListByExternalReq {
 	if r == nil {
 		return nil
 	}
@@ -71,7 +62,16 @@ func (r *ListKnowledgeBasesRequest) BuildServiceReq() *service.KnowledgeBaseList
 	}
 
 	filterArgs := &service.KnowledgeBaseListFilterArgs{
-		IsPublic: r.IsPublic,
+		IsPublic:    r.IsPublic,
+		NameKeyword: r.NameKeyword,
+	}
+	if r.CreateTimeRange != nil {
+		filterArgs.CreateTimeRangeStart = r.CreateTimeRange.Start
+		filterArgs.CreateTimeRangeEnd = r.CreateTimeRange.End
+	}
+	if r.UpdateTimeRange != nil {
+		filterArgs.UpdateTimeRangeStart = r.UpdateTimeRange.Start
+		filterArgs.UpdateTimeRangeEnd = r.UpdateTimeRange.End
 	}
 
 	req := &service.KnowledgeBaseListByExternalReq{
@@ -84,8 +84,8 @@ func (r *ListKnowledgeBasesRequest) BuildServiceReq() *service.KnowledgeBaseList
 		},
 	}
 
-	if r.UserExternalID != nil {
-		req.CreatorExternalID = *r.UserExternalID
+	if r.OnlyMine {
+		req.CreatorExternalID = userExternalID
 	}
 
 	return req
@@ -97,9 +97,14 @@ func (h *ListKnowledgeBasesHandler) handle(ctx context.Context, req api_base.Req
 		return nil, status.StatusParamError
 	}
 
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok {
+		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "user not logged in")
+	}
+
 	// TODO: permission check
 	kbModels, err := service.KnowledgeBaseSvc.ListByExternal(
-		listKBsReq.BuildServiceReq(),
+		listKBsReq.BuildServiceReq(userExternalID),
 	)
 	if err != nil {
 		return nil, err

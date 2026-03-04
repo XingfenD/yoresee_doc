@@ -74,7 +74,7 @@ func (s *DocumentService) GetDocumentWithContent(docExternalID string) (*model.D
 	return document, content, nil
 }
 
-type DocumentsListReq struct {
+type documentsListReq struct {
 	MetaArgs   *DocumentsListMetaArgs   `json:"meta_args"`
 	FilterArgs *DocumentsListFilterArgs `json:"filter_args"`
 	SortArgs   SortArgs                 `json:"sort_args"`
@@ -105,7 +105,7 @@ type DocumentsListFilterArgs struct {
 	UpdateTimeRangeEnd   *string  `json:"update_time_range_end"`
 }
 
-func (s *DocumentService) buildListDocumentsOperation(req *DocumentsListReq) (*repository.DocumentsListOperation, error) {
+func (s *DocumentService) buildListDocumentsOperation(req *documentsListReq) (*repository.DocumentsListOperation, error) {
 	if s == nil || s.documentRepo == nil {
 		return nil, status.StatusServiceInternalError
 	}
@@ -132,7 +132,7 @@ func (s *DocumentService) buildListDocumentsOperation(req *DocumentsListReq) (*r
 	return listOp, nil
 }
 
-func (s *DocumentService) ListDocuments(req *DocumentsListReq) ([]*dto.DocumentResponse, int64, error) {
+func (s *DocumentService) listDocuments(req *documentsListReq) ([]*dto.DocumentResponse, int64, error) {
 	listOp, err := s.buildListDocumentsOperation(req)
 	if err != nil {
 		return nil, 0, err
@@ -155,7 +155,7 @@ type ListDocumentsOptions struct {
 	Depth           int  `json:"depth"`
 }
 
-func (s *DocumentService) GetChildDocuments(parentID int64, options *ListDocumentsOptions) ([]*dto.DocumentResponse, error) {
+func (s *DocumentService) getChildDocuments(parentID int64, options *ListDocumentsOptions) ([]*dto.DocumentResponse, error) {
 	models, _, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
 		WithParentID(&parentID).
 		WithSort("created_at", false).
@@ -174,7 +174,7 @@ func (s *DocumentService) GetChildDocuments(parentID int64, options *ListDocumen
 				Recursive:       options.Recursive,
 				Depth:           options.Depth - 1,
 			}
-			grandChildren, err := s.GetChildDocuments(model.ID, subOptions)
+			grandChildren, err := s.getChildDocuments(model.ID, subOptions)
 			if err == nil {
 				childResponses[i].Children = grandChildren
 				if len(grandChildren) > 0 {
@@ -187,8 +187,8 @@ func (s *DocumentService) GetChildDocuments(parentID int64, options *ListDocumen
 	return childResponses, nil
 }
 
-func (s *DocumentService) ListDocumentsWithChildren(req *DocumentsListReq) ([]*dto.DocumentResponse, int64, error) {
-	docs, total, err := s.ListDocuments(req)
+func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*dto.DocumentResponse, int64, error) {
+	docs, total, err := s.listDocuments(req)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -203,7 +203,7 @@ func (s *DocumentService) ListDocumentsWithChildren(req *DocumentsListReq) ([]*d
 		}
 
 		for i := range docs {
-			childDocs, err := s.GetChildDocuments(models[i].ID, req.Options)
+			childDocs, err := s.getChildDocuments(models[i].ID, req.Options)
 			if err == nil {
 				docs[i].Children = childDocs
 				if len(childDocs) > 0 {
@@ -252,8 +252,8 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *ListDocuments
 		knowledgeID = &id
 	}
 
-	return s.ListDocumentsWithChildren(
-		&DocumentsListReq{
+	return s.listDocumentsWithChildren(
+		&documentsListReq{
 			MetaArgs: &DocumentsListMetaArgs{
 				UserID:      userID,
 				ParentID:    &parentID, // default to root

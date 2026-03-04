@@ -11,15 +11,20 @@ type KnowledgeBaseRepository struct{}
 var KnowledgeBaseRepo = &KnowledgeBaseRepository{}
 
 type ListKnowledgeBaseOperation struct {
-	repo      *KnowledgeBaseRepository
-	model     *model.KnowledgeBase
-	creatorID *int64
-	isPublic  *bool
-	sortField string
-	sortDesc  bool
-	page      int
-	pageSize  int
-	tx        *gorm.DB
+	repo          *KnowledgeBaseRepository
+	model         *model.KnowledgeBase
+	creatorID     *int64
+	isPublic      *bool
+	nameKeyword   *string
+	createAtStart *string
+	createAtEnd   *string
+	updateAtStart *string
+	updateAtEnd   *string
+	sortField     string
+	sortDesc      bool
+	page          int
+	pageSize      int
+	tx            *gorm.DB
 }
 
 func (r *KnowledgeBaseRepository) List(m *model.KnowledgeBase) (op *ListKnowledgeBaseOperation) {
@@ -41,6 +46,23 @@ func (op *ListKnowledgeBaseOperation) WithCreatorID(creatorID *int64) *ListKnowl
 
 func (op *ListKnowledgeBaseOperation) WithIsPublic(isPublic *bool) *ListKnowledgeBaseOperation {
 	op.isPublic = isPublic
+	return op
+}
+
+func (op *ListKnowledgeBaseOperation) WithNameKeyword(nameKeyword *string) *ListKnowledgeBaseOperation {
+	op.nameKeyword = nameKeyword
+	return op
+}
+
+func (op *ListKnowledgeBaseOperation) WithCreateTimeRange(start, end *string) *ListKnowledgeBaseOperation {
+	op.createAtStart = start
+	op.createAtEnd = end
+	return op
+}
+
+func (op *ListKnowledgeBaseOperation) WithUpdateTimeRange(start, end *string) *ListKnowledgeBaseOperation {
+	op.updateAtStart = start
+	op.updateAtEnd = end
 	return op
 }
 
