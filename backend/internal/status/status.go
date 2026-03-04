@@ -52,8 +52,9 @@ var (
 
 	StatusPermissionDenied_DocumentRead = NewStatusErr(40300, "permission denied for reading document")
 
-	StatusWriteDBError = NewStatusErr(50000, "write db error")
-	StatusReadDBError  = NewStatusErr(50001, "read db error")
+	StatusServiceInternalError = NewStatusErr(50000, "service internal error")
+	StatusWriteDBError         = NewStatusErr(50001, "write db error")
+	StatusReadDBError          = NewStatusErr(50002, "read db error")
 
 	StatusInternalParamsError = NewStatusErr(50010, "invalid internal arguments")
 )

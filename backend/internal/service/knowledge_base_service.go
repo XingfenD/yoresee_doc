@@ -30,13 +30,28 @@ type KnowledgeBaseListReq struct {
 	Pagination Pagination                   `json:"pagination"`
 }
 
+func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *KnowledgeBaseListReq) (*repository.ListKnowledgeBaseOperation, error) {
+	if s == nil || s.knowledgeBaseRepo == nil {
+		return nil, status.StatusServiceInternalError
+	}
+	if req == nil {
+		return nil, status.StatusInternalParamsError
+	}
+	op := s.knowledgeBaseRepo.List(&model.KnowledgeBase{}).WithCreatorID(req.CreatorID)
+	if req.FilterArgs != nil {
+		op = op.WithIsPublic(req.FilterArgs.IsPublic)
+	}
+	op = op.WithSort(req.SortArgs.Field, req.SortArgs.Desc).
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize)
+	return op, nil
+}
+
 func (s *KnowledgeBaseService) List(req *KnowledgeBaseListReq) ([]*dto.KnowledgeBaseResponse, error) {
-	kbModels, _, err := s.knowledgeBaseRepo.List(&model.KnowledgeBase{}).
-		WithCreatorID(req.CreatorID).
-		WithIsPublic(req.FilterArgs.IsPublic).
-		WithSort(req.SortArgs.Field, req.SortArgs.Desc).
-		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
-		ExecWithTotal()
+	listOp, err := s.buildListKnowledgeBaseOperation(req)
+	if err != nil {
+		return nil, err
+	}
+	kbModels, _, err := listOp.ExecWithTotal()
 	if err != nil {
 		return nil, err
 	}

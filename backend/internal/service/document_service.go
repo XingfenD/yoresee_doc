@@ -107,6 +107,9 @@ type DocumentsListFilterArgs struct {
 }
 
 func (s *DocumentService) buildListDocumentsOperation(req *DocumentsListReq) (*repository.DocumentsListOperation, error) {
+	if s == nil || s.documentRepo == nil {
+		return nil, status.StatusServiceInternalError
+	}
 	if req == nil {
 		return nil, status.StatusInternalParamsError
 	}
