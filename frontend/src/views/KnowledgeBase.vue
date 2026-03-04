@@ -288,7 +288,7 @@ const fetchMyKnowledgeBases = async (page = 1, pageSize = 10) => {
     const params = {
       page: page,
       page_size: pageSize,
-      user_external_id: userInfo.value?.external_id,
+      only_mine: true,
     }
 
     const data = await api.getKnowledgeBases(params)

@@ -79,22 +79,51 @@ type KnowledgeBaseListByExternalReq struct {
 	Pagination        Pagination                   `json:"pagination"`
 }
 
-func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, error) {
+func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, int, error) {
 	var creatorID *int64
 	if req.CreatorExternalID != "" {
 		id, err := repository.UserRepo.GetIDByExternalID(req.CreatorExternalID).Exec()
 		if err != nil {
-			return nil, status.StatusUserNotFound
+			return nil, 0, status.StatusUserNotFound
 		}
 		creatorID = &id
 	}
 
-	return s.List(&KnowledgeBaseListReq{
+	listOp, err := s.buildListKnowledgeBaseOperation(&KnowledgeBaseListReq{
 		CreatorID:  creatorID,
 		FilterArgs: req.FilterArgs,
 		SortArgs:   req.SortArgs,
 		Pagination: req.Pagination,
 	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	kbModels, total, err := listOp.ExecWithTotal()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	knowledgeBases := make([]*dto.KnowledgeBaseResponse, 0, len(kbModels))
+	for _, kb := range kbModels {
+		kbResp := dto.NewKnowledgeBaseResponseFromModel(kb)
+
+		// 获取创建者姓名
+		user, err := s.userSrvc.GetByID(kb.CreatorUserID)
+		if err == nil && user != nil {
+			kbResp.CreatorName = user.Username
+		}
+
+		// 获取文档数量
+		docCount, err := repository.DocKnowledgeRelationRepo.CountDocsByKnowledgeID(kb.ID).Exec()
+		if err == nil {
+			kbResp.DocumentsCount = int(docCount)
+		}
+
+		knowledgeBases = append(knowledgeBases, kbResp)
+	}
+
+	return knowledgeBases, int(total), nil
 }
 
 func (s *KnowledgeBaseService) GetIDByExternalID(externalID string) (int64, error) {

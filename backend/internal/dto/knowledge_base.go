@@ -20,6 +20,8 @@ type KnowledgeBaseBase struct {
 
 type KnowledgeBaseResponse struct {
 	KnowledgeBaseBase
+	CreatorName    string `json:"creator_name"`
+	DocumentsCount int    `json:"documents_count"`
 }
 
 func NewKnowledgeBaseResponseFromModel(kb *model.KnowledgeBase) *KnowledgeBaseResponse {
@@ -35,6 +37,8 @@ func NewKnowledgeBaseResponseFromModel(kb *model.KnowledgeBase) *KnowledgeBaseRe
 			UpdatedAt:     kb.UpdatedAt,
 			DeletedAt:     kb.DeletedAt,
 		},
+		CreatorName:    "", // Will be populated later
+		DocumentsCount: 0,  // Will be populated later
 	}
 
 	return response

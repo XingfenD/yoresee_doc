@@ -15,6 +15,7 @@ import (
 type ListKnowledgeBasesResponse struct {
 	api_base.BaseResponse
 	KnowledgeBases []*dto.KnowledgeBaseResponse `json:"knowledge_bases"`
+	Total          int                          `json:"total"`
 }
 
 type ListKnowledgeBasesArgs_OrderBy string
@@ -103,7 +104,7 @@ func (h *ListKnowledgeBasesHandler) handle(ctx context.Context, req api_base.Req
 	}
 
 	// TODO: permission check
-	kbModels, err := service.KnowledgeBaseSvc.ListByExternal(
+	kbModels, total, err := service.KnowledgeBaseSvc.ListByExternal(
 		listKBsReq.BuildServiceReq(userExternalID),
 	)
 	if err != nil {
@@ -113,6 +114,7 @@ func (h *ListKnowledgeBasesHandler) handle(ctx context.Context, req api_base.Req
 	return &ListKnowledgeBasesResponse{
 		BaseResponse:   api_base.GenBaseRespWithErr(status.StatusSuccess),
 		KnowledgeBases: kbModels,
+		Total:          total,
 	}, nil
 }
 
