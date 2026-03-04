@@ -9,7 +9,6 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/types"
-	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -135,9 +134,7 @@ func (apiOptions *ListDocumentsOptions) ToServiceOptions() *service.ListDocument
 	serviceOptions := &service.ListDocumentsOptions{
 		IncludeChildren: apiOptions.IncludeChildren,
 		Recursive:       apiOptions.Recursive,
-	}
-	if apiOptions.WithDepthLimitation {
-		serviceOptions.Depth = utils.Of(apiOptions.Depth)
+		Depth:           apiOptions.Depth,
 	}
 	return serviceOptions
 }
