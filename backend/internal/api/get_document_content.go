@@ -33,6 +33,8 @@ func (h *GetDocumentContentHandler) handle(ctx context.Context, req api_base.Req
 	// 	return nil, status.StatusUserNotFound
 	// }
 
+	// TODO： permission check
+
 	document, err := service.DocumentSvc.GetDocumentByExternalID(getDocReq.DocumentExternalID)
 	if err != nil {
 		return nil, status.StatusDocumentNotFound

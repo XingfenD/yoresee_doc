@@ -5,6 +5,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 )
 
 type DocumentService struct {
@@ -149,7 +150,7 @@ func (s *DocumentService) ListDocuments(req *DocumentsListReq) ([]*dto.DocumentR
 type ListDocumentsOptions struct {
 	IncludeChildren bool `json:"include_children"`
 	Recursive       bool `json:"recursive"`
-	Depth           int  `json:"depth"`
+	Depth           *int `json:"depth"`
 }
 
 func (s *DocumentService) GetChildDocuments(parentID int64, options *ListDocumentsOptions) ([]*dto.DocumentResponse, error) {
@@ -165,11 +166,13 @@ func (s *DocumentService) GetChildDocuments(parentID int64, options *ListDocumen
 	for i, model := range models {
 		childResponses[i] = s.ConvertToDocumentResponse(&model)
 
-		if options != nil && options.Recursive && (options.Depth <= 0 || options.Depth > 1) {
+		if options != nil && options.Recursive && (options.Depth == nil || *options.Depth <= 0 || *options.Depth > 1) {
 			subOptions := &ListDocumentsOptions{
 				IncludeChildren: options.IncludeChildren,
 				Recursive:       options.Recursive,
-				Depth:           options.Depth - 1,
+			}
+			if options.Depth != nil {
+				subOptions.Depth = utils.Of(*options.Depth - 1)
 			}
 			grandChildren, err := s.GetChildDocuments(model.ID, subOptions)
 			if err == nil {

@@ -9,6 +9,7 @@ var SystemInfoHandlerImpl = &SystemInfoHandler{}
 var GetDocumentContentHandlerImpl = &GetDocumentContentHandler{}
 var ListDocumentsHandlerImpl = &ListDocumentsHandler{}
 var ListKnowledgeBasesHandlerImpl = &ListKnowledgeBasesHandler{}
+var GetKnowledgeBaseHandlerImpl = &GetKnowledgeBaseHandler{}
 
 type HealthHandler struct{}
 type TestProtectedHandler struct{}
@@ -19,3 +20,4 @@ type SystemInfoHandler struct{}
 type GetDocumentContentHandler struct{}
 type ListDocumentsHandler struct{}
 type ListKnowledgeBasesHandler struct{}
+type GetKnowledgeBaseHandler struct{}

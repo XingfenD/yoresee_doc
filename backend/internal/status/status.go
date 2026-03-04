@@ -33,9 +33,10 @@ func GenErrWithCustomMsg(err error, msg string) error {
 var (
 	StatusSuccess = NewStatusErr(20000, "success")
 
-	StatusParamError   = NewStatusErr(40000, "invalid parameter")
-	StatusTokenInvalid = NewStatusErr(40001, "invalid token")
-	StatusTokenExpired = NewStatusErr(40002, "token expired")
+	StatusParamError       = NewStatusErr(40000, "invalid parameter")
+	StatusTokenInvalid     = NewStatusErr(40001, "invalid token")
+	StatusTokenExpired     = NewStatusErr(40002, "token expired")
+	StatusPermissionDenied = NewStatusErr(40003, "permission denied")
 
 	StatusUserNotFound      = NewStatusErr(40100, "user not found")
 	StatusUserAlreadyExists = NewStatusErr(40101, "user already exists")
@@ -45,10 +46,14 @@ var (
 	StatusMembershipMetaNotFound = NewStatusErr(40140, "membership meta not found")
 	StatusInvalidMembershipType  = NewStatusErr(40141, "invalid membership type")
 
+	StatusKnowledgeBaseNotFound = NewStatusErr(40150, "knowledge base not found")
+
 	StatusInvitationInvalid = NewStatusErr(40200, "invitation invalid")
 
 	StatusPermissionDenied_DocumentRead = NewStatusErr(40300, "permission denied for reading document")
 
 	StatusWriteDBError = NewStatusErr(50000, "write db error")
 	StatusReadDBError  = NewStatusErr(50001, "read db error")
+
+	StatusInternalParamsError = NewStatusErr(50010, "invalid internal arguments")
 )

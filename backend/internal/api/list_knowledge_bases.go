@@ -97,6 +97,7 @@ func (h *ListKnowledgeBasesHandler) handle(ctx context.Context, req api_base.Req
 		return nil, status.StatusParamError
 	}
 
+	// TODO: permission check
 	kbModels, err := service.KnowledgeBaseSvc.ListByExternal(
 		listKBsReq.BuildServiceReq(),
 	)

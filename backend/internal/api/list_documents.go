@@ -9,6 +9,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/types"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,9 +19,10 @@ type ListDocumentsResponse struct {
 }
 
 type ListDocumentsOptions struct {
-	IncludeChildren bool `json:"include_children"`
-	Recursive       bool `json:"recursive"`
-	Depth           int  `json:"depth"`
+	IncludeChildren     bool `json:"include_children" form:"include_children"`
+	Recursive           bool `json:"recursive" form:"recursive"`
+	WithDepthLimitation bool `json:"with_depth_limitation" form:"with_depth_limitation"`
+	Depth               int  `json:"depth" form:"depth"`
 }
 
 type ListDocumentsArgs_OrderBy string
@@ -130,11 +132,14 @@ func (apiOptions *ListDocumentsOptions) ToServiceOptions() *service.ListDocument
 	if apiOptions == nil {
 		return nil
 	}
-	return &service.ListDocumentsOptions{
+	serviceOptions := &service.ListDocumentsOptions{
 		IncludeChildren: apiOptions.IncludeChildren,
 		Recursive:       apiOptions.Recursive,
-		Depth:           apiOptions.Depth,
 	}
+	if apiOptions.WithDepthLimitation {
+		serviceOptions.Depth = utils.Of(apiOptions.Depth)
+	}
+	return serviceOptions
 }
 
 func (h *ListDocumentsHandler) GinHandle() gin.HandlerFunc {
