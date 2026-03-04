@@ -28,14 +28,14 @@ type KnowledgeBaseListFilterArgs struct {
 	UpdateTimeRangeEnd   *string `json:"update_time_range_end"`
 }
 
-type KnowledgeBaseListReq struct {
+type knowledgeBaseListReq struct {
 	CreatorID  *int64                       `json:"creator_id"`
 	FilterArgs *KnowledgeBaseListFilterArgs `json:"filter_args"`
 	SortArgs   SortArgs                     `json:"sort_args"`
 	Pagination Pagination                   `json:"pagination"`
 }
 
-func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *KnowledgeBaseListReq) (*repository.ListKnowledgeBaseOperation, error) {
+func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *knowledgeBaseListReq) (*repository.ListKnowledgeBaseOperation, error) {
 	if s == nil || s.knowledgeBaseRepo == nil {
 		return nil, status.StatusServiceInternalError
 	}
@@ -54,7 +54,7 @@ func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *KnowledgeBas
 	return op, nil
 }
 
-func (s *KnowledgeBaseService) List(req *KnowledgeBaseListReq) ([]*dto.KnowledgeBaseResponse, error) {
+func (s *KnowledgeBaseService) list(req *knowledgeBaseListReq) ([]*dto.KnowledgeBaseResponse, error) {
 	listOp, err := s.buildListKnowledgeBaseOperation(req)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (s *KnowledgeBaseService) List(req *KnowledgeBaseListReq) ([]*dto.Knowledge
 
 	knowledgeBases := make([]*dto.KnowledgeBaseResponse, 0, len(kbModels))
 	for _, kb := range kbModels {
-		knowledgeBases = append(knowledgeBases, dto.NewKnowledgeBaseResponseFromModel(kb))
+		knowledgeBases = append(knowledgeBases, dto.NewKnowledgeBaseResponseFromModel(kb, nil))
 	}
 
 	return knowledgeBases, nil
@@ -89,7 +89,7 @@ func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalRe
 		creatorID = &id
 	}
 
-	listOp, err := s.buildListKnowledgeBaseOperation(&KnowledgeBaseListReq{
+	listOp, err := s.buildListKnowledgeBaseOperation(&knowledgeBaseListReq{
 		CreatorID:  creatorID,
 		FilterArgs: req.FilterArgs,
 		SortArgs:   req.SortArgs,
@@ -106,7 +106,7 @@ func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalRe
 
 	knowledgeBases := make([]*dto.KnowledgeBaseResponse, 0, len(kbModels))
 	for _, kb := range kbModels {
-		kbResp := dto.NewKnowledgeBaseResponseFromModel(kb)
+		kbResp := dto.NewKnowledgeBaseResponseFromModel(kb, nil)
 
 		// 获取创建者姓名
 		user, err := s.userSrvc.GetByID(kb.CreatorUserID)
@@ -134,17 +134,17 @@ func (s *KnowledgeBaseService) GetIDByExternalID(externalID string) (int64, erro
 	return id, nil
 }
 
-type KnowledgeBaseGetReq struct {
+type KnowledgeBaseGetByExternalIDReq struct {
 	KnowledgeBaseExternalID string `json:"knowledge_base_external_id"`
 }
 
-func (s *KnowledgeBaseService) Get(req *KnowledgeBaseGetReq) (*dto.KnowledgeBaseResponse, error) {
+func (s *KnowledgeBaseService) GetByExternalID(req *KnowledgeBaseGetByExternalIDReq) (*dto.KnowledgeBaseResponse, error) {
 	kbModel, err := s.knowledgeBaseRepo.GetByExternalID(req.KnowledgeBaseExternalID).Exec()
 	if err != nil {
 		return nil, err
 	}
 
-	return dto.NewKnowledgeBaseResponseFromModel(kbModel), nil
+	return dto.NewKnowledgeBaseResponseFromModel(kbModel, nil), nil
 }
 
 func (s *KnowledgeBaseService) CreateRecentKnowledgeBase(req *dto.CreateRecentKnowledgeBaseRequest) error {

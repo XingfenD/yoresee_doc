@@ -32,12 +32,7 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "user not logged in")
 	}
 
-	userID, err := service.UserSvc.GetIDByExternalID(userExternalID)
-	if err != nil {
-		return nil, status.StatusUserNotFound
-	}
-
-	knowledgeBaseDTO, err := service.KnowledgeBaseSvc.Get(&service.KnowledgeBaseGetReq{
+	knowledgeBaseDTO, err := service.KnowledgeBaseSvc.GetByExternalID(&service.KnowledgeBaseGetByExternalIDReq{
 		KnowledgeBaseExternalID: getKnowledgeBaseReq.KnowledgeBaseExternalID,
 	})
 	if err != nil {
@@ -45,7 +40,7 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 	}
 
 	if !knowledgeBaseDTO.IsPublic {
-		if knowledgeBaseDTO.CreatorUserID != userID {
+		if knowledgeBaseDTO.CreatorUserExternalID != userExternalID {
 			return nil, status.StatusPermissionDenied
 		}
 		// TODO: permission check
