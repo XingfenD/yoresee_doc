@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ElMessage } from 'element-plus';
 
 // 创建axios实例
 const api = axios.create({
@@ -69,9 +70,25 @@ api.interceptors.response.use(
   }
 );
 
+// 统一处理响应
+function handleResponse(response) {
+  if (response.data && response.data.code === 20000) {
+    return response.data
+  } else {
+    const errorMessage = response.data?.message || '请求失败'
+    ElMessage.error(errorMessage)
+    throw new Error(errorMessage)
+  }
+}
+
 // 获取知识库列表
 export const getKnowledgeBases = (params) => {
-  return api.get('/api/knowledge-bases', { params });
+  return api.get('/api/knowledge-bases', { params }).then(handleResponse)
+};
+
+// 获取知识库详情
+export const getKnowledgeBaseDetail = (knowledgeBaseExternalID, params = {}) => {
+  return api.get(`/api/knowledge-base/${knowledgeBaseExternalID}`, { params }).then(handleResponse)
 };
 
 export default api;

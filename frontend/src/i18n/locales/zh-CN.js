@@ -91,7 +91,12 @@ export default {
     saveSuccess: '保存成功',
     deleteSuccess: '删除成功',
     networkError: '网络错误，请稍后再试',
-    empty: '暂无文档'
+    empty: '暂无文档',
+    knowledgeBaseNotFound: '知识库ID不存在',
+    loadKnowledgeBaseError: '加载知识库详情失败，请稍后重试',
+    openDocument: '打开文档',
+    renameDocument: '重命名文档',
+    shareDocument: '分享文档'
   },
   language: {
     english: 'English',
@@ -153,7 +158,20 @@ export default {
     recent: '最近访问',
     my: '我的知识库',
     noRecent: '暂无最近访问的知识库',
-    createComingSoon: '创建功能即将上线！'
+    createComingSoon: '创建功能即将上线！',
+    // 详情页面翻译
+    createDocument: '创建文档',
+    createDocumentSuccess: '文档创建成功',
+    treeRefreshed: '树形结构已刷新',
+    documentStructure: '文档结构',
+    searchDocuments: '搜索文档...',
+    sortBy: '排序方式',
+    sortByName: '按名称',
+    sortByDate: '按日期',
+    sortByType: '按类型',
+    lastUpdated: '最后更新',
+    owner: '所有者',
+    noDocuments: '暂无文档'
   },
   common: {
     yes: '是',

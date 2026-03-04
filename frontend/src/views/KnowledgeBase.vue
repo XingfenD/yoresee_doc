@@ -291,8 +291,7 @@ const fetchMyKnowledgeBases = async (page = 1, pageSize = 10) => {
       user_external_id: userInfo.value?.external_id,
     }
 
-    const response = await api.getKnowledgeBases(params)
-    const data = response.data
+    const data = await api.getKnowledgeBases(params)
 
     if (page === 1) {
       myKnowledgeBases.value = data.knowledge_bases || []
@@ -322,8 +321,7 @@ const fetchPublicKnowledgeBases = async (page = 1, pageSize = 10) => {
       is_public: true  // 获取公开知识库
     }
 
-    const response = await api.getKnowledgeBases(params)
-    const data = response.data
+    const data = await api.getKnowledgeBases(params)
 
     if (page === 1) {
       publicKnowledgeBases.value = data.knowledge_bases || []
@@ -381,7 +379,6 @@ const viewKnowledgeBase = (kb) => {
 const accessKnowledgeBase = (kb) => {
   // 跳转到知识库详情页面
   router.push(`/knowledge-base/${kb.externalId}`)
-  ElMessage.success(t('knowledgeBase.accessSuccess', { name: kb.name }))
 }
 
 // 处理菜单选择

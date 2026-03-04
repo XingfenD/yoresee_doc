@@ -93,7 +93,12 @@ export default {
     saveSuccess: 'Saved successfully',
     deleteSuccess: 'Deleted successfully',
     networkError: 'Network error, please try again later',
-    empty: 'No documents found'
+    empty: 'No documents found',
+    knowledgeBaseNotFound: 'Knowledge base ID not found',
+    loadKnowledgeBaseError: 'Failed to load knowledge base details, please try again later',
+    openDocument: 'Open document',
+    renameDocument: 'Rename document',
+    shareDocument: 'Share document'
   },
   language: {
     english: 'English',
@@ -155,7 +160,20 @@ export default {
     recent: 'Recent Access',
     my: 'My Knowledge Bases',
     noRecent: 'No recent knowledge bases',
-    createComingSoon: 'Create feature coming soon!'
+    createComingSoon: 'Create feature coming soon!',
+    // Detail page translations
+    createDocument: 'Create Document',
+    createDocumentSuccess: 'Document created successfully',
+    treeRefreshed: 'Tree structure refreshed',
+    documentStructure: 'Document Structure',
+    searchDocuments: 'Search documents...',
+    sortBy: 'Sort by',
+    sortByName: 'By Name',
+    sortByDate: 'By Date',
+    sortByType: 'By Type',
+    lastUpdated: 'Last Updated',
+    owner: 'Owner',
+    noDocuments: 'No documents'
   },
   common: {
     yes: 'Yes',

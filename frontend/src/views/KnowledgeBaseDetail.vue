@@ -91,8 +91,8 @@
                 </div>
 
                 <!-- 知识库详情内容 -->
-                <div class="detail-content">
-                    <div class="kb-info-card">
+                <div class="detail-content" v-loading="loading">
+                    <div class="kb-info-card" v-if="knowledgeBaseData">
                         <h2 class="kb-title">{{ knowledgeBaseName }}</h2>
                         <p class="kb-description">{{ knowledgeBaseDescription }}</p>
 
@@ -117,6 +117,9 @@
                             </div>
                         </div>
                     </div>
+                    <div v-else-if="!loading" class="empty-state">
+                        <el-empty :description="t('message.empty')" />
+                    </div>
 
                     <!-- 文档树形结构 -->
                     <div class="document-tree-section">
@@ -135,10 +138,10 @@
                             </div>
                         </div>
 
-                        <div class="tree-content">
-                            <el-tree :data="documentTreeData" :props="treeProps" node-key="id"
-                                :default-expand-all="false" :expand-on-click-node="false" :accordion="true"
-                                @node-click="handleTreeNodeClick" class="custom-tree">
+                        <div class="tree-content" v-loading="loading">
+                            <el-tree v-if="documentTreeData.length > 0" :data="documentTreeData" :props="treeProps"
+                                node-key="id" :default-expand-all="false" :expand-on-click-node="false"
+                                :accordion="true" @node-click="handleTreeNodeClick" class="custom-tree">
                                 <template #default="{ node, data }">
                                     <div class="tree-node-content">
                                         <div class="node-icon">
@@ -189,6 +192,9 @@
                                     </div>
                                 </template>
                             </el-tree>
+                            <div v-else-if="!loading" class="empty-tree-state">
+                                <el-empty :description="t('knowledgeBase.noDocuments')" :image-size="64" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -204,6 +210,7 @@ import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import SideNav from '@/components/SideNav.vue'
+import { getKnowledgeBaseDetail } from '@/services/api.js'
 import {
     ArrowDown,
     House,
@@ -246,11 +253,13 @@ const userInfo = computed(() => userStore.userInfo)
 const userAvatar = ref('')
 
 // 知识库信息
-const knowledgeBaseName = ref('项目知识库')
-const knowledgeBaseDescription = ref('项目相关的技术文档和规范')
-const totalDocuments = ref(24)
-const lastUpdated = ref('2024-01-15T09:00:00Z')
-const ownerName = ref('张三')
+const knowledgeBaseName = ref('')
+const knowledgeBaseDescription = ref('')
+const totalDocuments = ref(0)
+const lastUpdated = ref('')
+const ownerName = ref('')
+const knowledgeBaseData = ref(null)
+const loading = ref(false)
 
 // 文档树相关
 const searchKeyword = ref('')
@@ -263,245 +272,73 @@ const sortOptions = ref([
 
 
 
-// 模拟文档树数据 - 体现父文档和子文档的关系
+// 文档树数据 - 从API获取
+const documentTreeData = computed(() => {
+    if (!knowledgeBaseData.value || !knowledgeBaseData.value.documents) {
+        return []
+    }
+
+    return knowledgeBaseData.value.documents.map(doc => ({
+        id: doc.external_id,
+        name: doc.title,
+        type: doc.type,
+        isParent: doc.hasChildren || (doc.children && doc.children.length > 0),
+        children: doc.children ? doc.children.map(child => ({
+            id: child.external_id,
+            name: child.title,
+            type: child.type,
+            isParent: false,
+            tags: child.tags || [],
+            size: '0 MB', // 后端没有返回大小信息
+            modified: child.updated_at,
+            external_id: child.external_id
+        })) : [],
+        tags: doc.tags || [],
+        size: '0 MB', // 后端没有返回大小信息
+        modified: doc.updated_at,
+        external_id: doc.external_id
+    }))
+})
 
 const treeProps = {
     children: 'children',
     label: 'name'
 }
 
-const documentTreeData = ref([
-    {
-        id: 1,
-        name: '项目启动文档',
-        type: 'document',
-        isParent: true, // 表明这是一个父文档
-        children: [
-            {
-                id: 11,
-                name: '项目章程',
-                type: 'document',
-                isParent: false,
-                tags: ['重要'],
-                size: '2.4 MB',
-                modified: '2024-01-15T09:00:00Z'
-            },
-            {
-                id: 12,
-                name: '项目范围说明书',
-                type: 'document',
-                isParent: false,
-                tags: ['重要'],
-                size: '1.8 MB',
-                modified: '2024-01-14T14:30:00Z'
-            }
-        ],
-        tags: ['重要'],
-        size: '4.2 MB',
-        modified: '2024-01-15T09:00:00Z'
-    },
-    {
-        id: 2,
-        name: '需求分析',
-        type: 'document',
-        isParent: true,
-        children: [
-            {
-                id: 21,
-                name: '功能需求',
-                type: 'document',
-                isParent: false,
-                tags: ['需求'],
-                size: '1.2 MB',
-                modified: '2024-01-13T11:20:00Z'
-            },
-            {
-                id: 22,
-                name: '非功能需求',
-                type: 'document',
-                isParent: false,
-                tags: ['需求'],
-                size: '0.6 MB',
-                modified: '2024-01-12T16:45:00Z'
-            }
-        ],
-        tags: ['需求'],
-        size: '1.8 MB',
-        modified: '2024-01-13T11:20:00Z'
-    },
-    {
-        id: 3,
-        name: '产品路线图',
-        type: 'document',
-        isParent: false,
-        tags: ['计划'],
-        size: '0.5 MB',
-        modified: '2024-01-11T10:15:00Z'
-    },
-    {
-        id: 4,
-        name: '系统架构',
-        type: 'document',
-        isParent: true,
-        children: [
-            {
-                id: 41,
-                name: '系统架构图',
-                type: 'document',
-                isParent: false,
-                tags: ['设计'],
-                size: '3.2 MB',
-                modified: '2024-01-10T16:45:00Z'
-            },
-            {
-                id: 42,
-                name: '数据库设计规范',
-                type: 'document',
-                isParent: false,
-                tags: ['规范'],
-                size: '0.3 MB',
-                modified: '2024-01-09T10:15:00Z'
-            },
-            {
-                id: 43,
-                name: '接口设计规范',
-                type: 'document',
-                isParent: false,
-                tags: ['规范'],
-                size: '0.4 MB',
-                modified: '2024-01-08T14:20:00Z'
-            }
-        ],
-        tags: ['设计'],
-        size: '3.9 MB',
-        modified: '2024-01-10T16:45:00Z'
-    },
-    {
-        id: 5,
-        name: 'API文档',
-        type: 'document',
-        isParent: true,
-        children: [
-            {
-                id: 51,
-                name: '用户服务API',
-                type: 'document',
-                isParent: false,
-                tags: ['API'],
-                size: '1.1 MB',
-                modified: '2024-01-07T09:30:00Z'
-            },
-            {
-                id: 52,
-                name: '订单服务API',
-                type: 'document',
-                isParent: false,
-                tags: ['API'],
-                size: '0.9 MB',
-                modified: '2024-01-06T15:20:00Z'
-            }
-        ],
-        tags: ['API'],
-        size: '2.0 MB',
-        modified: '2024-01-07T09:30:00Z'
-    },
-    {
-        id: 6,
-        name: '开发规范',
-        type: 'document',
-        isParent: true,
-        children: [
-            {
-                id: 61,
-                name: '前端开发规范',
-                type: 'document',
-                isParent: false,
-                tags: ['规范'],
-                size: '0.2 MB',
-                modified: '2024-01-05T14:10:00Z'
-            },
-            {
-                id: 62,
-                name: '后端开发规范',
-                type: 'document',
-                isParent: false,
-                tags: ['规范'],
-                size: '0.3 MB',
-                modified: '2024-01-05T13:05:00Z'
-            }
-        ],
-        tags: ['规范'],
-        size: '0.5 MB',
-        modified: '2024-01-05T14:10:00Z'
-    },
-    {
-        id: 7,
-        name: '测试文档',
-        type: 'document',
-        isParent: true,
-        children: [
-            {
-                id: 71,
-                name: '测试计划',
-                type: 'document',
-                isParent: false,
-                tags: ['测试'],
-                size: '0.8 MB',
-                modified: '2024-01-04T10:45:00Z'
-            },
-            {
-                id: 72,
-                name: '测试用例',
-                type: 'document',
-                isParent: false,
-                tags: ['测试'],
-                size: '1.5 MB',
-                modified: '2024-01-03T16:30:00Z'
-            },
-            {
-                id: 73,
-                name: '测试报告',
-                type: 'document',
-                isParent: false,
-                tags: ['测试'],
-                size: '2.1 MB',
-                modified: '2024-01-02T12:20:00Z'
-            }
-        ],
-        tags: ['测试'],
-        size: '4.4 MB',
-        modified: '2024-01-04T10:45:00Z'
-    },
-    {
-        id: 8,
-        name: '会议纪要',
-        type: 'document',
-        isParent: true,
-        children: [
-            {
-                id: 81,
-                name: '第1周会议纪要',
-                type: 'document',
-                isParent: false,
-                tags: ['会议'],
-                size: '0.2 MB',
-                modified: '2024-01-01T11:00:00Z'
-            },
-            {
-                id: 82,
-                name: '第2周会议纪要',
-                type: 'document',
-                isParent: false,
-                tags: ['会议'],
-                size: '0.2 MB',
-                modified: '2023-12-31T11:00:00Z'
-            }
-        ],
-        tags: ['会议'],
-        size: '0.4 MB',
-        modified: '2024-01-01T11:00:00Z'
+// 加载知识库详情数据
+const loadKnowledgeBaseDetail = async () => {
+    const knowledgeBaseExternalID = route.params.id
+    if (!knowledgeBaseExternalID) {
+        ElMessage.error(t('message.knowledgeBaseNotFound'))
+        return
     }
-])
+
+    loading.value = true
+    try {
+        // 调用API获取知识库详情，同时记录最近访问
+        const data = await getKnowledgeBaseDetail(knowledgeBaseExternalID, {
+            record_recent_log: true
+        })
+
+        knowledgeBaseData.value = data
+
+        // 更新知识库信息
+        if (data.knowledge_base) {
+            knowledgeBaseName.value = data.knowledge_base.name
+            knowledgeBaseDescription.value = data.knowledge_base.description
+            lastUpdated.value = data.knowledge_base.updated_at
+            totalDocuments.value = data.documents ? data.documents.length : 0
+            ownerName.value = data.knowledge_base.owner_name || '未知用户'
+        }
+
+
+    } catch (error) {
+        console.error('加载知识库详情失败:', error)
+        ElMessage.error(t('message.loadKnowledgeBaseError'))
+    } finally {
+        loading.value = false
+    }
+}
 
 // 创建文档
 const createDocument = () => {
@@ -510,7 +347,8 @@ const createDocument = () => {
 
 // 刷新树
 const refreshTree = () => {
-    ElMessage.info(t('knowledgeBase.treeRefreshed'))
+    loadKnowledgeBaseDetail()
+    ElMessage.success(t('knowledgeBase.treeRefreshed'))
 }
 
 // 格式化日期
@@ -529,7 +367,7 @@ const handleTreeNodeClick = (data) => {
 
 // 打开文档
 const openDocument = (data) => {
-    ElMessage.success(`${t('common.open')} ${data.name}`)
+    ElMessage.success(`${t('message.openDocument')}: ${data.name}`)
     console.log('Opening document:', data)
 }
 
@@ -537,10 +375,10 @@ const openDocument = (data) => {
 const handleNodeAction = (command, data) => {
     switch (command) {
         case 'rename':
-            ElMessage.info(`${t('common.rename')} ${data.name}`)
+            ElMessage.info(`${t('message.renameDocument')}: ${data.name}`)
             break
         case 'share':
-            ElMessage.info(`${t('document.share')} ${data.name}`)
+            ElMessage.info(`${t('message.shareDocument')}: ${data.name}`)
             break
         case 'delete':
             ElMessage.confirm(
@@ -622,9 +460,8 @@ onMounted(async () => {
     initTheme()
     initLanguage()
 
-    // 设置当前知识库ID
-    const kbId = route.params.id
-    console.log('Current knowledge base ID:', kbId)
+    // 加载知识库详情数据
+    await loadKnowledgeBaseDetail()
 })
 </script>
 
@@ -953,6 +790,29 @@ onMounted(async () => {
     background-color: var(--input-bg);
     border-color: var(--input-border);
     color: var(--input-text);
+}
+
+/* 空状态样式 */
+.empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    background-color: var(--bg-white);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.empty-tree-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    background-color: var(--bg-white);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
 }
 
 .dark-mode .sort-select :deep(.el-input__wrapper) {
