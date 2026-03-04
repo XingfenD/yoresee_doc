@@ -31,6 +31,7 @@ func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
 		return nil, status.StatusTokenInvalid
 	}
 
+	// TODO: jwt + redis
 	if jwtValidator.IsExpired(claims) {
 		return nil, status.StatusTokenExpired
 	}
