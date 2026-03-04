@@ -9,11 +9,13 @@ import (
 
 type KnowledgeBaseService struct {
 	knowledgeBaseRepo *repository.KnowledgeBaseRepository
+	userSrvc          *UserService
 }
 
 func NewKnowledgeBaseService() *KnowledgeBaseService {
 	return &KnowledgeBaseService{
 		knowledgeBaseRepo: repository.KnowledgeBaseRepo,
+		userSrvc:          UserSvc,
 	}
 }
 
@@ -70,6 +72,51 @@ func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalRe
 		SortArgs:   req.SortArgs,
 		Pagination: req.Pagination,
 	})
+}
+
+func (s *KnowledgeBaseService) GetIDByExternalID(externalID string) (int64, error) {
+	id, err := s.knowledgeBaseRepo.GetIDByExternalID(externalID).Exec()
+	if err != nil {
+		return 0, status.StatusKnowledgeBaseNotFound
+	}
+	return id, nil
+}
+
+type KnowledgeBaseGetReq struct {
+	KnowledgeBaseExternalID string `json:"knowledge_base_external_id"`
+}
+
+func (s *KnowledgeBaseService) Get(req *KnowledgeBaseGetReq) (*dto.KnowledgeBaseResponse, error) {
+	kbModel, err := s.knowledgeBaseRepo.GetByExternalID(req.KnowledgeBaseExternalID).Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.NewKnowledgeBaseResponseFromModel(kbModel), nil
+}
+
+func (s *KnowledgeBaseService) CreateRecentKnowledgeBase(req *dto.CreateRecentKnowledgeBaseRequest) error {
+	userID, err := s.userSrvc.GetIDByExternalID(req.UserExternalID)
+	if err != nil {
+		return status.StatusUserNotFound
+	}
+
+	knowledgeBaseID, err := s.GetIDByExternalID(req.KnowledgeBaseExternalID)
+	if err != nil {
+		return status.StatusKnowledgeBaseNotFound
+	}
+
+	err = s.knowledgeBaseRepo.CreateRecentKnowledgeBase(&model.RecentKnowledgeBase{
+		UserID:          userID,
+		KnowledgeBaseID: knowledgeBaseID,
+		AccessedAt:      req.AssessTime,
+	}).Exec()
+
+	if err != nil {
+		return status.StatusWriteDBError
+	}
+
+	return nil
 }
 
 var KnowledgeBaseSvc = NewKnowledgeBaseService()

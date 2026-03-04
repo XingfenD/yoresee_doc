@@ -4,6 +4,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
+	"github.com/XingfenD/yoresee_doc/internal/status"
 )
 
 type DocumentService struct {
@@ -104,20 +105,36 @@ type DocumentsListFilterArgs struct {
 	UpdateTimeRangeEnd   *string  `json:"update_time_range_end"`
 }
 
+func (s *DocumentService) buildListDocumentsOperation(req *DocumentsListReq) (*repository.DocumentsListOperation, error) {
+	if req == nil {
+		return nil, status.StatusInternalParamsError
+	}
+	listOp := s.documentRepo.ListDocuments(&model.DocumentMeta{})
+	if req.MetaArgs != nil {
+		listOp = listOp.WithUserID(req.MetaArgs.UserID).
+			WithParentID(req.MetaArgs.ParentID).
+			WithKnowledgeID(req.MetaArgs.KnowledgeID)
+	}
+	if req.FilterArgs != nil {
+		listOp = listOp.WithTitleKeyword(req.FilterArgs.TitleKeyword).
+			WithType(req.FilterArgs.DocType).
+			WithStatus(req.FilterArgs.Status).
+			WithTags(req.FilterArgs.Tags).
+			WithCreateTimeRange(req.FilterArgs.CreateTimeRangeStart, req.FilterArgs.CreateTimeRangeEnd).
+			WithUpdateTimeRange(req.FilterArgs.UpdateTimeRangeStart, req.FilterArgs.UpdateTimeRangeEnd)
+	}
+	listOp = listOp.WithSort(req.SortArgs.Field, req.SortArgs.Desc).
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize)
+
+	return listOp, nil
+}
+
 func (s *DocumentService) ListDocuments(req *DocumentsListReq) ([]*dto.DocumentResponse, int64, error) {
-	models, total, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
-		WithUserID(req.MetaArgs.UserID).
-		WithParentID(req.MetaArgs.ParentID).
-		WithKnowledgeID(req.MetaArgs.KnowledgeID).
-		WithTitleKeyword(req.FilterArgs.TitleKeyword).
-		WithType(req.FilterArgs.DocType).
-		WithStatus(req.FilterArgs.Status).
-		WithTags(req.FilterArgs.Tags).
-		WithCreateTimeRange(req.FilterArgs.CreateTimeRangeStart, req.FilterArgs.CreateTimeRangeEnd).
-		WithUpdateTimeRange(req.FilterArgs.UpdateTimeRangeStart, req.FilterArgs.UpdateTimeRangeEnd).
-		WithSort(req.SortArgs.Field, req.SortArgs.Desc).
-		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
-		ExecWithTotal()
+	listOp, err := s.buildListDocumentsOperation(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	models, total, err := listOp.ExecWithTotal()
 
 	if err != nil {
 		return nil, 0, err
@@ -173,18 +190,11 @@ func (s *DocumentService) ListDocumentsWithChildren(req *DocumentsListReq) ([]*d
 		return nil, 0, err
 	}
 	if req.Options != nil && req.Options.IncludeChildren {
-		models, _, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
-			WithUserID(req.MetaArgs.UserID).
-			WithParentID(req.MetaArgs.ParentID).
-			WithTitleKeyword(req.FilterArgs.TitleKeyword).
-			WithType(req.FilterArgs.DocType).
-			WithStatus(req.FilterArgs.Status).
-			WithTags(req.FilterArgs.Tags).
-			WithCreateTimeRange(req.FilterArgs.CreateTimeRangeStart, req.FilterArgs.CreateTimeRangeEnd).
-			WithUpdateTimeRange(req.FilterArgs.UpdateTimeRangeStart, req.FilterArgs.UpdateTimeRangeEnd).
-			WithSort(req.SortArgs.Field, req.SortArgs.Desc).
-			WithPagination(req.Pagination.Page, req.Pagination.PageSize).
-			ExecWithTotal()
+		listOp, err := s.buildListDocumentsOperation(req)
+		if err != nil {
+			return nil, 0, err
+		}
+		models, _, err := listOp.ExecWithTotal()
 		if err != nil {
 			return nil, 0, err
 		}
@@ -221,13 +231,13 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *ListDocuments
 		userID = &id
 	}
 
-	var parentID *int64
+	var parentID int64
 	if req.ExternalArgs.RootDocumentExternalID != nil && *req.ExternalArgs.RootDocumentExternalID != "" {
 		doc, err := s.GetDocumentByExternalID(*req.ExternalArgs.RootDocumentExternalID)
 		if err != nil {
 			return nil, 0, err
 		}
-		parentID = &doc.ID
+		parentID = doc.ID
 	}
 
 	var knowledgeID *int64
@@ -243,7 +253,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *ListDocuments
 		&DocumentsListReq{
 			MetaArgs: &DocumentsListMetaArgs{
 				UserID:      userID,
-				ParentID:    parentID,
+				ParentID:    &parentID, // default to root
 				KnowledgeID: knowledgeID,
 			},
 			FilterArgs: req.FilterArgs,

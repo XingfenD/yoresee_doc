@@ -39,3 +39,9 @@ func NewKnowledgeBaseResponseFromModel(kb *model.KnowledgeBase) *KnowledgeBaseRe
 
 	return response
 }
+
+type CreateRecentKnowledgeBaseRequest struct {
+	UserExternalID          string
+	KnowledgeBaseExternalID string
+	AssessTime              time.Time
+}

@@ -164,7 +164,7 @@ func (op *KnowledgeBaseGetIDByExternalIDOperation) Exec() (int64, error) {
 	if op.tx == nil {
 		op.tx = storage.DB
 	}
-	err := op.tx.First(&model.KnowledgeBase{}, "external_id = ?", op.externalID).Pluck("id", &id).Error
+	err := op.tx.Model(&model.KnowledgeBase{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	if err != nil {
 		return 0, err
 	}
@@ -215,12 +215,16 @@ func (op *GetKnowledgeBaseByExternalIDOperation) WithTx(tx *gorm.DB) *GetKnowled
 	return op
 }
 
-func (op *GetKnowledgeBaseByExternalIDOperation) Exec() (knowledgeBase *model.KnowledgeBase, err error) {
+func (op *GetKnowledgeBaseByExternalIDOperation) Exec() (*model.KnowledgeBase, error) {
+	var knowledgeBase model.KnowledgeBase
 	if op.tx == nil {
 		op.tx = storage.DB
 	}
-	err = op.tx.First(knowledgeBase, "external_id = ?", op.externalID).Error
-	return
+	err := op.tx.First(&knowledgeBase, "external_id = ?", op.externalID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &knowledgeBase, nil
 }
 
 type CreateKnowledgeBaseOperation struct {
@@ -245,8 +249,8 @@ func (op *CreateKnowledgeBaseOperation) Exec() error {
 	if op.tx == nil {
 		op.tx = storage.DB
 	}
-	err := op.tx.Create(op.knowledgeBase).Error
-	return err
+
+	return op.tx.Create(op.knowledgeBase).Error
 }
 
 type DeleteKnowledgeBaseOperation struct {
@@ -273,4 +277,29 @@ func (op *DeleteKnowledgeBaseOperation) Exec() error {
 	}
 	err := op.tx.Delete(op.knowledgeBase).Error
 	return err
+}
+
+type CreateRecentKnowledgeBaseOperation struct {
+	repo *KnowledgeBaseRepository
+	m    *model.RecentKnowledgeBase
+	tx   *gorm.DB
+}
+
+func (r *KnowledgeBaseRepository) CreateRecentKnowledgeBase(m *model.RecentKnowledgeBase) *CreateRecentKnowledgeBaseOperation {
+	return &CreateRecentKnowledgeBaseOperation{
+		repo: r,
+		m:    m,
+	}
+}
+
+func (op *CreateRecentKnowledgeBaseOperation) WithTx(tx *gorm.DB) {
+	op.tx = tx
+}
+
+func (op *CreateRecentKnowledgeBaseOperation) Exec() error {
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	return op.tx.Create(op.m).Error
 }

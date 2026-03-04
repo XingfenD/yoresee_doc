@@ -45,3 +45,10 @@ func NewDocumentResponseFromModel(doc *model.DocumentMeta) *DocumentResponse {
 
 	return response
 }
+
+type DirectoryResponse struct {
+	ExternalID  string `json:"external_id"`
+	Title       string `json:"title"`
+	HasChildren bool   `json:"has_children"`
+	ParentID    string `json:"parent_id"`
+}
