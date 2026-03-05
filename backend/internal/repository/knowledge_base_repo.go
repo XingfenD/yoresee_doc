@@ -122,21 +122,21 @@ func (op *ListKnowledgeBaseOperation) ExecWithTotal() (kbs []*model.KnowledgeBas
 	}
 
 	dbQuery := op.tx.Model(op.model)
-	countQuery := op.tx.Model(op.model)
 
 	if op.model != nil {
 		dbQuery = dbQuery.Where(op.model)
-		countQuery = countQuery.Where(op.model)
 	}
 
 	if op.creatorID != nil {
 		dbQuery = dbQuery.Where("creator_user_id = ?", *op.creatorID)
-		countQuery = countQuery.Where("creator_user_id = ?", *op.creatorID)
 	}
 
 	if op.isPublic != nil {
 		dbQuery = dbQuery.Where("is_public = ?", *op.isPublic)
-		countQuery = countQuery.Where("is_public = ?", *op.isPublic)
+	}
+	err = dbQuery.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
 	}
 
 	orderStr := "created_at DESC"
@@ -148,11 +148,6 @@ func (op *ListKnowledgeBaseOperation) ExecWithTotal() (kbs []*model.KnowledgeBas
 		}
 	}
 	dbQuery = dbQuery.Order(orderStr)
-
-	err = countQuery.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
 
 	if op.page > 0 && op.pageSize > 0 {
 		offset := (op.page - 1) * op.pageSize
@@ -359,4 +354,61 @@ func (op *GetKnowledgeBaseDocumentsCountOperation) Exec() (int64, error) {
 	}
 
 	return count, nil
+}
+
+type MGetKnowledgeBaseDocumentsCountOperation struct {
+	repo             *KnowledgeBaseRepository
+	knowledgeBaseIDs []int64
+	tx               *gorm.DB
+}
+
+func (r *KnowledgeBaseRepository) MGetKnowledgeBaseDocumentsCount(knowledgeBaseIDs []int64) *MGetKnowledgeBaseDocumentsCountOperation {
+	return &MGetKnowledgeBaseDocumentsCountOperation{
+		repo:             r,
+		knowledgeBaseIDs: knowledgeBaseIDs,
+	}
+}
+
+func (op *MGetKnowledgeBaseDocumentsCountOperation) WithTx(tx *gorm.DB) *MGetKnowledgeBaseDocumentsCountOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *MGetKnowledgeBaseDocumentsCountOperation) Exec() (map[int64]int64, error) {
+	result := make(map[int64]int64)
+
+	if len(op.knowledgeBaseIDs) == 0 {
+		return result, nil
+	}
+
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	var counts []struct {
+		KnowledgeID int64
+		Count       int64
+	}
+
+	err := op.tx.Model(&model.DocKnowledgeRelation{}).
+		Select("knowledge_id, COUNT(*) as count").
+		Where("knowledge_id IN ?", op.knowledgeBaseIDs).
+		Group("knowledge_id").
+		Scan(&counts).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range counts {
+		result[c.KnowledgeID] = c.Count
+	}
+
+	for _, id := range op.knowledgeBaseIDs {
+		if _, exists := result[id]; !exists {
+			result[id] = 0
+		}
+	}
+
+	return result, nil
 }

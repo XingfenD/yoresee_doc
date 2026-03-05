@@ -4,6 +4,7 @@ go 1.24.1
 
 require (
 	github.com/bwmarrin/snowflake v0.3.0
+	github.com/bytedance/gg v1.1.0
 	github.com/bytedance/sonic v1.14.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.1

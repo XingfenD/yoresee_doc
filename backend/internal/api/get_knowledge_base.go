@@ -34,17 +34,17 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 
 	knowledgeBaseDTO, err := service.KnowledgeBaseSvc.GetByExternalID(&service.KnowledgeBaseGetByExternalIDReq{
 		KnowledgeBaseExternalID: getKnowledgeBaseReq.KnowledgeBaseExternalID,
-	}).Exec()
+	}).WithExtend().Exec()
 	if err != nil {
 		return nil, status.StatusKnowledgeBaseNotFound
 	}
 
-	if !knowledgeBaseDTO.IsPublic {
-		if knowledgeBaseDTO.CreatorUserExternalID != userExternalID {
-			return nil, status.StatusPermissionDenied
-		}
-		// TODO: permission check
-	}
+	// if !knowledgeBaseDTO.IsPublic {
+	// 	if knowledgeBaseDTO.CreatorUserExternalID != userExternalID {
+	// 		return nil, status.StatusPermissionDenied
+	// 	}
+	// 	// TODO: permission check
+	// }
 
 	if getKnowledgeBaseReq.RecordRecentLog {
 		service.KnowledgeBaseSvc.CreateRecentKnowledgeBase(&dto.CreateRecentKnowledgeBaseRequest{

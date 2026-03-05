@@ -363,7 +363,7 @@ func (op *InvitationDeleteOperation) WithTx(tx *gorm.DB) *InvitationDeleteOperat
 }
 
 func (op *InvitationDeleteOperation) Exec() error {
-	if op.tx != nil {
+	if op.tx == nil {
 		op.tx = storage.DB
 	}
 	return op.tx.Delete(&model.Invitation{}, op.id).Error

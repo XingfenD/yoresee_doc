@@ -15,7 +15,7 @@ import (
 type ListKnowledgeBasesResponse struct {
 	api_base.BaseResponse
 	KnowledgeBases []*dto.KnowledgeBaseResponse `json:"knowledge_bases"`
-	Total          int                          `json:"total"`
+	Total          int64                        `json:"total"`
 }
 
 type ListKnowledgeBasesArgs_OrderBy string

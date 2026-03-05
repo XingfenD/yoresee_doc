@@ -1,6 +1,9 @@
 package service
 
 import (
+	"github.com/bytedance/gg/gslice"
+	"github.com/sirupsen/logrus"
+
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
@@ -54,22 +57,120 @@ func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *knowledgeBas
 	return op, nil
 }
 
-func (s *KnowledgeBaseService) list(req *knowledgeBaseListReq) ([]*dto.KnowledgeBaseResponse, error) {
-	listOp, err := s.buildListKnowledgeBaseOperation(req)
+type knowledgeBaseListOperation struct {
+	req  *knowledgeBaseListReq
+	srvc *KnowledgeBaseService
+
+	withDocumentExtend bool
+	withUserExtend     bool
+}
+
+func (s *KnowledgeBaseService) list(req *knowledgeBaseListReq) *knowledgeBaseListOperation {
+	return &knowledgeBaseListOperation{
+		req:  req,
+		srvc: s,
+	}
+}
+
+func (op *knowledgeBaseListOperation) WithDocumentExtend() *knowledgeBaseListOperation {
+	op.withDocumentExtend = true
+	return op
+}
+
+func (op *knowledgeBaseListOperation) WithUserExtend() *knowledgeBaseListOperation {
+	op.withUserExtend = true
+	return op
+}
+
+func (op *knowledgeBaseListOperation) documentExtend(kbModels []*model.KnowledgeBase, kbExtendMapByID map[int64]*dto.KnowledgeBaseExtend) error {
+	if op.withDocumentExtend {
+		kbIDs := gslice.Map(kbModels, func(kbModel *model.KnowledgeBase) int64 {
+			return kbModel.ID
+		})
+		countMapByKbID, err := op.srvc.knowledgeBaseRepo.MGetKnowledgeBaseDocumentsCount(kbIDs).Exec()
+		if err != nil {
+			logrus.Errorf("[Service layer: knowledgeBaseList]: MGetKnowledgeBaseDocumentsCount failed, err: %+v", err)
+			return err
+		}
+		for id, count := range countMapByKbID {
+			if _, ok := kbExtendMapByID[id]; !ok {
+				kbExtendMapByID[id] = &dto.KnowledgeBaseExtend{}
+			}
+			kbExtendMapByID[id].DocumentsCount = count
+		}
+	}
+	return nil
+}
+
+func (op *knowledgeBaseListOperation) userExtend(kbModels []*model.KnowledgeBase, kbExtendMapByID map[int64]*dto.KnowledgeBaseExtend) error {
+	if op.withUserExtend {
+		// collect all user_id
+		allUserID := gslice.Map(kbModels, func(kb *model.KnowledgeBase) int64 {
+			return kb.CreatorUserID
+		})
+		uniqUserID := gslice.Uniq(allUserID)
+		usersMapByUserID, err := op.srvc.userSrvc.userRepo.MGetUserByID(uniqUserID).Exec()
+		if err != nil {
+			logrus.Errorf("[Service layer: knowledgeBaseList]: MGetUserByID failed, err: %+v", err)
+			return err
+		}
+		for _, kbModel := range kbModels {
+			if _, ok := kbExtendMapByID[kbModel.ID]; !ok {
+				kbExtendMapByID[kbModel.ID] = &dto.KnowledgeBaseExtend{}
+			}
+			if user, ok := usersMapByUserID[kbModel.CreatorUserID]; ok {
+				kbExtendMapByID[kbModel.ID].CreatorUserExternalID = user.ExternalID
+				kbExtendMapByID[kbModel.ID].CreatorName = user.Username
+			}
+		}
+	}
+	return nil
+}
+
+func (op *knowledgeBaseListOperation) Exec() ([]*dto.KnowledgeBaseResponse, error) {
+	listOp, err := op.srvc.buildListKnowledgeBaseOperation(op.req)
 	if err != nil {
 		return nil, err
 	}
-	kbModels, _, err := listOp.ExecWithTotal()
+	kbModels, err := listOp.Exec()
 	if err != nil {
 		return nil, err
 	}
+
+	kbExtendMapByID := make(map[int64]*dto.KnowledgeBaseExtend)
+
+	op.documentExtend(kbModels, kbExtendMapByID)
+	op.userExtend(kbModels, kbExtendMapByID)
 
 	knowledgeBases := make([]*dto.KnowledgeBaseResponse, 0, len(kbModels))
 	for _, kb := range kbModels {
-		knowledgeBases = append(knowledgeBases, dto.NewKnowledgeBaseResponseFromModel(kb, nil))
+		knowledgeBases = append(knowledgeBases, dto.NewKnowledgeBaseResponseFromModel(kb, kbExtendMapByID[kb.ID]))
 	}
 
 	return knowledgeBases, nil
+}
+
+func (op *knowledgeBaseListOperation) ExecWithTotal() ([]*dto.KnowledgeBaseResponse, int64, error) {
+	listOp, err := op.srvc.buildListKnowledgeBaseOperation(op.req)
+	if err != nil {
+		return nil, 0, err
+	}
+	kbModels, total, err := listOp.ExecWithTotal()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	kbExtendMapByID := make(map[int64]*dto.KnowledgeBaseExtend)
+
+	op.documentExtend(kbModels, kbExtendMapByID)
+	op.userExtend(kbModels, kbExtendMapByID)
+
+	knowledgeBases := make([]*dto.KnowledgeBaseResponse, 0, len(kbModels))
+	for _, kb := range kbModels {
+		knowledgeBases = append(knowledgeBases, dto.NewKnowledgeBaseResponseFromModel(kb, kbExtendMapByID[kb.ID]))
+	}
+
+	return knowledgeBases, total, nil
 }
 
 type KnowledgeBaseListByExternalReq struct {
@@ -79,7 +180,20 @@ type KnowledgeBaseListByExternalReq struct {
 	Pagination        Pagination                   `json:"pagination"`
 }
 
-func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, int, error) {
+func buildKnowledgeBaseListReqFromExternal(req *KnowledgeBaseListByExternalReq, creatorID *int64) *knowledgeBaseListReq {
+	if req == nil {
+		return nil
+	}
+
+	return &knowledgeBaseListReq{
+		CreatorID:  creatorID,
+		FilterArgs: req.FilterArgs,
+		SortArgs:   req.SortArgs,
+		Pagination: req.Pagination,
+	}
+}
+
+func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, int64, error) {
 	var creatorID *int64
 	if req.CreatorExternalID != "" {
 		id, err := repository.UserRepo.GetIDByExternalID(req.CreatorExternalID).Exec()
@@ -89,39 +203,8 @@ func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalRe
 		creatorID = &id
 	}
 
-	listOp, err := s.buildListKnowledgeBaseOperation(&knowledgeBaseListReq{
-		CreatorID:  creatorID,
-		FilterArgs: req.FilterArgs,
-		SortArgs:   req.SortArgs,
-		Pagination: req.Pagination,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-
-	kbModels, total, err := listOp.ExecWithTotal()
-	if err != nil {
-		return nil, 0, err
-	}
-
-	knowledgeBases := make([]*dto.KnowledgeBaseResponse, 0, len(kbModels))
-	for _, kb := range kbModels {
-		kbResp := dto.NewKnowledgeBaseResponseFromModel(kb, nil)
-
-		user, err := s.userSrvc.GetByID(kb.CreatorUserID)
-		if err == nil && user != nil {
-			kbResp.CreatorName = user.Username
-		}
-
-		docCount, err := repository.DocKnowledgeRelationRepo.CountDocsByKnowledgeID(kb.ID).Exec()
-		if err == nil {
-			kbResp.DocumentsCount = docCount
-		}
-
-		knowledgeBases = append(knowledgeBases, kbResp)
-	}
-
-	return knowledgeBases, int(total), nil
+	routerReq := buildKnowledgeBaseListReqFromExternal(req, creatorID)
+	return s.list(routerReq).WithDocumentExtend().WithUserExtend().ExecWithTotal()
 }
 
 func (s *KnowledgeBaseService) GetIDByExternalID(externalID string) (int64, error) {
@@ -150,17 +233,20 @@ func (s *KnowledgeBaseService) GetByExternalID(req *KnowledgeBaseGetByExternalID
 	}
 }
 
-func (op *KnowledgeBaseGetByExternalIDOperation) WithExtend() {
+func (op *KnowledgeBaseGetByExternalIDOperation) WithExtend() *KnowledgeBaseGetByExternalIDOperation {
 	op.withUserExtend = true
 	op.withDocumentExtend = true
+	return op
 }
 
-func (op *KnowledgeBaseGetByExternalIDOperation) WithUserExtend() {
+func (op *KnowledgeBaseGetByExternalIDOperation) WithUserExtend() *KnowledgeBaseGetByExternalIDOperation {
 	op.withUserExtend = true
+	return op
 }
 
-func (op *KnowledgeBaseGetByExternalIDOperation) WithDocumentExtend() {
+func (op *KnowledgeBaseGetByExternalIDOperation) WithDocumentExtend() *KnowledgeBaseGetByExternalIDOperation {
 	op.withDocumentExtend = true
+	return op
 }
 
 func (op *KnowledgeBaseGetByExternalIDOperation) Exec() (*dto.KnowledgeBaseResponse, error) {
