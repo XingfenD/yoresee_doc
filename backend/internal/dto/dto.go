@@ -1,4 +1,4 @@
-package service
+package dto
 
 type Pagination struct {
 	Page     int `json:"page"`
@@ -18,4 +18,10 @@ func (p *Pagination) Validate() bool {
 type SortArgs struct {
 	Field string `json:"field"`
 	Desc  bool   `json:"desc"`
+}
+
+type RecursiveOptions struct {
+	IncludeChildren bool `json:"include_children"`
+	Recursive       bool `json:"recursive"`
+	Depth           int  `json:"depth"`
 }

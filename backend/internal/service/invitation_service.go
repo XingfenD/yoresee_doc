@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -47,19 +48,7 @@ func (s *InvitationService) ListByCreator(userID int64) ([]model.Invitation, err
 	return s.invitationRepo.List(&model.Invitation{CreatedBy: userID}).Exec()
 }
 
-type ListInvitationsReq struct {
-	CreatorID      *int64     `json:"creator_id"`
-	MaxUsedCnt     *int64     `json:"max_used_cnt"`
-	ExpiresAtStart *string    `json:"expires_at_start"`
-	ExpiresAtEnd   *string    `json:"expires_at_end"`
-	CreatedAtStart *string    `json:"created_at_start"`
-	CreatedAtEnd   *string    `json:"created_at_end"`
-	Disabled       *bool      `json:"disabled"`
-	SortArgs       *SortArgs  `json:"sort_args"`
-	Pagination     Pagination `json:"pagination"`
-}
-
-func (s *InvitationService) ListInvitations(req *ListInvitationsReq) ([]model.Invitation, int64, error) {
+func (s *InvitationService) ListInvitations(req *dto.ListInvitationsReq) ([]model.Invitation, int64, error) {
 
 	return s.invitationRepo.List(&model.Invitation{}).
 		WithCreatorID(req.CreatorID).

@@ -41,12 +41,12 @@ type ListKnowledgeBasesRequest struct {
 	PageSize int `json:"page_size,omitempty" form:"page_size"`
 }
 
-func (r *ListKnowledgeBasesRequest) BuildServiceReq(userExternalID string) *service.KnowledgeBaseListByExternalReq {
+func (r *ListKnowledgeBasesRequest) BuildServiceReq(userExternalID string) *dto.KnowledgeBaseListByExternalReq {
 	if r == nil {
 		return nil
 	}
 
-	sortArgs := service.SortArgs{
+	sortArgs := dto.SortArgs{
 		Field: "created_at",
 		Desc:  true,
 	}
@@ -62,7 +62,7 @@ func (r *ListKnowledgeBasesRequest) BuildServiceReq(userExternalID string) *serv
 		sortArgs.Desc = *r.OrderDesc
 	}
 
-	filterArgs := &service.KnowledgeBaseListFilterArgs{
+	filterArgs := &dto.KnowledgeBaseListFilterArgs{
 		IsPublic:    r.IsPublic,
 		NameKeyword: r.NameKeyword,
 	}
@@ -75,11 +75,11 @@ func (r *ListKnowledgeBasesRequest) BuildServiceReq(userExternalID string) *serv
 		filterArgs.UpdateTimeRangeEnd = r.UpdateTimeRange.End
 	}
 
-	req := &service.KnowledgeBaseListByExternalReq{
+	req := &dto.KnowledgeBaseListByExternalReq{
 		CreatorExternalID: "",
 		FilterArgs:        filterArgs,
 		SortArgs:          sortArgs,
-		Pagination: service.Pagination{
+		Pagination: dto.Pagination{
 			Page:     r.Page,
 			PageSize: r.PageSize,
 		},

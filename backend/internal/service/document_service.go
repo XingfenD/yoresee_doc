@@ -74,37 +74,6 @@ func (s *DocumentService) GetDocumentWithContent(docExternalID string) (*model.D
 	return document, content, nil
 }
 
-type documentsListReq struct {
-	MetaArgs   *DocumentsListMetaArgs   `json:"meta_args"`
-	FilterArgs *DocumentsListFilterArgs `json:"filter_args"`
-	SortArgs   SortArgs                 `json:"sort_args"`
-	Pagination Pagination               `json:"pagination"`
-	Options    *ListDocumentsOptions    `json:"options"`
-}
-
-type DocumentsListMetaArgs struct {
-	UserID      *int64 `json:"user_id"`
-	ParentID    *int64 `json:"parent_id"`
-	KnowledgeID *int64 `json:"knowledge_id"`
-}
-
-type DocumentsListExternalArgs struct {
-	UserExternalID         *string `json:"user_external_id"`
-	RootDocumentExternalID *string `json:"root_document_external_id"`
-	KnowledgeExternalID    *string `json:"knowledge_external_id"`
-}
-
-type DocumentsListFilterArgs struct {
-	TitleKeyword         *string  `json:"title_keyword"`
-	DocType              *string  `json:"doc_type"`
-	Status               *int     `json:"status"`
-	Tags                 []string `json:"tags"`
-	CreateTimeRangeStart *string  `json:"create_time_range_start"`
-	CreateTimeRangeEnd   *string  `json:"create_time_range_end"`
-	UpdateTimeRangeStart *string  `json:"update_time_range_start"`
-	UpdateTimeRangeEnd   *string  `json:"update_time_range_end"`
-}
-
 func (s *DocumentService) buildListDocumentsOperation(req *documentsListReq) (*repository.DocumentsListOperation, error) {
 	if s == nil || s.documentRepo == nil {
 		return nil, status.StatusServiceInternalError
@@ -149,13 +118,7 @@ func (s *DocumentService) listDocuments(req *documentsListReq) ([]*dto.DocumentR
 	return responses, total, nil
 }
 
-type ListDocumentsOptions struct {
-	IncludeChildren bool `json:"include_children"`
-	Recursive       bool `json:"recursive"`
-	Depth           int  `json:"depth"`
-}
-
-func (s *DocumentService) getChildDocuments(parentID int64, options *ListDocumentsOptions) ([]*dto.DocumentResponse, error) {
+func (s *DocumentService) getChildDocuments(parentID int64, options *dto.RecursiveOptions) ([]*dto.DocumentResponse, error) {
 	models, _, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
 		WithParentID(&parentID).
 		WithSort("created_at", false).
@@ -169,7 +132,7 @@ func (s *DocumentService) getChildDocuments(parentID int64, options *ListDocumen
 		childResponses[i] = s.ConvertToDocumentResponse(&model)
 
 		if options != nil && options.Recursive && (options.Depth <= 0 || options.Depth > 1) {
-			subOptions := &ListDocumentsOptions{
+			subOptions := &dto.RecursiveOptions{
 				IncludeChildren: options.IncludeChildren,
 				Recursive:       options.Recursive,
 				Depth:           options.Depth - 1,
@@ -216,15 +179,7 @@ func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*d
 	return docs, total, nil
 }
 
-type ListDocumentsByExternalReq struct {
-	ExternalArgs *DocumentsListExternalArgs `json:"external_args"`
-	FilterArgs   *DocumentsListFilterArgs   `json:"filter_args"`
-	SortArgs     SortArgs                   `json:"sort_args"`
-	Pagination   Pagination                 `json:"pagination"`
-	Options      *ListDocumentsOptions      `json:"options"`
-}
-
-func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *ListDocumentsByExternalReq) ([]*dto.DocumentResponse, int64, error) {
+func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocumentsByExternalReq) ([]*dto.DocumentResponse, int64, error) {
 	var userID *int64
 	if req.ExternalArgs.UserExternalID != nil && *req.ExternalArgs.UserExternalID != "" {
 		id, err := repository.UserRepo.GetIDByExternalID(*req.ExternalArgs.UserExternalID).Exec()
@@ -254,7 +209,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *ListDocuments
 
 	return s.listDocumentsWithChildren(
 		&documentsListReq{
-			MetaArgs: &DocumentsListMetaArgs{
+			MetaArgs: &documentsListMetaArgs{
 				UserID:      userID,
 				ParentID:    &parentID, // default to root
 				KnowledgeID: knowledgeID,
@@ -266,3 +221,5 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *ListDocuments
 		},
 	)
 }
+
+// func (s *DocumentService) Create(req *CreateDocumentReq)

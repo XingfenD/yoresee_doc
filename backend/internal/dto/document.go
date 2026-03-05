@@ -52,3 +52,28 @@ type DirectoryResponse struct {
 	HasChildren bool   `json:"has_children"`
 	ParentID    string `json:"parent_id"`
 }
+
+type DocumentsListExternalArgs struct {
+	UserExternalID         *string `json:"user_external_id"`
+	RootDocumentExternalID *string `json:"root_document_external_id"`
+	KnowledgeExternalID    *string `json:"knowledge_external_id"`
+}
+
+type DocumentsListFilterArgs struct {
+	TitleKeyword         *string  `json:"title_keyword"`
+	DocType              *string  `json:"doc_type"`
+	Status               *int     `json:"status"`
+	Tags                 []string `json:"tags"`
+	CreateTimeRangeStart *string  `json:"create_time_range_start"`
+	CreateTimeRangeEnd   *string  `json:"create_time_range_end"`
+	UpdateTimeRangeStart *string  `json:"update_time_range_start"`
+	UpdateTimeRangeEnd   *string  `json:"update_time_range_end"`
+}
+
+type ListDocumentsByExternalReq struct {
+	ExternalArgs *DocumentsListExternalArgs `json:"external_args"`
+	FilterArgs   *DocumentsListFilterArgs   `json:"filter_args"`
+	SortArgs     SortArgs                   `json:"sort_args"`
+	Pagination   Pagination                 `json:"pagination"`
+	Options      *RecursiveOptions          `json:"options"`
+}

@@ -57,3 +57,23 @@ type CreateRecentKnowledgeBaseRequest struct {
 	KnowledgeBaseExternalID string
 	AssessTime              time.Time
 }
+
+type KnowledgeBaseListByExternalReq struct {
+	CreatorExternalID string                       `json:"creator_external_id"`
+	FilterArgs        *KnowledgeBaseListFilterArgs `json:"filter_args"`
+	SortArgs          SortArgs                     `json:"sort_args"`
+	Pagination        Pagination                   `json:"pagination"`
+}
+
+type KnowledgeBaseGetByExternalIDReq struct {
+	KnowledgeBaseExternalID string `json:"knowledge_base_external_id"`
+}
+
+type KnowledgeBaseListFilterArgs struct {
+	IsPublic             *bool   `json:"is_public"`
+	NameKeyword          *string `json:"name_keyword"`
+	CreateTimeRangeStart *string `json:"create_time_range_start"`
+	CreateTimeRangeEnd   *string `json:"create_time_range_end"`
+	UpdateTimeRangeStart *string `json:"update_time_range_start"`
+	UpdateTimeRangeEnd   *string `json:"update_time_range_end"`
+}

@@ -18,10 +18,9 @@ type ListDocumentsResponse struct {
 }
 
 type ListDocumentsOptions struct {
-	IncludeChildren     bool `json:"include_children" form:"include_children"`
-	Recursive           bool `json:"recursive" form:"recursive"`
-	WithDepthLimitation bool `json:"with_depth_limitation" form:"with_depth_limitation"`
-	Depth               int  `json:"depth" form:"depth"`
+	IncludeChildren bool `json:"include_children" form:"include_children"`
+	Recursive       bool `json:"recursive" form:"recursive"`
+	Depth           int  `json:"depth" form:"depth"`
 }
 
 type ListDocumentsArgs_OrderBy string
@@ -52,12 +51,12 @@ type ListDocumentsRequest struct {
 	Options *ListDocumentsOptions `json:"options,omitempty" form:"options"`
 }
 
-func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExternalReq {
+func (r *ListDocumentsRequest) BuildServiceReq() *dto.ListDocumentsByExternalReq {
 	if r == nil {
 		return nil
 	}
 
-	sortArgs := service.SortArgs{
+	sortArgs := dto.SortArgs{
 		Field: "created_at",
 		Desc:  true,
 	}
@@ -73,7 +72,7 @@ func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExterna
 		sortArgs.Desc = *r.OrderDesc
 	}
 
-	filterArgs := &service.DocumentsListFilterArgs{
+	filterArgs := &dto.DocumentsListFilterArgs{
 		TitleKeyword: r.TitleKeyword,
 		DocType:      r.Type,
 		Status:       r.Status,
@@ -87,14 +86,14 @@ func (r *ListDocumentsRequest) BuildServiceReq() *service.ListDocumentsByExterna
 		filterArgs.UpdateTimeRangeStart = r.UpdateTimeRange.Start
 		filterArgs.UpdateTimeRangeEnd = r.UpdateTimeRange.End
 	}
-	req := &service.ListDocumentsByExternalReq{
-		ExternalArgs: &service.DocumentsListExternalArgs{
+	req := &dto.ListDocumentsByExternalReq{
+		ExternalArgs: &dto.DocumentsListExternalArgs{
 			UserExternalID:         r.UserExternalID,
 			RootDocumentExternalID: r.RootDocumentExternalID,
 		},
 		FilterArgs: filterArgs,
 		SortArgs:   sortArgs,
-		Pagination: service.Pagination{
+		Pagination: dto.Pagination{
 			Page:     r.Page,
 			PageSize: r.PageSize,
 		},
@@ -127,11 +126,11 @@ func (h *ListDocumentsHandler) handle(ctx context.Context, req api_base.Request)
 	}, nil
 }
 
-func (apiOptions *ListDocumentsOptions) ToServiceOptions() *service.ListDocumentsOptions {
+func (apiOptions *ListDocumentsOptions) ToServiceOptions() *dto.RecursiveOptions {
 	if apiOptions == nil {
 		return nil
 	}
-	serviceOptions := &service.ListDocumentsOptions{
+	serviceOptions := &dto.RecursiveOptions{
 		IncludeChildren: apiOptions.IncludeChildren,
 		Recursive:       apiOptions.Recursive,
 		Depth:           apiOptions.Depth,

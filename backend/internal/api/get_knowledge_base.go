@@ -32,7 +32,7 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "user not logged in")
 	}
 
-	knowledgeBaseDTO, err := service.KnowledgeBaseSvc.GetByExternalID(&service.KnowledgeBaseGetByExternalIDReq{
+	knowledgeBaseDTO, err := service.KnowledgeBaseSvc.GetByExternalID(&dto.KnowledgeBaseGetByExternalIDReq{
 		KnowledgeBaseExternalID: getKnowledgeBaseReq.KnowledgeBaseExternalID,
 	}).WithExtend().Exec()
 	if err != nil {
@@ -55,11 +55,11 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 	}
 
 	documents, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(
-		&service.ListDocumentsByExternalReq{
-			ExternalArgs: &service.DocumentsListExternalArgs{
+		&dto.ListDocumentsByExternalReq{
+			ExternalArgs: &dto.DocumentsListExternalArgs{
 				KnowledgeExternalID: &knowledgeBaseDTO.ExternalID,
 			},
-			Options: &service.ListDocumentsOptions{
+			Options: &dto.RecursiveOptions{
 				IncludeChildren: true,
 			},
 		},

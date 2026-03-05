@@ -22,22 +22,6 @@ func NewKnowledgeBaseService() *KnowledgeBaseService {
 	}
 }
 
-type KnowledgeBaseListFilterArgs struct {
-	IsPublic             *bool   `json:"is_public"`
-	NameKeyword          *string `json:"name_keyword"`
-	CreateTimeRangeStart *string `json:"create_time_range_start"`
-	CreateTimeRangeEnd   *string `json:"create_time_range_end"`
-	UpdateTimeRangeStart *string `json:"update_time_range_start"`
-	UpdateTimeRangeEnd   *string `json:"update_time_range_end"`
-}
-
-type knowledgeBaseListReq struct {
-	CreatorID  *int64                       `json:"creator_id"`
-	FilterArgs *KnowledgeBaseListFilterArgs `json:"filter_args"`
-	SortArgs   SortArgs                     `json:"sort_args"`
-	Pagination Pagination                   `json:"pagination"`
-}
-
 func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *knowledgeBaseListReq) (*repository.ListKnowledgeBaseOperation, error) {
 	if s == nil || s.knowledgeBaseRepo == nil {
 		return nil, status.StatusServiceInternalError
@@ -55,14 +39,6 @@ func (s *KnowledgeBaseService) buildListKnowledgeBaseOperation(req *knowledgeBas
 	op = op.WithSort(req.SortArgs.Field, req.SortArgs.Desc).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize)
 	return op, nil
-}
-
-type knowledgeBaseListOperation struct {
-	req  *knowledgeBaseListReq
-	srvc *KnowledgeBaseService
-
-	withDocumentExtend bool
-	withUserExtend     bool
 }
 
 func (s *KnowledgeBaseService) list(req *knowledgeBaseListReq) *knowledgeBaseListOperation {
@@ -173,14 +149,7 @@ func (op *knowledgeBaseListOperation) ExecWithTotal() ([]*dto.KnowledgeBaseRespo
 	return knowledgeBases, total, nil
 }
 
-type KnowledgeBaseListByExternalReq struct {
-	CreatorExternalID string                       `json:"creator_external_id"`
-	FilterArgs        *KnowledgeBaseListFilterArgs `json:"filter_args"`
-	SortArgs          SortArgs                     `json:"sort_args"`
-	Pagination        Pagination                   `json:"pagination"`
-}
-
-func buildKnowledgeBaseListReqFromExternal(req *KnowledgeBaseListByExternalReq, creatorID *int64) *knowledgeBaseListReq {
+func buildKnowledgeBaseListReqFromExternal(req *dto.KnowledgeBaseListByExternalReq, creatorID *int64) *knowledgeBaseListReq {
 	if req == nil {
 		return nil
 	}
@@ -193,7 +162,7 @@ func buildKnowledgeBaseListReqFromExternal(req *KnowledgeBaseListByExternalReq, 
 	}
 }
 
-func (s *KnowledgeBaseService) ListByExternal(req *KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, int64, error) {
+func (s *KnowledgeBaseService) ListByExternal(req *dto.KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, int64, error) {
 	var creatorID *int64
 	if req.CreatorExternalID != "" {
 		id, err := repository.UserRepo.GetIDByExternalID(req.CreatorExternalID).Exec()
@@ -215,18 +184,14 @@ func (s *KnowledgeBaseService) GetIDByExternalID(externalID string) (int64, erro
 	return id, nil
 }
 
-type KnowledgeBaseGetByExternalIDReq struct {
-	KnowledgeBaseExternalID string `json:"knowledge_base_external_id"`
-}
-
 type KnowledgeBaseGetByExternalIDOperation struct {
 	withUserExtend     bool
 	withDocumentExtend bool
-	req                *KnowledgeBaseGetByExternalIDReq
+	req                *dto.KnowledgeBaseGetByExternalIDReq
 	srvc               *KnowledgeBaseService
 }
 
-func (s *KnowledgeBaseService) GetByExternalID(req *KnowledgeBaseGetByExternalIDReq) *KnowledgeBaseGetByExternalIDOperation {
+func (s *KnowledgeBaseService) GetByExternalID(req *dto.KnowledgeBaseGetByExternalIDReq) *KnowledgeBaseGetByExternalIDOperation {
 	return &KnowledgeBaseGetByExternalIDOperation{
 		req:  req,
 		srvc: s,
