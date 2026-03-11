@@ -17,20 +17,20 @@ type MessageQueue interface {
 
 var MQ MessageQueue
 
-func NewMessageQueue(mqType string, cfg *config.Config) (MessageQueue, error) {
+func NewMessageQueue(mqType string, cfg *config.MQConfig) (MessageQueue, error) {
 	switch mqType {
 	case "redis":
 		return NewRedisMQ(), nil
 	case "rabbitmq":
-		rabbitCfg := BuildRabbitMQConfig(cfg.Backend.MQConfig.RabbitMQ)
+		rabbitCfg := BuildRabbitMQConfig(cfg.RabbitMQ)
 		return NewRabbitMQ(rabbitCfg)
 	default:
 		return nil, fmt.Errorf("unsupported mq type: %s", mqType)
 	}
 }
 
-func InitMessageQueue(cfg *config.Config) (MessageQueue, error) {
-	mqType := cfg.Backend.MQConfig.Type
+func InitMessageQueue(cfg *config.MQConfig) (MessageQueue, error) {
+	mqType := cfg.Type
 	if mqType == "" {
 		mqType = "redis"
 	}

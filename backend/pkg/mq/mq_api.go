@@ -7,7 +7,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
 )
 
-func Init(cfg *config.Config) error {
+func Init(cfg *config.MQConfig) error {
 	mq, err := InitMessageQueue(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to initialize message queue: %w", err)

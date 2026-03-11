@@ -19,10 +19,7 @@ func NewStatusErr(code int, msg string) error {
 func GenErrWithCustomMsg(err error, msg string) error {
 	statusErr, ok := err.(*Status)
 	if !ok {
-		return &Status{
-			Code:    500,
-			Message: "internal server error",
-		}
+		return StatusServiceInternalError
 	}
 	return &Status{
 		Code:    statusErr.Code,
@@ -55,6 +52,8 @@ var (
 	StatusServiceInternalError = NewStatusErr(50000, "service internal error")
 	StatusWriteDBError         = NewStatusErr(50001, "write db error")
 	StatusReadDBError          = NewStatusErr(50002, "read db error")
+	StatusMQNotInitialized     = NewStatusErr(50002, "message queue not initialized")
 
 	StatusInternalParamsError = NewStatusErr(50010, "invalid internal arguments")
+	StatusTypeAssertFailed    = NewStatusErr(50011, "type assert failed")
 )

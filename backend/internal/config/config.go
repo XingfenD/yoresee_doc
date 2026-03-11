@@ -12,6 +12,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Minio    MinioConfig    `mapstructure:"minio"`
+	MQConfig MQConfig       `mapstructure:"mq_config"`
 	Backend  BackendConfig  `mapstructure:"backend"`
 }
 
@@ -45,11 +46,19 @@ type MinioConfig struct {
 	UseSSL    bool   `mapstructure:"use_ssl"`
 }
 
+type ClusterRole string
+
+const (
+	ClusterRoleProducer ClusterRole = "producer"
+	ClusterRoleConsumer ClusterRole = "consumer"
+	ClusterRoleHybrid   ClusterRole = "hybrid" // producer and consumer
+)
+
 type BackendConfig struct {
-	HTTPFramework string    `mapstructure:"http_framework"`
-	Jwt           JWTConfig `mapstructure:"jwt"`
-	SystemName    string    `mapstructure:"system_name"`
-	MQConfig      MQConfig  `mapstructure:"mq_config"`
+	HTTPFramework string      `mapstructure:"http_framework"`
+	Jwt           JWTConfig   `mapstructure:"jwt"`
+	SystemName    string      `mapstructure:"system_name"`
+	ClusterRole   ClusterRole `mapstructure:"cluster_role"`
 	// Log           LogConfig      `mapstructure:"log"`
 	// document      DocumentConfig `mapstructure:"document"`
 }

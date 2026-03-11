@@ -6,6 +6,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/router"
+	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/gin-gonic/gin"
@@ -28,15 +29,17 @@ func main() {
 		panic("init redis failed")
 	}
 
-	if err := mq.Init(config.GlobalConfig); err != nil {
+	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
 		logrus.Fatalf("Init message queue failed: %v", err)
 	}
+
 	defer mq.Close()
 
 	defer storage.ClosePostgres()
 
 	defer storage.CloseRedis()
 
+	service.Init(config.GlobalConfig)
 	i18n.Init()
 
 	r := gin.Default()
