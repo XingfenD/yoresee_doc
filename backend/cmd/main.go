@@ -6,6 +6,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/router"
+	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -23,6 +24,15 @@ func main() {
 	if err := storage.InitRedis(&config.GlobalConfig.Redis); err != nil {
 		logrus.Fatalf("Init redis failed: %v", err)
 	}
+
+	if err := service.InitMessageQueue(config.GlobalConfig); err != nil {
+		logrus.Fatalf("Init message queue failed: %v", err)
+	}
+	defer service.CloseMessageQueue()
+
+	defer storage.ClosePostgres()
+
+	defer storage.CloseRedis()
 
 	i18n.Init()
 

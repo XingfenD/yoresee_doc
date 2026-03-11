@@ -39,6 +39,14 @@ secret = "yoresee_doc_jwt_secret_key"
 expire = 86400                 # 24 hours
 refresh_expire = 604800        # 7 days
 
+[backend.mq_config]
+type = "redis"  # available values: "redis", "rabbitmq"
+
+# [backend.mq_config.redis]
+
+[backend.mq_config.rabbitmq]
+url = "amqp://guest:guest@yoresee_doc_rabbitmq:5672/"
+
 [backend.log]
 level = "debug"
 file = "logs/app.log"

@@ -33,6 +33,13 @@ func GetRedis() *redis.Client {
 	return KVS
 }
 
+func CloseRedis() error {
+	if KVS != nil {
+		return KVS.Close()
+	}
+	return nil
+}
+
 func SetCache(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
 	return KVS.Set(ctx, key, value, expiration).Err()
 }

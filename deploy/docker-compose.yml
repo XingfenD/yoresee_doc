@@ -56,6 +56,20 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: yoresee_doc_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - yoresee_doc_rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./logs/rabbitmq:/var/log/rabbitmq
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
   backend:
     build:
       context: ../backend
@@ -68,6 +82,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - rabbitmq
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -75,6 +90,7 @@ services:
 volumes:
   yoresee_doc_postgres_data:
   yoresee_doc_redis_data:
+  yoresee_doc_rabbitmq_data:
 
 networks:
   yoresee_doc_network:

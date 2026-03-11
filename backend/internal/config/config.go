@@ -49,8 +49,22 @@ type BackendConfig struct {
 	HTTPFramework string    `mapstructure:"http_framework"`
 	Jwt           JWTConfig `mapstructure:"jwt"`
 	SystemName    string    `mapstructure:"system_name"`
+	MQConfig      MQConfig  `mapstructure:"mq_config"`
 	// Log           LogConfig      `mapstructure:"log"`
 	// document      DocumentConfig `mapstructure:"document"`
+}
+
+type MQConfig struct {
+	Type     string              `mapstructure:"type"`
+	Redis    RedisQueueConfig    `mapstructure:"redis"`
+	RabbitMQ RabbitMQQueueConfig `mapstructure:"rabbitmq"`
+}
+
+type RedisQueueConfig struct {
+}
+
+type RabbitMQQueueConfig struct {
+	URL string `mapstructure:"url"`
 }
 
 type JWTConfig struct {

@@ -38,6 +38,17 @@ func InitPostgres(cfg *config.DatabaseConfig) error {
 	return nil
 }
 
+func ClosePostgres() error {
+	if DB != nil {
+		sqlDB, err := DB.DB()
+		if err != nil {
+			return err
+		}
+		return sqlDB.Close()
+	}
+	return nil
+}
+
 // func InitMySQL(cfg *config.DatabaseConfig) error {
 // 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 // 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
