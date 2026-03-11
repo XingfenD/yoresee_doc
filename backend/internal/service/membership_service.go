@@ -8,8 +8,8 @@ import (
 )
 
 type MembershipService struct {
-	repo        *repository.MembershipRepository
-	userService *UserService
+	repo    *repository.MembershipRepository
+	useRepo *repository.UserRepository
 }
 
 func NewMembershipService() *MembershipService {
@@ -39,7 +39,7 @@ func (s *MembershipService) GetMembershipIDByExternalID(req *dto.MembershipBaseR
 }
 
 func (s *MembershipService) CreateMembershipRelation(membership *dto.CreateMembershipRelationRequest) error {
-	userID, err := s.userService.GetIDByExternalID(membership.UserExternalID)
+	userID, err := s.useRepo.GetIDByExternalID(membership.UserExternalID).Exec()
 	if err != nil {
 		return status.StatusUserNotFound
 	}

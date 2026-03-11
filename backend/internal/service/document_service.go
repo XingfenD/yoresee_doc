@@ -19,9 +19,10 @@ type DocumentService struct {
 
 func NewDocumentService() *DocumentService {
 	return &DocumentService{
-		documentRepo: repository.DocumentRepo,
-		userRepo:     repository.UserRepo,
-		kbRepo:       repository.KnowledgeBaseRepo,
+		documentRepo:      repository.DocumentRepo,
+		userRepo:          repository.UserRepo,
+		kbRepo:            repository.KnowledgeBaseRepo,
+		docKBRelationRepo: repository.DocKnowledgeRelationRepo,
 	}
 }
 

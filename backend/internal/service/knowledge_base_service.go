@@ -12,13 +12,13 @@ import (
 
 type KnowledgeBaseService struct {
 	knowledgeBaseRepo *repository.KnowledgeBaseRepository
-	userSrvc          *UserService
+	userRepo          *repository.UserRepository
 }
 
 func NewKnowledgeBaseService() *KnowledgeBaseService {
 	return &KnowledgeBaseService{
 		knowledgeBaseRepo: repository.KnowledgeBaseRepo,
-		userSrvc:          UserSvc,
+		userRepo:          repository.UserRepo,
 	}
 }
 
@@ -85,7 +85,7 @@ func (op *knowledgeBaseListOperation) userExtend(kbModels []*model.KnowledgeBase
 			return kb.CreatorUserID
 		})
 		uniqUserID := gslice.Uniq(allUserID)
-		usersMapByUserID, err := op.srvc.userSrvc.userRepo.MGetUserByID(uniqUserID).Exec()
+		usersMapByUserID, err := op.srvc.userRepo.MGetUserByID(uniqUserID).Exec()
 		if err != nil {
 			logrus.Errorf("[Service layer: knowledgeBaseList]: MGetUserByID failed, err: %+v", err)
 			return err
@@ -222,7 +222,7 @@ func (op *KnowledgeBaseGetByExternalIDOperation) Exec() (*dto.KnowledgeBaseRespo
 	extendDTO := &dto.KnowledgeBaseExtend{}
 
 	if op.withUserExtend {
-		userModel, err := op.srvc.userSrvc.GetByID(kbModel.CreatorUserID)
+		userModel, err := op.srvc.userRepo.GetByID(kbModel.CreatorUserID).Exec()
 		if err != nil {
 			return nil, err
 		}
@@ -244,7 +244,7 @@ func (op *KnowledgeBaseGetByExternalIDOperation) Exec() (*dto.KnowledgeBaseRespo
 }
 
 func (s *KnowledgeBaseService) CreateRecentKnowledgeBase(req *dto.CreateRecentKnowledgeBaseRequest) error {
-	userID, err := s.userSrvc.GetIDByExternalID(req.UserExternalID)
+	userID, err := s.userRepo.GetIDByExternalID(req.UserExternalID).Exec()
 	if err != nil {
 		return status.StatusUserNotFound
 	}
