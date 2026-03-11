@@ -40,9 +40,9 @@ func (srvc *MQService) Subscribe(topic string, handler func([]byte) error) error
 	})
 }
 
-func PublishByTask[T any](ctx context.Context, producer svc_iface.TopicProducer[T], taskData T) error {
+func PublishByProducer[T any](ctx context.Context, producer svc_iface.TopicProducer, taskData T) error {
 	if !MQSvc.IsInitialized() {
-		return producer.Handle(taskData)
+		return status.StatusMQNotInitialized
 	}
 	data, err := sonic.Marshal(taskData)
 	if err != nil {

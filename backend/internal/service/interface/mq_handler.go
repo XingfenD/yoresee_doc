@@ -1,7 +1,5 @@
 package svc_iface
 
-import "context"
-
 type HandleFunc func(data []byte) error
 
 type TopicConsumer interface {
@@ -9,13 +7,11 @@ type TopicConsumer interface {
 	Consume() HandleFunc
 }
 
-type TopicProducer[T any] interface {
-	Publish(ctx context.Context, data T) error
-	Handle(T) error
+type TopicProducer interface {
 	Topic() string
 }
 
-// type MQTopicHandler[T any] interface {
-// 	TopicProducer[T]
+// type MQTopicHandler interface {
+// 	TopicProducer
 // 	TopicConsumer
 // }
