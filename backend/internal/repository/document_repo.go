@@ -310,6 +310,10 @@ func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, 
 		dbQuery = dbQuery.Where("parent_id = ?", *op.parentID)
 	}
 
+	if op.knowledgeID != nil {
+		dbQuery = dbQuery.Where("knowledge_id = ?", *op.knowledgeID)
+	}
+
 	if op.titleKeyword != nil && *op.titleKeyword != "" {
 		dbQuery = dbQuery.Where("title LIKE ?", "%"+*op.titleKeyword+"%")
 	}
@@ -379,4 +383,30 @@ func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, 
 	}
 
 	return documents, total, nil
+}
+
+type DocumentCreateOperation struct {
+	repo *DocumentRepository
+	doc  *model.DocumentMeta
+	tx   *gorm.DB
+}
+
+func (r *DocumentRepository) Create(doc *model.DocumentMeta) *DocumentCreateOperation {
+	return &DocumentCreateOperation{
+		repo: r,
+		doc:  doc,
+	}
+}
+
+func (op *DocumentCreateOperation) WithTx(tx *gorm.DB) *DocumentCreateOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocumentCreateOperation) Exec() error {
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	return op.tx.Create(op.doc).Error
 }

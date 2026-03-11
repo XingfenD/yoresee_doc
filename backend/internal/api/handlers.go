@@ -10,6 +10,7 @@ var GetDocumentContentHandlerImpl = &GetDocumentContentHandler{}
 var ListDocumentsHandlerImpl = &ListDocumentsHandler{}
 var ListKnowledgeBasesHandlerImpl = &ListKnowledgeBasesHandler{}
 var GetKnowledgeBaseHandlerImpl = &GetKnowledgeBaseHandler{}
+var CreateDocumentHandlerImpl = &CreateDocumentHandler{}
 
 type HealthHandler struct{}
 type TestProtectedHandler struct{}
@@ -21,3 +22,4 @@ type GetDocumentContentHandler struct{}
 type ListDocumentsHandler struct{}
 type ListKnowledgeBasesHandler struct{}
 type GetKnowledgeBaseHandler struct{}
+type CreateDocumentHandler struct{}

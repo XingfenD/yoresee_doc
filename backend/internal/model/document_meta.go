@@ -20,6 +20,7 @@ type DocumentMeta struct {
 	ViewCount   int            `gorm:"default:0" json:"view_count"`
 	EditCount   int            `gorm:"default:0" json:"edit_count"`
 	Version     int            `gorm:"default:1" json:"version"`
+	Content     string         `gorm:"type:text" json:"content"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

@@ -5,15 +5,23 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type DocumentService struct {
-	documentRepo *repository.DocumentRepository
+	documentRepo      *repository.DocumentRepository
+	userRepo          *repository.UserRepository
+	kbRepo            *repository.KnowledgeBaseRepository
+	docKBRelationRepo *repository.DocKnowledgeRelationRepository
 }
 
 func NewDocumentService() *DocumentService {
 	return &DocumentService{
 		documentRepo: repository.DocumentRepo,
+		userRepo:     repository.UserRepo,
+		kbRepo:       repository.KnowledgeBaseRepo,
 	}
 }
 
@@ -222,4 +230,77 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocum
 	)
 }
 
-// func (s *DocumentService) Create(req *CreateDocumentReq)
+func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumentResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	// TODO: redis support
+	docExternalID := utils.GenerateExternalID(utils.ExternalIDContextDocument)
+	err := utils.WithTransaction(func(tx *gorm.DB) error {
+		docModel := &model.DocumentMeta{
+			ExternalID: docExternalID,
+			Title:      req.Title,
+			Type:       req.Type,
+			Summary:    req.Summary,
+			Content:    req.Content,
+		}
+		// query user_id
+		userID, err := s.userRepo.GetIDByExternalID(*req.CreatorExternalID).WithTx(tx).Exec()
+		if err != nil {
+			return status.StatusUserNotFound
+		}
+
+		docModel.UserID = userID
+		// query knowledge_id
+		var ownerID *int64
+		if !req.CreateAsOwnDoc {
+			kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeExternalID).WithTx(tx).Exec()
+			if err != nil {
+				return status.StatusKnowledgeBaseNotFound
+			}
+			docModel.KnowledgeID = &kbID
+		} else {
+			ownerID = &userID
+		}
+		// query parent_id
+		if req.ParentExternalID != nil {
+			parentDocID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).WithTx(tx).Exec()
+			if err != nil {
+				return status.StatusDocumentNotFound
+			}
+			docModel.ParentID = parentDocID
+		}
+		// create document meta
+		err = s.documentRepo.Create(docModel).WithTx(tx).Exec()
+		if err != nil {
+			status.GenErrWithCustomMsg(status.StatusWriteDBError, "create document meta failed")
+			return status.StatusWriteDBError
+		}
+
+		// create doc-kb relation
+		err = s.docKBRelationRepo.CreateDocKBRelation(docModel.ID).
+			WithKnowledgeID(docModel.KnowledgeID).
+			WithOwnerID(ownerID).
+			Exec()
+		if err != nil {
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create doc-kb relation failed")
+		}
+
+		// create doc version
+		// err = s.
+		// TODO:
+
+		// create content
+
+		return nil
+	})
+
+	if err != nil {
+		logrus.Errorf("[Service layer: DocumentService] Create err: %+v", err)
+		return nil, status.StatusWriteDBError
+	}
+	return &dto.CreateDocumentResponse{
+		ExternalID: docExternalID,
+	}, nil
+}

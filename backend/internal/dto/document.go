@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/status"
 )
 
 type DocumentBase struct {
@@ -46,12 +47,12 @@ func NewDocumentResponseFromModel(doc *model.DocumentMeta) *DocumentResponse {
 	return response
 }
 
-type DirectoryResponse struct {
-	ExternalID  string `json:"external_id"`
-	Title       string `json:"title"`
-	HasChildren bool   `json:"has_children"`
-	ParentID    string `json:"parent_id"`
-}
+// type DirectoryResponse struct {
+// 	ExternalID  string `json:"external_id"`
+// 	Title       string `json:"title"`
+// 	HasChildren bool   `json:"has_children"`
+// 	ParentID    string `json:"parent_id"`
+// }
 
 type DocumentsListExternalArgs struct {
 	UserExternalID         *string `json:"user_external_id"`
@@ -76,4 +77,39 @@ type ListDocumentsByExternalReq struct {
 	SortArgs     SortArgs                   `json:"sort_args"`
 	Pagination   Pagination                 `json:"pagination"`
 	Options      *RecursiveOptions          `json:"options"`
+}
+
+type CreateDocumentReq struct {
+	Title             string   `json:"title"`
+	Type              string   `json:"type"`
+	Summary           string   `json:"summary"`
+	Status            int      `json:"status"`
+	Tags              []string `json:"tags"`
+	Content           string   `json:"content"`
+	CreatorExternalID *string  `json:"creator_external_id"`
+
+	//
+	CreateAsOwnDoc bool `json:"create_as_own_doc"`
+
+	// optional
+	ParentExternalID    *string `json:"parent_external_id"`
+	KnowledgeExternalID *string `json:"knowledge_external_id"`
+}
+
+func (req *CreateDocumentReq) Validate() error {
+	if req == nil {
+		return status.StatusInternalParamsError
+	}
+	if req.CreateAsOwnDoc && req.KnowledgeExternalID != nil {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID not nil when CreateAsOwnDoc")
+	}
+	if !req.CreateAsOwnDoc && req.KnowledgeExternalID == nil {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID is nil when not CreateAsOwnDoc")
+	}
+
+	return nil
+}
+
+type CreateDocumentResponse struct {
+	ExternalID string `json:"external_id"`
 }

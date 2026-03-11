@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -43,4 +44,54 @@ func (op *CountDocsByKnowledgeIDOperation) Exec() (int64, error) {
 	}
 
 	return count, nil
+}
+
+type DocKBRelationCreateOperation struct {
+	repo    *DocKnowledgeRelationRepository
+	docID   int64
+	kbID    *int64
+	ownerID *int64
+	tx      *gorm.DB
+}
+
+func (r *DocKnowledgeRelationRepository) CreateDocKBRelation(docID int64) *DocKBRelationCreateOperation {
+	return &DocKBRelationCreateOperation{
+		repo:  r,
+		docID: docID,
+	}
+}
+
+func (op *DocKBRelationCreateOperation) WithKnowledgeID(kbID *int64) *DocKBRelationCreateOperation {
+	op.kbID = kbID
+	return op
+}
+
+func (op *DocKBRelationCreateOperation) WithOwnerID(ownerID *int64) *DocKBRelationCreateOperation {
+	op.ownerID = ownerID
+	return op
+}
+
+func (op *DocKBRelationCreateOperation) WithTx(tx *gorm.DB) *DocKBRelationCreateOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocKBRelationCreateOperation) Exec() error {
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	if op.kbID != nil && op.ownerID != nil {
+		return status.StatusInternalParamsError
+	}
+
+	relation := model.DocKnowledgeRelation{
+		DocumentID:  op.docID,
+		KnowledgeID: op.kbID,
+		OwnerID:     op.ownerID,
+	}
+
+	return op.tx.FirstOrCreate(&relation, model.DocKnowledgeRelation{
+		DocumentID: relation.DocumentID,
+	}).Error
 }
