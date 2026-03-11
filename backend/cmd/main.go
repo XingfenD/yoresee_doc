@@ -6,7 +6,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/i18n"
 	"github.com/XingfenD/yoresee_doc/internal/router"
-	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -15,20 +15,23 @@ import (
 func main() {
 	if err := config.InitConfig(); err != nil {
 		logrus.Fatalf("Init config failed: %v", err)
+		panic("init config failed")
 	}
 
 	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
 		logrus.Fatalf("Init database failed: %v", err)
+		panic("init database failed")
 	}
 
 	if err := storage.InitRedis(&config.GlobalConfig.Redis); err != nil {
 		logrus.Fatalf("Init redis failed: %v", err)
+		panic("init redis failed")
 	}
 
-	if err := service.InitMessageQueue(config.GlobalConfig); err != nil {
+	if err := mq.Init(config.GlobalConfig); err != nil {
 		logrus.Fatalf("Init message queue failed: %v", err)
 	}
-	defer service.CloseMessageQueue()
+	defer mq.Close()
 
 	defer storage.ClosePostgres()
 

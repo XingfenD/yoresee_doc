@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -14,6 +15,12 @@ type RabbitMQ struct {
 
 type RabbitMQConfig struct {
 	URL string
+}
+
+func BuildRabbitMQConfig(cfg config.RabbitMQQueueConfig) RabbitMQConfig {
+	return RabbitMQConfig{
+		URL: cfg.URL,
+	}
 }
 
 func NewRabbitMQ(config RabbitMQConfig) (*RabbitMQ, error) {
