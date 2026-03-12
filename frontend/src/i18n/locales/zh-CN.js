@@ -72,7 +72,14 @@ export default {
     showPreview: '显示预览',
     hidePreview: '隐藏预览',
     lastSaved: '上次保存',
-    fetchContentError: '加载文档内容失败'
+    fetchContentError: '加载文档内容失败',
+    createDocument: '创建文档',
+    deleteDocument: '删除文档',
+    deleteDocumentConfirm: '确定要删除当前文档吗？',
+    deleteNotSupported: '当前版本暂不支持删除文档',
+    renameDocument: '重命名文档',
+    renameNotSupported: '当前版本暂不支持重命名文档',
+    enterDocumentTitle: '请输入文档标题'
   },
   system: {
     name: 'Yoresee',

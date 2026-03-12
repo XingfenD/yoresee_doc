@@ -209,42 +209,8 @@
     </div>
   </div>
 
-  <!-- 创建文档对话框 -->
-  <el-dialog v-model="showCreateDialog" :title="t('knowledgeBase.createDocument')" width="500px"
-    :close-on-click-modal="false">
-    <el-form :model="creatingDocument" label-position="top" @submit.prevent>
-      <el-form-item :label="t('knowledgeBase.documentTitle')" required>
-        <el-input v-model="creatingDocument.title" :placeholder="t('knowledgeBase.enterDocumentTitle')" maxlength="100"
-          show-word-limit />
-      </el-form-item>
-
-      <el-form-item :label="t('knowledgeBase.documentType')">
-        <el-select v-model="creatingDocument.type" :placeholder="t('knowledgeBase.selectDocumentType')"
-          style="width: 100%">
-          <el-option label="Markdown" value="markdown" />
-          <el-option label="Text" value="text" />
-          <!-- 更多文档类型可在此处添加 -->
-        </el-select>
-      </el-form-item>
-
-      <el-form-item :label="t('knowledgeBase.template')">
-        <el-select v-model="creatingDocument.template" :placeholder="t('knowledgeBase.selectTemplate')"
-          style="width: 100%" disabled>
-          <el-option label="空白文档" value="" />
-          <!-- 模板选项将在此处添加 -->
-        </el-select>
-      </el-form-item>
-    </el-form>
-
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="cancelCreateDocument">{{ t("button.cancel") }}</el-button>
-        <el-button type="primary" @click="createDocument" :loading="creatingLoading">
-          {{ t("button.create") }}
-        </el-button>
-      </span>
-    </template>
-  </el-dialog>
+  <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading" @submit="createDocument"
+    @cancel="cancelCreateDocument" />
 </template>
 
 <script setup>
@@ -254,6 +220,7 @@ import { useUserStore } from "@/store/user";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import SideNav from "@/components/SideNav.vue";
+import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import { getKnowledgeBaseDetail, createDocument as createDocumentApi } from "@/services/api.js";
 import {
   ArrowDown,
@@ -314,11 +281,6 @@ const totalDocumentsCount = ref(0);
 
 // 创建文档对话框相关
 const showCreateDialog = ref(false);
-const creatingDocument = ref({
-  title: '',
-  type: 'markdown',
-  template: ''
-});
 const creatingLoading = ref(false);
 const sortOptions = ref([
   { value: "name", label: t("knowledgeBase.sortByName") },
@@ -385,7 +347,7 @@ const loadKnowledgeBaseDetail = async () => {
       knowledgeBaseName.value = data.knowledge_base.name;
       knowledgeBaseDescription.value = data.knowledge_base.description;
       lastUpdated.value = data.knowledge_base.updated_at;
-      totalDocuments.value = data.documents ? data.documents.length : 0;
+      totalDocuments.value = data.knowledge_base.documents_count || 0;
       totalDocumentsCount.value = data.total_count || 0;
       ownerName.value = data.knowledge_base.creator_name || "未知用户";
     }
@@ -399,18 +361,12 @@ const loadKnowledgeBaseDetail = async () => {
 
 // 打开创建文档对话框
 const openCreateDocumentDialog = () => {
-  // 重置表单
-  creatingDocument.value = {
-    title: '',
-    type: 'markdown',
-    template: ''
-  };
   showCreateDialog.value = true;
 };
 
 // 创建文档
-const createDocument = async () => {
-  if (!creatingDocument.value.title.trim()) {
+const createDocument = async (payload) => {
+  if (!payload?.title?.trim()) {
     ElMessage.error(t("knowledgeBase.titleRequired"));
     return;
   }
@@ -426,13 +382,11 @@ const createDocument = async () => {
 
     // 调用API创建文档
     const response = await createDocumentApi({
-      title: creatingDocument.value.title,
-      type: creatingDocument.value.type,
+      title: payload.title,
+      type: payload.type || 'markdown',
       container_type: "knowledge_base",
       knowledge_base_external_id: knowledgeBaseExternalID
     });
-
-    ElMessage.success(t("knowledgeBase.documentCreatedSuccessfully"));
 
     // 关闭对话框
     showCreateDialog.value = false;

@@ -62,7 +62,7 @@
       <!-- 右侧内容 -->
       <div class="content-area">
         <div class="editor-layout">
-          <aside class="sidebar">
+          <aside class="sidebar" :style="{ width: `${sidebarWidth}px` }">
             <div class="sidebar-header">
               <el-button text @click="goBack">
                 <el-icon>
@@ -73,20 +73,38 @@
             </div>
             <div class="sidebar-title">{{ knowledgeBaseName }}</div>
             <div class="tree-toolbar">
-              <el-button text @click="toggleExpandAll"
-                :title="isAllExpanded ? t('common.collapseAll') : t('common.expandAll')" class="tree-expand-btn">
-                <el-icon :size="14">
-                  <FolderOpened v-if="isAllExpanded" />
-                  <Folder v-else />
-                </el-icon>
-              </el-button>
+              <div class="tree-toolbar-left">
+                <el-button text @click="toggleExpandAll"
+                  :title="isAllExpanded ? t('common.collapseAll') : t('common.expandAll')" class="tree-expand-btn">
+                  <el-icon :size="14">
+                    <FolderOpened v-if="isAllExpanded" />
+                    <Folder v-else />
+                  </el-icon>
+                </el-button>
+              </div>
+              <div class="tree-toolbar-actions">
+                <el-button text class="tree-action-btn" :title="t('knowledgeBase.createDocument')"
+                  @click="openCreateDocumentDialog">
+                  <el-icon :size="16">
+                    <Plus />
+                  </el-icon>
+                </el-button>
+                <el-button text class="tree-action-btn tree-action-btn--danger" :disabled="!docId"
+                  :title="t('document.deleteDocument')" @click="handleDeleteDocument">
+                  <el-icon :size="16">
+                    <Delete />
+                  </el-icon>
+                </el-button>
+              </div>
             </div>
-            <div class="directory-tree" v-loading="treeLoading">
+            <div class="directory-tree" v-loading="treeLoading" @click="closeContextMenu">
               <el-tree ref="treeRef" :data="directoryTree" :props="treeProps" node-key="id" :default-expand-all="false"
                 :expand-on-click-node="false" :current-node-key="docId" highlight-current
                 @node-click="handleTreeNodeClick" class="editor-tree">
                 <template #default="{ node, data }">
-                  <div class="tree-node-content" :class="{ 'is-active': isCurrentDoc(data) }">
+                  <div class="tree-node-content" :class="{ 'is-active': isCurrentDoc(data) }"
+                    @click.stop="closeContextMenu"
+                    @contextmenu.prevent="(event) => handleNodeContextMenu(event, data)">
                     <div class="node-icon">
                       <el-icon v-if="data.isFolder">
                         <FolderOpened v-if="node.expanded" />
@@ -96,7 +114,17 @@
                         <Document />
                       </el-icon>
                     </div>
-                    <span class="node-label">
+                    <el-input
+                      v-if="data.isRenaming"
+                      :ref="(el) => setRenamingInputRef(el, data)"
+                      v-model="data.renameValue"
+                      size="small"
+                      class="inline-rename-input"
+                      @keyup.enter="confirmInlineRename(data)"
+                      @keydown.esc.prevent="cancelInlineRename(data)"
+                      @blur="confirmInlineRename(data)"
+                    />
+                    <span v-else class="node-label">
                       {{ node.label }}
                     </span>
                   </div>
@@ -104,6 +132,7 @@
               </el-tree>
             </div>
           </aside>
+          <div class="sidebar-resizer" role="separator" aria-orientation="vertical" @mousedown="startResize"></div>
 
           <main class="editor-main">
             <div class="editor-header">
@@ -131,27 +160,68 @@
         </div>
       </div>
     </div>
+    <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
+      :parent-external-id="pendingParentId" @submit="createDocument"
+      @cancel="cancelCreateDocument" />
+    <div v-show="contextMenu.visible" class="tree-context-menu" :style="contextMenuStyle">
+      <button class="context-item" type="button" @click="handleContextCommand('create')">
+        <el-icon :size="14" class="context-icon">
+          <Plus />
+        </el-icon>
+        {{ t('document.createDocument') }}
+      </button>
+      <button class="context-item" type="button" @click="handleContextCommand('rename')">
+        <el-icon :size="14" class="context-icon">
+          <Edit />
+        </el-icon>
+        {{ t('document.renameDocument') }}
+      </button>
+      <button class="context-item is-danger" type="button" @click="handleContextCommand('delete')">
+        <el-icon :size="14" class="context-icon">
+          <Delete />
+        </el-icon>
+        {{ t('document.deleteDocument') }}
+      </button>
+    </div>
   </div>
 </template>
 
+<script>
+export default {
+  inheritAttrs: false
+};
+</script>
+
 <script setup>
-import { ref, onMounted, computed, nextTick, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ElMessage } from 'element-plus';
-import { ArrowLeft, Folder, FolderOpened, Document, Check, Flag, ChatLineRound, Moon, Sunny, ArrowDown } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { ArrowLeft, Folder, FolderOpened, Document, Check, Flag, ChatLineRound, Moon, Sunny, ArrowDown, Plus, Delete, Edit } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
+import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import SideNav from '@/components/SideNav.vue';
 import { useUserStore } from '@/store/user';
-import { getKnowledgeBaseDocuments, getDocumentContent } from '@/services/api';
+import { getKnowledgeBaseDocuments, getDocumentContent, createDocument as createDocumentApi } from '@/services/api';
+
+const props = defineProps({
+  kbId: {
+    type: String,
+    default: ''
+  },
+  docId: {
+    type: String,
+    default: ''
+  }
+});
 
 const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
-const kbId = ref(route.params.kbId);
-const docId = ref(route.params.docId);
+const kbId = ref(props.kbId || route.params.kbId);
+const docId = ref(props.docId || route.params.docId);
 
 const systemName = ref(userStore.systemName || 'Yoresee');
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
@@ -165,21 +235,138 @@ const currentDocTitle = ref('示例文档');
 const editorContent = ref('# 欢迎使用文档编辑器\n\n这是一个示例文档内容。\n\n## 功能说明\n\n- 左侧显示知识库目录\n- 右侧为 Markdown 编辑器\n- 支持实时预览\n- 支持语法高亮\n\n```javascript\n// 代码块示例\nconst hello = "Hello World";\nconsole.log(hello);\n```\n\n> 引用块示例\n\n**粗体** 和 *斜体* 文本\n\n| 表格 | 示例 | |\n|------|------|---|\n| 列1  | 列2  | 列3 |\n');
 const lastSavedTime = ref('--');
 const treeLoading = ref(false);
+const sidebarWidth = ref(280);
+const isResizingSidebar = ref(false);
+const showCreateDialog = ref(false);
+const creatingLoading = ref(false);
+const pendingParentId = ref(null);
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  data: null
+});
+const renamingInputRef = ref(null);
 
 const treeRef = ref(null);
 const isAllExpanded = ref(true);
 
 const treeProps = {
   children: 'children',
-  label: 'label'
+  label: 'label',
+  isLeaf: 'isLeaf'
 };
 
 const directoryTree = ref([]);
 
 const isCurrentDoc = (data) => String(data.id) === String(docId.value);
 
+const setRenamingInputRef = (el, data) => {
+  if (el && data?.isRenaming) {
+    renamingInputRef.value = el;
+  }
+};
 
-const transformDocumentsToTree = (documents) => {
+const openCreateDocumentDialog = (parentId = null) => {
+  pendingParentId.value = parentId;
+  showCreateDialog.value = true;
+};
+
+const cancelCreateDocument = () => {
+  showCreateDialog.value = false;
+};
+
+const createDocument = async (payload) => {
+  if (!payload?.title?.trim()) {
+    ElMessage.error(t('knowledgeBase.titleRequired'));
+    return;
+  }
+
+  try {
+    creatingLoading.value = true;
+    const requestBody = {
+      title: payload.title,
+      type: payload.type || 'markdown',
+      container_type: 'knowledge_base',
+      knowledge_base_external_id: kbId.value
+    };
+    if (payload?.parent_external_id) {
+      requestBody.parent_external_id = payload.parent_external_id;
+    } else if (pendingParentId.value) {
+      requestBody.parent_external_id = pendingParentId.value;
+    }
+    const response = await createDocumentApi(requestBody);
+
+    showCreateDialog.value = false;
+    pendingParentId.value = null;
+    await fetchDocuments();
+    if (response?.external_id) {
+      router.push(`/knowledge-base/${kbId.value}/document/${response.external_id}`);
+    }
+  } catch (error) {
+    console.error('创建文档失败:', error);
+    ElMessage.error(t('knowledgeBase.createDocumentError'));
+  } finally {
+    creatingLoading.value = false;
+  }
+};
+
+const handleDeleteDocument = async () => {
+  if (!docId.value) {
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(
+      t('document.deleteDocumentConfirm'),
+      t('document.deleteDocument'),
+      {
+        confirmButtonText: t('button.confirm'),
+        cancelButtonText: t('button.cancel'),
+        type: 'warning'
+      }
+    );
+    ElMessage.warning(t('document.deleteNotSupported'));
+  } catch (error) {
+    // cancel
+  }
+};
+
+const onResizeMove = (event) => {
+  if (!isResizingSidebar.value) {
+    return;
+  }
+  const layoutRect = document.querySelector('.editor-layout')?.getBoundingClientRect();
+  if (!layoutRect) {
+    return;
+  }
+  const minWidth = 220;
+  const maxWidth = Math.min(520, layoutRect.width - 320);
+  const nextWidth = Math.min(Math.max(event.clientX - layoutRect.left, minWidth), maxWidth);
+  sidebarWidth.value = nextWidth;
+};
+
+const stopResize = () => {
+  if (!isResizingSidebar.value) {
+    return;
+  }
+  isResizingSidebar.value = false;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  window.removeEventListener('mousemove', onResizeMove);
+  window.removeEventListener('mouseup', stopResize);
+};
+
+const startResize = (event) => {
+  event.preventDefault();
+  isResizingSidebar.value = true;
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  window.addEventListener('mousemove', onResizeMove);
+  window.addEventListener('mouseup', stopResize);
+};
+
+
+const transformDocumentsToTree = (documents, parentId = null) => {
   const tree = [];
 
   documents.forEach(doc => {
@@ -187,11 +374,14 @@ const transformDocumentsToTree = (documents) => {
       id: doc.external_id,
       label: doc.title,
       isFolder: doc.has_children,
+      isLeaf: !doc.has_children,
+      type: doc.type,
+      parentId,
       children: []
     };
 
     if (doc.children && doc.children.length > 0) {
-      treeNode.children = transformDocumentsToTree(doc.children);
+      treeNode.children = transformDocumentsToTree(doc.children, treeNode.id);
     }
 
     tree.push(treeNode);
@@ -199,6 +389,126 @@ const transformDocumentsToTree = (documents) => {
 
   return tree;
 };
+
+const handleContextCommand = async (command, data) => {
+  const target = data || contextMenu.value.data;
+  if (!target) {
+    return;
+  }
+  contextMenu.value.visible = false;
+  switch (command) {
+    case 'create': {
+      openCreateDocumentDialog(target.id || null);
+      break;
+    }
+    case 'rename': {
+      startInlineRename(target);
+      break;
+    }
+    case 'delete': {
+      try {
+        await ElMessageBox.confirm(
+          t('document.deleteDocumentConfirm'),
+          t('document.deleteDocument'),
+          {
+            confirmButtonText: t('button.confirm'),
+            cancelButtonText: t('button.cancel'),
+            type: 'warning'
+          }
+        );
+        ElMessage.warning(t('document.deleteNotSupported'));
+      } catch (error) {
+        // cancel
+      }
+      break;
+    }
+    default:
+      break;
+  }
+};
+
+const handleNodeContextMenu = (event, data) => {
+  event.preventDefault();
+  event.stopPropagation();
+  const menuWidth = 150;
+  const menuHeight = 120;
+  let x = event.clientX;
+  let y = event.clientY;
+  if (x + menuWidth > window.innerWidth) {
+    x = window.innerWidth - menuWidth - 8;
+  }
+  if (y + menuHeight > window.innerHeight) {
+    y = window.innerHeight - menuHeight - 8;
+  }
+  contextMenu.value = {
+    visible: true,
+    x,
+    y,
+    data
+  };
+};
+
+const contextMenuStyle = computed(() => ({
+  left: `${contextMenu.value.x}px`,
+  top: `${contextMenu.value.y}px`
+}));
+
+const closeContextMenu = () => {
+  if (contextMenu.value.visible) {
+    contextMenu.value.visible = false;
+  }
+};
+
+const startInlineRename = (node) => {
+  if (!node || node.isRenaming) {
+    return;
+  }
+  node.isRenaming = true;
+  node.originalLabel = node.label;
+  node.renameValue = node.label;
+  nextTick(() => {
+    const focusInput = () => {
+      const inputEl = renamingInputRef.value?.input || renamingInputRef.value;
+      if (inputEl && typeof inputEl.focus === 'function') {
+        inputEl.focus();
+        if (typeof inputEl.select === 'function') {
+          inputEl.select();
+        }
+        return true;
+      }
+      return false;
+    };
+    if (!focusInput()) {
+      setTimeout(focusInput, 0);
+    }
+  });
+};
+
+const cancelInlineRename = (node) => {
+  if (!node?.isRenaming) {
+    return;
+  }
+  node.label = node.originalLabel || node.label;
+  node.renameValue = '';
+  node.isRenaming = false;
+};
+
+const confirmInlineRename = (node) => {
+  if (!node?.isRenaming) {
+    return;
+  }
+  const nextName = node.renameValue?.trim();
+  if (!nextName) {
+    cancelInlineRename(node);
+    return;
+  }
+  node.isRenaming = false;
+  node.renameValue = '';
+  // TODO: replace with rename API when available
+  ElMessage.warning(t('document.renameNotSupported'));
+  node.label = node.originalLabel || node.label;
+};
+
 
 const fetchDocuments = async () => {
   if (kbId.value === 'example' || kbId.value === 'personal') {
@@ -280,6 +590,9 @@ const goBack = () => {
 };
 
 const handleTreeNodeClick = (data) => {
+  if (data?.isCreating) {
+    return;
+  }
   if (!data.isFolder) {
     router.push(`/knowledge-base/${kbId.value}/document/${data.id}`);
   }
@@ -381,11 +694,34 @@ onMounted(async () => {
   await fetchSystemInfo();
 });
 
+onBeforeUnmount(() => {
+  stopResize();
+  window.removeEventListener('click', closeContextMenu);
+  window.removeEventListener('scroll', closeContextMenu, true);
+});
+
+onMounted(() => {
+  window.addEventListener('click', closeContextMenu);
+  window.addEventListener('scroll', closeContextMenu, true);
+});
+
 watch(
-  () => route.params.docId,
+  () => props.docId || route.params.docId,
   async (newDocId) => {
     docId.value = newDocId;
     await expandToCurrentDoc();
+    await fetchDocumentContent();
+  }
+);
+
+watch(
+  () => props.kbId || route.params.kbId,
+  async (newKbId) => {
+    if (!newKbId) {
+      return;
+    }
+    kbId.value = newKbId;
+    await fetchDocuments();
     await fetchDocumentContent();
   }
 );
@@ -498,11 +834,12 @@ watch(
 }
 
 .sidebar {
-  width: 280px;
   background-color: var(--bg-white);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
+  min-width: 220px;
+  max-width: 520px;
 }
 
 .dark-mode .sidebar {
@@ -534,13 +871,34 @@ watch(
 
 .tree-toolbar {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
   padding: var(--spacing-xs) var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
 }
 
 .dark-mode .tree-toolbar {
   border-color: var(--border-color);
+}
+
+.tree-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.tree-action-btn {
+  padding: 2px 4px;
+  color: var(--text-light);
+}
+
+.tree-action-btn:hover {
+  color: var(--primary-color);
+}
+
+.tree-action-btn--danger:hover {
+  color: #f56c6c;
 }
 
 .tree-expand-btn {
@@ -558,6 +916,7 @@ watch(
 .directory-tree {
   flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
   padding: var(--spacing-sm);
 }
 
@@ -565,6 +924,42 @@ watch(
   background: transparent;
 }
 
+.editor-tree :deep(.el-tree-node__label) {
+  white-space: nowrap;
+}
+
+.editor-tree :deep(.el-tree-node__content) {
+  min-width: max-content;
+}
+
+.editor-tree :deep(.el-tree-node__children) {
+  min-width: max-content;
+}
+
+.editor-tree :deep(.el-tree-node__content) {
+  white-space: nowrap;
+}
+
+.sidebar-resizer {
+  width: 6px;
+  cursor: col-resize;
+  background-color: var(--bg-light);
+  border-right: 1px solid var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-resizer:hover {
+  background-color: var(--bg-medium);
+}
+
+.dark-mode .sidebar-resizer {
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
+}
+
+.dark-mode .sidebar-resizer:hover {
+  background-color: var(--bg-white);
+}
 .editor-tree :deep(.el-tree-node__content) {
   background-color: transparent;
 }
@@ -586,7 +981,7 @@ watch(
 }
 
 .dark-mode .editor-tree :deep(.el-tree-node__content:hover) {
-  background-color: var(--bg-medium);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .tree-node-content {
@@ -599,6 +994,63 @@ watch(
   box-sizing: border-box;
 }
 
+.tree-context-menu {
+  position: fixed;
+  z-index: 3000;
+  min-width: 150px;
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xs) 0;
+}
+
+.dark-mode .tree-context-menu {
+  background-color: var(--bg-white);
+  border-color: var(--border-color);
+}
+
+.context-item {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: transparent;
+  border: none;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-medium);
+  cursor: pointer;
+}
+
+.context-item:hover {
+  background-color: var(--bg-light);
+  color: var(--primary-color);
+}
+
+.dark-mode .context-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.context-item.is-danger:hover {
+  color: #f56c6c;
+}
+
+.context-icon {
+  color: var(--text-light);
+}
+
+.context-item:hover .context-icon {
+  color: var(--primary-color);
+}
+
+.context-item.is-danger:hover .context-icon {
+  color: #f56c6c;
+}
+
+.inline-rename-input {
+  max-width: 220px;
+}
 .editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: rgba(22, 93, 255, 0.1);
 }
@@ -693,5 +1145,60 @@ watch(
 .dark-mode .editor-footer {
   border-color: var(--border-color);
   color: var(--text-light);
+}
+
+/* 深色模式对话框样式 */
+.dark-mode .el-dialog {
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .el-dialog__header {
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .el-dialog__body {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.dark-mode .el-dialog__footer {
+  background-color: var(--bg-white);
+  border-top: 1px solid var(--border-color);
+}
+
+.dark-mode .el-form-item__label {
+  color: var(--text-dark);
+}
+
+.dark-mode :deep(.el-input__wrapper) {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+.dark-mode :deep(.el-input__inner) {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+.dark-mode :deep(.el-select__wrapper) {
+  background-color: var(--select-bg);
+  border-color: var(--select-border);
+  color: var(--select-text);
+}
+
+.dark-mode :deep(.el-select__input) {
+  background-color: var(--select-bg);
+  color: var(--select-text);
+}
+
+.dark-mode :deep(.el-select-dropdown__item) {
+  background-color: var(--select-option-bg);
+  color: var(--select-text);
 }
 </style>

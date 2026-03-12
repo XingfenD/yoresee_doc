@@ -74,7 +74,14 @@ export default {
     showPreview: 'Show Preview',
     hidePreview: 'Hide Preview',
     lastSaved: 'Last saved',
-    fetchContentError: 'Failed to load document content'
+    fetchContentError: 'Failed to load document content',
+    createDocument: 'Create Document',
+    deleteDocument: 'Delete Document',
+    deleteDocumentConfirm: 'Are you sure you want to delete this document?',
+    deleteNotSupported: 'Document deletion is not available yet',
+    renameDocument: 'Rename Document',
+    renameNotSupported: 'Document rename is not available yet',
+    enterDocumentTitle: 'Please enter document title'
   },
   system: {
     name: 'Yoresee',

@@ -31,16 +31,18 @@ let vditor = null;
 let themeObserver = null;
 
 const applyVditorTheme = () => {
-  if (!vditor) {
+  if (!vditor || typeof vditor.setTheme !== 'function') {
     return;
   }
-  const isDarkMode = document.documentElement.classList.contains('dark-mode');
-  if (typeof vditor.setTheme === 'function') {
+  try {
+    const isDarkMode = document.documentElement.classList.contains('dark-mode');
     vditor.setTheme(
       isDarkMode ? 'dark' : 'classic',
       isDarkMode ? 'dark' : 'light',
       isDarkMode ? 'dark' : 'github'
     );
+  } catch (error) {
+    // Ignore theme apply errors during init/destroy
   }
 };
 
@@ -52,6 +54,7 @@ onMounted(() => {
     mode: 'wysiwyg',
     theme: 'classic',
     icon: 'ant',
+    customWysiwygToolbar: () => [],
     counter: {
       enable: true
     },
@@ -85,7 +88,16 @@ onBeforeUnmount(() => {
 });
 
 watch(() => props.modelValue, (newValue) => {
-  if (vditor && vditor.getValue() !== newValue) {
+  if (!vditor || typeof vditor.getValue !== 'function') {
+    return;
+  }
+  let currentValue = '';
+  try {
+    currentValue = vditor.getValue();
+  } catch (error) {
+    return;
+  }
+  if (currentValue !== newValue) {
     vditor.setValue(newValue);
   }
 });
