@@ -141,57 +141,48 @@
             </div>
 
             <div class="tree-content" v-loading="loading">
-              <el-tree v-if="documentTreeData.length > 0" :data="documentTreeData" :props="treeProps" node-key="id"
-                :default-expand-all="false" :expand-on-click-node="false" :accordion="true"
-                @node-click="handleTreeNodeClick" class="custom-tree">
-                <template #default="{ node, data }">
-                  <div class="tree-node-content">
-                    <div class="node-icon">
-                      <el-icon v-if="data.isParent">
-                        <FolderOpened v-if="node.expanded" />
-                        <Folder v-else />
-                      </el-icon>
-                      <el-icon v-else>
-                        <Document />
-                      </el-icon>
-                    </div>
-
-                    <div class="node-info">
-                      <span class="node-label">{{ node.label }}</span>
-                      <el-tag v-if="data.tags && data.tags.length > 0" size="small" type="info" class="node-tag">
-                        {{ data.tags[0] }}
-                      </el-tag>
-                    </div>
-
-                    <div class="node-actions">
-                      <el-button size="small" type="primary" text @click.stop="openDocument(data)">
-                        {{ t("common.open") }}
-                      </el-button>
-
-                      <el-dropdown trigger="click" @command="handleNodeAction($event, data)">
-                        <el-button size="small" text @click.stop>
-                          <el-icon>
-                            <MoreFilled />
-                          </el-icon>
-                        </el-button>
-                        <template #dropdown>
-                          <el-dropdown-menu>
-                            <el-dropdown-item command="rename">
-                              {{ t("common.rename") }}
-                            </el-dropdown-item>
-                            <el-dropdown-item command="share" divided>
-                              {{ t("document.share") }}
-                            </el-dropdown-item>
-                            <el-dropdown-item command="delete" divided>
-                              {{ t("common.delete") }}
-                            </el-dropdown-item>
-                          </el-dropdown-menu>
-                        </template>
-                      </el-dropdown>
-                    </div>
-                  </div>
+              <DocumentTree
+                v-if="directoryTreeData.length > 0"
+                :nodes="directoryTreeData"
+                :loading="loading"
+                :show-toolbar="false"
+                :show-create="false"
+                :show-delete="false"
+                :context-menu-enabled="false"
+                @node-click="handleTreeNodeClick"
+              >
+                <template #node-extra="{ data }">
+                  <el-tag v-if="data.tags && data.tags.length > 0" size="small" type="info" class="node-tag">
+                    {{ data.tags[0] }}
+                  </el-tag>
                 </template>
-              </el-tree>
+                <template #node-actions="{ data }">
+                  <el-button size="small" type="primary" text @click.stop="openDocument(data)">
+                    {{ t("common.open") }}
+                  </el-button>
+
+                  <el-dropdown trigger="click" @command="handleNodeAction($event, data)">
+                    <el-button size="small" text @click.stop>
+                      <el-icon>
+                        <MoreFilled />
+                      </el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="rename">
+                          {{ t("common.rename") }}
+                        </el-dropdown-item>
+                        <el-dropdown-item command="share" divided>
+                          {{ t("document.share") }}
+                        </el-dropdown-item>
+                        <el-dropdown-item command="delete" divided>
+                          {{ t("common.delete") }}
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </template>
+              </DocumentTree>
               <div v-else-if="!loading" class="empty-tree-state">
                 <el-empty :description="t('knowledgeBase.noDocuments')" :image-size="64" />
               </div>
@@ -220,6 +211,7 @@ import { useUserStore } from "@/store/user";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import SideNav from "@/components/SideNav.vue";
+import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import { getKnowledgeBaseDetail, createDocument as createDocumentApi } from "@/services/api.js";
 import {
@@ -289,39 +281,25 @@ const sortOptions = ref([
 ]);
 
 // 文档树数据 - 从API获取
-const documentTreeData = computed(() => {
+const directoryTreeData = computed(() => {
   if (!knowledgeBaseData.value || !knowledgeBaseData.value.documents) {
     return [];
   }
 
-  return knowledgeBaseData.value.documents.map((doc) => ({
+  const mapDoc = (doc, parentId = null) => ({
     id: doc.external_id,
-    name: doc.title,
+    label: doc.title,
     type: doc.type,
-    isParent: doc.hasChildren || (doc.children && doc.children.length > 0),
-    children: doc.children
-      ? doc.children.map((child) => ({
-        id: child.external_id,
-        name: child.title,
-        type: child.type,
-        isParent: false,
-        tags: child.tags || [],
-        size: "0 MB", // 后端没有返回大小信息
-        modified: child.updated_at,
-        external_id: child.external_id,
-      }))
-      : [],
+    isFolder: doc.hasChildren || (doc.children && doc.children.length > 0),
+    isLeaf: !(doc.hasChildren || (doc.children && doc.children.length > 0)),
     tags: doc.tags || [],
-    size: "0 MB", // 后端没有返回大小信息
-    modified: doc.updated_at,
-    external_id: doc.external_id,
-  }));
+    parentId,
+    children: doc.children ? doc.children.map((child) => mapDoc(child, doc.external_id)) : []
+  });
+
+  return knowledgeBaseData.value.documents.map((doc) => mapDoc(doc));
 });
 
-const treeProps = {
-  children: "children",
-  label: "name",
-};
 
 // 加载知识库详情数据
 const loadKnowledgeBaseDetail = async () => {

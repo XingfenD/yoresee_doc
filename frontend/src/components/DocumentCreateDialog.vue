@@ -1,6 +1,7 @@
 <template>
-  <el-dialog v-model="visible" :title="t('knowledgeBase.createDocument')" width="500px" :close-on-click-modal="false">
-    <el-form :model="formState" label-position="top" @submit.prevent>
+  <el-dialog v-model="visible" :title="t('knowledgeBase.createDocument')" width="500px" :close-on-click-modal="false"
+    @keydown.esc.prevent="handleCancel">
+    <el-form :model="formState" label-position="top" @submit.prevent @keydown.enter.prevent="handleCreate">
       <el-form-item :label="t('knowledgeBase.documentTitle')" required>
         <el-input v-model="formState.title" :placeholder="t('knowledgeBase.enterDocumentTitle')" maxlength="100"
           show-word-limit />

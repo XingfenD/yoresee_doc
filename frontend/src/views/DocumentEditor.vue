@@ -72,65 +72,19 @@
               </el-button>
             </div>
             <div class="sidebar-title">{{ knowledgeBaseName }}</div>
-            <div class="tree-toolbar">
-              <div class="tree-toolbar-left">
-                <el-button text @click="toggleExpandAll"
-                  :title="isAllExpanded ? t('common.collapseAll') : t('common.expandAll')" class="tree-expand-btn">
-                  <el-icon :size="14">
-                    <FolderOpened v-if="isAllExpanded" />
-                    <Folder v-else />
-                  </el-icon>
-                </el-button>
-              </div>
-              <div class="tree-toolbar-actions">
-                <el-button text class="tree-action-btn" :title="t('knowledgeBase.createDocument')"
-                  @click="openCreateDocumentDialog">
-                  <el-icon :size="16">
-                    <Plus />
-                  </el-icon>
-                </el-button>
-                <el-button text class="tree-action-btn tree-action-btn--danger" :disabled="!docId"
-                  :title="t('document.deleteDocument')" @click="handleDeleteDocument">
-                  <el-icon :size="16">
-                    <Delete />
-                  </el-icon>
-                </el-button>
-              </div>
-            </div>
-            <div class="directory-tree" v-loading="treeLoading" @click="closeContextMenu">
-              <el-tree ref="treeRef" :data="directoryTree" :props="treeProps" node-key="id" :default-expand-all="false"
-                :expand-on-click-node="false" :current-node-key="docId" highlight-current
-                @node-click="handleTreeNodeClick" class="editor-tree">
-                <template #default="{ node, data }">
-                  <div class="tree-node-content" :class="{ 'is-active': isCurrentDoc(data) }"
-                    @click="closeContextMenu"
-                    @contextmenu.prevent="(event) => handleNodeContextMenu(event, data)">
-                    <div class="node-icon">
-                      <el-icon v-if="data.isFolder">
-                        <FolderOpened v-if="node.expanded" />
-                        <Folder v-else />
-                      </el-icon>
-                      <el-icon v-else>
-                        <Document />
-                      </el-icon>
-                    </div>
-                    <el-input
-                      v-if="data.isRenaming"
-                      :ref="(el) => setRenamingInputRef(el, data)"
-                      v-model="data.renameValue"
-                      size="small"
-                      class="inline-rename-input"
-                      @keyup.enter="confirmInlineRename(data)"
-                      @keydown.esc.prevent="cancelInlineRename(data)"
-                      @blur="confirmInlineRename(data)"
-                    />
-                    <span v-else class="node-label">
-                      {{ node.label }}
-                    </span>
-                  </div>
-                </template>
-              </el-tree>
-            </div>
+            <DocumentTree
+              ref="treeComponentRef"
+              :nodes="directoryTree"
+              :loading="treeLoading"
+              :current-id="docId"
+              :expand-all="isAllExpanded"
+              :disable-delete="!docId"
+              @toggle-expand="toggleExpandAll"
+              @node-click="handleTreeNodeClick"
+              @create="handleCreateFromTree"
+              @delete="handleDeleteDocument"
+              @rename="handleRenameFromTree"
+            />
           </aside>
           <div class="sidebar-resizer" role="separator" aria-orientation="vertical" @mousedown="startResize"></div>
 
@@ -163,26 +117,6 @@
     <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
       :parent-external-id="pendingParentId" @submit="createDocument"
       @cancel="cancelCreateDocument" />
-    <div v-show="contextMenu.visible" class="tree-context-menu" :style="contextMenuStyle">
-      <button class="context-item" type="button" @click="handleContextCommand('create')">
-        <el-icon :size="14" class="context-icon">
-          <Plus />
-        </el-icon>
-        {{ t('document.createDocument') }}
-      </button>
-      <button class="context-item" type="button" @click="handleContextCommand('rename')">
-        <el-icon :size="14" class="context-icon">
-          <Edit />
-        </el-icon>
-        {{ t('document.renameDocument') }}
-      </button>
-      <button class="context-item is-danger" type="button" @click="handleContextCommand('delete')">
-        <el-icon :size="14" class="context-icon">
-          <Delete />
-        </el-icon>
-        {{ t('document.deleteDocument') }}
-      </button>
-    </div>
   </div>
 </template>
 
@@ -197,9 +131,10 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, Folder, FolderOpened, Document, Check, Flag, ChatLineRound, Moon, Sunny, ArrowDown, Plus, Delete, Edit } from '@element-plus/icons-vue';
+import { ArrowLeft, Check, Flag, ChatLineRound, Moon, Sunny, ArrowDown } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
+import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
 import { useUserStore } from '@/store/user';
 import { getKnowledgeBaseDocuments, getDocumentContent, createDocument as createDocumentApi } from '@/services/api';
@@ -240,32 +175,14 @@ const isResizingSidebar = ref(false);
 const showCreateDialog = ref(false);
 const creatingLoading = ref(false);
 const pendingParentId = ref(null);
-const contextMenu = ref({
-  visible: false,
-  x: 0,
-  y: 0,
-  data: null
-});
-const renamingInputRef = ref(null);
+const treeComponentRef = ref(null);
 
-const treeRef = ref(null);
+const treeRef = computed(() => treeComponentRef.value?.treeRef);
 const isAllExpanded = ref(true);
-
-const treeProps = {
-  children: 'children',
-  label: 'label',
-  isLeaf: 'isLeaf'
-};
 
 const directoryTree = ref([]);
 
 const isCurrentDoc = (data) => String(data.id) === String(docId.value);
-
-const setRenamingInputRef = (el, data) => {
-  if (el && data?.isRenaming) {
-    renamingInputRef.value = el;
-  }
-};
 
 const openCreateDocumentDialog = (parentId = null) => {
   pendingParentId.value = parentId;
@@ -390,123 +307,18 @@ const transformDocumentsToTree = (documents, parentId = null) => {
   return tree;
 };
 
-const handleContextCommand = async (command, data) => {
-  const target = data || contextMenu.value.data;
-  if (!target) {
-    return;
-  }
-  contextMenu.value.visible = false;
-  switch (command) {
-    case 'create': {
-      openCreateDocumentDialog(target.id || null);
-      break;
-    }
-    case 'rename': {
-      startInlineRename(target);
-      break;
-    }
-    case 'delete': {
-      try {
-        await ElMessageBox.confirm(
-          t('document.deleteDocumentConfirm'),
-          t('document.deleteDocument'),
-          {
-            confirmButtonText: t('button.confirm'),
-            cancelButtonText: t('button.cancel'),
-            type: 'warning'
-          }
-        );
-        ElMessage.warning(t('document.deleteNotSupported'));
-      } catch (error) {
-        // cancel
-      }
-      break;
-    }
-    default:
-      break;
-  }
+const handleCreateFromTree = (target) => {
+  openCreateDocumentDialog(target?.id || null);
 };
 
-const handleNodeContextMenu = (event, data) => {
-  event.preventDefault();
-  event.stopPropagation();
-  const menuWidth = 150;
-  const menuHeight = 120;
-  let x = event.clientX;
-  let y = event.clientY;
-  if (x + menuWidth > window.innerWidth) {
-    x = window.innerWidth - menuWidth - 8;
-  }
-  if (y + menuHeight > window.innerHeight) {
-    y = window.innerHeight - menuHeight - 8;
-  }
-  contextMenu.value = {
-    visible: true,
-    x,
-    y,
-    data
-  };
+const handleRenameFromTree = () => {
+  ElMessage.warning(t('document.renameNotSupported'));
 };
-
-const contextMenuStyle = computed(() => ({
-  left: `${contextMenu.value.x}px`,
-  top: `${contextMenu.value.y}px`
-}));
 
 const closeContextMenu = () => {
-  if (contextMenu.value.visible) {
-    contextMenu.value.visible = false;
+  if (treeComponentRef.value) {
+    treeComponentRef.value.closeContextMenu?.();
   }
-};
-
-const startInlineRename = (node) => {
-  if (!node || node.isRenaming) {
-    return;
-  }
-  node.isRenaming = true;
-  node.originalLabel = node.label;
-  node.renameValue = node.label;
-  nextTick(() => {
-    const focusInput = () => {
-      const inputEl = renamingInputRef.value?.input || renamingInputRef.value;
-      if (inputEl && typeof inputEl.focus === 'function') {
-        inputEl.focus();
-        if (typeof inputEl.select === 'function') {
-          inputEl.select();
-        }
-        return true;
-      }
-      return false;
-    };
-    if (!focusInput()) {
-      setTimeout(focusInput, 0);
-    }
-  });
-};
-
-const cancelInlineRename = (node) => {
-  if (!node?.isRenaming) {
-    return;
-  }
-  node.label = node.originalLabel || node.label;
-  node.renameValue = '';
-  node.isRenaming = false;
-};
-
-const confirmInlineRename = (node) => {
-  if (!node?.isRenaming) {
-    return;
-  }
-  const nextName = node.renameValue?.trim();
-  if (!nextName) {
-    cancelInlineRename(node);
-    return;
-  }
-  node.isRenaming = false;
-  node.renameValue = '';
-  // TODO: replace with rename API when available
-  ElMessage.warning(t('document.renameNotSupported'));
-  node.label = node.originalLabel || node.label;
 };
 
 
@@ -869,77 +681,6 @@ watch(
   border-color: var(--border-color);
 }
 
-.tree-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xs) var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.dark-mode .tree-toolbar {
-  border-color: var(--border-color);
-}
-
-.tree-toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.tree-action-btn {
-  padding: 2px 4px;
-  color: var(--text-light);
-}
-
-.tree-action-btn:hover {
-  color: var(--primary-color);
-}
-
-.tree-action-btn--danger:hover {
-  color: #f56c6c;
-}
-
-.tree-expand-btn {
-  padding: 2px 4px;
-}
-
-.tree-expand-btn .el-icon {
-  color: var(--text-light);
-}
-
-.tree-expand-btn:hover .el-icon {
-  color: var(--primary-color);
-}
-
-.directory-tree {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
-  padding: var(--spacing-sm);
-}
-
-.editor-tree {
-  background: transparent;
-}
-
-.editor-tree :deep(.el-tree-node__label) {
-  white-space: nowrap;
-}
-
-.editor-tree :deep(.el-tree-node__content) {
-  min-width: max-content;
-}
-
-.editor-tree :deep(.el-tree-node__children) {
-  min-width: max-content;
-}
-
-.editor-tree :deep(.el-tree-node__content) {
-  white-space: nowrap;
-}
-
 .sidebar-resizer {
   width: 6px;
   cursor: col-resize;
@@ -959,128 +700,6 @@ watch(
 
 .dark-mode .sidebar-resizer:hover {
   background-color: var(--bg-white);
-}
-.editor-tree :deep(.el-tree-node__content) {
-  background-color: transparent;
-}
-
-.editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: transparent;
-}
-
-.dark-mode .editor-tree :deep(.el-tree-node__content) {
-  background-color: transparent;
-}
-
-.dark-mode .editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: transparent;
-}
-
-.editor-tree :deep(.el-tree-node__content:hover) {
-  background-color: var(--bg-light);
-}
-
-.dark-mode .editor-tree :deep(.el-tree-node__content:hover) {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-.tree-node-content {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius-sm);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.tree-context-menu {
-  position: fixed;
-  z-index: 3000;
-  min-width: 150px;
-  background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  box-shadow: var(--shadow-md);
-  padding: var(--spacing-xs) 0;
-}
-
-.dark-mode .tree-context-menu {
-  background-color: var(--bg-white);
-  border-color: var(--border-color);
-}
-
-.context-item {
-  width: 100%;
-  padding: var(--spacing-xs) var(--spacing-md);
-  background: transparent;
-  border: none;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  color: var(--text-medium);
-  cursor: pointer;
-}
-
-.context-item:hover {
-  background-color: var(--bg-light);
-  color: var(--primary-color);
-}
-
-.dark-mode .context-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-.context-item.is-danger:hover {
-  color: #f56c6c;
-}
-
-.context-icon {
-  color: var(--text-light);
-}
-
-.context-item:hover .context-icon {
-  color: var(--primary-color);
-}
-
-.context-item.is-danger:hover .context-icon {
-  color: #f56c6c;
-}
-
-.inline-rename-input {
-  max-width: 220px;
-}
-.editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: rgba(22, 93, 255, 0.1);
-}
-
-.dark-mode .editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: rgba(64, 128, 255, 0.2);
-}
-
-.node-icon {
-  display: flex;
-  align-items: center;
-  color: var(--text-light);
-}
-
-.dark-mode .node-icon {
-  color: var(--text-light);
-}
-
-.node-label {
-  font-size: 14px;
-  color: var(--text-medium);
-  cursor: pointer;
-}
-
-.dark-mode .node-label {
-  color: var(--text-medium);
-}
-
-.node-label:hover {
-  color: var(--primary-color);
 }
 
 
