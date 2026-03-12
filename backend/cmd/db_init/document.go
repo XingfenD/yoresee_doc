@@ -42,7 +42,6 @@ func initializeDocumentsInTx(tx *gorm.DB) error {
 		Tags:      []string{"guide", "welcome"},
 		ViewCount: 0,
 		EditCount: 0,
-		Version:   1,
 	}
 
 	if err := tx.Create(&document).Error; err != nil {

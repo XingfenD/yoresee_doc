@@ -12,17 +12,20 @@ func SetupRouter(r *gin.Engine) {
 	root.GET("/health", api.HealthHandlerImpl.GinHandle())
 
 	root.GET("/system-info", api.SystemInfoHandlerImpl.GinHandle())
-	// root.POST("/test/post", api.TestPostHandlerImpl.GinHandle())
 	root.POST("/login", api.AuthLoginHandlerImpl.GinHandle())
 	root.POST("/register", api.AuthRegisterHandlerImpl.GinHandle())
+
+	// root.POST("/test/post", api.TestPostHandlerImpl.GinHandle())
 
 	// protected routes
 	protected := root.Group("/")
 	protected.Use(middleware.JWTAuth.GinHandle())
 	{
+		// protected.GET("/test/protected", api.TestProtectedHandlerImpl.GinHandle())
 		protected.GET("/document/:documentExternalID/content", api.GetDocumentContentHandlerImpl.GinHandle())
 		protected.GET("/documents", api.ListDocumentsHandlerImpl.GinHandle())
-		// protected.GET("/test/protected", api.TestProtectedHandlerImpl.GinHandle())
+		protected.POST("/document/create", api.CreateDocumentHandlerImpl.GinHandle())
+
 		protected.GET("/knowledge-bases", api.ListKnowledgeBasesHandlerImpl.GinHandle())
 		protected.GET("/knowledge-base/:knowledgeBaseExternalID", api.GetKnowledgeBaseHandlerImpl.GinHandle())
 	}

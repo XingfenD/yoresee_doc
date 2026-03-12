@@ -6,6 +6,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
+	"github.com/bytedance/gg/gslice"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -15,6 +16,8 @@ type DocumentService struct {
 	userRepo          *repository.UserRepository
 	kbRepo            *repository.KnowledgeBaseRepository
 	docKBRelationRepo *repository.DocKnowledgeRelationRepository
+	contentRepo       *repository.ContentRepository
+	docVersionRepo    *repository.DocumentVersionRepository
 }
 
 func NewDocumentService() *DocumentService {
@@ -231,8 +234,27 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocum
 	)
 }
 
+func validateCreateDocumentReq(req *dto.CreateDocumentReq) error {
+	if req == nil {
+		return status.StatusInternalParamsError
+	}
+	if req.CreateAsOwnDoc && req.KnowledgeExternalID != nil {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID not nil when CreateAsOwnDoc")
+	}
+	if !req.CreateAsOwnDoc && req.KnowledgeExternalID == nil {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID is nil when not CreateAsOwnDoc")
+	}
+
+	availableTypes := []dto.DocumentType{dto.DocumentType_Markdown}
+	if !gslice.Contains(availableTypes, req.Type) {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid document type")
+	}
+
+	return nil
+}
+
 func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumentResponse, error) {
-	if err := req.Validate(); err != nil {
+	if err := validateCreateDocumentReq(req); err != nil {
 		return nil, err
 	}
 
@@ -242,10 +264,11 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 		docModel := &model.DocumentMeta{
 			ExternalID: docExternalID,
 			Title:      req.Title,
-			Type:       req.Type,
-			Summary:    req.Summary,
-			Content:    req.Content,
+			Type:       model.DocumentType(req.Type),
+			Summary:    "",
+			Content:    "",
 		}
+
 		// query user_id
 		userID, err := s.userRepo.GetIDByExternalID(*req.CreatorExternalID).WithTx(tx).Exec()
 		if err != nil {
@@ -253,6 +276,7 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 		}
 
 		docModel.UserID = userID
+
 		// query knowledge_id
 		var ownerID *int64
 		if !req.CreateAsOwnDoc {
@@ -264,6 +288,9 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 		} else {
 			ownerID = &userID
 		}
+
+		// TODO: permission check for knowledgebase
+
 		// query parent_id
 		if req.ParentExternalID != nil {
 			parentDocID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).WithTx(tx).Exec()
@@ -272,6 +299,7 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 			}
 			docModel.ParentID = parentDocID
 		}
+
 		// create document meta
 		err = s.documentRepo.Create(docModel).WithTx(tx).Exec()
 		if err != nil {
@@ -283,16 +311,30 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 		err = s.docKBRelationRepo.CreateDocKBRelation(docModel.ID).
 			WithKnowledgeID(docModel.KnowledgeID).
 			WithOwnerID(ownerID).
+			WithTx(tx).
 			Exec()
 		if err != nil {
 			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create doc-kb relation failed")
 		}
 
-		// create doc version
-		// err = s.
-		// TODO:
-
 		// create content
+		contentID, err := s.contentRepo.Create("").WithTx(tx).Exec()
+		if err != nil {
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create content failed")
+		}
+
+		// create doc version
+		ver := &model.DocumentVersion{
+			DocumentID:    docModel.ID,
+			ContentID:     contentID,
+			UserID:        userID,
+			Title:         docModel.Title,
+			ChangeSummary: "Create the document",
+		}
+		err = s.docVersionRepo.Create(ver).WithTx(tx).Exec()
+		if err != nil {
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create version failed")
+		}
 
 		return nil
 	})

@@ -5,7 +5,10 @@ import (
 	"reflect"
 
 	api_base "github.com/XingfenD/yoresee_doc/internal/api/base"
+	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,40 +20,48 @@ const (
 )
 
 type CreateDocumentRequest struct {
-	Content                 string                      `json:"content" form:"content"`
+	Title                   string                      `json:"title" form:"title"`
 	Type                    string                      `json:"type" form:"type"`
 	ContainerType           CreateDocumentContainerType `json:"container_type" form:"container_type"`
 	KnowledgeBaseExternalID *string                     `json:"knowledge_base_external_id" form:"knowledge_base_external_id"`
-	OwnerExternalID         *string                     `json:"owner_external_id" form:"owner_external_id"`
+	ParentExternalID        *string                     `json:"parent_external_id" form:"parent_external_id"`
 }
 
 type CreateDocumentResponse struct {
 	ExternalID string `json:"external_id"`
 }
 
-func (h *CreateDocumentHandler) validate(req *CreateDocumentRequest) error {
+func (req *CreateDocumentRequest) BuildDTOReq(userExternalID string) *dto.CreateDocumentReq {
 	if req == nil {
-		return status.StatusParamError
+		return nil
 	}
 
-	if req.ContainerType == CreateDocumentContainerType_KnowledgeBase && req.KnowledgeBaseExternalID == nil {
-		return status.GenErrWithCustomMsg(status.StatusParamError, "nil KnowledgeBaseExternalID when ContainerType is knowledge_base")
+	dtoReq := &dto.CreateDocumentReq{
+		Title:             req.Title,
+		Type:              dto.DocumentType(req.Type),
+		CreatorExternalID: utils.Of(userExternalID),
 	}
-
-	if req.ContainerType == CreateDocumentContainerType_Own && req.OwnerExternalID == nil {
-		return status.GenErrWithCustomMsg(status.StatusParamError, "nil OwnerExternalID when ContainerType is own")
+	switch req.ContainerType {
+	case CreateDocumentContainerType_KnowledgeBase:
+		dtoReq.CreateAsOwnDoc = false
+		dtoReq.KnowledgeExternalID = req.KnowledgeBaseExternalID
+	case CreateDocumentContainerType_Own:
+		dtoReq.CreateAsOwnDoc = true
 	}
-
-	return nil
+	return dtoReq
 }
-
 func (h *CreateDocumentHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
 	createDocumentReq := req.(*CreateDocumentRequest)
-	if err := h.validate(createDocumentReq); err != nil {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok {
+		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "user not logged in")
+	}
+	dtoReq := createDocumentReq.BuildDTOReq(userExternalID)
+	resp, err := service.DocumentSvc.Create(dtoReq)
+	if err != nil {
 		return nil, err
 	}
 
-	resp := &CreateDocumentResponse{}
 	return resp, nil
 }
 

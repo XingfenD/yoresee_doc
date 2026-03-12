@@ -4,21 +4,23 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/internal/status"
 )
 
+type DocumentType string
+
+const DocumentType_Markdown DocumentType = "markdown"
+
 type DocumentBase struct {
-	ExternalID string    `json:"external_id"`
-	Title      string    `json:"title"`
-	Type       string    `json:"type"`
-	Summary    string    `json:"summary"`
-	Status     int       `json:"status"`
-	Tags       []string  `json:"tags"`
-	ViewCount  int       `json:"view_count"`
-	EditCount  int       `json:"edit_count"`
-	Version    int       `json:"version"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ExternalID string       `json:"external_id"`
+	Title      string       `json:"title"`
+	Type       DocumentType `json:"type"`
+	Summary    string       `json:"summary"`
+	Status     int          `json:"status"`
+	Tags       []string     `json:"tags"`
+	ViewCount  int          `json:"view_count"`
+	EditCount  int          `json:"edit_count"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
 type DocumentResponse struct {
@@ -32,13 +34,12 @@ func NewDocumentResponseFromModel(doc *model.DocumentMeta) *DocumentResponse {
 		DocumentBase: DocumentBase{
 			ExternalID: doc.ExternalID,
 			Title:      doc.Title,
-			Type:       doc.Type,
+			Type:       DocumentType(doc.Type),
 			Summary:    doc.Summary,
 			Status:     doc.Status,
 			Tags:       doc.Tags,
 			ViewCount:  doc.ViewCount,
 			EditCount:  doc.EditCount,
-			Version:    doc.Version,
 			CreatedAt:  doc.CreatedAt,
 			UpdatedAt:  doc.UpdatedAt,
 		},
@@ -80,34 +81,16 @@ type ListDocumentsByExternalReq struct {
 }
 
 type CreateDocumentReq struct {
-	Title             string   `json:"title"`
-	Type              string   `json:"type"`
-	Summary           string   `json:"summary"`
-	Status            int      `json:"status"`
-	Tags              []string `json:"tags"`
-	Content           string   `json:"content"`
-	CreatorExternalID *string  `json:"creator_external_id"`
+	Title             string       `json:"title"`
+	Type              DocumentType `json:"type"`
+	CreatorExternalID *string      `json:"creator_external_id"`
 
-	//
+	// own doc or in knowledge_base
 	CreateAsOwnDoc bool `json:"create_as_own_doc"`
 
 	// optional
 	ParentExternalID    *string `json:"parent_external_id"`
 	KnowledgeExternalID *string `json:"knowledge_external_id"`
-}
-
-func (req *CreateDocumentReq) Validate() error {
-	if req == nil {
-		return status.StatusInternalParamsError
-	}
-	if req.CreateAsOwnDoc && req.KnowledgeExternalID != nil {
-		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID not nil when CreateAsOwnDoc")
-	}
-	if !req.CreateAsOwnDoc && req.KnowledgeExternalID == nil {
-		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID is nil when not CreateAsOwnDoc")
-	}
-
-	return nil
 }
 
 type CreateDocumentResponse struct {

@@ -410,3 +410,29 @@ func (op *DocumentCreateOperation) Exec() error {
 
 	return op.tx.Create(op.doc).Error
 }
+
+type DocumentUpdateOperation struct {
+	repo *DocumentRepository
+	doc  *model.DocumentMeta
+	tx   *gorm.DB
+}
+
+func (r *DocumentRepository) Update(doc *model.DocumentMeta) *DocumentUpdateOperation {
+	return &DocumentUpdateOperation{
+		repo: r,
+		doc:  doc,
+	}
+}
+
+func (op *DocumentUpdateOperation) WithTx(tx *gorm.DB) *DocumentUpdateOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocumentUpdateOperation) Exec() error {
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	return op.tx.Save(op.doc).Error
+}
