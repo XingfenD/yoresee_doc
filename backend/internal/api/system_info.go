@@ -23,7 +23,7 @@ func (h *SystemInfoHandler) handle(ctx context.Context, req api_base.Request) (r
 	return &SystemInfoResponse{
 		BaseResponse:       api_base.GenBaseRespWithErr(status.StatusSuccess),
 		SystemName:         config.GlobalConfig.Backend.SystemName,
-		SystemRegisterMode: service.ConfigSvc.GetSystemRegisterMode(),
+		SystemRegisterMode: service.ConfigSvc.GetSystemRegisterMode(ctx),
 	}, nil
 }
 

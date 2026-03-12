@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
@@ -20,9 +22,9 @@ func NewAuthService() *AuthService {
 	}
 }
 
-func (s *AuthService) Register(userCreate *dto.UserCreate) error {
+func (s *AuthService) Register(ctx context.Context, userCreate *dto.UserCreate) error {
 	return utils.WithTransaction(func(tx *gorm.DB) error {
-		mode := ConfigSvc.GetSystemRegisterMode()
+		mode := ConfigSvc.GetSystemRegisterMode(ctx)
 		if mode == constant.RegisterMode_Invite {
 			if userCreate.InvitationCode == nil || *userCreate.InvitationCode == "" {
 				return status.GenErrWithCustomMsg(status.StatusParamError, "the system enable invitation mode, but the invitation code is empty")

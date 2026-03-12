@@ -38,7 +38,7 @@ func (h *AuthRegisterHandler) handle(ctx context.Context, req api_base.Request) 
 		InvitationCode: authRegisterReq.InvitationCode,
 	}
 
-	err := service.AuthSvc.Register(userCreate)
+	err := service.AuthSvc.Register(ctx, userCreate)
 	if err != nil {
 		return nil, err
 	}

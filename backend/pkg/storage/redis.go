@@ -64,3 +64,14 @@ func ClearCacheByPattern(ctx context.Context, pattern string) error {
 
 	return nil
 }
+
+func SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) (bool, error) {
+	return KVS.SetNX(ctx, key, value, expiration).Result()
+}
+
+func SetCacheForever(ctx context.Context, key string, value interface{}) error {
+	if err := KVS.Set(ctx, key, value, 0).Err(); err != nil {
+		return err
+	}
+	return KVS.Persist(ctx, key).Err()
+}
