@@ -50,6 +50,7 @@ func (req *CreateDocumentRequest) BuildDTOReq(userExternalID string) *dto.Create
 	}
 	return dtoReq
 }
+
 func (h *CreateDocumentHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
 	createDocumentReq := req.(*CreateDocumentRequest)
 	userExternalID, ok := ctx.Value("user_external_id").(string)
