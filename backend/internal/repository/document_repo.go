@@ -385,6 +385,142 @@ func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, 
 	return documents, total, nil
 }
 
+type DocumentGetSubtreeOperation struct {
+	repo         *DocumentRepository
+	rootParentID int64
+	knowledgeID  *int64
+	depth        *int
+	tx           *gorm.DB
+}
+
+func (r *DocumentRepository) GetSubtree(rootParentID int64) *DocumentGetSubtreeOperation {
+	return &DocumentGetSubtreeOperation{
+		repo:         r,
+		rootParentID: rootParentID,
+	}
+}
+
+func (op *DocumentGetSubtreeOperation) WithTx(tx *gorm.DB) *DocumentGetSubtreeOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocumentGetSubtreeOperation) WithKnowledgeID(knowledgeID *int64) *DocumentGetSubtreeOperation {
+	op.knowledgeID = knowledgeID
+	return op
+}
+
+func (op *DocumentGetSubtreeOperation) WithDepth(depth int) *DocumentGetSubtreeOperation {
+	op.depth = &depth
+	return op
+}
+
+func (op *DocumentGetSubtreeOperation) Exec() ([]model.DocumentMeta, error) {
+	db := storage.DB
+	if op.tx != nil {
+		db = op.tx
+	}
+
+	var documents []model.DocumentMeta
+
+	if op.depth != nil && *op.depth == 0 {
+		return documents, nil
+	}
+
+	depthFilter := ""
+	if op.depth != nil {
+		depthFilter = "AND depth <= " + string(rune(*op.depth+'0'))
+	}
+
+	query := `
+		WITH RECURSIVE subtree AS (
+			SELECT d.*, 0 as depth
+			FROM document_metas d
+			WHERE d.parent_id = ? AND d.deleted_at IS NULL
+			UNION ALL
+			SELECT d.*, s.depth + 1 as depth
+			FROM document_metas d
+			INNER JOIN subtree s ON d.parent_id = s.id
+			WHERE d.deleted_at IS NULL
+		)
+		SELECT * FROM subtree s
+		WHERE 1=1 ` + depthFilter + `
+		ORDER BY depth, created_at
+	`
+
+	err := db.Raw(query, op.rootParentID).Find(&documents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return documents, nil
+}
+
+type DocumentGetSubtreeByKnowledgeIDOperation struct {
+	repo        *DocumentRepository
+	knowledgeID int64
+	depth       *int
+	tx          *gorm.DB
+}
+
+func (r *DocumentRepository) GetSubtreeByKnowledgeID(knowledgeID int64) *DocumentGetSubtreeByKnowledgeIDOperation {
+	return &DocumentGetSubtreeByKnowledgeIDOperation{
+		repo:        r,
+		knowledgeID: knowledgeID,
+	}
+}
+
+func (op *DocumentGetSubtreeByKnowledgeIDOperation) WithTx(tx *gorm.DB) *DocumentGetSubtreeByKnowledgeIDOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocumentGetSubtreeByKnowledgeIDOperation) WithDepth(depth int) *DocumentGetSubtreeByKnowledgeIDOperation {
+	op.depth = &depth
+	return op
+}
+
+func (op *DocumentGetSubtreeByKnowledgeIDOperation) Exec() ([]model.DocumentMeta, error) {
+	db := storage.DB
+	if op.tx != nil {
+		db = op.tx
+	}
+
+	var documents []model.DocumentMeta
+
+	if op.depth != nil && *op.depth == 0 {
+		return documents, nil
+	}
+
+	depthFilter := ""
+	if op.depth != nil {
+		depthFilter = "AND depth <= " + string(rune(*op.depth+'0'))
+	}
+
+	query := `
+		WITH RECURSIVE subtree AS (
+			SELECT d.*, 0 as depth
+			FROM document_metas d
+			WHERE d.knowledge_id = ? AND d.parent_id = 0 AND d.deleted_at IS NULL
+			UNION ALL
+			SELECT d.*, s.depth + 1 as depth
+			FROM document_metas d
+			INNER JOIN subtree s ON d.parent_id = s.id
+			WHERE d.deleted_at IS NULL
+		)
+		SELECT * FROM subtree s
+		WHERE 1=1 ` + depthFilter + `
+		ORDER BY depth, created_at
+	`
+
+	err := db.Raw(query, op.knowledgeID).Find(&documents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return documents, nil
+}
+
 type DocumentCreateOperation struct {
 	repo *DocumentRepository
 	doc  *model.DocumentMeta

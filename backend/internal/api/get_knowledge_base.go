@@ -68,6 +68,7 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 			},
 			Options: &dto.RecursiveOptions{
 				IncludeChildren: true,
+				Recursive:       true,
 			},
 		},
 	)

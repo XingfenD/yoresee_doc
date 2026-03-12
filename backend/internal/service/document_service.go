@@ -162,22 +162,90 @@ func (s *DocumentService) getChildDocuments(parentID int64, options *dto.Recursi
 	return childResponses, nil
 }
 
+func (s *DocumentService) buildDocumentTree(rootDocs []model.DocumentMeta, allDescendants []model.DocumentMeta) []*dto.DocumentResponse {
+	docMap := make(map[int64]*dto.DocumentResponse)
+	var rootResponses []*dto.DocumentResponse
+
+	for i := range rootDocs {
+		resp := s.ConvertToDocumentResponse(&rootDocs[i])
+		docMap[rootDocs[i].ID] = resp
+		rootResponses = append(rootResponses, resp)
+	}
+
+	for i := range allDescendants {
+		doc := &allDescendants[i]
+		childResp := s.ConvertToDocumentResponse(doc)
+		docMap[doc.ID] = childResp
+
+		if doc.ParentID != 0 {
+			parentResp, exists := docMap[doc.ParentID]
+			if exists {
+				parentResp.Children = append(parentResp.Children, childResp)
+				parentResp.HasChildren = true
+			}
+		}
+	}
+
+	return rootResponses
+}
+
+func (s *DocumentService) getAllDescendantsByParentIDs(parentIDs []int64) ([]model.DocumentMeta, error) {
+	if len(parentIDs) == 0 {
+		return []model.DocumentMeta{}, nil
+	}
+
+	allDocs := make([]model.DocumentMeta, 0)
+	seen := make(map[int64]bool)
+
+	for _, rootParentID := range parentIDs {
+		docs, err := s.documentRepo.GetSubtree(rootParentID).Exec()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, doc := range docs {
+			if !seen[doc.ID] {
+				seen[doc.ID] = true
+				allDocs = append(allDocs, doc)
+			}
+		}
+	}
+
+	return allDocs, nil
+}
+
 func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*dto.DocumentResponse, int64, error) {
-	docs, total, err := s.listDocuments(req)
+	listOp, err := s.buildListDocumentsOperation(req)
 	if err != nil {
 		return nil, 0, err
 	}
-	if req.Options != nil && req.Options.IncludeChildren {
-		listOp, err := s.buildListDocumentsOperation(req)
-		if err != nil {
-			return nil, 0, err
+	models, total, err := listOp.ExecWithTotal()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if req.Options != nil && req.Options.IncludeChildren && req.Options.Recursive {
+		parentIDs := make([]int64, len(models))
+		for i := range models {
+			parentIDs[i] = models[i].ID
 		}
-		models, _, err := listOp.ExecWithTotal()
+
+		allDescendants, err := s.getAllDescendantsByParentIDs(parentIDs)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		for i := range docs {
+		docs := s.buildDocumentTree(models, allDescendants)
+		return docs, total, nil
+	}
+
+	docs := make([]*dto.DocumentResponse, 0, len(models))
+	for i := range models {
+		docs = append(docs, s.ConvertToDocumentResponse(&models[i]))
+	}
+
+	if req.Options != nil && req.Options.IncludeChildren {
+		for i := range models {
 			childDocs, err := s.getChildDocuments(models[i].ID, req.Options)
 			if err == nil {
 				docs[i].Children = childDocs
