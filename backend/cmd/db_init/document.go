@@ -57,6 +57,17 @@ func createDocumentWithAllTables(tx *gorm.DB, adminUserID int64, input DocumentI
 		return nil, err
 	}
 
+	if input.KnowledgeID != nil {
+		relation := model.DocKnowledgeRelation{
+			DocumentID:  document.ID,
+			KnowledgeID: input.KnowledgeID,
+			OwnerID:     &adminUserID,
+		}
+		if err := tx.Create(&relation).Error; err != nil {
+			return nil, err
+		}
+	}
+
 	return &document, nil
 }
 
