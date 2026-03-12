@@ -82,7 +82,8 @@
             </div>
             <div class="directory-tree" v-loading="treeLoading">
               <el-tree ref="treeRef" :data="directoryTree" :props="treeProps" node-key="id" :default-expand-all="false"
-                :expand-on-click-node="false" @node-click="handleTreeNodeClick" class="editor-tree">
+                :expand-on-click-node="false" :current-node-key="docId"
+                @node-click="handleTreeNodeClick" class="editor-tree">
                 <template #default="{ node, data }">
                   <div class="tree-node-content">
                     <div class="node-icon">
@@ -133,7 +134,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
+import { ref, onMounted, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
@@ -172,6 +173,7 @@ const treeProps = {
 };
 
 const directoryTree = ref([]);
+
 
 const transformDocumentsToTree = (documents) => {
   const tree = [];
@@ -349,6 +351,14 @@ onMounted(async () => {
   initTheme();
   initLanguage();
 });
+
+watch(
+  () => route.params.docId,
+  async (newDocId) => {
+    docId.value = newDocId;
+    await expandToCurrentDoc();
+  }
+);
 </script>
 
 <style scoped>
@@ -517,19 +527,29 @@ onMounted(async () => {
   background: transparent;
 }
 
+.editor-tree :deep(.el-tree-node__content:hover) {
+  background-color: var(--bg-light);
+}
+
+.dark-mode .editor-tree :deep(.el-tree-node__content:hover) {
+  background-color: var(--bg-medium);
+}
+
 .tree-node-content {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-xs) 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.tree-node-content.is-active {
+.editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: rgba(22, 93, 255, 0.1);
 }
 
-.dark-mode .tree-node-content.is-active {
+.dark-mode .editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: rgba(64, 128, 255, 0.2);
 }
 
@@ -557,10 +577,6 @@ onMounted(async () => {
   color: var(--primary-color);
 }
 
-.node-label.is-active {
-  color: var(--primary-color);
-  font-weight: 500;
-}
 
 .editor-main {
   flex: 1;

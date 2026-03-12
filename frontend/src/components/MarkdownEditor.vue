@@ -28,6 +28,21 @@ const emit = defineEmits(['update:modelValue']);
 
 const editorRef = ref(null);
 let vditor = null;
+let themeObserver = null;
+
+const applyVditorTheme = () => {
+  if (!vditor) {
+    return;
+  }
+  const isDarkMode = document.documentElement.classList.contains('dark-mode');
+  if (typeof vditor.setTheme === 'function') {
+    vditor.setTheme(
+      isDarkMode ? 'dark' : 'classic',
+      isDarkMode ? 'dark' : 'light',
+      isDarkMode ? 'dark' : 'github'
+    );
+  }
+};
 
 onMounted(() => {
   vditor = new Vditor(editorRef.value, {
@@ -50,6 +65,7 @@ onMounted(() => {
     },
     after: () => {
       vditor.setValue(props.modelValue);
+      applyVditorTheme();
     },
     input: (value) => {
       emit('update:modelValue', value);
@@ -58,6 +74,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (themeObserver) {
+    themeObserver.disconnect();
+    themeObserver = null;
+  }
   if (vditor) {
     vditor.destroy();
     vditor = null;
@@ -68,6 +88,16 @@ watch(() => props.modelValue, (newValue) => {
   if (vditor && vditor.getValue() !== newValue) {
     vditor.setValue(newValue);
   }
+});
+
+onMounted(() => {
+  themeObserver = new MutationObserver(() => {
+    applyVditorTheme();
+  });
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
 });
 </script>
 
@@ -125,7 +155,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .dark-mode .markdown-editor :deep(.vditor-content) {
-  background-color: var(--bg-white);
+  background-color: var(--bg-medium);
   color: var(--text-dark);
 }
 
@@ -135,7 +165,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .dark-mode .markdown-editor :deep(.vditor-ir) {
-  background-color: var(--bg-white);
+  background-color: var(--bg-medium);
   color: var(--text-dark);
 }
 
@@ -169,6 +199,21 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .dark-mode .markdown-editor :deep(.vditor-ir__heading) {
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-content h1),
+.dark-mode .markdown-editor :deep(.vditor-content h2),
+.dark-mode .markdown-editor :deep(.vditor-content h3),
+.dark-mode .markdown-editor :deep(.vditor-content h4),
+.dark-mode .markdown-editor :deep(.vditor-content h5),
+.dark-mode .markdown-editor :deep(.vditor-content h6),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg h1),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg h2),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg h3),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg h4),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg h5),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg h6) {
   color: var(--text-dark);
 }
 
@@ -214,7 +259,22 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .dark-mode .markdown-editor :deep(.vditor-wysiwyg) {
-  background-color: var(--bg-white);
+  background-color: var(--bg-medium);
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-content p),
+.dark-mode .markdown-editor :deep(.vditor-content li),
+.dark-mode .markdown-editor :deep(.vditor-content blockquote),
+.dark-mode .markdown-editor :deep(.vditor-content td),
+.dark-mode .markdown-editor :deep(.vditor-content th),
+.dark-mode .markdown-editor :deep(.vditor-ir__node),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg p),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg li),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg blockquote),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg td),
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg th) {
   color: var(--text-dark);
 }
 
@@ -263,6 +323,10 @@ watch(() => props.modelValue, (newValue) => {
 
 .markdown-editor :deep(.vditor-wysiwyg td) {
   border-color: var(--border-color);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg td) {
+  background-color: var(--bg-light);
 }
 
 .markdown-editor :deep(.vditor-preview) {
@@ -330,6 +394,10 @@ watch(() => props.modelValue, (newValue) => {
 
 .markdown-editor :deep(.vditor-preview td) {
   border-color: var(--border-color);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-preview td) {
+  background-color: var(--bg-light);
 }
 
 .markdown-editor :deep(.vditor-statusbar) {
