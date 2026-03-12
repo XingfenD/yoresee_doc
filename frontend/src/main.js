@@ -8,6 +8,35 @@ import router from './router';
 import './styles/variables.css';
 import i18n from './i18n';
 
+const sanitizeAuthStorage = () => {
+  try {
+    const token = localStorage.getItem('token');
+    const rawUserInfo = localStorage.getItem('userInfo');
+
+    if (!token || token === 'null' || token === 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
+      return;
+    }
+
+    if (!rawUserInfo) {
+      localStorage.removeItem('token');
+      return;
+    }
+
+    const parsed = JSON.parse(rawUserInfo);
+    if (!parsed || typeof parsed !== 'object' || !parsed.username) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
+    }
+  } catch (error) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
+  }
+};
+
+sanitizeAuthStorage();
+
 const app = createApp(App);
 
 // 注册Element Plus图标

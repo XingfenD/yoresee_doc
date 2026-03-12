@@ -1,58 +1,15 @@
 <template>
   <div class="home-container">
-    <!-- 顶部导航栏 -->
-    <header class="top-nav">
-      <div class="nav-left">
-        <h1 class="system-title">{{ systemName }}</h1>
-      </div>
-      <div class="nav-right">
-        <!-- 语言切换 -->
-        <el-dropdown trigger="click" @command="handleLanguageChange" class="nav-item">
-          <span class="nav-link">
-            <el-icon :size="18">
-              <Flag v-if="currentLanguage === 'en'" />
-              <ChatLineRound v-else />
-            </el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="en" :icon="'Flag'">
-                {{ t('language.english') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="zh" :icon="'ChatLineRound'">
-                {{ t('language.chinese') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-
-        <!-- 主题切换 -->
-        <div class="nav-item theme-switch">
-          <span class="nav-link" @click="toggleTheme">
-            <el-icon :size="18">
-              <Moon v-if="isDarkMode" />
-              <Sunny v-else />
-            </el-icon>
-          </span>
-        </div>
-
-        <!-- 用户菜单 -->
-        <el-dropdown trigger="click" class="nav-item">
-          <span class="user-info">
-            <el-avatar v-if="userAvatar" size="small" :src="userAvatar"></el-avatar>
-            <span class="username">{{ userInfo?.username || '用户' }}</span>
-            <el-icon class="el-icon--right">
-              <ArrowDown />
-            </el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="handleLogout">{{ t('button.logout') }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </header>
+    <TopNav
+      :system-name="systemName"
+      :current-language="currentLanguage"
+      :is-dark-mode="isDarkMode"
+      :user-avatar="userAvatar"
+      :username="userInfo?.username || '用户'"
+      @change-language="handleLanguageChange"
+      @toggle-theme="toggleTheme"
+      @logout="handleLogout"
+    />
 
     <!-- 主内容区 -->
     <div class="main-content">
@@ -101,9 +58,10 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
 import SideNav from '@/components/SideNav.vue';
+import TopNav from '@/components/TopNav.vue';
 import RecentDocumentsSection from '@/components/RecentDocumentsSection.vue';
 import RecentKnowledgeBaseSection from '@/components/RecentKnowledgeBaseSection.vue';
-import { ArrowDown, House, Plus, Upload, Search, User, Timer, View, Flag, ChatLineRound, Moon, Sunny, Collection } from '@element-plus/icons-vue';
+import { House, Plus, Upload, Search, User, Timer, View, Collection } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -305,75 +263,6 @@ onMounted(() => {
 }
 
 /* 顶部导航栏 */
-.top-nav {
-  height: 60px;
-  background-color: var(--bg-white);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--spacing-xl);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-}
-
-.system-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--primary-color);
-  margin: 0;
-}
-
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  margin-left: var(--spacing-sm);
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius-md);
-  color: var(--text-medium);
-  transition: all 0.3s ease;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--bg-medium);
-    color: var(--primary-color);
-  }
-}
-
-.theme-switch {
-  padding: var(--spacing-xs) var(--spacing-sm);
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius-md);
-  transition: background-color 0.3s;
-}
-
-.user-info:hover {
-  background-color: var(--bg-medium);
-}
-
-.username {
-  margin-left: var(--spacing-sm);
-  margin-right: 4px;
-  color: var(--text-medium);
-  font-size: 14px;
-}
 
 /* 主内容区 */
 .main-content {
@@ -581,14 +470,6 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .top-nav {
-    padding: 0 var(--spacing-md);
-  }
-
-  .system-title {
-    font-size: 16px;
-  }
-
   .side-nav {
     width: 60px;
   }
