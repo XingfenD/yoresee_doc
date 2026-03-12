@@ -71,7 +71,8 @@ export default {
     preview: '预览',
     showPreview: '显示预览',
     hidePreview: '隐藏预览',
-    lastSaved: '上次保存'
+    lastSaved: '上次保存',
+    fetchContentError: '加载文档内容失败'
   },
   system: {
     name: 'Yoresee',

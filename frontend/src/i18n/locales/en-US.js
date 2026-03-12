@@ -73,7 +73,8 @@ export default {
     preview: 'Preview',
     showPreview: 'Show Preview',
     hidePreview: 'Hide Preview',
-    lastSaved: 'Last saved'
+    lastSaved: 'Last saved',
+    fetchContentError: 'Failed to load document content'
   },
   system: {
     name: 'Yoresee',

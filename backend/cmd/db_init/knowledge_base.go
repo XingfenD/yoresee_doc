@@ -73,7 +73,6 @@ func initializeKnowledgeBasesInTx(tx *gorm.DB) error {
 	// 为默认知识库添加11个根文档和子文档
 	logrus.Println("Adding documents to default knowledge base...")
 
-	// 根文档标题列表
 	rootDocumentTitles := []string{
 		"项目概述",
 		"系统架构",
@@ -88,52 +87,48 @@ func initializeKnowledgeBasesInTx(tx *gorm.DB) error {
 		"用户手册",
 	}
 
-	// 为每个根文档添加子文档
 	for _, title := range rootDocumentTitles {
-		// 生成根文档的external_id
-		rootExternalID := utils.GenerateExternalID("doc")
-
-		// 插入根文档
-		var rootDocID int64
-		rootDocSQL := `
-			INSERT INTO document_metas (external_id, title, type, summary, parent_id, user_id, knowledge_id, status, tags, view_count, edit_count, version, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-			RETURNING id
-		`
-		if err := tx.Raw(rootDocSQL, rootExternalID, title, "markdown", "", 0, adminUser.ID, defaultKnowledgeBase.ID, 1, "[]", 0, 0, 1).Scan(&rootDocID).Error; err != nil {
+		rootDoc, err := createDocumentWithAllTables(tx, adminUser.ID, DocumentInput{
+			Title:       title,
+			Content:     "# " + title + "\n\n这是" + title + "的详细文档内容。",
+			Summary:     title + "相关文档",
+			ParentID:    0,
+			Tags:        []string{title},
+			KnowledgeID: &defaultKnowledgeBase.ID,
+		})
+		if err != nil {
 			logrus.Warnf("Failed to create root document %s: %v", title, err)
 			continue
 		}
 
-		// 插入文档与知识库的关联关系
-		relationSQL := `
-			INSERT INTO doc_knowledge_relations (document_id, knowledge_id, owner_id)
-			VALUES (?, ?, ?)
-		`
-		if err := tx.Exec(relationSQL, rootDocID, defaultKnowledgeBase.ID, adminUser.ID).Error; err != nil {
-			logrus.Warnf("Failed to create relation for root document %s: %v", title, err)
-		}
-
-		// 为每个根文档添加3个子文档
 		for j := 1; j <= 3; j++ {
 			childTitle := title + " - 子文档" + string(rune('0'+j))
-			childExternalID := utils.GenerateExternalID("doc")
-
-			// 插入子文档
-			var childDocID int64
-			childDocSQL := `
-				INSERT INTO document_metas (external_id, title, type, summary, parent_id, user_id, knowledge_id, status, tags, view_count, edit_count, version, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-				RETURNING id
-			`
-			if err := tx.Raw(childDocSQL, childExternalID, childTitle, "markdown", "", rootDocID, adminUser.ID, defaultKnowledgeBase.ID, 1, "[]", 0, 0, 1).Scan(&childDocID).Error; err != nil {
+			childDoc, err := createDocumentWithAllTables(tx, adminUser.ID, DocumentInput{
+				Title:       childTitle,
+				Content:     "# " + childTitle + "\n\n这是" + childTitle + "的详细文档内容。",
+				Summary:     childTitle + "相关文档",
+				ParentID:    rootDoc.ID,
+				Tags:        []string{title, "子文档"},
+				KnowledgeID: &defaultKnowledgeBase.ID,
+			})
+			if err != nil {
 				logrus.Warnf("Failed to create child document %s: %v", childTitle, err)
 				continue
 			}
 
-			// 插入子文档与知识库的关联关系
-			if err := tx.Exec(relationSQL, childDocID, defaultKnowledgeBase.ID, adminUser.ID).Error; err != nil {
-				logrus.Warnf("Failed to create relation for child document %s: %v", childTitle, err)
+			for k := 1; k <= 2; k++ {
+				grandchildTitle := childTitle + " - 孙文档" + string(rune('0'+k))
+				_, err := createDocumentWithAllTables(tx, adminUser.ID, DocumentInput{
+					Title:       grandchildTitle,
+					Content:     "# " + grandchildTitle + "\n\n这是" + grandchildTitle + "的详细文档内容。",
+					Summary:     grandchildTitle + "相关文档",
+					ParentID:    childDoc.ID,
+					Tags:        []string{title, "子文档", "孙文档"},
+					KnowledgeID: &defaultKnowledgeBase.ID,
+				})
+				if err != nil {
+					logrus.Warnf("Failed to create grandchild document %s: %v", grandchildTitle, err)
+				}
 			}
 		}
 	}

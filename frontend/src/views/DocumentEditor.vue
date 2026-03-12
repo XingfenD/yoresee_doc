@@ -143,7 +143,7 @@ import { ArrowLeft, Folder, FolderOpened, Document, Check, Flag, ChatLineRound, 
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import SideNav from '@/components/SideNav.vue';
 import { useUserStore } from '@/store/user';
-import { getKnowledgeBaseDocuments } from '@/services/api';
+import { getKnowledgeBaseDocuments, getDocumentContent } from '@/services/api';
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -153,10 +153,10 @@ const userStore = useUserStore();
 const kbId = ref(route.params.kbId);
 const docId = ref(route.params.docId);
 
-const systemName = ref('Yoresee 知识库');
+const systemName = ref(userStore.systemName || 'Yoresee');
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 const currentLanguage = computed(() => locale.value);
-const isDarkMode = ref(false);
+const isDarkMode = ref(document.documentElement.classList.contains('dark-mode'));
 const activeMenu = ref('knowledge-base');
 const userInfo = computed(() => userStore.userInfo);
 
@@ -217,6 +217,25 @@ const fetchDocuments = async () => {
     ElMessage.error(t('knowledgeBase.fetchError'));
   } finally {
     treeLoading.value = false;
+  }
+};
+
+const fetchDocumentContent = async () => {
+  if (kbId.value === 'example' || docId.value === 'example') {
+    return;
+  }
+
+  try {
+    const response = await getDocumentContent(docId.value);
+    if (response.content !== undefined) {
+      editorContent.value = response.content;
+    }
+    if (response.document) {
+      currentDocTitle.value = response.document.title;
+    }
+  } catch (error) {
+    console.error('获取文档内容失败:', error);
+    ElMessage.error(t('document.fetchContentError'));
   }
 };
 
@@ -321,9 +340,13 @@ const handleLogout = () => {
 
 const initTheme = () => {
   const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'dark') {
+  const savedDarkMode = localStorage.getItem('darkMode');
+  if (savedTheme === 'dark' || savedDarkMode === 'true') {
     isDarkMode.value = true;
     document.documentElement.classList.add('dark-mode');
+  } else if (savedTheme === 'light' || savedDarkMode === 'false') {
+    isDarkMode.value = false;
+    document.documentElement.classList.remove('dark-mode');
   }
 };
 
@@ -344,16 +367,18 @@ const fetchSystemInfo = async () => {
 };
 
 onMounted(async () => {
+  initTheme();
+  initLanguage();
+
   if (kbId.value === 'example' && docId.value === 'example') {
     knowledgeBaseName.value = '示例知识库';
     currentDocTitle.value = '示例文档';
   } else {
     await fetchDocuments();
+    await fetchDocumentContent();
   }
 
   await fetchSystemInfo();
-  initTheme();
-  initLanguage();
 });
 
 watch(
@@ -361,6 +386,7 @@ watch(
   async (newDocId) => {
     docId.value = newDocId;
     await expandToCurrentDoc();
+    await fetchDocumentContent();
   }
 );
 </script>

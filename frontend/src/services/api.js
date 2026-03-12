@@ -93,7 +93,7 @@ export const getKnowledgeBaseDetail = (knowledgeBaseExternalID, params = {}) => 
 
 // 获取知识库文档列表
 export const getKnowledgeBaseDocuments = (knowledgeBaseExternalID, params = {}) => {
-  return api.get(`/api/knowledge-base/${knowledgeBaseExternalID}`, { 
+  return api.get(`/api/knowledge-base/${knowledgeBaseExternalID}`, {
     params: {
       record_recent_log: false,
       page: 1,
@@ -106,6 +106,11 @@ export const getKnowledgeBaseDocuments = (knowledgeBaseExternalID, params = {}) 
 // 创建文档
 export const createDocument = (data) => {
   return api.post('/api/document/create', data).then(handleResponse)
+};
+
+// 获取文档内容
+export const getDocumentContent = (documentExternalID, params = {}) => {
+  return api.get(`/api/document/${documentExternalID}/content`, { params }).then(handleResponse)
 };
 
 export default api;
