@@ -103,7 +103,7 @@
                 @node-click="handleTreeNodeClick" class="editor-tree">
                 <template #default="{ node, data }">
                   <div class="tree-node-content" :class="{ 'is-active': isCurrentDoc(data) }"
-                    @click.stop="closeContextMenu"
+                    @click="closeContextMenu"
                     @contextmenu.prevent="(event) => handleNodeContextMenu(event, data)">
                     <div class="node-icon">
                       <el-icon v-if="data.isFolder">
