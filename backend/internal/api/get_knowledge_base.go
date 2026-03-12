@@ -16,12 +16,15 @@ import (
 type GetKnowledgeBaseRequset struct {
 	KnowledgeBaseExternalID string `json:"knowledge_base_external_id" form:"knowledge_base_external_id" uri:"knowledgeBaseExternalID"`
 	RecordRecentLog         bool   `json:"record_recent_log" form:"record_recent_log"`
+	Page                    int    `json:"page,omitempty" form:"page"`
+	PageSize                int    `json:"page_size,omitempty" form:"page_size"`
 }
 
 type GetKnowledgeBaseResponse struct {
 	api_base.BaseResponse
 	KnowledgeBase *dto.KnowledgeBaseResponse `json:"knowledge_base"`
 	Documents     []*dto.DocumentResponse    `json:"documents"`
+	TotalCount    int64                      `json:"total_count"`
 }
 
 func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Request) (api_base.Response, error) {
@@ -54,10 +57,14 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 		})
 	}
 
-	documents, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(
+	documents, totalCount, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(
 		&dto.ListDocumentsByExternalReq{
 			ExternalArgs: &dto.DocumentsListExternalArgs{
 				KnowledgeExternalID: &knowledgeBaseDTO.ExternalID,
+			},
+			Pagination: dto.Pagination{
+				Page:     getKnowledgeBaseReq.Page,
+				PageSize: getKnowledgeBaseReq.PageSize,
 			},
 			Options: &dto.RecursiveOptions{
 				IncludeChildren: true,
@@ -73,6 +80,7 @@ func (h *GetKnowledgeBaseHandler) handle(ctx context.Context, req api_base.Reque
 		BaseResponse:  api_base.GenBaseRespWithErr(status.StatusSuccess),
 		KnowledgeBase: knowledgeBaseDTO,
 		Documents:     documents,
+		TotalCount:    totalCount,
 	}
 
 	return response, nil

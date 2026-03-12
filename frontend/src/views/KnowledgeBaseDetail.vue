@@ -49,7 +49,7 @@
             <el-dropdown-menu>
               <el-dropdown-item @click="handleLogout">{{
                 t("button.logout")
-              }}</el-dropdown-item>
+                }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -85,7 +85,7 @@
           </div>
 
           <div class="actions">
-            <el-button type="primary" @click="createDocument">
+            <el-button type="primary" @click="openCreateDocumentDialog">
               {{ t("knowledgeBase.createDocument") }}
             </el-button>
             <el-button @click="refreshTree" :icon="Refresh" />
@@ -109,10 +109,8 @@
                 <el-icon>
                   <Clock />
                 </el-icon>
-                <span
-                  >{{ t("knowledgeBase.lastUpdated") }}:
-                  {{ formatDate(lastUpdated) }}</span
-                >
+                <span>{{ t("knowledgeBase.lastUpdated") }}:
+                  {{ formatDate(lastUpdated) }}</span>
               </div>
               <div class="stat-item">
                 <el-icon>
@@ -132,41 +130,20 @@
               <h3 class="section-title">{{ t("knowledgeBase.documentStructure") }}</h3>
 
               <div class="tree-controls">
-                <el-input
-                  v-model="searchKeyword"
-                  :placeholder="t('knowledgeBase.searchDocuments')"
-                  prefix-icon="Search"
-                  clearable
-                  class="search-input"
-                />
+                <el-input v-model="searchKeyword" :placeholder="t('knowledgeBase.searchDocuments')" prefix-icon="Search"
+                  clearable class="search-input" />
 
-                <el-select
-                  v-model="sortBy"
-                  :placeholder="t('knowledgeBase.sortBy')"
-                  class="sort-select"
-                >
-                  <el-option
-                    v-for="option in sortOptions"
-                    :key="option.value"
-                    :label="option.label"
-                    :value="option.value"
-                  />
+                <el-select v-model="sortBy" :placeholder="t('knowledgeBase.sortBy')" class="sort-select">
+                  <el-option v-for="option in sortOptions" :key="option.value" :label="option.label"
+                    :value="option.value" />
                 </el-select>
               </div>
             </div>
 
             <div class="tree-content" v-loading="loading">
-              <el-tree
-                v-if="documentTreeData.length > 0"
-                :data="documentTreeData"
-                :props="treeProps"
-                node-key="id"
-                :default-expand-all="false"
-                :expand-on-click-node="false"
-                :accordion="true"
-                @node-click="handleTreeNodeClick"
-                class="custom-tree"
-              >
+              <el-tree v-if="documentTreeData.length > 0" :data="documentTreeData" :props="treeProps" node-key="id"
+                :default-expand-all="false" :expand-on-click-node="false" :accordion="true"
+                @node-click="handleTreeNodeClick" class="custom-tree">
                 <template #default="{ node, data }">
                   <div class="tree-node-content">
                     <div class="node-icon">
@@ -181,30 +158,17 @@
 
                     <div class="node-info">
                       <span class="node-label">{{ node.label }}</span>
-                      <el-tag
-                        v-if="data.tags && data.tags.length > 0"
-                        size="small"
-                        type="info"
-                        class="node-tag"
-                      >
+                      <el-tag v-if="data.tags && data.tags.length > 0" size="small" type="info" class="node-tag">
                         {{ data.tags[0] }}
                       </el-tag>
                     </div>
 
                     <div class="node-actions">
-                      <el-button
-                        size="small"
-                        type="primary"
-                        text
-                        @click.stop="openDocument(data)"
-                      >
+                      <el-button size="small" type="primary" text @click.stop="openDocument(data)">
                         {{ t("common.open") }}
                       </el-button>
 
-                      <el-dropdown
-                        trigger="click"
-                        @command="handleNodeAction($event, data)"
-                      >
+                      <el-dropdown trigger="click" @command="handleNodeAction($event, data)">
                         <el-button size="small" text @click.stop>
                           <el-icon>
                             <MoreFilled />
@@ -229,17 +193,58 @@
                 </template>
               </el-tree>
               <div v-else-if="!loading" class="empty-tree-state">
-                <el-empty
-                  :description="t('knowledgeBase.noDocuments')"
-                  :image-size="64"
-                />
+                <el-empty :description="t('knowledgeBase.noDocuments')" :image-size="64" />
               </div>
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination-container" v-if="totalDocumentsCount > pageSize">
+              <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[20, 50, 100]"
+                :total="totalDocumentsCount" layout="total, sizes, prev, pager, next, jumper"
+                @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- 创建文档对话框 -->
+  <el-dialog v-model="showCreateDialog" :title="t('knowledgeBase.createDocument')" width="500px"
+    :close-on-click-modal="false">
+    <el-form :model="creatingDocument" label-position="top" @submit.prevent>
+      <el-form-item :label="t('knowledgeBase.documentTitle')" required>
+        <el-input v-model="creatingDocument.title" :placeholder="t('knowledgeBase.enterDocumentTitle')" maxlength="100"
+          show-word-limit />
+      </el-form-item>
+
+      <el-form-item :label="t('knowledgeBase.documentType')">
+        <el-select v-model="creatingDocument.type" :placeholder="t('knowledgeBase.selectDocumentType')"
+          style="width: 100%">
+          <el-option label="Markdown" value="markdown" />
+          <el-option label="Text" value="text" />
+          <!-- 更多文档类型可在此处添加 -->
+        </el-select>
+      </el-form-item>
+
+      <el-form-item :label="t('knowledgeBase.template')">
+        <el-select v-model="creatingDocument.template" :placeholder="t('knowledgeBase.selectTemplate')"
+          style="width: 100%" disabled>
+          <el-option label="空白文档" value="" />
+          <!-- 模板选项将在此处添加 -->
+        </el-select>
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="cancelCreateDocument">{{ t("button.cancel") }}</el-button>
+        <el-button type="primary" @click="createDocument" :loading="creatingLoading">
+          {{ t("button.create") }}
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -249,7 +254,7 @@ import { useUserStore } from "@/store/user";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import SideNav from "@/components/SideNav.vue";
-import { getKnowledgeBaseDetail } from "@/services/api.js";
+import { getKnowledgeBaseDetail, createDocument as createDocumentApi } from "@/services/api.js";
 import {
   ArrowDown,
   House,
@@ -303,6 +308,18 @@ const loading = ref(false);
 // 文档树相关
 const searchKeyword = ref("");
 const sortBy = ref("name");
+const currentPage = ref(1);
+const pageSize = ref(50);
+const totalDocumentsCount = ref(0);
+
+// 创建文档对话框相关
+const showCreateDialog = ref(false);
+const creatingDocument = ref({
+  title: '',
+  type: 'markdown',
+  template: ''
+});
+const creatingLoading = ref(false);
 const sortOptions = ref([
   { value: "name", label: t("knowledgeBase.sortByName") },
   { value: "date", label: t("knowledgeBase.sortByDate") },
@@ -322,15 +339,15 @@ const documentTreeData = computed(() => {
     isParent: doc.hasChildren || (doc.children && doc.children.length > 0),
     children: doc.children
       ? doc.children.map((child) => ({
-          id: child.external_id,
-          name: child.title,
-          type: child.type,
-          isParent: false,
-          tags: child.tags || [],
-          size: "0 MB", // 后端没有返回大小信息
-          modified: child.updated_at,
-          external_id: child.external_id,
-        }))
+        id: child.external_id,
+        name: child.title,
+        type: child.type,
+        isParent: false,
+        tags: child.tags || [],
+        size: "0 MB", // 后端没有返回大小信息
+        modified: child.updated_at,
+        external_id: child.external_id,
+      }))
       : [],
     tags: doc.tags || [],
     size: "0 MB", // 后端没有返回大小信息
@@ -357,6 +374,8 @@ const loadKnowledgeBaseDetail = async () => {
     // 调用API获取知识库详情，同时记录最近访问
     const data = await getKnowledgeBaseDetail(knowledgeBaseExternalID, {
       record_recent_log: true,
+      page: currentPage.value,
+      page_size: pageSize.value
     });
 
     knowledgeBaseData.value = data;
@@ -367,6 +386,7 @@ const loadKnowledgeBaseDetail = async () => {
       knowledgeBaseDescription.value = data.knowledge_base.description;
       lastUpdated.value = data.knowledge_base.updated_at;
       totalDocuments.value = data.documents ? data.documents.length : 0;
+      totalDocumentsCount.value = data.total_count || 0;
       ownerName.value = data.knowledge_base.creator_name || "未知用户";
     }
   } catch (error) {
@@ -377,9 +397,59 @@ const loadKnowledgeBaseDetail = async () => {
   }
 };
 
+// 打开创建文档对话框
+const openCreateDocumentDialog = () => {
+  // 重置表单
+  creatingDocument.value = {
+    title: '',
+    type: 'markdown',
+    template: ''
+  };
+  showCreateDialog.value = true;
+};
+
 // 创建文档
-const createDocument = () => {
-  ElMessage.success(t("knowledgeBase.createDocumentSuccess"));
+const createDocument = async () => {
+  if (!creatingDocument.value.title.trim()) {
+    ElMessage.error(t("knowledgeBase.titleRequired"));
+    return;
+  }
+
+  try {
+    const knowledgeBaseExternalID = route.params.id;
+    if (!knowledgeBaseExternalID) {
+      ElMessage.error(t("message.knowledgeBaseNotFound"));
+      return;
+    }
+
+    creatingLoading.value = true;
+
+    // 调用API创建文档
+    const response = await createDocumentApi({
+      title: creatingDocument.value.title,
+      type: creatingDocument.value.type,
+      container_type: "knowledge_base",
+      knowledge_base_external_id: knowledgeBaseExternalID
+    });
+
+    ElMessage.success(t("knowledgeBase.documentCreatedSuccessfully"));
+
+    // 关闭对话框
+    showCreateDialog.value = false;
+
+    // 重新加载知识库详情以显示新创建的文档
+    await loadKnowledgeBaseDetail();
+  } catch (error) {
+    console.error("创建文档失败:", error);
+    ElMessage.error(t("knowledgeBase.createDocumentError"));
+  } finally {
+    creatingLoading.value = false;
+  }
+};
+
+// 取消创建文档
+const cancelCreateDocument = () => {
+  showCreateDialog.value = false;
 };
 
 // 刷新树
@@ -476,6 +546,19 @@ const fetchSystemInfo = async () => {
   } catch (err) {
     console.error("获取系统信息失败:", err);
   }
+};
+
+// 分页大小改变
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+  currentPage.value = 1; // 重置到第一页
+  loadKnowledgeBaseDetail();
+};
+
+// 当前页改变
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
+  loadKnowledgeBaseDetail();
 };
 
 // 登出处理
@@ -773,6 +856,16 @@ onMounted(async () => {
   opacity: 1;
 }
 
+/* 分页容器样式 */
+.pagination-container {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-white);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .top-nav {
@@ -970,5 +1063,83 @@ onMounted(async () => {
   background-color: rgba(255, 82, 82, 0.1);
   border-color: rgba(255, 82, 82, 0.2);
   color: var(--text-light);
+}
+
+/* 深色模式对话框样式 */
+.dark-mode .el-dialog {
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .el-dialog__header {
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .el-dialog__body {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.dark-mode .el-dialog__footer {
+  background-color: var(--bg-white);
+  border-top: 1px solid var(--border-color);
+}
+
+.dark-mode .el-form-item__label {
+  color: var(--text-dark);
+}
+
+.dark-mode :deep(.el-input__wrapper) {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+.dark-mode :deep(.el-input__inner) {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+.dark-mode :deep(.el-select__wrapper) {
+  background-color: var(--select-bg);
+  border-color: var(--select-border);
+  color: var(--select-text);
+}
+
+.dark-mode :deep(.el-select__input) {
+  background-color: var(--select-bg);
+  color: var(--select-text);
+}
+
+.dark-mode :deep(.el-select-dropdown__item) {
+  background-color: var(--select-option-bg);
+  color: var(--select-text);
+}
+
+.dark-mode :deep(.el-select-dropdown__item.hover) {
+  background-color: var(--select-option-hover);
+}
+
+.dark-mode :deep(.el-select-dropdown__item:hover) {
+  background-color: var(--select-option-hover);
+}
+
+.dark-mode :deep(.el-button) {
+  --el-button-bg-color: var(--bg-light);
+  --el-button-text-color: var(--text-dark);
+  --el-button-hover-bg-color: var(--bg-medium);
+  --el-button-hover-text-color: var(--text-dark);
+  --el-button-border-color: var(--border-color);
+}
+
+.dark-mode :deep(.el-button--primary) {
+  --el-button-bg-color: var(--primary-color);
+  --el-button-text-color: var(--text-light);
+  --el-button-hover-bg-color: var(--primary-color);
+  --el-button-hover-text-color: var(--text-light);
 }
 </style>

@@ -80,7 +80,8 @@ export default {
     reset: '重置',
     back: '返回',
     next: '下一步',
-    logout: '登出'
+    logout: '登出',
+    create: '创建'
   },
   message: {
     success: '成功',
@@ -101,42 +102,6 @@ export default {
   language: {
     english: 'English',
     chinese: '中文'
-  },
-  knowledgeBase: {
-    title: '知识库',
-    recent: '最近访问',
-    my: '我的知识库',
-    public: '公开知识库',
-    noRecent: '暂无最近访问的知识库',
-    noDescription: '暂无描述',
-    access: '访问',
-    createNew: '创建',
-    private: '私有',
-    documentsCount: '文档数',
-    updatedAt: '更新时间',
-    owner: '所有者',
-    view: '查看',
-    accessSuccess: '已访问 {name}',
-    createComingSoon: '此功能即将推出',
-    viewInfo: '查看知识库详情',
-    fetchError: '获取知识库失败',
-    createDocument: '创建文档',
-    documentStructure: '文档结构',
-    searchDocuments: '搜索文档...',
-    sortBy: '排序方式',
-    sortByName: '按名称',
-    sortByDate: '按日期',
-    sortByType: '按类型',
-    lastUpdated: '最后更新',
-    createDocumentSuccess: '创建文档成功',
-    treeRefreshed: '文档树已刷新',
-    refresh: '刷新',
-    open: '打开',
-    size: '大小'
-  },
-  theme: {
-    light: '浅色模式',
-    dark: '深色模式'
   },
   knowledgeBase: {
     title: '知识库',
@@ -161,7 +126,17 @@ export default {
     createComingSoon: '创建功能即将上线！',
     // 详情页面翻译
     createDocument: '创建文档',
+    titleRequired: '请输入文档标题',
+    documentTitle: '文档标题',
+    enterDocumentTitle: '请输入文档标题',
+    documentType: '文档类型',
+    selectDocumentType: '请选择文档类型',
+    template: '模板',
+    selectTemplate: '请选择模板',
     createDocumentSuccess: '文档创建成功',
+    documentCreatedSuccessfully: '文档创建成功',
+    createDocumentError: '创建文档失败',
+    newDocument: '新文档',
     treeRefreshed: '树形结构已刷新',
     documentStructure: '文档结构',
     searchDocuments: '搜索文档...',
@@ -171,7 +146,12 @@ export default {
     sortByType: '按类型',
     lastUpdated: '最后更新',
     owner: '所有者',
-    noDocuments: '暂无文档'
+    noDocuments: '暂无文档',
+    refresh: '刷新'
+  },
+  theme: {
+    light: '浅色模式',
+    dark: '深色模式'
   },
   common: {
     yes: '是',

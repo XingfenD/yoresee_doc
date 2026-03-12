@@ -36,7 +36,6 @@ onMounted(() => {
 </script>
 
 <style>
-
 * {
   margin: 0;
   padding: 0;
@@ -91,121 +90,153 @@ body {
 
 /* 深色模式下的Element Plus组件样式 */
 .dark-mode {
+
   /* 输入框 */
   .el-input__wrapper {
     background-color: var(--input-bg) !important;
     border-color: var(--input-border) !important;
   }
-  
+
   .el-input__wrapper .el-input__input {
     color: var(--input-text) !important;
   }
-  
+
   .el-input__wrapper .el-input__placeholder {
     color: var(--input-placeholder) !important;
   }
-  
+
   /* 确保输入框文字颜色正确显示 */
   input[type="text"],
   input[type="password"],
   input[type="email"] {
     color: var(--input-text) !important;
   }
-  
+
   /* 下拉列表 */
   .el-select__wrapper {
     background-color: var(--select-bg) !important;
     border-color: var(--select-border) !important;
   }
-  
+
   .el-select__input {
     color: var(--select-text) !important;
   }
-  
+
   .el-select__placeholder {
     color: var(--input-placeholder) !important;
   }
-  
+
   .el-select-dropdown {
     background-color: var(--select-option-bg) !important;
     border-color: var(--select-border) !important;
   }
-  
+
   .el-select-dropdown__item {
     color: var(--select-text) !important;
     background-color: var(--select-option-bg) !important;
   }
-  
+
   .el-select-dropdown__item:hover {
     background-color: var(--select-option-hover) !important;
   }
-  
+
   .el-select-dropdown__item.selected {
     background-color: var(--primary-light) !important;
     color: var(--primary-color) !important;
   }
-  
+
   .el-select-dropdown__item:focus {
     background-color: var(--select-option-hover) !important;
   }
-  
+
   .el-select-dropdown__item.hover,
   .el-select-dropdown__item:hover {
     background-color: var(--select-option-hover) !important;
   }
-  
+
   /* 按钮 */
   .el-button--text {
     color: var(--text-medium) !important;
   }
-  
+
   .el-button--text:hover {
     color: var(--primary-color) !important;
   }
-  
+
   /* 卡片 */
   .el-card {
     background-color: var(--bg-white) !important;
     border-color: var(--border-color) !important;
   }
-  
+
   /* 表单 */
   .el-form-item__label {
     color: var(--text-medium) !important;
   }
-  
+
   /* 下拉菜单 */
   .el-dropdown-menu {
     background-color: var(--bg-white) !important;
     border-color: var(--border-color) !important;
   }
-  
+
   .el-dropdown-item {
     color: var(--text-medium) !important;
   }
-  
+
   .el-dropdown-item:hover {
     background-color: var(--bg-medium) !important;
   }
-  
+
   /* 菜单 */
   .el-menu {
     background-color: var(--bg-white) !important;
     border-color: var(--border-color) !important;
   }
-  
+
   .el-menu-item {
     color: var(--text-medium) !important;
   }
-  
+
   .el-menu-item:hover {
     background-color: var(--bg-medium) !important;
     color: var(--primary-color) !important;
   }
-  
+
   .el-menu-item.is-active {
     background-color: var(--primary-light) !important;
     color: var(--primary-color) !important;
+  }
+
+  /* 对话框 */
+  .el-dialog {
+    background-color: var(--bg-white) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .el-dialog__header {
+    background-color: var(--bg-white) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+
+  .el-dialog__title {
+    color: var(--text-dark) !important;
+  }
+
+  .el-dialog__body {
+    background-color: var(--bg-white) !important;
+    color: var(--text-dark) !important;
+  }
+
+  .el-dialog__footer {
+    background-color: var(--bg-white) !important;
+    border-top: 1px solid var(--border-color) !important;
+  }
+
+  /* 输入框字数统计 */
+  .el-input__count-inner {
+    background-color: var(--input-bg) !important;
+    color: var(--text-light) !important;
   }
 }
 </style>

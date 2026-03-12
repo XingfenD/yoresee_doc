@@ -91,4 +91,9 @@ export const getKnowledgeBaseDetail = (knowledgeBaseExternalID, params = {}) => 
   return api.get(`/api/knowledge-base/${knowledgeBaseExternalID}`, { params }).then(handleResponse)
 };
 
+// 创建文档
+export const createDocument = (data) => {
+  return api.post('/api/document/create', data).then(handleResponse)
+};
+
 export default api;

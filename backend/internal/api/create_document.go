@@ -28,6 +28,7 @@ type CreateDocumentRequest struct {
 }
 
 type CreateDocumentResponse struct {
+	api_base.BaseResponse
 	ExternalID string `json:"external_id"`
 }
 
@@ -63,7 +64,10 @@ func (h *CreateDocumentHandler) handle(ctx context.Context, req api_base.Request
 		return nil, err
 	}
 
-	return resp, nil
+	return &CreateDocumentResponse{
+		BaseResponse: api_base.GenBaseRespWithErr(status.StatusSuccess),
+		ExternalID:   resp.ExternalID,
+	}, nil
 }
 
 func (h *CreateDocumentHandler) GinHandle() gin.HandlerFunc {

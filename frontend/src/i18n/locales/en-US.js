@@ -82,7 +82,8 @@ export default {
     reset: 'Reset',
     back: 'Back',
     next: 'Next',
-    logout: 'Logout'
+    logout: 'Logout',
+    create: 'Create'
   },
   message: {
     success: 'Success',
@@ -103,42 +104,6 @@ export default {
   language: {
     english: 'English',
     chinese: '中文'
-  },
-  knowledgeBase: {
-    title: 'Knowledge Base',
-    recent: 'Recent Access',
-    my: 'My Knowledge Bases',
-    public: 'Public Knowledge Bases',
-    noRecent: 'No recently accessed knowledge bases',
-    noDescription: 'No description',
-    access: 'Access',
-    createNew: 'Create',
-    private: 'Private',
-    documentsCount: 'Documents Count',
-    updatedAt: 'Last Updated',
-    owner: 'Owner',
-    view: 'View',
-    accessSuccess: 'Accessed {name}',
-    createComingSoon: 'This feature is coming soon',
-    viewInfo: 'View knowledge base details',
-    fetchError: 'Failed to fetch knowledge base',
-    createDocument: 'Create Document',
-    documentStructure: 'Document Structure',
-    searchDocuments: 'Search documents...',
-    sortBy: 'Sort by',
-    sortByName: 'By Name',
-    sortByDate: 'By Date',
-    sortByType: 'By Type',
-    lastUpdated: 'Last Updated',
-    createDocumentSuccess: 'Document created successfully',
-    treeRefreshed: 'Document tree refreshed',
-    refresh: 'Refresh',
-    open: 'Open',
-    size: 'Size'
-  },
-  theme: {
-    light: 'Light Mode',
-    dark: 'Dark Mode'
   },
   knowledgeBase: {
     title: 'Knowledge Bases',
@@ -163,7 +128,17 @@ export default {
     createComingSoon: 'Create feature coming soon!',
     // Detail page translations
     createDocument: 'Create Document',
+    titleRequired: 'Please enter document title',
+    documentTitle: 'Document Title',
+    enterDocumentTitle: 'Please enter document title',
+    documentType: 'Document Type',
+    selectDocumentType: 'Select document type',
+    template: 'Template',
+    selectTemplate: 'Select template',
     createDocumentSuccess: 'Document created successfully',
+    documentCreatedSuccessfully: 'Document created successfully',
+    createDocumentError: 'Failed to create document',
+    newDocument: 'New Document',
     treeRefreshed: 'Tree structure refreshed',
     documentStructure: 'Document Structure',
     searchDocuments: 'Search documents...',
@@ -173,7 +148,12 @@ export default {
     sortByType: 'By Type',
     lastUpdated: 'Last Updated',
     owner: 'Owner',
-    noDocuments: 'No documents'
+    noDocuments: 'No documents',
+    refresh: 'Refresh'
+  },
+  theme: {
+    light: 'Light Mode',
+    dark: 'Dark Mode'
   },
   common: {
     yes: 'Yes',
