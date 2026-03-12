@@ -41,6 +41,7 @@ func (req *CreateDocumentRequest) BuildDTOReq(userExternalID string) *dto.Create
 		Title:             req.Title,
 		Type:              dto.DocumentType(req.Type),
 		CreatorExternalID: utils.Of(userExternalID),
+		ParentExternalID:  req.ParentExternalID,
 	}
 	switch req.ContainerType {
 	case CreateDocumentContainerType_KnowledgeBase:

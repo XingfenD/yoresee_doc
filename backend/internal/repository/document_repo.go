@@ -106,7 +106,7 @@ func (op DocumentGetIDByExternalIDOperation) Exec() (int64, error) {
 		op.tx = storage.DB
 	}
 
-	err := op.tx.First(&model.DocumentMeta{}).Where("external_id = ?").First(op.externalID).Pluck("id", &id).Error
+	err := op.tx.Model(&model.DocumentMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	if err != nil {
 		return 0, err
 	}
