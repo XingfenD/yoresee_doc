@@ -39,7 +39,7 @@
         <!-- 用户菜单 -->
         <el-dropdown trigger="click" class="nav-item">
           <span class="user-info">
-            <el-avatar size="small" :src="userAvatar"></el-avatar>
+            <el-avatar v-if="userAvatar" size="small" :src="userAvatar"></el-avatar>
             <span class="username">{{ userInfo?.username || '用户' }}</span>
             <el-icon class="el-icon--right">
               <ArrowDown />
@@ -116,7 +116,7 @@ const filterStatus = ref('all');
 const isDarkMode = ref(false);
 
 const userInfo = computed(() => userStore.userInfo);
-const userAvatar = ref('');
+const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 
 // 计算当前语言
 const currentLanguage = computed({

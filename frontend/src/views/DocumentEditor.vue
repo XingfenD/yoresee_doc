@@ -39,7 +39,8 @@
         <!-- 用户菜单 -->
         <el-dropdown trigger="click" class="nav-item">
           <span class="user-info">
-            <el-avatar size="small" :src="userAvatar"></el-avatar>
+            <el-avatar v-if="userAvatar" size="small" :src="userAvatar"></el-avatar>
+            <span class="username">{{ userInfo?.username || '用户' }}</span>
             <el-icon class="el-icon--right">
               <ArrowDown />
             </el-icon>
@@ -82,10 +83,10 @@
             </div>
             <div class="directory-tree" v-loading="treeLoading">
               <el-tree ref="treeRef" :data="directoryTree" :props="treeProps" node-key="id" :default-expand-all="false"
-                :expand-on-click-node="false" :current-node-key="docId"
+                :expand-on-click-node="false" :current-node-key="docId" highlight-current
                 @node-click="handleTreeNodeClick" class="editor-tree">
                 <template #default="{ node, data }">
-                  <div class="tree-node-content">
+                  <div class="tree-node-content" :class="{ 'is-active': isCurrentDoc(data) }">
                     <div class="node-icon">
                       <el-icon v-if="data.isFolder">
                         <FolderOpened v-if="node.expanded" />
@@ -153,10 +154,11 @@ const kbId = ref(route.params.kbId);
 const docId = ref(route.params.docId);
 
 const systemName = ref('Yoresee 知识库');
-const userAvatar = ref('https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
+const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 const currentLanguage = computed(() => locale.value);
 const isDarkMode = ref(false);
 const activeMenu = ref('knowledge-base');
+const userInfo = computed(() => userStore.userInfo);
 
 const knowledgeBaseName = ref('示例知识库');
 const currentDocTitle = ref('示例文档');
@@ -173,6 +175,8 @@ const treeProps = {
 };
 
 const directoryTree = ref([]);
+
+const isCurrentDoc = (data) => String(data.id) === String(docId.value);
 
 
 const transformDocumentsToTree = (documents) => {
@@ -402,6 +406,7 @@ watch(
 .nav-item {
   display: flex;
   align-items: center;
+  margin-left: var(--spacing-sm);
 }
 
 .nav-link {
@@ -434,6 +439,13 @@ watch(
 
 .user-info:hover {
   background-color: var(--bg-medium);
+}
+
+.username {
+  margin-left: var(--spacing-sm);
+  margin-right: 4px;
+  color: var(--text-medium);
+  font-size: 14px;
 }
 
 /* 主内容区 */
@@ -525,6 +537,22 @@ watch(
 
 .editor-tree {
   background: transparent;
+}
+
+.editor-tree :deep(.el-tree-node__content) {
+  background-color: transparent;
+}
+
+.editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background-color: transparent;
+}
+
+.dark-mode .editor-tree :deep(.el-tree-node__content) {
+  background-color: transparent;
+}
+
+.dark-mode .editor-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background-color: transparent;
 }
 
 .editor-tree :deep(.el-tree-node__content:hover) {
