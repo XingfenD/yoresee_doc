@@ -49,7 +49,7 @@
             <el-dropdown-menu>
               <el-dropdown-item @click="handleLogout">{{
                 t("button.logout")
-                }}</el-dropdown-item>
+              }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -474,8 +474,7 @@ const handleTreeNodeClick = (data) => {
 
 // 打开文档
 const openDocument = (data) => {
-  ElMessage.success(`${t("message.openDocument")}: ${data.name}`);
-  console.log("Opening document:", data);
+  router.push(`/knowledge-base/${route.params.id}/document/${data.id}`);
 };
 
 // 处理节点操作

@@ -68,7 +68,12 @@ export default {
     collaborators: 'Collaborators',
     status: 'Status',
     folders: 'Folders',
-    trash: 'Trash'
+    trash: 'Trash',
+    editorPlaceholder: 'Start writing your document here...',
+    preview: 'Preview',
+    showPreview: 'Show Preview',
+    hidePreview: 'Hide Preview',
+    lastSaved: 'Last saved'
   },
   system: {
     name: 'Yoresee',
@@ -166,6 +171,10 @@ export default {
     open: 'Open',
     rename: 'Rename',
     actions: 'Actions',
-    size: 'Size'
+    size: 'Size',
+    back: 'Back',
+    save: 'Save',
+    collapse: 'Collapse',
+    expand: 'Expand'
   }
 };

@@ -32,6 +32,13 @@ const router = createRouter({
       component: () => import('../views/KnowledgeBaseDetail.vue'),
       meta: { requiresAuth: true },
       props: true
+    },
+    {
+      path: '/knowledge-base/:kbId/document/:docId',
+      name: 'KnowledgeBaseDocumentEditor',
+      component: () => import('../views/DocumentEditor.vue'),
+      meta: { requiresAuth: true },
+      props: true
     }
   ]
 });

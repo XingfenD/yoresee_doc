@@ -1,0 +1,346 @@
+<template>
+  <div class="markdown-editor">
+    <div ref="editorRef" class="vditor-container"></div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import Vditor from 'vditor';
+import 'vditor/dist/index.css';
+
+const props = defineProps({
+  modelValue: {
+    type: String,
+    default: ''
+  },
+  placeholder: {
+    type: String,
+    default: ''
+  },
+  height: {
+    type: [String, Number],
+    default: '100%'
+  }
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+const editorRef = ref(null);
+let vditor = null;
+
+onMounted(() => {
+  vditor = new Vditor(editorRef.value, {
+    height: props.height,
+    value: props.modelValue,
+    placeholder: props.placeholder,
+    mode: 'wysiwyg',
+    theme: 'classic',
+    icon: 'ant',
+    counter: {
+      enable: true
+    },
+    cache: {
+      enable: false
+    },
+    upload: {
+      handler: (files) => {
+        return Promise.reject('上传功能暂未实现');
+      }
+    },
+    after: () => {
+      vditor.setValue(props.modelValue);
+    },
+    input: (value) => {
+      emit('update:modelValue', value);
+    }
+  });
+});
+
+onBeforeUnmount(() => {
+  if (vditor) {
+    vditor.destroy();
+    vditor = null;
+  }
+});
+
+watch(() => props.modelValue, (newValue) => {
+  if (vditor && vditor.getValue() !== newValue) {
+    vditor.setValue(newValue);
+  }
+});
+</script>
+
+<style scoped>
+.markdown-editor {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vditor-container {
+  flex: 1;
+  min-height: 500px;
+}
+
+.markdown-editor :deep(.vditor) {
+  border: none;
+  background-color: var(--bg-white);
+}
+
+.dark-mode .markdown-editor :deep(.vditor) {
+  background-color: var(--bg-white);
+}
+
+.markdown-editor :deep(.vditor-toolbar) {
+  background-color: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-toolbar) {
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
+}
+
+.markdown-editor :deep(.vditor-toolbar__item) {
+  color: var(--text-medium);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-toolbar__item) {
+  color: var(--text-medium);
+}
+
+.markdown-editor :deep(.vditor-toolbar__item:hover) {
+  color: var(--primary-color);
+}
+
+.markdown-editor :deep(.vditor-toolbar__item--current) {
+  color: var(--primary-color);
+}
+
+.markdown-editor :deep(.vditor-content) {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-content) {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-ir) {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir) {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-ir__node) {
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir__node) {
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-ir__link) {
+  color: var(--primary-color);
+}
+
+.markdown-editor :deep(.vditor-ir__link:hover) {
+  color: var(--primary-color);
+}
+
+.markdown-editor :deep(.vditor-ir__marker) {
+  color: var(--text-light);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir__marker) {
+  color: var(--text-light);
+}
+
+.markdown-editor :deep(.vditor-ir__heading) {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir__heading) {
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-ir__codeblock) {
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir__codeblock) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-ir__quote) {
+  border-left-color: var(--primary-color);
+  color: var(--text-medium);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir__quote) {
+  color: var(--text-medium);
+}
+
+.markdown-editor :deep(.vditor-ir__strong) {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir__strong) {
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-ir__em) {
+  font-style: italic;
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-ir__em) {
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg) {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg) {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg pre) {
+  background-color: var(--bg-light);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg pre) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg code) {
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg code) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg blockquote) {
+  border-left-color: var(--primary-color);
+  color: var(--text-medium);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg blockquote) {
+  color: var(--text-medium);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg a) {
+  color: var(--primary-color);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg table) {
+  border-color: var(--border-color);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg th) {
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-wysiwyg th) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-wysiwyg td) {
+  border-color: var(--border-color);
+}
+
+.markdown-editor :deep(.vditor-preview) {
+  background-color: var(--bg-light);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-preview) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-preview h1),
+.markdown-editor :deep(.vditor-preview h2),
+.markdown-editor :deep(.vditor-preview h3) {
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-preview h1),
+.dark-mode .markdown-editor :deep(.vditor-preview h2),
+.dark-mode .markdown-editor :deep(.vditor-preview h3) {
+  color: var(--text-dark);
+}
+
+.markdown-editor :deep(.vditor-preview code) {
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-preview code) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-preview pre) {
+  background-color: var(--bg-white);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-preview pre) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-preview blockquote) {
+  border-left-color: var(--primary-color);
+  color: var(--text-medium);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-preview blockquote) {
+  color: var(--text-medium);
+}
+
+.markdown-editor :deep(.vditor-preview a) {
+  color: var(--primary-color);
+}
+
+.markdown-editor :deep(.vditor-preview table) {
+  border-color: var(--border-color);
+}
+
+.markdown-editor :deep(.vditor-preview th) {
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-preview th) {
+  background-color: var(--bg-medium);
+}
+
+.markdown-editor :deep(.vditor-preview td) {
+  border-color: var(--border-color);
+}
+
+.markdown-editor :deep(.vditor-statusbar) {
+  background-color: var(--bg-white);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-light);
+}
+
+.dark-mode .markdown-editor :deep(.vditor-statusbar) {
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
+  color: var(--text-light);
+}
+</style>

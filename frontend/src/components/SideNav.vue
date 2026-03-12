@@ -1,30 +1,44 @@
 <template>
-  <aside class="side-nav">
+  <aside class="side-nav" :class="{ 'collapsed': isCollapsed }">
     <el-menu :default-active="currentActiveMenu" class="side-menu" @select="handleMenuSelect">
       <el-menu-item index="home">
         <el-icon>
           <House />
         </el-icon>
-        <span>{{ t('navigation.home') }}</span>
+        <span class="menu-text">{{ t('navigation.home') }}</span>
       </el-menu-item>
       <el-menu-item index="knowledge-base">
         <el-icon>
           <Collection />
         </el-icon>
-        <span>{{ t('navigation.knowledgeBase') }}</span>
+        <span class="menu-text">{{ t('navigation.knowledgeBase') }}</span>
       </el-menu-item>
     </el-menu>
+    <button class="collapse-btn" @click="toggleCollapse"
+      :title="isCollapsed ? t('common.expand') : t('common.collapse')">
+      <el-icon>
+        <DArrowRight v-if="isCollapsed" />
+        <DArrowLeft v-else />
+      </el-icon>
+    </button>
   </aside>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { House, Collection } from '@element-plus/icons-vue';
+import { House, Collection, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const { t } = useI18n();
+
+const isCollapsed = ref(localStorage.getItem('sideNavCollapsed') === 'true');
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
+  localStorage.setItem('sideNavCollapsed', isCollapsed.value);
+};
 
 // 接收当前激活的菜单作为 props
 const props = defineProps({
@@ -56,8 +70,13 @@ const handleMenuSelect = (key) => {
   width: 240px;
   background-color: var(--bg-white);
   border-right: 1px solid var(--border-color);
-  overflow-y: auto;
+  overflow: hidden;
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.side-nav.collapsed {
+  width: 60px;
 }
 
 .side-menu {
@@ -74,7 +93,6 @@ const handleMenuSelect = (key) => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  /* 添加图标和文字之间的间距 */
 }
 
 .side-menu .el-menu-item:hover {
@@ -88,20 +106,73 @@ const handleMenuSelect = (key) => {
   border-right: 3px solid var(--primary-color);
 }
 
+.menu-text {
+  transition: opacity 0.3s ease;
+}
+
+.side-nav.collapsed .menu-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.side-nav.collapsed .el-menu-item {
+  justify-content: center;
+  gap: 0;
+}
+
+.collapse-btn {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  color: var(--text-medium);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: var(--shadow-sm);
+}
+
+.collapse-btn:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.collapse-btn .el-icon {
+  font-size: 14px;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .side-nav {
     width: 60px;
   }
 
-  .side-menu .el-menu-item span {
+  .side-nav.collapsed {
+    width: 60px;
+  }
+
+  .menu-text {
     display: none;
   }
 
-  /* 在折叠状态下，确保图标居中 */
   .side-menu .el-menu-item {
     justify-content: center;
     gap: 0;
+  }
+
+  .collapse-btn {
+    display: none;
   }
 }
 </style>

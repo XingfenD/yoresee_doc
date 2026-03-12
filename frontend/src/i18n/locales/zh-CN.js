@@ -66,7 +66,12 @@ export default {
     collaborators: '协作者',
     status: '状态',
     folders: '文件夹',
-    trash: '回收站'
+    trash: '回收站',
+    editorPlaceholder: '在这里开始编写您的文档...',
+    preview: '预览',
+    showPreview: '显示预览',
+    hidePreview: '隐藏预览',
+    lastSaved: '上次保存'
   },
   system: {
     name: 'Yoresee',
@@ -164,6 +169,10 @@ export default {
     open: '打开',
     rename: '重命名',
     actions: '操作',
-    size: '大小'
+    size: '大小',
+    back: '返回',
+    save: '保存',
+    collapse: '收起',
+    expand: '展开'
   }
 };
