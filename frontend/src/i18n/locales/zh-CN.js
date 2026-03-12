@@ -173,6 +173,8 @@ export default {
     back: '返回',
     save: '保存',
     collapse: '收起',
-    expand: '展开'
+    collapseAll: '收起全部',
+    expand: '展开',
+    expandAll: '展开全部'
   }
 };

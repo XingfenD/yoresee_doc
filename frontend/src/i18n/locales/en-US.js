@@ -175,6 +175,8 @@ export default {
     back: 'Back',
     save: 'Save',
     collapse: 'Collapse',
-    expand: 'Expand'
+    collapseAll: 'Collapse All',
+    expand: 'Expand',
+    expandAll: 'Expand All'
   }
 };

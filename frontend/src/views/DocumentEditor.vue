@@ -71,8 +71,17 @@
               </el-button>
             </div>
             <div class="sidebar-title">{{ knowledgeBaseName }}</div>
+            <div class="tree-toolbar">
+              <el-button text @click="toggleExpandAll"
+                :title="isAllExpanded ? t('common.collapseAll') : t('common.expandAll')" class="tree-expand-btn">
+                <el-icon :size="14">
+                  <FolderOpened v-if="isAllExpanded" />
+                  <Folder v-else />
+                </el-icon>
+              </el-button>
+            </div>
             <div class="directory-tree" v-loading="treeLoading">
-              <el-tree :data="directoryTree" :props="treeProps" node-key="id" :default-expand-all="true"
+              <el-tree ref="treeRef" :data="directoryTree" :props="treeProps" node-key="id" :default-expand-all="false"
                 :expand-on-click-node="false" @node-click="handleTreeNodeClick" class="editor-tree">
                 <template #default="{ node, data }">
                   <div class="tree-node-content">
@@ -85,7 +94,7 @@
                         <Document />
                       </el-icon>
                     </div>
-                    <span class="node-label" :class="{ 'is-active': data.id === currentDocId }">
+                    <span class="node-label">
                       {{ node.label }}
                     </span>
                   </div>
@@ -124,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
@@ -132,6 +141,7 @@ import { ArrowLeft, Folder, FolderOpened, Document, Check, Flag, ChatLineRound, 
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import SideNav from '@/components/SideNav.vue';
 import { useUserStore } from '@/store/user';
+import { getKnowledgeBaseDocuments } from '@/services/api';
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -153,43 +163,88 @@ const editorContent = ref('# 欢迎使用文档编辑器\n\n这是一个示例�
 const lastSavedTime = ref('--');
 const treeLoading = ref(false);
 
-const currentDocId = computed(() => docId.value);
+const treeRef = ref(null);
+const isAllExpanded = ref(true);
 
 const treeProps = {
   children: 'children',
   label: 'label'
 };
 
-const directoryTree = ref([
-  {
-    id: 'folder-1',
-    label: '第一章：入门指南',
-    isFolder: true,
-    children: [
-      { id: 'doc-1', label: '快速开始', isFolder: false },
-      { id: 'doc-2', label: '安装配置', isFolder: false }
-    ]
-  },
-  {
-    id: 'folder-2',
-    label: '第二章：核心功能',
-    isFolder: true,
-    children: [
-      { id: 'doc-3', label: '文档管理', isFolder: false },
-      { id: 'doc-4', label: '权限设置', isFolder: false },
-      { id: 'example', label: '当前文档', isFolder: false }
-    ]
-  },
-  {
-    id: 'folder-3',
-    label: '第三章：高级特性',
-    isFolder: true,
-    children: [
-      { id: 'doc-5', label: 'API 接口', isFolder: false },
-      { id: 'doc-6', label: '插件开发', isFolder: false }
-    ]
+const directoryTree = ref([]);
+
+const transformDocumentsToTree = (documents) => {
+  const tree = [];
+
+  documents.forEach(doc => {
+    const treeNode = {
+      id: doc.external_id,
+      label: doc.title,
+      isFolder: doc.has_children,
+      children: []
+    };
+
+    if (doc.children && doc.children.length > 0) {
+      treeNode.children = transformDocumentsToTree(doc.children);
+    }
+
+    tree.push(treeNode);
+  });
+
+  return tree;
+};
+
+const fetchDocuments = async () => {
+  if (kbId.value === 'example' || kbId.value === 'personal') {
+    return;
   }
-]);
+
+  treeLoading.value = true;
+  try {
+    const response = await getKnowledgeBaseDocuments(kbId.value);
+    knowledgeBaseName.value = response.knowledge_base.name;
+    directoryTree.value = transformDocumentsToTree(response.documents);
+
+    await expandToCurrentDoc();
+  } catch (error) {
+    console.error('获取文档列表失败:', error);
+    ElMessage.error(t('knowledgeBase.fetchError'));
+  } finally {
+    treeLoading.value = false;
+  }
+};
+
+const findPathToNode = (tree, targetId, path = []) => {
+  for (const node of tree) {
+    if (node.id === targetId) {
+      return [...path, node];
+    }
+    if (node.children && node.children.length > 0) {
+      const result = findPathToNode(node.children, targetId, [...path, node]);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return null;
+};
+
+const expandToCurrentDoc = async () => {
+  if (!treeRef.value || !docId.value || directoryTree.value.length === 0) {
+    return;
+  }
+
+  const path = findPathToNode(directoryTree.value, docId.value);
+  if (path && path.length > 0) {
+    await nextTick();
+    for (let i = 0; i < path.length - 1; i++) {
+      const node = treeRef.value.getNode(path[i].id);
+      if (node) {
+        node.expanded = true;
+      }
+    }
+  }
+};
 
 const goBack = () => {
   if (kbId.value === 'personal' || kbId.value === 'example') {
@@ -201,10 +256,19 @@ const goBack = () => {
 
 const handleTreeNodeClick = (data) => {
   if (!data.isFolder) {
-    if (data.id === 'example') {
-      return;
-    }
     router.push(`/knowledge-base/${kbId.value}/document/${data.id}`);
+  }
+};
+
+const toggleExpandAll = () => {
+  isAllExpanded.value = !isAllExpanded.value;
+  if (treeRef.value) {
+    const nodes = treeRef.value.store?.nodesMap;
+    if (nodes) {
+      Object.values(nodes).forEach(node => {
+        node.expanded = isAllExpanded.value;
+      });
+    }
   }
 };
 
@@ -277,6 +341,8 @@ onMounted(async () => {
   if (kbId.value === 'example' && docId.value === 'example') {
     knowledgeBaseName.value = '示例知识库';
     currentDocTitle.value = '示例文档';
+  } else {
+    await fetchDocuments();
   }
 
   await fetchSystemInfo();
@@ -418,6 +484,29 @@ onMounted(async () => {
   border-color: var(--border-color);
 }
 
+.tree-toolbar {
+  display: flex;
+  justify-content: flex-start;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dark-mode .tree-toolbar {
+  border-color: var(--border-color);
+}
+
+.tree-expand-btn {
+  padding: 2px 4px;
+}
+
+.tree-expand-btn .el-icon {
+  color: var(--text-light);
+}
+
+.tree-expand-btn:hover .el-icon {
+  color: var(--primary-color);
+}
+
 .directory-tree {
   flex: 1;
   overflow-y: auto;
@@ -433,6 +522,15 @@ onMounted(async () => {
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) 0;
+  border-radius: var(--border-radius-sm);
+}
+
+.tree-node-content.is-active {
+  background-color: rgba(22, 93, 255, 0.1);
+}
+
+.dark-mode .tree-node-content.is-active {
+  background-color: rgba(64, 128, 255, 0.2);
 }
 
 .node-icon {
