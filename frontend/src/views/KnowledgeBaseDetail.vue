@@ -20,7 +20,7 @@
       <div class="content-area">
         <!-- 操作栏 -->
         <div class="action-bar">
-          <el-button text @click="goBackToKnowledgeBase">
+          <el-button text class="back-button" @click="goBackToKnowledgeBase">
             <el-icon>
               <ArrowLeft />
             </el-icon>

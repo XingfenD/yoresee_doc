@@ -88,6 +88,19 @@ body {
   padding: 0;
 }
 
+/* 全局返回按钮样式 */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: 500;
+  color: var(--text-medium);
+}
+
+.back-button:hover {
+  color: var(--primary-color);
+}
+
 /* 深色模式下的Element Plus组件样式 */
 .dark-mode {
 

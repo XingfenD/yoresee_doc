@@ -21,7 +21,7 @@
         <div class="editor-layout">
           <aside class="sidebar" :style="{ width: `${sidebarWidth}px` }">
             <div class="sidebar-header">
-              <el-button text @click="goBack">
+              <el-button text class="back-button" @click="goBack">
                 <el-icon>
                   <ArrowLeft />
                 </el-icon>

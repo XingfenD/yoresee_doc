@@ -35,7 +35,7 @@
         </div>
 
         <div class="kb-actions">
-          <el-button size="small" @click="handleOpen(kb)">
+          <el-button size="small" type="primary" @click="handleOpen(kb)">
             {{ actionLabel }}
           </el-button>
         </div>
