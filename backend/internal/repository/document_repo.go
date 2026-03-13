@@ -235,6 +235,10 @@ func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 		dbQuery = dbQuery.Where("knowledge_id IS NULL")
 	}
 
+	if op.knowledgeID != nil {
+		dbQuery = dbQuery.Where("knowledge_id = ?", *op.knowledgeID)
+	}
+
 	if op.titleKeyword != nil && *op.titleKeyword != "" {
 		dbQuery = dbQuery.Where("title LIKE ?", "%"+*op.titleKeyword+"%")
 	}
