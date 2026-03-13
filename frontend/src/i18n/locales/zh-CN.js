@@ -137,6 +137,7 @@ export default {
     createNew: '创建新知识库',
     recent: '最近访问',
     my: '我的知识库',
+    publicList: '公开知识库',
     noRecent: '暂无最近访问的知识库',
     createComingSoon: '创建功能即将上线！',
     // 详情页面翻译

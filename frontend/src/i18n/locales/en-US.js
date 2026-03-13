@@ -139,6 +139,7 @@ export default {
     createNew: 'Create New Knowledge Base',
     recent: 'Recent Access',
     my: 'My Knowledge Bases',
+    publicList: 'Public Knowledge Bases',
     noRecent: 'No recent knowledge bases',
     createComingSoon: 'Create feature coming soon!',
     // Detail page translations

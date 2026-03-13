@@ -19,163 +19,70 @@
     </template>
 
     <div class="knowledge-base-vertical-layout">
-          <!-- 第一部分：最近访问的知识库 -->
-          <div class="vertical-section">
-            <div class="section-header">
-              <h3 class="section-title">{{ t("knowledgeBase.recent") }}</h3>
-            </div>
-            <div class="section-content">
-              <el-empty
-                :description="t('knowledgeBase.noRecent')"
-                v-if="recentKnowledgeBases.length === 0"
-              />
-              <el-card
-                v-for="kb in recentKnowledgeBases"
-                :key="kb.externalId"
-                class="knowledge-base-item"
-              >
-                <template #header>
-                  <div class="card-header">
-                    <span class="kb-name">{{ kb.name }}</span>
-                    <el-tag v-if="kb.isPublic" type="success" size="small">
-                      {{ t("knowledgeBase.public") }}
-                    </el-tag>
-                  </div>
-                </template>
+      <el-tabs v-model="activeTab" class="knowledge-base-tabs">
+        <el-tab-pane :label="t('knowledgeBase.my')" name="my">
+          <KnowledgeBaseListSection
+            :title="t('knowledgeBase.my')"
+            :items="myKnowledgeBases"
+            :empty-text="t('knowledgeBase.noRecent')"
+            :tag-mapper="myTagMapper"
+            :fallback-description="t('knowledgeBase.noDescription')"
+            :meta-mapper="myMetaMapper"
+            :show-load-more="myHasMore"
+            :loading="myLoading"
+            :load-more-label="t('common.loadMore')"
+            :loading-label="t('common.loading')"
+            :action-label="t('common.open')"
+            @open="viewKnowledgeBase"
+            @load-more="loadMoreMyKnowledgeBases"
+          />
+        </el-tab-pane>
 
-                <p class="kb-description">
-                  {{ kb.description || t("knowledgeBase.noDescription") }}
-                </p>
+        <el-tab-pane :label="t('knowledgeBase.recent')" name="recent">
+          <KnowledgeBaseListSection
+            :title="t('knowledgeBase.recent')"
+            :items="recentKnowledgeBases"
+            :empty-text="t('knowledgeBase.noRecent')"
+            :tag-mapper="recentTagMapper"
+            :fallback-description="t('knowledgeBase.noDescription')"
+            :meta-mapper="null"
+            :show-load-more="false"
+            :action-label="t('common.open')"
+            @open="accessKnowledgeBase"
+          />
+        </el-tab-pane>
 
-                <div class="kb-actions">
-                  <el-button size="small" @click="accessKnowledgeBase(kb)">
-                    {{ t("common.open") }}
-                  </el-button>
-                </div>
-              </el-card>
-            </div>
-          </div>
-
-          <!-- 第二部分：我的知识库 -->
-          <div class="vertical-section">
-            <div class="section-header">
-              <h3 class="section-title">{{ t("knowledgeBase.my") }}</h3>
-            </div>
-            <div class="section-content">
-              <el-card
-                v-for="kb in myKnowledgeBases"
-                :key="kb.externalId"
-                class="knowledge-base-item"
-              >
-                <template #header>
-                  <div class="card-header">
-                    <span class="kb-name">{{ kb.name }}</span>
-                    <el-tag v-if="!kb.isPublic" type="info" size="small">
-                      {{ t("knowledgeBase.private") }}
-                    </el-tag>
-                  </div>
-                </template>
-
-                <p class="kb-description">
-                  {{ kb.description || t("knowledgeBase.noDescription") }}
-                </p>
-
-                <div class="kb-details">
-                  <div class="detail-item">
-                    <span class="detail-label"
-                      >{{ t("knowledgeBase.documentsCount") }}:</span
-                    >
-                    <span class="detail-value">{{ kb.documents_count || 0 }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="detail-label">{{ t("knowledgeBase.updatedAt") }}:</span>
-                    <span class="detail-value">{{ formatDate(kb.updated_at) }}</span>
-                  </div>
-                </div>
-
-                <div class="kb-actions">
-                  <el-button size="small" @click="viewKnowledgeBase(kb)">
-                    {{ t("common.open") }}
-                  </el-button>
-                </div>
-              </el-card>
-
-              <div class="load-more" v-if="myHasMore">
-                <el-button @click="loadMoreMyKnowledgeBases" :loading="myLoading" plain>
-                  {{ myLoading ? t("common.loading") : t("common.loadMore") }}
-                </el-button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 第三部分：公开知识库 -->
-          <div class="vertical-section">
-            <div class="section-header">
-              <h3 class="section-title">{{ t("knowledgeBase.public") }}</h3>
-            </div>
-            <div class="section-content">
-              <el-card
-                v-for="kb in publicKnowledgeBases"
-                :key="kb.externalId"
-                class="knowledge-base-item"
-              >
-                <template #header>
-                  <div class="card-header">
-                    <span class="kb-name">{{ kb.name }}</span>
-                    <el-tag type="success" size="small">
-                      {{ t("knowledgeBase.public") }}
-                    </el-tag>
-                  </div>
-                </template>
-
-                <p class="kb-description">
-                  {{ kb.description || t("knowledgeBase.noDescription") }}
-                </p>
-
-                <div class="kb-details">
-                  <div class="detail-item">
-                    <span class="detail-label"
-                      >{{ t("knowledgeBase.documentsCount") }}:</span
-                    >
-                    <span class="detail-value">{{ kb.documents_count || 0 }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="detail-label">{{ t("knowledgeBase.owner") }}:</span>
-                    <span class="detail-value">{{
-                      kb.creator_name || t("common.unknown")
-                    }}</span>
-                  </div>
-                </div>
-
-                <div class="kb-actions">
-                  <el-button size="small" @click="viewKnowledgeBase(kb)">
-                    {{ t("common.open") }}
-                  </el-button>
-                </div>
-              </el-card>
-
-              <div class="load-more" v-if="publicHasMore">
-                <el-button
-                  @click="loadMorePublicKnowledgeBases"
-                  :loading="publicLoading"
-                  plain
-                >
-                  {{ publicLoading ? t("common.loading") : t("common.loadMore") }}
-                </el-button>
-              </div>
-            </div>
-          </div>
+        <el-tab-pane :label="t('knowledgeBase.publicList')" name="public">
+          <KnowledgeBaseListSection
+            :title="t('knowledgeBase.publicList')"
+            :items="publicKnowledgeBases"
+            :empty-text="t('knowledgeBase.noRecent')"
+            :tag-type="'success'"
+            :tag-label="t('knowledgeBase.public')"
+            :fallback-description="t('knowledgeBase.noDescription')"
+            :meta-mapper="publicMetaMapper"
+            :show-load-more="publicHasMore"
+            :loading="publicLoading"
+            :load-more-label="t('common.loadMore')"
+            :loading-label="t('common.loading')"
+            :action-label="t('common.open')"
+            @open="viewKnowledgeBase"
+            @load-more="loadMorePublicKnowledgeBases"
+          />
+        </el-tab-pane>
+      </el-tabs>
     </div>
   </PageLayout>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/store/user";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import PageLayout from "@/components/PageLayout.vue";
+import KnowledgeBaseListSection from "@/components/KnowledgeBaseListSection.vue";
 import * as api from "@/services/api";
 import { House, Collection, Plus } from "@element-plus/icons-vue";
 
@@ -189,6 +96,7 @@ const systemName = ref("Yoresee");
 
 // 导航相关
 const activeMenu = ref("knowledge-base");
+const activeTab = ref("my");
 const isDarkMode = ref(false);
 const currentLanguage = computed({
   get: () => locale.value,
@@ -240,6 +148,12 @@ const myPageSize = ref(10);
 const myTotal = ref(0);
 const myLoading = ref(false);
 const myHasMore = computed(() => myKnowledgeBases.value.length < myTotal.value);
+const myTagMapper = (kb) =>
+  kb.isPublic ? null : { type: "info", label: t("knowledgeBase.private") };
+const myMetaMapper = (kb) => [
+  { label: t("knowledgeBase.documentsCount"), value: kb.documents_count || 0 },
+  { label: t("knowledgeBase.updatedAt"), value: formatDate(kb.updated_at) },
+];
 
 // 公开知识库
 const publicKnowledgeBases = ref([]);
@@ -250,6 +164,16 @@ const publicLoading = ref(false);
 const publicHasMore = computed(
   () => publicKnowledgeBases.value.length < publicTotal.value
 );
+const publicMetaMapper = (kb) => [
+  { label: t("knowledgeBase.documentsCount"), value: kb.documents_count || 0 },
+  { label: t("knowledgeBase.owner"), value: kb.creator_name || t("common.unknown") },
+];
+
+const recentTagMapper = (kb) =>
+  kb.isPublic ? { type: "success", label: t("knowledgeBase.public") } : null;
+
+const myLoaded = ref(false);
+const publicLoaded = ref(false);
 
 // 获取我的知识库
 const fetchMyKnowledgeBases = async (page = 1, pageSize = 10) => {
@@ -273,6 +197,7 @@ const fetchMyKnowledgeBases = async (page = 1, pageSize = 10) => {
     }
 
     myTotal.value = data.total || 0;
+    myLoaded.value = true;
   } catch (error) {
     console.error("Failed to fetch my knowledge bases:", error);
     ElMessage.error(t("knowledgeBase.fetchError"));
@@ -303,6 +228,7 @@ const fetchPublicKnowledgeBases = async (page = 1, pageSize = 10) => {
     }
 
     publicTotal.value = data.total || 0;
+    publicLoaded.value = true;
   } catch (error) {
     console.error("Failed to fetch public knowledge bases:", error);
     ElMessage.error(t("knowledgeBase.fetchError"));
@@ -343,14 +269,11 @@ const formatDate = (dateString) => {
 
 // 查看知识库详情
 const viewKnowledgeBase = (kb) => {
-  // 跳转到知识库详情页面
   router.push(`/knowledge-base/${kb.external_id}`);
-  ElMessage.info(t("knowledgeBase.viewInfo"));
 };
 
 // 访问知识库
 const accessKnowledgeBase = (kb) => {
-  // 跳转到知识库详情页面
   router.push(`/knowledge-base/${kb.external_id}`);
 };
 
@@ -417,11 +340,17 @@ onMounted(async () => {
   initTheme();
   initLanguage();
 
-  // 获取知识库数据
-  await Promise.all([
-    fetchMyKnowledgeBases(myPage.value, myPageSize.value),
-    fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value),
-  ]);
+  // 默认加载我的知识库
+  await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
+});
+
+watch(activeTab, async (tab) => {
+  if (tab === "my" && !myLoaded.value) {
+    await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
+  }
+  if (tab === "public" && !publicLoaded.value) {
+    await fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value);
+  }
 });
 </script>
 
@@ -434,109 +363,26 @@ onMounted(async () => {
   height: auto;
 }
 
-.vertical-section {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-white);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-md);
+.knowledge-base-tabs :deep(.el-tabs__header) {
+  margin: 0 0 var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-white);
 }
 
-.section-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
+.knowledge-base-tabs :deep(.el-tabs__nav-wrap) {
+  padding: 0 var(--spacing-sm);
 }
 
-.section-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-md);
-}
-
-.knowledge-base-item {
-  margin-bottom: var(--spacing-md);
-  transition: box-shadow 0.3s ease;
-}
-
-.knowledge-base-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.kb-name {
-  font-weight: bold;
-  font-size: 16px;
-  color: var(--el-text-color-primary);
-  flex: 1;
-}
-
-.kb-description {
-  color: var(--el-text-color-regular);
-  margin: 10px 0;
-  line-height: 1.5;
-  word-break: break-word;
-}
-
-.kb-details {
-  border-top: 1px solid var(--el-border-color-light);
-  padding-top: 15px;
-  margin-top: 10px;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.detail-label {
-  color: var(--el-text-color-secondary);
+.knowledge-base-tabs :deep(.el-tabs__item) {
+  color: var(--text-medium);
   font-weight: 500;
 }
 
-.detail-value {
-  color: var(--el-text-color-primary);
-  font-weight: 400;
+.knowledge-base-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--primary-color);
 }
 
-.kb-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.load-more {
-  text-align: center;
-  margin-top: var(--spacing-md);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .section-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--spacing-md);
-  }
+.knowledge-base-tabs :deep(.el-tabs__active-bar) {
+  background-color: var(--primary-color);
 }
 
 /* 深色模式支持 */
@@ -603,22 +449,6 @@ onMounted(async () => {
   color: var(--text-primary);
 }
 
-.dark-mode .kb-name {
-  color: var(--text-dark);
-}
-
-.dark-mode .kb-description {
-  color: var(--text-medium);
-}
-
-.dark-mode .detail-label {
-  color: var(--text-light);
-}
-
-.dark-mode .detail-value {
-  color: var(--text-medium);
-}
-
 .dark-mode .el-pagination.is-background :deep(.el-pager li:not(.is-disabled):hover) {
   color: var(--primary-color);
 }
@@ -655,8 +485,4 @@ onMounted(async () => {
   border-bottom: 1px solid var(--border-color);
 }
 
-.dark-mode .knowledge-base-item {
-  background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
-}
 </style>
