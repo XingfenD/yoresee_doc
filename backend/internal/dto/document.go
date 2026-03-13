@@ -59,6 +59,7 @@ type DocumentsListExternalArgs struct {
 	UserExternalID         *string `json:"user_external_id"`
 	RootDocumentExternalID *string `json:"root_document_external_id"`
 	KnowledgeExternalID    *string `json:"knowledge_external_id"`
+	ListOwnDoc             bool    `json:"list_own_doc"`
 }
 
 type DocumentsListFilterArgs struct {

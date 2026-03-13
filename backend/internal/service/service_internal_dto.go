@@ -6,6 +6,7 @@ type documentsListMetaArgs struct {
 	UserID      *int64 `json:"user_id"`
 	ParentID    *int64 `json:"parent_id"`
 	KnowledgeID *int64 `json:"knowledge_id"`
+	ListOwnDoc  bool   `json:"list_own_doc"`
 }
 
 type documentsListReq struct {

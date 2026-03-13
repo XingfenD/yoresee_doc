@@ -24,6 +24,7 @@ func SetupRouter(r *gin.Engine) {
 		// protected.GET("/test/protected", api.TestProtectedHandlerImpl.GinHandle())
 		protected.GET("/document/:documentExternalID/content", api.GetDocumentContentHandlerImpl.GinHandle())
 		protected.GET("/documents", api.ListDocumentsHandlerImpl.GinHandle())
+		protected.GET("/documents/my", api.GetOwnDocumentsHandlerImpl.GinHandle())
 		protected.POST("/document/create", api.CreateDocumentHandlerImpl.GinHandle())
 
 		protected.GET("/knowledge-bases", api.ListKnowledgeBasesHandlerImpl.GinHandle())

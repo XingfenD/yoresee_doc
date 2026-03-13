@@ -97,7 +97,8 @@ func (s *DocumentService) buildListDocumentsOperation(req *documentsListReq) (*r
 	if req.MetaArgs != nil {
 		listOp = listOp.WithUserID(req.MetaArgs.UserID).
 			WithParentID(req.MetaArgs.ParentID).
-			WithKnowledgeID(req.MetaArgs.KnowledgeID)
+			WithKnowledgeID(req.MetaArgs.KnowledgeID).
+			WithListOwnDoc(req.MetaArgs.ListOwnDoc)
 	}
 	if req.FilterArgs != nil {
 		listOp = listOp.WithTitleKeyword(req.FilterArgs.TitleKeyword).
@@ -261,7 +262,10 @@ func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*d
 
 func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocumentsByExternalReq) ([]*dto.DocumentResponse, int64, error) {
 	var userID *int64
-	if req.ExternalArgs.UserExternalID != nil && *req.ExternalArgs.UserExternalID != "" {
+	if req == nil {
+		return nil, 0, status.StatusInternalParamsError
+	}
+	if req.ExternalArgs != nil && req.ExternalArgs.UserExternalID != nil && *req.ExternalArgs.UserExternalID != "" {
 		id, err := repository.UserRepo.GetIDByExternalID(*req.ExternalArgs.UserExternalID).Exec()
 		if err != nil {
 			return nil, 0, err
@@ -270,7 +274,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocum
 	}
 
 	var parentID int64
-	if req.ExternalArgs.RootDocumentExternalID != nil && *req.ExternalArgs.RootDocumentExternalID != "" {
+	if req.ExternalArgs != nil && req.ExternalArgs.RootDocumentExternalID != nil && *req.ExternalArgs.RootDocumentExternalID != "" {
 		doc, err := s.GetDocumentByExternalID(*req.ExternalArgs.RootDocumentExternalID)
 		if err != nil {
 			return nil, 0, err
@@ -279,12 +283,17 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocum
 	}
 
 	var knowledgeID *int64
-	if req.ExternalArgs.KnowledgeExternalID != nil && *req.ExternalArgs.KnowledgeExternalID != "" {
+	if req.ExternalArgs != nil && req.ExternalArgs.KnowledgeExternalID != nil && *req.ExternalArgs.KnowledgeExternalID != "" {
 		id, err := repository.KnowledgeBaseRepo.GetIDByExternalID(*req.ExternalArgs.KnowledgeExternalID).Exec()
 		if err != nil {
 			return nil, 0, err
 		}
 		knowledgeID = &id
+	}
+
+	var listOwnDoc bool
+	if req.ExternalArgs != nil {
+		listOwnDoc = req.ExternalArgs.ListOwnDoc
 	}
 
 	return s.listDocumentsWithChildren(
@@ -293,6 +302,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocum
 				UserID:      userID,
 				ParentID:    &parentID, // default to root
 				KnowledgeID: knowledgeID,
+				ListOwnDoc:  listOwnDoc,
 			},
 			FilterArgs: req.FilterArgs,
 			SortArgs:   req.SortArgs,

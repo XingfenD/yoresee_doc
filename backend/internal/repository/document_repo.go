@@ -119,6 +119,7 @@ type DocumentsListOperation struct {
 	userID               *int64
 	parentID             *int64
 	knowledgeID          *int64
+	listOwnDoc           bool
 	titleKeyword         *string
 	docType              *string
 	status               *int
@@ -153,6 +154,11 @@ func (op *DocumentsListOperation) WithParentID(parentID *int64) *DocumentsListOp
 
 func (op *DocumentsListOperation) WithKnowledgeID(knowledgeID *int64) *DocumentsListOperation {
 	op.knowledgeID = knowledgeID
+	return op
+}
+
+func (op *DocumentsListOperation) WithListOwnDoc(listOwnDoc bool) *DocumentsListOperation {
+	op.listOwnDoc = listOwnDoc
 	return op
 }
 
@@ -205,7 +211,7 @@ func (op *DocumentsListOperation) WithTx(tx *gorm.DB) *DocumentsListOperation {
 	return op
 }
 
-func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
+func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 	db := storage.DB
 	if op.tx != nil {
 		db = op.tx
@@ -223,6 +229,10 @@ func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
 
 	if op.parentID != nil {
 		dbQuery = dbQuery.Where("parent_id = ?", *op.parentID)
+	}
+
+	if op.listOwnDoc {
+		dbQuery = dbQuery.Where("knowledge_id IS NULL")
 	}
 
 	if op.titleKeyword != nil && *op.titleKeyword != "" {
@@ -256,6 +266,12 @@ func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
 		dbQuery = dbQuery.Where("updated_at <= ?", *op.updateTimeRangeEnd)
 	}
 
+	return dbQuery
+}
+
+func (op *DocumentsListOperation) appendOtherArgs(db *gorm.DB) *gorm.DB {
+	dbQuery := db
+
 	sortField := op.sortField
 	if sortField == "" {
 		sortField = "created_at"
@@ -280,6 +296,13 @@ func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
 
 	offset := (page - 1) * pageSize
 	dbQuery = dbQuery.Offset(offset).Limit(pageSize)
+
+	return dbQuery
+}
+
+func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
+	dbQuery := op.buildBaseQuery()
+	dbQuery = op.appendOtherArgs(dbQuery)
 
 	var documents []model.DocumentMeta
 	err := dbQuery.Find(&documents).Error
@@ -291,59 +314,7 @@ func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
 }
 
 func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, error) {
-	db := storage.DB
-	if op.tx != nil {
-		db = op.tx
-	}
-
-	dbQuery := db.Model(&model.DocumentMeta{})
-
-	if op.model != nil {
-		dbQuery = dbQuery.Where(op.model)
-	}
-
-	if op.userID != nil {
-		dbQuery = dbQuery.Where("user_id = ?", *op.userID)
-	}
-
-	if op.parentID != nil {
-		dbQuery = dbQuery.Where("parent_id = ?", *op.parentID)
-	}
-
-	if op.knowledgeID != nil {
-		dbQuery = dbQuery.Where("knowledge_id = ?", *op.knowledgeID)
-	}
-
-	if op.titleKeyword != nil && *op.titleKeyword != "" {
-		dbQuery = dbQuery.Where("title LIKE ?", "%"+*op.titleKeyword+"%")
-	}
-
-	if op.docType != nil && *op.docType != "" {
-		dbQuery = dbQuery.Where("type = ?", *op.docType)
-	}
-
-	if op.status != nil {
-		dbQuery = dbQuery.Where("status = ?", *op.status)
-	}
-
-	if len(op.tags) > 0 {
-		for _, tag := range op.tags {
-			dbQuery = dbQuery.Where("JSON_CONTAINS(tags, ?)", "\""+tag+"\"")
-		}
-	}
-
-	if op.createTimeRangeStart != nil && *op.createTimeRangeStart != "" {
-		dbQuery = dbQuery.Where("created_at >= ?", *op.createTimeRangeStart)
-	}
-	if op.createTimeRangeEnd != nil && *op.createTimeRangeEnd != "" {
-		dbQuery = dbQuery.Where("created_at <= ?", *op.createTimeRangeEnd)
-	}
-	if op.updateTimeRangeStart != nil && *op.updateTimeRangeStart != "" {
-		dbQuery = dbQuery.Where("updated_at >= ?", *op.updateTimeRangeStart)
-	}
-	if op.updateTimeRangeEnd != nil && *op.updateTimeRangeEnd != "" {
-		dbQuery = dbQuery.Where("updated_at <= ?", *op.updateTimeRangeEnd)
-	}
+	dbQuery := op.buildBaseQuery()
 
 	var total int64
 	err := dbQuery.Count(&total).Error
@@ -351,30 +322,7 @@ func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, 
 		return nil, 0, err
 	}
 
-	sortField := op.sortField
-	if sortField == "" {
-		sortField = "created_at"
-	}
-	orderDirection := "ASC"
-	if op.sortDesc {
-		orderDirection = "DESC"
-	}
-	dbQuery = dbQuery.Order(sortField + " " + orderDirection)
-
-	page := op.page
-	pageSize := op.pageSize
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	if pageSize > 100 {
-		pageSize = 100
-	}
-
-	offset := (page - 1) * pageSize
-	dbQuery = dbQuery.Offset(offset).Limit(pageSize)
+	dbQuery = op.appendOtherArgs(dbQuery)
 
 	var documents []model.DocumentMeta
 	err = dbQuery.Find(&documents).Error
