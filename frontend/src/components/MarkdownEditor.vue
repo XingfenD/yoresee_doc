@@ -8,6 +8,8 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import Vditor from 'vditor';
 import 'vditor/dist/index.css';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
 
 const props = defineProps({
   modelValue: {
@@ -21,6 +23,22 @@ const props = defineProps({
   height: {
     type: [String, Number],
     default: '100%'
+  },
+  collabEnabled: {
+    type: Boolean,
+    default: false
+  },
+  collabRoom: {
+    type: String,
+    default: ''
+  },
+  collabUrl: {
+    type: String,
+    default: '/collab'
+  },
+  collabToken: {
+    type: String,
+    default: ''
   }
 });
 
@@ -29,6 +47,15 @@ const emit = defineEmits(['update:modelValue']);
 const editorRef = ref(null);
 let vditor = null;
 let themeObserver = null;
+let ydoc = null;
+let provider = null;
+let ytext = null;
+let isApplyingRemote = false;
+let isVditorReady = false;
+let collabSynced = false;
+let suppressInput = false;
+const debugCollab = false;
+let pendingSeed = '';
 
 const applyVditorTheme = () => {
   if (!vditor || typeof vditor.setTheme !== 'function') {
@@ -44,6 +71,106 @@ const applyVditorTheme = () => {
   } catch (error) {
     // Ignore theme apply errors during init/destroy
   }
+};
+
+const resolveCollabUrl = () => {
+  if (!props.collabUrl) {
+    return '';
+  }
+  if (props.collabUrl.startsWith('ws://') || props.collabUrl.startsWith('wss://')) {
+    return props.collabUrl;
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const host = window.location.host;
+  const path = props.collabUrl.startsWith('/') ? props.collabUrl : `/${props.collabUrl}`;
+  return `${protocol}://${host}${path}`;
+};
+
+const setupCollaboration = () => {
+  if (!props.collabEnabled || !props.collabRoom) {
+    return;
+  }
+  const url = resolveCollabUrl();
+  if (!url) {
+    return;
+  }
+
+  ydoc = new Y.Doc();
+  ytext = ydoc.getText('content');
+  provider = new WebsocketProvider(url, props.collabRoom, ydoc, {
+    params: props.collabToken ? { token: props.collabToken } : {}
+  });
+
+  provider.on('sync', (isSynced) => {
+    collabSynced = isSynced;
+    if (debugCollab) {
+      console.log('[collab] sync', { isSynced, room: props.collabRoom });
+    }
+    if (!isSynced || !ytext) {
+      return;
+    }
+    const remote = ytext.toString();
+    if (ytext.length === 0) {
+      const seed = pendingSeed || props.modelValue || '';
+      if (seed) {
+        ytext.insert(0, seed);
+        if (debugCollab) {
+          console.log('[collab] seed from pending', { length: seed.length });
+        }
+      }
+    } else if (pendingSeed && remote !== pendingSeed) {
+      if (debugCollab) {
+        console.log('[collab] remote wins over pending seed', { remoteLength: remote.length });
+      }
+      emit('update:modelValue', remote);
+      if (vditor && isVditorReady) {
+        isApplyingRemote = true;
+        vditor.setValue(remote);
+        isApplyingRemote = false;
+      }
+    } else if (remote && remote !== props.modelValue) {
+      if (debugCollab) {
+        console.log('[collab] align local to remote', { remoteLength: remote.length });
+      }
+      emit('update:modelValue', remote);
+      if (vditor && isVditorReady) {
+        isApplyingRemote = true;
+        vditor.setValue(remote);
+        isApplyingRemote = false;
+      }
+    }
+    pendingSeed = '';
+  });
+
+  ytext.observe(() => {
+    if (!vditor || !isVditorReady || typeof vditor.setValue !== 'function') {
+      return;
+    }
+    if (suppressInput) {
+      return;
+    }
+    if (debugCollab) {
+      console.log('[collab] ytext update', { length: ytext.length, room: props.collabRoom });
+    }
+    isApplyingRemote = true;
+    vditor.setValue(ytext.toString());
+    emit('update:modelValue', ytext.toString());
+    isApplyingRemote = false;
+  });
+};
+
+const teardownCollaboration = () => {
+  if (provider) {
+    provider.destroy();
+    provider = null;
+  }
+  if (ydoc) {
+    ydoc.destroy();
+    ydoc = null;
+    ytext = null;
+  }
+  collabSynced = false;
+  pendingSeed = '';
 };
 
 onMounted(() => {
@@ -67,13 +194,31 @@ onMounted(() => {
       }
     },
     after: () => {
+      suppressInput = true;
       vditor.setValue(props.modelValue);
+      suppressInput = false;
+      isVditorReady = true;
+      if (debugCollab) {
+        console.log('[collab] vditor ready', { room: props.collabRoom });
+      }
       applyVditorTheme();
     },
     input: (value) => {
+      if (suppressInput) {
+        return;
+      }
+      if (props.collabEnabled && ytext && !isApplyingRemote) {
+        if (debugCollab) {
+          console.log('[collab] input -> ytext', { length: value.length, room: props.collabRoom });
+        }
+        ytext.delete(0, ytext.length);
+        ytext.insert(0, value);
+      }
       emit('update:modelValue', value);
     }
   });
+
+  setupCollaboration();
 });
 
 onBeforeUnmount(() => {
@@ -85,10 +230,24 @@ onBeforeUnmount(() => {
     vditor.destroy();
     vditor = null;
   }
+  teardownCollaboration();
 });
 
 watch(() => props.modelValue, (newValue) => {
-  if (!vditor || typeof vditor.getValue !== 'function') {
+  if (props.collabEnabled && ytext) {
+    if (ytext.toString() === newValue) {
+      return;
+    }
+    // Defer seeding until sync; never overwrite active collaborative edits.
+    if (!collabSynced || ytext.length === 0) {
+      pendingSeed = newValue || '';
+      if (debugCollab) {
+        console.log('[collab] modelValue pending seed', { length: pendingSeed.length, room: props.collabRoom });
+      }
+    }
+    return;
+  }
+  if (!vditor || !isVditorReady || typeof vditor.getValue !== 'function') {
     return;
   }
   let currentValue = '';
@@ -101,6 +260,17 @@ watch(() => props.modelValue, (newValue) => {
     vditor.setValue(newValue);
   }
 });
+
+watch(
+  () => props.collabRoom,
+  () => {
+    if (!props.collabEnabled) {
+      return;
+    }
+    teardownCollaboration();
+    setupCollaboration();
+  }
+);
 
 onMounted(() => {
   themeObserver = new MutationObserver(() => {

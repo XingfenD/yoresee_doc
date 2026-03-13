@@ -12,6 +12,7 @@ services:
     depends_on:
       - frontend
       - backend
+      - collab
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -92,6 +93,19 @@ services:
       - postgres
       - redis
       - rabbitmq
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+  collab:
+    build:
+      context: ../collab
+      dockerfile: Dockerfile
+    image: yoresee_doc_collab:latest
+    container_name: yoresee_doc_collab
+    environment:
+      - PORT=1234
+      - JWT_SECRET=yoresee_doc_jwt_secret_key
     networks:
       - yoresee_doc_network
     restart: unless-stopped
