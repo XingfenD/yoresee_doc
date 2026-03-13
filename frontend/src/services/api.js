@@ -113,4 +113,9 @@ export const getDocumentContent = (documentExternalID, params = {}) => {
   return api.get(`/api/document/${documentExternalID}/content`, { params }).then(handleResponse)
 };
 
+// 获取我的文档列表
+export const getMyDocuments = (params = {}) => {
+  return api.get('/api/documents/my', { params }).then(handleResponse)
+};
+
 export default api;

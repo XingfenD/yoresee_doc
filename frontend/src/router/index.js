@@ -21,6 +21,24 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/mydocuments',
+      name: 'MyDocuments',
+      component: () => import('../views/MyDocuments.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/documents',
+      name: 'MyDocumentsAlias',
+      redirect: '/mydocuments'
+    },
+    {
+      path: '/mydocument/:docId',
+      name: 'MyDocumentEditor',
+      component: () => import('../views/DocumentEditor.vue'),
+      meta: { requiresAuth: true },
+      props: (route) => ({ kbId: 'personal', docId: route.params.docId })
+    },
+    {
       path: '/knowledge-base',
       name: 'KnowledgeBase',
       component: () => import('../views/KnowledgeBase.vue'),

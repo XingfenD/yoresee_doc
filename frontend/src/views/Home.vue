@@ -1,67 +1,49 @@
 <template>
-  <div class="home-container">
-    <TopNav
-      :system-name="systemName"
-      :current-language="currentLanguage"
-      :is-dark-mode="isDarkMode"
-      :user-avatar="userAvatar"
-      :username="userInfo?.username || '用户'"
-      @change-language="handleLanguageChange"
-      @toggle-theme="toggleTheme"
-      @logout="handleLogout"
-    />
+  <PageLayout
+    :system-name="systemName"
+    :current-language="currentLanguage"
+    :is-dark-mode="isDarkMode"
+    :user-avatar="userAvatar"
+    :username="userInfo?.username || '用户'"
+    :active-menu="activeMenu"
+    :title="t('home.welcome')"
+    @change-language="handleLanguageChange"
+    @toggle-theme="toggleTheme"
+    @logout="handleLogout"
+    @menu-select="handleMenuSelect"
+  >
+    <div class="home-vertical-layout">
+      <RecentDocumentsSection
+        :title="t('home.recentDocuments')"
+        :items="recentDocuments"
+        :empty-text="t('home.noRecentDocuments')"
+        :show-view-all="true"
+        @view-all="goToDocuments"
+        @view-item="viewDocument"
+        @edit-item="editDocument"
+      />
 
-    <!-- 主内容区 -->
-    <div class="main-content">
-      <!-- 左侧导航 -->
-      <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
-
-      <!-- 右侧内容 -->
-      <div class="content-area">
-        <!-- 操作栏 -->
-        <div class="action-bar">
-          <h2 class="page-title">{{ t('home.welcome') }}</h2>
-        </div>
-
-        <!-- 垂直布局：最近文档和最近知识库 -->
-        <div class="home-vertical-layout">
-          <!-- 最近文档部分 -->
-          <RecentDocumentsSection
-            :title="t('home.recentDocuments')"
-            :items="recentDocuments"
-            :empty-text="t('home.noRecentDocuments')"
-            :show-view-all="true"
-            @view-all="goToDocuments"
-            @view-item="viewDocument"
-            @edit-item="editDocument"
-          />
-
-          <!-- 最近知识库部分 -->
-          <RecentKnowledgeBaseSection
-            :title="t('home.recentKnowledgeBases')"
-            :items="recentKnowledgeBases"
-            :empty-text="t('home.noRecentKnowledgeBases')"
-            :show-view-all="true"
-            @view-all="goToKnowledgeBases"
-            @view-item="viewKnowledgeBase"
-            @access-item="accessKnowledgeBase"
-          />
-        </div>
-      </div>
+      <RecentKnowledgeBaseSection
+        :title="t('home.recentKnowledgeBases')"
+        :items="recentKnowledgeBases"
+        :empty-text="t('home.noRecentKnowledgeBases')"
+        :show-view-all="true"
+        @view-all="goToKnowledgeBases"
+        @view-item="viewKnowledgeBase"
+        @access-item="accessKnowledgeBase"
+      />
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
-import SideNav from '@/components/SideNav.vue';
-import TopNav from '@/components/TopNav.vue';
+import PageLayout from '@/components/PageLayout.vue';
 import RecentDocumentsSection from '@/components/RecentDocumentsSection.vue';
 import RecentKnowledgeBaseSection from '@/components/RecentKnowledgeBaseSection.vue';
-import { House, Plus, Upload, Search, User, Timer, View, Collection } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -69,8 +51,6 @@ const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
 const activeMenu = ref('home');
-const searchKeyword = ref('');
-const filterStatus = ref('all');
 const isDarkMode = ref(false);
 
 const userInfo = computed(() => userStore.userInfo);
@@ -188,7 +168,7 @@ const recentKnowledgeBases = ref([
 
 // 页面跳转方法
 const goToDocuments = () => {
-  router.push('/');
+  router.push('/mydocuments');
 };
 
 const goToKnowledgeBases = () => {
@@ -254,63 +234,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.home-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-light);
-  transition: all 0.3s ease;
-}
-
-/* 顶部导航栏 */
-
-/* 主内容区 */
-.main-content {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-/* 左侧导航 */
-.side-nav {
-  width: 240px;
-  background-color: var(--bg-white);
-  border-right: 1px solid var(--border-color);
-  overflow-y: auto;
-  transition: all 0.3s ease;
-}
-
-.side-menu {
-  border-right: none;
-}
-
-.side-menu .el-menu-item {
-  height: 48px;
-  line-height: 48px;
-  margin: 0;
-  border-radius: 0;
-  color: var(--text-medium);
-  transition: all 0.3s ease;
-}
-
-.side-menu .el-menu-item:hover {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
-}
-
-.side-menu .el-menu-item.is-active {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
-}
-
-/* 右侧内容 */
-.content-area {
-  flex: 1;
-  padding: var(--spacing-lg);
-  overflow-y: auto;
-}
-
-/* 垂直布局 */
 .home-vertical-layout {
   display: flex;
   flex-direction: column;
@@ -318,187 +241,4 @@ onMounted(() => {
   height: auto;
 }
 
-/* 操作栏 */
-.action-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin: 0;
-}
-
-.action-buttons {
-  display: flex;
-  gap: var(--spacing-md);
-}
-
-.primary-btn {
-  border-radius: var(--border-radius-md);
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.primary-btn:hover {
-  background-color: var(--primary-dark);
-  border-color: var(--primary-dark);
-}
-
-.secondary-btn {
-  border-radius: var(--border-radius-md);
-  background-color: var(--bg-white);
-  border-color: var(--border-color);
-  color: var(--text-medium);
-}
-
-.secondary-btn:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-/* 搜索和筛选 */
-.search-filter {
-  display: flex;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-}
-
-.search-input {
-  width: 300px;
-  border-radius: var(--border-radius-md);
-}
-
-.filter-select {
-  width: 120px;
-  border-radius: var(--border-radius-md);
-}
-
-/* 文档列表 */
-.document-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.document-card {
-  border-radius: var(--border-radius-md);
-  transition: all 0.3s ease;
-  background-color: var(--bg-white);
-}
-
-.document-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.document-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--spacing-md);
-}
-
-.document-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-dark);
-  margin: 0;
-  flex: 1;
-}
-
-.document-status {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  margin-left: var(--spacing-md);
-}
-
-.status-draft {
-  background-color: var(--bg-medium);
-  color: var(--text-light);
-}
-
-.status-published {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
-}
-
-.document-meta {
-  display: flex;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
-  flex-wrap: wrap;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  color: var(--text-light);
-  gap: 4px;
-}
-
-.document-actions {
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: flex-end;
-}
-
-/* 空状态 */
-.empty-state {
-  margin-top: 60px;
-  text-align: center;
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .side-nav {
-    width: 200px;
-  }
-
-  .document-list {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .side-nav {
-    width: 60px;
-  }
-
-  .side-menu .el-menu-item span {
-    display: none;
-  }
-
-  .content-area {
-    padding: var(--spacing-md);
-  }
-
-  .action-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-  }
-
-  .search-filter {
-    flex-direction: column;
-  }
-
-  .search-input,
-  .filter-select {
-    width: 100%;
-  }
-
-  .document-list {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

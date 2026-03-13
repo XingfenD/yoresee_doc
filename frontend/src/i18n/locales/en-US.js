@@ -1,6 +1,7 @@
 export default {
   navigation: {
     home: 'Home',
+    myDocuments: 'My Documents',
     documents: 'Documents',
     folders: 'Folders',
     trash: 'Trash',
@@ -50,6 +51,7 @@ export default {
     noRecentDocuments: 'No recent documents',
     noRecentKnowledgeBases: 'No recent knowledge bases',
     myDocuments: 'My Documents',
+    noMyDocuments: 'No personal documents',
     sharedWithMe: 'Shared with Me',
     createDocument: 'Create Document',
     uploadFile: 'Upload File',

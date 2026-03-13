@@ -1,30 +1,24 @@
 <template>
-  <div class="knowledge-base-container">
-    <TopNav
-      :system-name="systemName"
-      :current-language="currentLanguage"
-      :is-dark-mode="isDarkMode"
-      :user-avatar="userAvatar"
-      :username="userInfo?.username || t('common.unknown')"
-      @change-language="handleLanguageChange"
-      @toggle-theme="toggleTheme"
-      @logout="handleLogout"
-    />
+  <PageLayout
+    :system-name="systemName"
+    :current-language="currentLanguage"
+    :is-dark-mode="isDarkMode"
+    :user-avatar="userAvatar"
+    :username="userInfo?.username || t('common.unknown')"
+    :active-menu="activeMenu"
+    :title="t('knowledgeBase.title')"
+    @change-language="handleLanguageChange"
+    @toggle-theme="toggleTheme"
+    @logout="handleLogout"
+    @menu-select="handleMenuSelect"
+  >
+    <template #actions>
+      <el-button class="page-action-btn" type="primary" size="small" @click="createKnowledgeBase">
+        {{ t("knowledgeBase.createNew") }}
+      </el-button>
+    </template>
 
-    <!-- 主内容区 -->
-    <div class="main-content">
-      <!-- 左侧导航 -->
-      <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
-
-      <!-- 右侧内容 -->
-      <div class="content-area">
-        <!-- 操作栏 -->
-        <div class="action-bar">
-          <h2 class="page-title">{{ t("knowledgeBase.title") }}</h2>
-        </div>
-
-        <!-- 垂直布局 -->
-        <div class="knowledge-base-vertical-layout">
+    <div class="knowledge-base-vertical-layout">
           <!-- 第一部分：最近访问的知识库 -->
           <div class="vertical-section">
             <div class="section-header">
@@ -55,7 +49,7 @@
 
                 <div class="kb-actions">
                   <el-button size="small" @click="accessKnowledgeBase(kb)">
-                    {{ t("knowledgeBase.access") }}
+                    {{ t("common.open") }}
                   </el-button>
                 </div>
               </el-card>
@@ -66,9 +60,6 @@
           <div class="vertical-section">
             <div class="section-header">
               <h3 class="section-title">{{ t("knowledgeBase.my") }}</h3>
-              <el-button type="primary" size="small" @click="createKnowledgeBase">
-                {{ t("knowledgeBase.createNew") }}
-              </el-button>
             </div>
             <div class="section-content">
               <el-card
@@ -104,10 +95,7 @@
 
                 <div class="kb-actions">
                   <el-button size="small" @click="viewKnowledgeBase(kb)">
-                    {{ t("common.view") }}
-                  </el-button>
-                  <el-button size="small" type="primary" @click="accessKnowledgeBase(kb)">
-                    {{ t("knowledgeBase.access") }}
+                    {{ t("common.open") }}
                   </el-button>
                 </div>
               </el-card>
@@ -161,10 +149,7 @@
 
                 <div class="kb-actions">
                   <el-button size="small" @click="viewKnowledgeBase(kb)">
-                    {{ t("common.view") }}
-                  </el-button>
-                  <el-button size="small" type="primary" @click="accessKnowledgeBase(kb)">
-                    {{ t("knowledgeBase.access") }}
+                    {{ t("common.open") }}
                   </el-button>
                 </div>
               </el-card>
@@ -180,10 +165,8 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <script setup>
@@ -192,8 +175,7 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/store/user";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
-import SideNav from "@/components/SideNav.vue";
-import TopNav from "@/components/TopNav.vue";
+import PageLayout from "@/components/PageLayout.vue";
 import * as api from "@/services/api";
 import { House, Collection, Plus } from "@element-plus/icons-vue";
 
@@ -444,80 +426,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.knowledge-base-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-light);
-  transition: all 0.3s ease;
-}
-
-/* 顶部导航栏 */
-
-/* 主内容区 */
-.main-content {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-/* 左侧导航 */
-.side-nav {
-  width: 240px;
-  background-color: var(--bg-white);
-  border-right: 1px solid var(--border-color);
-  overflow-y: auto;
-  transition: all 0.3s ease;
-}
-
-.side-menu {
-  border-right: none;
-}
-
-.side-menu .el-menu-item {
-  height: 48px;
-  line-height: 48px;
-  margin: 0;
-  border-radius: 0;
-  color: var(--text-medium);
-  transition: all 0.3s ease;
-}
-
-.side-menu .el-menu-item:hover {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
-}
-
-.side-menu .el-menu-item.is-active {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
-  border-right: 3px solid var(--primary-color);
-}
-
-/* 右侧内容区域 */
-.content-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-xl);
-  background-color: var(--bg-light);
-}
-
-.action-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
 /* 垂直布局 */
 .knowledge-base-vertical-layout {
   display: flex;
@@ -624,18 +532,6 @@ onMounted(async () => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .side-nav {
-    width: 60px;
-  }
-
-  .side-menu .el-menu-item span {
-    display: none;
-  }
-
-  .content-area {
-    padding: var(--spacing-md);
-  }
-
   .section-header {
     flex-direction: column;
     align-items: stretch;

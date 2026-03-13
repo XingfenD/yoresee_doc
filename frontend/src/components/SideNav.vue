@@ -7,6 +7,12 @@
         </el-icon>
         <span class="menu-text">{{ t('navigation.home') }}</span>
       </el-menu-item>
+      <el-menu-item index="documents">
+        <el-icon>
+          <Document />
+        </el-icon>
+        <span class="menu-text">{{ t('navigation.myDocuments') }}</span>
+      </el-menu-item>
       <el-menu-item index="knowledge-base">
         <el-icon>
           <Collection />
@@ -28,7 +34,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { House, Collection, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
+import { House, Collection, Document, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -59,6 +65,8 @@ const handleMenuSelect = (key) => {
   emit('menuSelect', key);
   if (key === 'home') {
     router.push('/');
+  } else if (key === 'documents') {
+    router.push('/mydocuments');
   } else if (key === 'knowledge-base') {
     router.push('/knowledge-base');
   }

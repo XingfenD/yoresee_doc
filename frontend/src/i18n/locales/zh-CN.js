@@ -1,6 +1,7 @@
 export default {
   navigation: {
     home: '首页',
+    myDocuments: '个人文档',
     documents: '文档',
     folders: '文件夹',
     trash: '回收站',
@@ -48,6 +49,7 @@ export default {
     noRecentDocuments: '暂无最近文档',
     noRecentKnowledgeBases: '暂无最近知识库',
     myDocuments: '我的文档',
+    noMyDocuments: '暂无个人文档',
     sharedWithMe: '与我共享',
     createDocument: '创建文档',
     uploadFile: '上传文件',

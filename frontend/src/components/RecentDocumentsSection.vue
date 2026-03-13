@@ -35,12 +35,17 @@
         </div>
 
         <div class="item-actions">
-          <el-button size="small" @click="handleView(doc)">
-            {{ t('document.view') }}
+          <el-button v-if="singleAction" size="small" type="primary" @click="handleView(doc)">
+            {{ primaryActionLabel || t('common.open') }}
           </el-button>
-          <el-button size="small" type="primary" @click="handleEdit(doc)">
-            {{ t('document.edit') }}
-          </el-button>
+          <template v-else>
+            <el-button size="small" @click="handleView(doc)">
+              {{ t('document.view') }}
+            </el-button>
+            <el-button size="small" type="primary" @click="handleEdit(doc)">
+              {{ t('document.edit') }}
+            </el-button>
+          </template>
         </div>
       </el-card>
     </div>
@@ -70,6 +75,14 @@ const props = defineProps({
   showViewAll: {
     type: Boolean,
     default: false
+  },
+  singleAction: {
+    type: Boolean,
+    default: false
+  },
+  primaryActionLabel: {
+    type: String,
+    default: ''
   }
 });
 

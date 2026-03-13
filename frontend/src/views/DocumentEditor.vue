@@ -95,7 +95,7 @@ import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
 import TopNav from '@/components/TopNav.vue';
 import { useUserStore } from '@/store/user';
-import { getKnowledgeBaseDocuments, getDocumentContent, createDocument as createDocumentApi } from '@/services/api';
+import { getKnowledgeBaseDocuments, getDocumentContent, createDocument as createDocumentApi, getMyDocuments } from '@/services/api';
 
 const props = defineProps({
   kbId: {
@@ -159,12 +159,15 @@ const createDocument = async (payload) => {
 
   try {
     creatingLoading.value = true;
+    const isPersonal = kbId.value === 'personal';
     const requestBody = {
       title: payload.title,
       type: payload.type || 'markdown',
-      container_type: 'knowledge_base',
-      knowledge_base_external_id: kbId.value
+      container_type: isPersonal ? 'own' : 'knowledge_base'
     };
+    if (!isPersonal) {
+      requestBody.knowledge_base_external_id = kbId.value;
+    }
     if (payload?.parent_external_id) {
       requestBody.parent_external_id = payload.parent_external_id;
     } else if (pendingParentId.value) {
@@ -176,7 +179,11 @@ const createDocument = async (payload) => {
     pendingParentId.value = null;
     await fetchDocuments();
     if (response?.external_id) {
-      router.push(`/knowledge-base/${kbId.value}/document/${response.external_id}`);
+      if (isPersonal) {
+        router.push(`/mydocument/${response.external_id}`);
+      } else {
+        router.push(`/knowledge-base/${kbId.value}/document/${response.external_id}`);
+      }
     }
   } catch (error) {
     console.error('创建文档失败:', error);
@@ -248,7 +255,7 @@ const transformDocumentsToTree = (documents, parentId = null) => {
     const treeNode = {
       id: doc.external_id,
       label: doc.title,
-      isFolder: doc.has_children,
+      isFolder: !!doc.has_children,
       isLeaf: !doc.has_children,
       type: doc.type,
       parentId,
@@ -281,15 +288,21 @@ const closeContextMenu = () => {
 
 
 const fetchDocuments = async () => {
-  if (kbId.value === 'example' || kbId.value === 'personal') {
+  if (kbId.value === 'example') {
     return;
   }
 
   treeLoading.value = true;
   try {
-    const response = await getKnowledgeBaseDocuments(kbId.value);
-    knowledgeBaseName.value = response.knowledge_base.name;
-    directoryTree.value = transformDocumentsToTree(response.documents);
+    if (kbId.value === 'personal') {
+      const response = await getMyDocuments({ page: 1, page_size: 1000 });
+      knowledgeBaseName.value = t('home.myDocuments');
+      directoryTree.value = transformDocumentsToTree(response.documents || []);
+    } else {
+      const response = await getKnowledgeBaseDocuments(kbId.value);
+      knowledgeBaseName.value = response.knowledge_base.name;
+      directoryTree.value = transformDocumentsToTree(response.documents);
+    }
 
     await expandToCurrentDoc();
   } catch (error) {
@@ -353,7 +366,7 @@ const expandToCurrentDoc = async () => {
 
 const goBack = () => {
   if (kbId.value === 'personal' || kbId.value === 'example') {
-    router.push('/');
+    router.push('/mydocuments');
   } else {
     router.push(`/knowledge-base/${kbId.value}`);
   }
@@ -364,7 +377,11 @@ const handleTreeNodeClick = (data) => {
     return;
   }
   if (!data.isFolder) {
-    router.push(`/knowledge-base/${kbId.value}/document/${data.id}`);
+    if (kbId.value === 'personal') {
+      router.push(`/mydocument/${data.id}`);
+    } else {
+      router.push(`/knowledge-base/${kbId.value}/document/${data.id}`);
+    }
   }
 };
 
@@ -404,7 +421,7 @@ const handleMenuSelect = (menu) => {
   } else if (menu === 'knowledge-base') {
     router.push('/knowledge-base');
   } else if (menu === 'documents') {
-    router.push('/documents');
+    router.push('/mydocuments');
   } else if (menu === 'folders') {
     router.push('/folders');
   } else if (menu === 'trash') {
@@ -452,6 +469,10 @@ const fetchSystemInfo = async () => {
 onMounted(async () => {
   initTheme();
   initLanguage();
+
+  if (kbId.value === 'personal') {
+    activeMenu.value = 'documents';
+  }
 
   if (kbId.value === 'example' && docId.value === 'example') {
     knowledgeBaseName.value = '示例知识库';
