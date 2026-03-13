@@ -12,5 +12,16 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['codemirror', 'easymde']
+  },
+  server: {
+    host: true,
+    port: 80,
+    strictPort: true,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 80,
+      clientPort: 8080
+    }
   }
 })
