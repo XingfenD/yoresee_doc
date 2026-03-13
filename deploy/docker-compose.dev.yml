@@ -97,15 +97,28 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
-  collab:
+  collab-core:
     build:
       context: ../collab
       dockerfile: Dockerfile
-    image: yoresee_doc_collab:latest
+    image: yoresee_doc_collab_core:latest
+    container_name: yoresee_doc_collab_core
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+  collab:
+    build:
+      context: ../collab-go
+      dockerfile: Dockerfile
+    image: yoresee_doc_collab_gateway:latest
     container_name: yoresee_doc_collab
     environment:
-      - PORT=1234
+      - ADDR=:1235
       - JWT_SECRET=yoresee_doc_jwt_secret_key
+      - COLLAB_CORE_URL=ws://collab-core:1234
+    depends_on:
+      - collab-core
     networks:
       - yoresee_doc_network
     restart: unless-stopped

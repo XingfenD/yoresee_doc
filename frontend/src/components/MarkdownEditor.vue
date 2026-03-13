@@ -50,12 +50,11 @@ let themeObserver = null;
 let ydoc = null;
 let provider = null;
 let ytext = null;
-let isApplyingRemote = false;
 let isVditorReady = false;
-let collabSynced = false;
 let suppressInput = false;
-const debugCollab = false;
+let collabSynced = false;
 let pendingSeed = '';
+const debugCollab = false;
 
 const applyVditorTheme = () => {
   if (!vditor || typeof vditor.setTheme !== 'function') {
@@ -103,9 +102,6 @@ const setupCollaboration = () => {
 
   provider.on('sync', (isSynced) => {
     collabSynced = isSynced;
-    if (debugCollab) {
-      console.log('[collab] sync', { isSynced, room: props.collabRoom });
-    }
     if (!isSynced || !ytext) {
       return;
     }
@@ -118,25 +114,15 @@ const setupCollaboration = () => {
           console.log('[collab] seed from pending', { length: seed.length });
         }
       }
-    } else if (pendingSeed && remote !== pendingSeed) {
-      if (debugCollab) {
-        console.log('[collab] remote wins over pending seed', { remoteLength: remote.length });
-      }
-      emit('update:modelValue', remote);
-      if (vditor && isVditorReady) {
-        isApplyingRemote = true;
-        vditor.setValue(remote);
-        isApplyingRemote = false;
-      }
     } else if (remote && remote !== props.modelValue) {
       if (debugCollab) {
         console.log('[collab] align local to remote', { remoteLength: remote.length });
       }
       emit('update:modelValue', remote);
       if (vditor && isVditorReady) {
-        isApplyingRemote = true;
+        suppressInput = true;
         vditor.setValue(remote);
-        isApplyingRemote = false;
+        suppressInput = false;
       }
     }
     pendingSeed = '';
@@ -152,10 +138,10 @@ const setupCollaboration = () => {
     if (debugCollab) {
       console.log('[collab] ytext update', { length: ytext.length, room: props.collabRoom });
     }
-    isApplyingRemote = true;
+    suppressInput = true;
     vditor.setValue(ytext.toString());
     emit('update:modelValue', ytext.toString());
-    isApplyingRemote = false;
+    suppressInput = false;
   });
 };
 
@@ -198,19 +184,13 @@ onMounted(() => {
       vditor.setValue(props.modelValue);
       suppressInput = false;
       isVditorReady = true;
-      if (debugCollab) {
-        console.log('[collab] vditor ready', { room: props.collabRoom });
-      }
       applyVditorTheme();
     },
     input: (value) => {
       if (suppressInput) {
         return;
       }
-      if (props.collabEnabled && ytext && !isApplyingRemote) {
-        if (debugCollab) {
-          console.log('[collab] input -> ytext', { length: value.length, room: props.collabRoom });
-        }
+      if (props.collabEnabled && ytext) {
         ytext.delete(0, ytext.length);
         ytext.insert(0, value);
       }
@@ -238,14 +218,10 @@ watch(() => props.modelValue, (newValue) => {
     if (ytext.toString() === newValue) {
       return;
     }
-    // Defer seeding until sync; never overwrite active collaborative edits.
     if (!collabSynced || ytext.length === 0) {
       pendingSeed = newValue || '';
-      if (debugCollab) {
-        console.log('[collab] modelValue pending seed', { length: pendingSeed.length, room: props.collabRoom });
-      }
+      return;
     }
-    return;
   }
   if (!vditor || !isVditorReady || typeof vditor.getValue !== 'function') {
     return;
@@ -257,7 +233,9 @@ watch(() => props.modelValue, (newValue) => {
     return;
   }
   if (currentValue !== newValue) {
+    suppressInput = true;
     vditor.setValue(newValue);
+    suppressInput = false;
   }
 });
 
@@ -371,226 +349,11 @@ onMounted(() => {
   color: var(--text-light);
 }
 
+.markdown-editor :deep(.vditor-ir__marker--heading) {
+  color: var(--text-medium);
+}
+
 .dark-mode .markdown-editor :deep(.vditor-ir__marker) {
-  color: var(--text-light);
-}
-
-.markdown-editor :deep(.vditor-ir__heading) {
-  color: var(--text-dark);
-  font-weight: 600;
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__heading) {
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-content h1),
-.dark-mode .markdown-editor :deep(.vditor-content h2),
-.dark-mode .markdown-editor :deep(.vditor-content h3),
-.dark-mode .markdown-editor :deep(.vditor-content h4),
-.dark-mode .markdown-editor :deep(.vditor-content h5),
-.dark-mode .markdown-editor :deep(.vditor-content h6),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h1),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h2),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h3),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h4),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h5),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h6) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-ir__codeblock) {
-  background-color: var(--bg-light);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__codeblock) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-ir__quote) {
-  border-left-color: var(--primary-color);
-  color: var(--text-medium);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__quote) {
-  color: var(--text-medium);
-}
-
-.markdown-editor :deep(.vditor-ir__strong) {
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__strong) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-ir__em) {
-  font-style: italic;
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__em) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg) {
-  background-color: var(--bg-white);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg) {
-  background-color: var(--bg-medium);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-content p),
-.dark-mode .markdown-editor :deep(.vditor-content li),
-.dark-mode .markdown-editor :deep(.vditor-content blockquote),
-.dark-mode .markdown-editor :deep(.vditor-content td),
-.dark-mode .markdown-editor :deep(.vditor-content th),
-.dark-mode .markdown-editor :deep(.vditor-ir__node),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg p),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg li),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg blockquote),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg td),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg th) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg pre) {
-  background-color: var(--bg-light);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg pre) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg code) {
-  background-color: var(--bg-light);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg code) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg blockquote) {
-  border-left-color: var(--primary-color);
-  color: var(--text-medium);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg blockquote) {
-  color: var(--text-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg a) {
-  color: var(--primary-color);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg table) {
-  border-color: var(--border-color);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg th) {
-  background-color: var(--bg-light);
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg th) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg td) {
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg td) {
-  background-color: var(--bg-light);
-}
-
-.markdown-editor :deep(.vditor-preview) {
-  background-color: var(--bg-light);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview h1),
-.markdown-editor :deep(.vditor-preview h2),
-.markdown-editor :deep(.vditor-preview h3) {
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview h1),
-.dark-mode .markdown-editor :deep(.vditor-preview h2),
-.dark-mode .markdown-editor :deep(.vditor-preview h3) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-preview code) {
-  background-color: var(--bg-white);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview code) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview pre) {
-  background-color: var(--bg-white);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview pre) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview blockquote) {
-  border-left-color: var(--primary-color);
-  color: var(--text-medium);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview blockquote) {
-  color: var(--text-medium);
-}
-
-.markdown-editor :deep(.vditor-preview a) {
-  color: var(--primary-color);
-}
-
-.markdown-editor :deep(.vditor-preview table) {
-  border-color: var(--border-color);
-}
-
-.markdown-editor :deep(.vditor-preview th) {
-  background-color: var(--bg-light);
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview th) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview td) {
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview td) {
-  background-color: var(--bg-light);
-}
-
-.markdown-editor :deep(.vditor-statusbar) {
-  background-color: var(--bg-white);
-  border-top: 1px solid var(--border-color);
-  color: var(--text-light);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-statusbar) {
-  background-color: var(--bg-medium);
-  border-color: var(--border-color);
   color: var(--text-light);
 }
 </style>
