@@ -125,6 +125,48 @@ func initializeDocumentsInTx(tx *gorm.DB) error {
 		return err
 	}
 
+	logrus.Println("Adding child documents to welcome document...")
+
+	childDocumentTitles := []string{
+		"功能介绍",
+		"使用教程",
+		"常见问题",
+		"更新日志",
+		"联系我们",
+	}
+
+	for _, title := range childDocumentTitles {
+		childDoc, err := createDocumentWithAllTables(tx, adminUser.ID, DocumentInput{
+			Title:       title,
+			Content:     "# " + title + "\n\n这是" + title + "的详细文档内容。",
+			Summary:     title + "相关文档",
+			ParentID:    document.ID,
+			Tags:        []string{"welcome", title},
+			KnowledgeID: nil,
+		})
+		if err != nil {
+			logrus.Warnf("Failed to create child document %s: %v", title, err)
+			continue
+		}
+
+		for k := 1; k <= 2; k++ {
+			grandchildTitle := title + " - 详情" + string(rune('0'+k))
+			_, err := createDocumentWithAllTables(tx, adminUser.ID, DocumentInput{
+				Title:       grandchildTitle,
+				Content:     "# " + grandchildTitle + "\n\n这是" + grandchildTitle + "的详细文档内容。",
+				Summary:     grandchildTitle + "相关文档",
+				ParentID:    childDoc.ID,
+				Tags:        []string{"welcome", title, "详情"},
+				KnowledgeID: nil,
+			})
+			if err != nil {
+				logrus.Warnf("Failed to create grandchild document %s: %v", grandchildTitle, err)
+			}
+		}
+	}
+
+	logrus.Println("Child documents added to welcome document successfully")
+
 	logrus.Println("Default document created successfully in transaction")
 	return nil
 }

@@ -39,6 +39,10 @@ func (h *GetOwnDocumentsHandler) handle(ctx context.Context, req api_base.Reques
 			Page:     getOwnDocsReq.Page,
 			PageSize: getOwnDocsReq.PageSize,
 		},
+		Options: &dto.RecursiveOptions{
+			IncludeChildren: true,
+			Recursive:       true,
+		},
 	}
 
 	docs, count, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(queryReq)
