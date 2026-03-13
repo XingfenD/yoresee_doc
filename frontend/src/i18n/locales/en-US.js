@@ -165,7 +165,20 @@ export default {
     lastUpdated: 'Last Updated',
     owner: 'Owner',
     noDocuments: 'No documents',
-    refresh: 'Refresh'
+    refresh: 'Refresh',
+    templates: 'Knowledge Base Templates'
+  },
+  templates: {
+    title: 'Templates',
+    my: 'My Templates',
+    recent: 'Recent Templates',
+    public: 'Public Templates',
+    private: 'Private Templates',
+    updatedAt: 'Updated At',
+    noDescription: 'No description',
+    noMy: 'No templates yet',
+    noRecent: 'No recent templates',
+    noPublic: 'No public templates'
   },
   theme: {
     light: 'Light Mode',

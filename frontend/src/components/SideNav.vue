@@ -19,6 +19,12 @@
         </el-icon>
         <span class="menu-text">{{ t('navigation.knowledgeBase') }}</span>
       </el-menu-item>
+      <el-menu-item index="templates">
+        <el-icon>
+          <Tickets />
+        </el-icon>
+        <span class="menu-text">{{ t('navigation.templates') }}</span>
+      </el-menu-item>
     </el-menu>
     <button class="collapse-btn" @click="toggleCollapse"
       :title="isCollapsed ? t('common.expand') : t('common.collapse')">
@@ -34,7 +40,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { House, Collection, Document, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
+import { House, Collection, Document, Tickets, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -69,6 +75,8 @@ const handleMenuSelect = (key) => {
     router.push('/mydocuments');
   } else if (key === 'knowledge-base') {
     router.push('/knowledge-base');
+  } else if (key === 'templates') {
+    router.push('/templates');
   }
 };
 </script>

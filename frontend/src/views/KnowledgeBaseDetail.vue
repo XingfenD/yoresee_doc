@@ -33,6 +33,7 @@
             </el-button>
             <el-button @click="refreshTree" :icon="Refresh" />
           </div>
+
         </div>
 
         <!-- 知识库详情内容 -->
@@ -67,8 +68,9 @@
             <el-empty :description="t('message.empty')" />
           </div>
 
-          <!-- 文档树形结构 -->
-          <div class="document-tree-section">
+          <div class="detail-columns">
+            <!-- 文档树形结构 -->
+            <div class="document-tree-section">
             <div class="section-header">
               <h3 class="section-title">{{ t("knowledgeBase.documentStructure") }}</h3>
 
@@ -138,6 +140,20 @@
                 @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
           </div>
+
+            <div class="kb-templates-section">
+            <TemplateListSection
+              :title="t('knowledgeBase.templates')"
+              :items="kbTemplates"
+              :empty-text="t('templates.noMy')"
+              :fallback-description="t('templates.noDescription')"
+              :tag-mapper="templateTagMapper"
+              :meta-mapper="templateMetaMapper"
+              :action-label="t('common.open')"
+              @open="openTemplate"
+            />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -157,6 +173,7 @@ import SideNav from "@/components/SideNav.vue";
 import TopNav from "@/components/TopNav.vue";
 import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
+import TemplateListSection from "@/components/TemplateListSection.vue";
 import { getKnowledgeBaseDetail, createDocument as createDocumentApi } from "@/services/api.js";
 import {
   ArrowLeft,
@@ -202,6 +219,10 @@ const lastUpdated = ref("");
 const ownerName = ref("");
 const knowledgeBaseData = ref(null);
 const loading = ref(false);
+const kbTemplates = ref([
+  { id: 'kb-tpl-1', name: '知识库概览模板', description: '用于快速建立知识库首页', updatedAt: '2026-03-10', isPublic: false },
+  { id: 'kb-tpl-2', name: '规范文档模板', description: '统一规范文档结构', updatedAt: '2026-03-08', isPublic: false }
+]);
 
 // 文档树相关
 const searchKeyword = ref("");
@@ -441,6 +462,15 @@ const goBackToKnowledgeBase = () => {
   router.push("/knowledge-base");
 };
 
+const templateTagMapper = () => ({ type: "info", label: t("templates.private") });
+const templateMetaMapper = (tpl) => [
+  { label: t("templates.updatedAt"), value: tpl.updatedAt }
+];
+
+const openTemplate = (tpl) => {
+  console.log("open kb template", tpl);
+};
+
 onMounted(async () => {
   // 获取系统信息
   await fetchSystemInfo();
@@ -506,6 +536,17 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+}
+
+.detail-columns {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+}
+
+.kb-templates-section {
+  width: 320px;
+  flex-shrink: 0;
 }
 
 .kb-info-card {
@@ -585,6 +626,16 @@ onMounted(async () => {
 
 .sort-select {
   width: 150px;
+}
+
+@media (max-width: 1200px) {
+  .detail-columns {
+    flex-direction: column;
+  }
+
+  .kb-templates-section {
+    width: 100%;
+  }
 }
 
 .tree-content {

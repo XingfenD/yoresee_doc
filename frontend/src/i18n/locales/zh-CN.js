@@ -163,7 +163,20 @@ export default {
     lastUpdated: '最后更新',
     owner: '所有者',
     noDocuments: '暂无文档',
-    refresh: '刷新'
+    refresh: '刷新',
+    templates: '知识库模板'
+  },
+  templates: {
+    title: '模板',
+    my: '我的模板',
+    recent: '最近模板',
+    public: '公开模板',
+    private: '私有模板',
+    updatedAt: '更新时间',
+    noDescription: '暂无描述',
+    noMy: '暂无我的模板',
+    noRecent: '暂无最近模板',
+    noPublic: '暂无公开模板'
   },
   theme: {
     light: '浅色模式',
