@@ -20,24 +20,12 @@
       <div class="content-area">
         <!-- 操作栏 -->
         <div class="action-bar">
-          <div class="breadcrumb">
-            <el-breadcrumb separator="/">
-              <el-breadcrumb-item>
-                <div class="breadcrumb-home">
-                  <el-icon class="home-icon">
-                    <House />
-                  </el-icon>
-                  <span class="home-text">{{ t("navigation.home") }}</span>
-                </div>
-              </el-breadcrumb-item>
-              <el-breadcrumb-item>
-                <span>{{ t("navigation.knowledgeBase") }}</span>
-              </el-breadcrumb-item>
-              <el-breadcrumb-item>
-                <span>{{ knowledgeBaseName }}</span>
-              </el-breadcrumb-item>
-            </el-breadcrumb>
-          </div>
+          <el-button text @click="goBackToKnowledgeBase">
+            <el-icon>
+              <ArrowLeft />
+            </el-icon>
+            {{ t("common.back") }}
+          </el-button>
 
           <div class="actions">
             <el-button type="primary" @click="openCreateDocumentDialog">
@@ -171,7 +159,7 @@ import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import { getKnowledgeBaseDetail, createDocument as createDocumentApi } from "@/services/api.js";
 import {
-  House,
+  ArrowLeft,
   Document,
   Clock,
   User,
@@ -449,6 +437,10 @@ const handleLogout = () => {
   router.push("/login");
 };
 
+const goBackToKnowledgeBase = () => {
+  router.push("/knowledge-base");
+};
+
 onMounted(async () => {
   // 获取系统信息
   await fetchSystemInfo();
@@ -495,25 +487,6 @@ onMounted(async () => {
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-}
-
-.breadcrumb-home {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.home-icon {
-  vertical-align: middle;
-}
-
-.home-text {
-  vertical-align: middle;
 }
 
 .actions {
