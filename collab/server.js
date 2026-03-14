@@ -3,6 +3,9 @@ const WebSocket = require('ws');
 const { setupWSConnection, setPersistence } = require('y-websocket/bin/utils');
 const { createClient } = require('redis');
 const { RedisPersistence } = require('y-redis');
+const grpc = require('@grpc/grpc-js');
+const { DocumentServiceClient } = require('./gen/yoresee_doc_grpc_pb');
+const Y = require('yjs');
 
 const port = Number(process.env.PORT || 1234);
 const server = http.createServer();
@@ -13,8 +16,85 @@ const redisPort = Number(process.env.REDIS_PORT || 6379);
 const redisPassword = process.env.REDIS_PASSWORD || '';
 const redisDb = Number(process.env.REDIS_DB || 0);
 
+const backendAddr = process.env.BACKEND_ADDR || 'backend:9090';
+
 let redisClient = null;
 let redisPersistence = null;
+let documentServiceClient = null;
+
+function initGrpcClient() {
+  try {
+    documentServiceClient = new DocumentServiceClient(
+      backendAddr,
+      grpc.credentials.createInsecure(),
+      {
+        'grpc.default_service_config': JSON.stringify({
+          loadBalancingConfig: [{ round_robin: {} }]
+        })
+      }
+    );
+    console.log(`gRPC client initialized, connecting to ${backendAddr}`);
+  } catch (err) {
+    console.error('Failed to initialize gRPC client:', err.message);
+  }
+}
+
+async function getDocumentContent(documentExternalId) {
+  return new Promise((resolve, reject) => {
+    if (!documentServiceClient) {
+      return reject(new Error('gRPC client not initialized'));
+    }
+    const GetDocumentContentRequest = require('./gen/yoresee_doc_pb').GetDocumentContentRequest;
+    const request = new GetDocumentContentRequest();
+    request.setDocumentExternalId(documentExternalId);
+    
+    documentServiceClient.getDocumentContent(
+      request,
+      (err, response) => {
+        if (err) {
+          return reject(err);
+        }
+        const base = response.getBase();
+        if (base && base.getCode() !== 0) {
+          return reject(new Error(base.getMessage() || 'Failed to get document content'));
+        }
+        resolve(response.getContent() || '');
+      }
+    );
+  });
+}
+
+async function checkAndInitRoom(roomName) {
+  if (!redisClient || !documentServiceClient) {
+    return null;
+  }
+  
+  const yjsKey = `yjs:${roomName}`;
+  try {
+    const exists = await redisClient.exists(yjsKey);
+    if (exists) {
+      console.log(`Room ${roomName} already has data in Redis, skipping init`);
+      return null;
+    }
+    
+    const docId = roomName.replace(/^doc-/, '');
+    console.log(`Room ${roomName} is empty, fetching content from backend for doc ${docId}...`);
+    
+    const content = await getDocumentContent(docId);
+    if (content) {
+      console.log(`Got content from backend, length: ${content.length}`);
+      const ydoc = new Y.Doc();
+      const ytext = ydoc.getText('content');
+      ytext.insert(0, content);
+      return ydoc;
+    }
+    
+    return null;
+  } catch (err) {
+    console.error(`Failed to check/init room ${roomName}:`, err.message);
+    return null;
+  }
+}
 
 async function initRedis() {
   redisClient = createClient({
@@ -119,6 +199,7 @@ wss.on('connection', (conn, req) => {
 server.listen(port, async () => {
   await initRedis();
   initYRedis();
+  initGrpcClient();
 
   console.log(`Collab server listening on ${port}`);
   console.log(`Redis config: ${redisHost}:${redisPort}/${redisDb}`);

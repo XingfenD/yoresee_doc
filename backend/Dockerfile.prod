@@ -16,7 +16,11 @@ COPY deploy ./deploy
 WORKDIR /app/backend
 
 RUN go mod download
-RUN bash ../deploy/script/gen_proto.sh
+RUN mkdir -p /app/backend/pkg/gen && \
+    protoc -I /app/proto \
+      --go_out=/app/backend/pkg/gen --go_opt=paths=source_relative \
+      --go-grpc_out=/app/backend/pkg/gen --go-grpc_opt=paths=source_relative \
+      /app/proto/yoresee_doc/v1/yoresee_doc.proto
 RUN go mod tidy
 RUN CGO_ENABLED=0 go build -p 1 -o main.out cmd/main.go && \
     CGO_ENABLED=0 go build -p 1 -o migrate.out ./cmd/migrate && \

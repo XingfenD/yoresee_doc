@@ -92,8 +92,8 @@ services:
 
   collab-core:
     build:
-      context: ../collab
-      dockerfile: Dockerfile.prod
+      context: ..
+      dockerfile: collab/Dockerfile.prod
     image: yoresee_doc_collab_core:latest
     container_name: yoresee_doc_collab_core
     environment:
@@ -101,8 +101,10 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=your_redis_password
       - REDIS_DB=0
+      - BACKEND_ADDR=backend:9090
     depends_on:
       - redis
+      - backend
     networks:
       - yoresee_doc_network
     restart: unless-stopped
