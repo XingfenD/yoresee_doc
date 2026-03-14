@@ -5,30 +5,19 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 
-RUN apk add --no-cache protobuf curl
-ARG TARGETARCH
-RUN set -e; \
-    if [ "$TARGETARCH" = "arm64" ]; then ARCH="arm64"; else ARCH="x86_64"; fi; \
-    curl -sSL -o /usr/local/bin/protoc-gen-grpc-web "https://github.com/grpc/grpc-web/releases/download/2.0.2/protoc-gen-grpc-web-2.0.2-linux-${ARCH}"; \
-    chmod +x /usr/local/bin/protoc-gen-grpc-web
+RUN apk add --no-cache protobuf
 
 COPY frontend ./
 COPY proto /app/proto
 
+RUN mkdir -p /app/frontend/src/gen
+
 RUN protoc -I /app/proto \
-    --js_out=import_style=commonjs,binary:/app/frontend/src/gen \
-    --grpc-web_out=import_style=commonjs,mode=grpcwebtext:/app/frontend/src/gen \
+    --plugin=protoc-gen-es=/app/frontend/node_modules/.bin/protoc-gen-es \
+    --plugin=protoc-gen-connect-es=/app/frontend/node_modules/.bin/protoc-gen-connect-es \
+    --es_out=/app/frontend/src/gen --es_opt=target=js,import_extension=.js \
+    --connect-es_out=/app/frontend/src/gen --connect-es_opt=target=js,import_extension=.js \
     /app/proto/yoresee_doc/v1/yoresee_doc.proto
-
-RUN cp /app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_pb.js /app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_pb.cjs
-RUN cp /app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_grpc_web_pb.js /app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_grpc_web_pb.cjs
-
-RUN NODE_PATH=/app/frontend/node_modules ./node_modules/.bin/esbuild /app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_pb.cjs \
-    --format=esm --bundle --platform=browser \
-    --outfile=/app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_pb.esm.js
-RUN NODE_PATH=/app/frontend/node_modules ./node_modules/.bin/esbuild /app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_grpc_web_pb.cjs \
-    --format=esm --bundle --platform=browser \
-    --outfile=/app/frontend/src/gen/yoresee_doc/v1/yoresee_doc_grpc_web_pb.esm.js
 
 RUN npm run build
 
