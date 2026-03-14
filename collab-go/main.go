@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
@@ -16,50 +15,48 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func validateToken(tokenString, secret string) bool {
+func validateToken(tokenString, secret string) error {
 	if secret == "" {
-		return true
+		return nil
 	}
 	if tokenString == "" {
-		return false
+		return http.ErrNoCookie
 	}
 	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
-	})
-	return err == nil
+	}, jwt.WithValidMethods([]string{"HS256", "HS384", "HS512"}))
+	return err
 }
 
 func main() {
 	addr := os.Getenv("ADDR")
 	if addr == "" {
-		addr = ":1235"
+		addr = ":1234"
 	}
 	secret := os.Getenv("JWT_SECRET")
 	coreURL := os.Getenv("COLLAB_CORE_URL")
 	if coreURL == "" {
-		coreURL = "ws://collab:1234"
+		coreURL = "ws://collab-core:1234"
 	}
 
-	http.HandleFunc("/collab", func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, "/collab") {
-			http.NotFound(w, r)
-			return
-		}
-
+	handler := func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
-		if !validateToken(token, secret) {
+		if err := validateToken(token, secret); err != nil {
+			log.Printf("collab-gateway unauthorized path=%s remote=%s err=%v", r.URL.Path, r.RemoteAddr, err)
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
+			log.Printf("collab-gateway upgrade failed path=%s remote=%s err=%v", r.URL.Path, r.RemoteAddr, err)
 			return
 		}
 		defer conn.Close()
 
 		u, err := url.Parse(coreURL)
 		if err != nil {
+			log.Printf("collab-gateway invalid core url=%s err=%v", coreURL, err)
 			return
 		}
 		u.Path = r.URL.Path
@@ -67,6 +64,7 @@ func main() {
 
 		coreConn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
+			log.Printf("collab-gateway dial core failed url=%s err=%v", u.String(), err)
 			return
 		}
 		defer coreConn.Close()
@@ -76,7 +74,9 @@ func main() {
 		go proxyWS(coreConn, conn, errCh)
 
 		<-errCh
-	})
+	}
+
+	http.HandleFunc("/", handler)
 
 	log.Printf("collab-gateway listening on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))

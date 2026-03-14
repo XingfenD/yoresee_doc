@@ -115,9 +115,11 @@ services:
     image: yoresee_doc_collab_gateway:latest
     container_name: yoresee_doc_collab
     environment:
-      - ADDR=:1235
+      - ADDR=:1234
       - JWT_SECRET=yoresee_doc_jwt_secret_key
       - COLLAB_CORE_URL=ws://collab-core:1234
+    volumes:
+      - ../collab-go:/app
     depends_on:
       - collab-core
     networks:

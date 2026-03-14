@@ -218,8 +218,16 @@ watch(() => props.modelValue, (newValue) => {
     if (ytext.toString() === newValue) {
       return;
     }
-    if (!collabSynced || ytext.length === 0) {
+    if (!collabSynced) {
       pendingSeed = newValue || '';
+      return;
+    }
+    if (collabSynced && ytext.length === 0) {
+      const seed = newValue || pendingSeed || '';
+      pendingSeed = '';
+      if (seed) {
+        ytext.insert(0, seed);
+      }
       return;
     }
   }

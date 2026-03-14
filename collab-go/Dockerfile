@@ -1,15 +1,8 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24-alpine AS dev
 WORKDIR /app
 
-COPY go.mod ./
-RUN go mod download
+ENV GOPROXY=https://goproxy.cn,direct
 
-COPY . .
-RUN CGO_ENABLED=0 go build -o collab-go main.go
+EXPOSE 1234
 
-FROM alpine:latest
-WORKDIR /app
-COPY --from=builder /app/collab-go .
-
-EXPOSE 1235
-CMD ["./collab-go"]
+CMD ["sh", "-c", "go mod download && go run main.go"]
