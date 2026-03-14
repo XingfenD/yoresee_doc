@@ -1,15 +1,11 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/XingfenD/yoresee_doc/internal/config"
-	"github.com/XingfenD/yoresee_doc/internal/i18n"
-	"github.com/XingfenD/yoresee_doc/internal/router"
 	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/internal/transport/connectserver"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,19 +36,10 @@ func main() {
 	defer storage.CloseRedis()
 
 	service.Init(config.GlobalConfig)
-	i18n.Init()
 
-	r := gin.Default()
+	if _, _, err := connectserver.Start(config.GlobalConfig.Server.GrpcPort, config.GlobalConfig.Server.GrpcWebPort); err != nil {
+		logrus.Fatalf("Start connect servers failed: %v", err)
+	}
 
-	router.SetupRouter(r)
-
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-
-	addr := fmt.Sprintf(":%d", config.GlobalConfig.Server.Port)
-	fmt.Printf("Server starting on %s\n", addr)
-	r.Run(addr)
+	select {}
 }

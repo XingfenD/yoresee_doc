@@ -1,0 +1,182 @@
+package grpcserver
+
+import (
+	"context"
+
+	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
+	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+)
+
+type DocumentServiceServer struct {
+	pb.UnimplementedDocumentServiceServer
+}
+
+func NewDocumentServiceServer() *DocumentServiceServer {
+	return &DocumentServiceServer{}
+}
+
+func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListDocumentsRequest) (*pb.ListDocumentsResponse, error) {
+	if req == nil {
+		return &pb.ListDocumentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	filterArgs := &dto.DocumentsListFilterArgs{
+		TitleKeyword: req.TitleKeyword,
+		DocType:      req.Type,
+		Tags:         req.Tags,
+	}
+	if req.Status != nil {
+		filterArgs.Status = utils.Of(int(req.GetStatus()))
+	}
+	if req.CreateTimeRange != nil {
+		filterArgs.CreateTimeRangeStart = req.CreateTimeRange.Start
+		filterArgs.CreateTimeRangeEnd = req.CreateTimeRange.End
+	}
+	if req.UpdateTimeRange != nil {
+		filterArgs.UpdateTimeRangeStart = req.UpdateTimeRange.Start
+		filterArgs.UpdateTimeRangeEnd = req.UpdateTimeRange.End
+	}
+
+	sortArgs := dto.SortArgs{Field: "created_at", Desc: true}
+	if req.OrderBy != nil {
+		sortArgs.Field = req.GetOrderBy()
+	}
+	if req.OrderDesc != nil {
+		sortArgs.Desc = req.GetOrderDesc()
+	}
+
+	serviceReq := &dto.ListDocumentsByExternalReq{
+		ExternalArgs: &dto.DocumentsListExternalArgs{
+			UserExternalID:         req.UserExternalId,
+			RootDocumentExternalID: req.RootDocumentExternalId,
+		},
+		FilterArgs: filterArgs,
+		SortArgs:   sortArgs,
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+	}
+	if req.Options != nil {
+		serviceReq.Options = &dto.RecursiveOptions{
+			IncludeChildren: req.Options.IncludeChildren,
+			Recursive:       req.Options.Recursive,
+			Depth:           int(req.Options.Depth),
+		}
+	}
+
+	docs, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(serviceReq)
+	if err != nil {
+		return &pb.ListDocumentsResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	respDocs := make([]*pb.DocumentResponse, 0, len(docs))
+	for _, doc := range docs {
+		respDocs = append(respDocs, toDocumentResponse(doc))
+	}
+
+	return &pb.ListDocumentsResponse{
+		Base:      baseResponseFromErr(nil),
+		Documents: respDocs,
+	}, nil
+}
+
+func (s *DocumentServiceServer) GetDocumentContent(ctx context.Context, req *pb.GetDocumentContentRequest) (*pb.GetDocumentContentResponse, error) {
+	if req == nil || req.DocumentExternalId == "" {
+		return &pb.GetDocumentContentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	document, err := service.DocumentSvc.GetDocumentByExternalID(req.DocumentExternalId)
+	if err != nil {
+		return &pb.GetDocumentContentResponse{Base: baseResponseFromErr(status.StatusDocumentNotFound)}, nil
+	}
+
+	content, err := service.DocumentSvc.GetDocumentContent(document.ID)
+	if err != nil {
+		return &pb.GetDocumentContentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.GetDocumentContentResponse{
+		Base:     baseResponseFromErr(nil),
+		Document: toDocumentResponse(service.DocumentSvc.ConvertToDocumentResponse(document)),
+		Content:  content,
+	}, nil
+}
+
+func (s *DocumentServiceServer) GetOwnDocuments(ctx context.Context, req *pb.GetOwnDocumentsRequest) (*pb.GetOwnDocumentsResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.GetOwnDocumentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	queryReq := &dto.ListDocumentsByExternalReq{
+		ExternalArgs: &dto.DocumentsListExternalArgs{
+			UserExternalID: &userExternalID,
+			ListOwnDoc:     true,
+		},
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+		Options: &dto.RecursiveOptions{
+			IncludeChildren: true,
+			Recursive:       true,
+		},
+	}
+
+	docs, count, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(queryReq)
+	if err != nil {
+		return &pb.GetOwnDocumentsResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	respDocs := make([]*pb.DocumentResponse, 0, len(docs))
+	for _, doc := range docs {
+		respDocs = append(respDocs, toDocumentResponse(doc))
+	}
+
+	return &pb.GetOwnDocumentsResponse{
+		Base:       baseResponseFromErr(nil),
+		Documents:  respDocs,
+		TotalCount: count,
+	}, nil
+}
+
+func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.CreateDocumentRequest) (*pb.CreateDocumentResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.CreateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.Title == "" {
+		return &pb.CreateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	dtoReq := &dto.CreateDocumentReq{
+		Title:             req.Title,
+		Type:              fromDocumentType(req.Type),
+		CreatorExternalID: utils.Of(userExternalID),
+		ParentExternalID:  req.ParentExternalId,
+	}
+
+	switch req.ContainerType {
+	case pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE:
+		dtoReq.CreateAsOwnDoc = false
+		dtoReq.KnowledgeExternalID = req.KnowledgeBaseExternalId
+	case pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN:
+		dtoReq.CreateAsOwnDoc = true
+	default:
+		return &pb.CreateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	resp, err := service.DocumentSvc.Create(dtoReq)
+	if err != nil {
+		return &pb.CreateDocumentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.CreateDocumentResponse{
+		Base:       baseResponseFromErr(nil),
+		ExternalId: resp.ExternalID,
+	}, nil
+}

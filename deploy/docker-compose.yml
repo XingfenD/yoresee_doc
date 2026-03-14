@@ -18,14 +18,14 @@ services:
 
   frontend:
     build:
-      context: ../frontend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: frontend/Dockerfile.prod
       target: runner
     image: yoresee_doc_frontend_runner:latest
     container_name: yoresee_doc_frontend
     environment:
       - NODE_ENV=production
-      - VITE_API_BASE_URL=/api
+      - VITE_GRPC_WEB_ENDPOINT=/grpc
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -72,13 +72,15 @@ services:
 
   backend:
     build:
-      context: ../backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile.prod
       target: runner
     image: yoresee_doc_backend_runner:latest
     container_name: yoresee_doc_backend
     volumes:
       - ../backend/config.toml:/app/config.toml
+    ports:
+      - "9090:9090"
     depends_on:
       - postgres
       - redis

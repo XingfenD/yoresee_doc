@@ -45,6 +45,11 @@ fi
 
 echo "Using compose file: $COMPOSE_FILE"
 
+if [ "$ENVIRONMENT" = "dev" ]; then
+    echo "Generating gRPC code for dev..."
+    bash "$SCRIPT_DIR/gen_proto.sh"
+fi
+
 case "$ACTION" in
     "rebuild")
         echo "Rebuilding and starting services..."

@@ -376,12 +376,13 @@ const handleTreeNodeClick = (data) => {
   if (data?.isCreating) {
     return;
   }
-  if (!data.isFolder) {
-    if (kbId.value === 'personal') {
-      router.push(`/mydocument/${data.id}`);
-    } else {
-      router.push(`/knowledge-base/${kbId.value}/document/${data.id}`);
-    }
+  if (!data?.id) {
+    return;
+  }
+  if (kbId.value === 'personal') {
+    router.push(`/mydocument/${data.id}`);
+  } else {
+    router.push(`/knowledge-base/${kbId.value}/document/${data.id}`);
   }
 };
 

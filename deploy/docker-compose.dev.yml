@@ -28,7 +28,7 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - VITE_API_BASE_URL=/api
+      - VITE_GRPC_WEB_ENDPOINT=/grpc
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -88,6 +88,7 @@ services:
       - ../backend:/app
     ports:
       - "2345:2345"
+      - "9090:9090"
     depends_on:
       - postgres
       - redis

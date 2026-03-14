@@ -1,0 +1,30 @@
+# release
+FROM node:20-alpine AS builder
+WORKDIR /app/frontend
+
+COPY frontend/package*.json ./
+RUN npm install
+
+RUN apk add --no-cache protobuf
+
+COPY frontend ./
+COPY proto /app/proto
+
+RUN mkdir -p /app/frontend/src/gen
+
+RUN protoc -I /app/proto \
+    --plugin=protoc-gen-es=/app/frontend/node_modules/.bin/protoc-gen-es \
+    --plugin=protoc-gen-connect-es=/app/frontend/node_modules/.bin/protoc-gen-connect-es \
+    --es_out=/app/frontend/src/gen --es_opt=target=js,import_extension=.js \
+    --connect-es_out=/app/frontend/src/gen --connect-es_opt=target=js,import_extension=.js \
+    /app/proto/yoresee_doc/v1/yoresee_doc.proto
+
+RUN npm run build
+
+FROM nginx:alpine AS runner
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
