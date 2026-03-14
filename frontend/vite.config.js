@@ -11,7 +11,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['codemirror', 'easymde']
+    include: ['codemirror', 'easymde', 'google-protobuf']
   },
   server: {
     host: true,

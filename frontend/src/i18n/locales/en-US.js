@@ -69,6 +69,8 @@ export default {
     comments: 'Comments',
     collaborators: 'Collaborators',
     status: 'Status',
+    published: 'Published',
+    draft: 'Draft',
     folders: 'Folders',
     trash: 'Trash',
     editorPlaceholder: 'Start writing your document here...',

@@ -1,6 +1,7 @@
 [server]
-port = 8080
 mode = "debug"
+grpc_port = 9090
+grpc_web_port = 8080
 read_timeout = 10
 write_timeout = 10
 
@@ -39,7 +40,6 @@ type = "redis"  # available values: "redis", "rabbitmq"
 url = "amqp://guest:guest@yoresee_doc_rabbitmq:5672/"
 
 [backend]
-http_framework = "gin"
 system_name = "Yoresee"
 cluster_role = "hybrid"  # available values: "producer", "consumer", "hybrid"
 

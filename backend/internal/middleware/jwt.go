@@ -3,16 +3,17 @@ package middleware
 import (
 	"strings"
 
-	api_base "github.com/XingfenD/yoresee_doc/internal/api/base"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 var JWTAuth = &JWTAuthMiddleware{}
 
 type JWTAuthMiddleware struct {
+}
+
+func (m *JWTAuthMiddleware) ValidateAuthorizationHeader(authHeader string) (*utils.Claims, error) {
+	return m.handle(authHeader)
 }
 
 func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
@@ -36,22 +37,4 @@ func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
 		return nil, status.StatusTokenExpired
 	}
 	return claims, nil
-}
-
-func (m *JWTAuthMiddleware) GinHandle() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		logrus.Infof("authHeader: %s", authHeader)
-		claims, err := m.handle(authHeader)
-		if err != nil {
-			c.JSON(401, api_base.GenBaseRespWithErr(err))
-			c.Abort()
-			return
-		}
-
-		c.Set("user_external_id", claims.ExternalID)
-		c.Set("username", claims.Username)
-
-		c.Next()
-	}
 }

@@ -67,6 +67,8 @@ export default {
     comments: '评论',
     collaborators: '协作者',
     status: '状态',
+    published: '已发布',
+    draft: '草稿',
     folders: '文件夹',
     trash: '回收站',
     editorPlaceholder: '在这里开始编写您的文档...',

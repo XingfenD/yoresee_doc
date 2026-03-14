@@ -17,8 +17,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port int    `mapstructure:"port"`
-	Mode string `mapstructure:"mode"`
+	Mode        string `mapstructure:"mode"`
+	GrpcPort    int    `mapstructure:"grpc_port"`
+	GrpcWebPort int    `mapstructure:"grpc_web_port"`
 }
 
 type DatabaseConfig struct {
@@ -55,10 +56,9 @@ const (
 )
 
 type BackendConfig struct {
-	HTTPFramework string      `mapstructure:"http_framework"`
-	Jwt           JWTConfig   `mapstructure:"jwt"`
-	SystemName    string      `mapstructure:"system_name"`
-	ClusterRole   ClusterRole `mapstructure:"cluster_role"`
+	Jwt         JWTConfig   `mapstructure:"jwt"`
+	SystemName  string      `mapstructure:"system_name"`
+	ClusterRole ClusterRole `mapstructure:"cluster_role"`
 	// Log           LogConfig      `mapstructure:"log"`
 	// document      DocumentConfig `mapstructure:"document"`
 }

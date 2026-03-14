@@ -1,0 +1,221 @@
+syntax = "proto3";
+
+package yoresee_doc.v1;
+
+option go_package = "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1;yoreseedocpb";
+
+message BaseResponse {
+  int32 code = 1;
+  string message = 2;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  BaseResponse base = 1;
+  string timestamp = 2;
+  string status = 3;
+  string version = 4;
+}
+
+message SystemInfoRequest {}
+
+message SystemInfoResponse {
+  BaseResponse base = 1;
+  string system_name = 2;
+  string system_register_mode = 3;
+}
+
+message AuthLoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthLoginResponse {
+  BaseResponse base = 1;
+  string token = 2;
+  UserResponse user = 3;
+}
+
+message AuthRegisterRequest {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+  optional string invitation_code = 4;
+}
+
+message AuthRegisterResponse {
+  BaseResponse base = 1;
+}
+
+enum DocumentType {
+  DOCUMENT_TYPE_UNSPECIFIED = 0;
+  DOCUMENT_TYPE_MARKDOWN = 1;
+}
+
+message DocumentResponse {
+  string external_id = 1;
+  string title = 2;
+  DocumentType type = 3;
+  string summary = 4;
+  int32 status = 5;
+  repeated string tags = 6;
+  int32 view_count = 7;
+  int32 edit_count = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  repeated DocumentResponse children = 11;
+  bool has_children = 12;
+}
+
+message GetDocumentContentRequest {
+  string document_external_id = 1;
+}
+
+message GetDocumentContentResponse {
+  BaseResponse base = 1;
+  DocumentResponse document = 2;
+  string content = 3;
+}
+
+message RecursiveOptions {
+  bool include_children = 1;
+  bool recursive = 2;
+  int32 depth = 3;
+}
+
+message TimeRange {
+  optional string start = 1;
+  optional string end = 2;
+}
+
+message ListDocumentsRequest {
+  optional string user_external_id = 1;
+  optional string root_document_external_id = 2;
+  optional string title_keyword = 3;
+  optional string type = 4;
+  optional int32 status = 5;
+  repeated string tags = 6;
+  optional TimeRange create_time_range = 7;
+  optional TimeRange update_time_range = 8;
+  optional string order_by = 9;
+  optional bool order_desc = 10;
+  int32 page = 11;
+  int32 page_size = 12;
+  optional RecursiveOptions options = 13;
+}
+
+message ListDocumentsResponse {
+  BaseResponse base = 1;
+  repeated DocumentResponse documents = 2;
+}
+
+message GetOwnDocumentsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message GetOwnDocumentsResponse {
+  BaseResponse base = 1;
+  repeated DocumentResponse documents = 2;
+  int64 total_count = 3;
+}
+
+enum CreateDocumentContainerType {
+  CREATE_DOCUMENT_CONTAINER_TYPE_UNSPECIFIED = 0;
+  CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE = 1;
+  CREATE_DOCUMENT_CONTAINER_TYPE_OWN = 2;
+}
+
+message CreateDocumentRequest {
+  string title = 1;
+  DocumentType type = 2;
+  CreateDocumentContainerType container_type = 3;
+  optional string knowledge_base_external_id = 4;
+  optional string parent_external_id = 5;
+}
+
+message CreateDocumentResponse {
+  BaseResponse base = 1;
+  string external_id = 2;
+}
+
+message KnowledgeBaseResponse {
+  string external_id = 1;
+  string name = 2;
+  string description = 3;
+  string cover = 4;
+  bool is_public = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  string deleted_at = 8;
+  string creator_user_external_id = 9;
+  string creator_name = 10;
+  int64 documents_count = 11;
+}
+
+message ListKnowledgeBasesRequest {
+  bool only_mine = 1;
+  optional string name_keyword = 2;
+  optional bool is_public = 3;
+  optional TimeRange create_time_range = 4;
+  optional TimeRange update_time_range = 5;
+  optional string order_by = 6;
+  optional bool order_desc = 7;
+  int32 page = 8;
+  int32 page_size = 9;
+}
+
+message ListKnowledgeBasesResponse {
+  BaseResponse base = 1;
+  repeated KnowledgeBaseResponse knowledge_bases = 2;
+  int64 total = 3;
+}
+
+message GetKnowledgeBaseRequest {
+  string knowledge_base_external_id = 1;
+  bool record_recent_log = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetKnowledgeBaseResponse {
+  BaseResponse base = 1;
+  KnowledgeBaseResponse knowledge_base = 2;
+  repeated DocumentResponse documents = 3;
+  int64 total_count = 4;
+}
+
+message UserResponse {
+  string external_id = 1;
+  string username = 2;
+  string email = 3;
+  string nickname = 4;
+  string avatar = 5;
+  int32 status = 6;
+  string created_at = 7;
+  string updated_at = 8;
+  optional string invitation_code = 9;
+}
+
+service AuthService {
+  rpc Login(AuthLoginRequest) returns (AuthLoginResponse);
+  rpc Register(AuthRegisterRequest) returns (AuthRegisterResponse);
+}
+
+service DocumentService {
+  rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+  rpc GetDocumentContent(GetDocumentContentRequest) returns (GetDocumentContentResponse);
+  rpc GetOwnDocuments(GetOwnDocumentsRequest) returns (GetOwnDocumentsResponse);
+  rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
+}
+
+service KnowledgeBaseService {
+  rpc ListKnowledgeBases(ListKnowledgeBasesRequest) returns (ListKnowledgeBasesResponse);
+  rpc GetKnowledgeBase(GetKnowledgeBaseRequest) returns (GetKnowledgeBaseResponse);
+}
+
+service SystemService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc SystemInfo(SystemInfoRequest) returns (SystemInfoResponse);
+}

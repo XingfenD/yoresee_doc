@@ -1,121 +1,232 @@
-import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import { clients, messages, unaryCall } from './grpc_client';
 
-// 创建axios实例
-const api = axios.create({
-  baseURL: '/',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+const { documentClient, knowledgeBaseClient } = clients;
+const {
+  ListKnowledgeBasesRequest,
+  GetKnowledgeBaseRequest,
+  CreateDocumentRequest,
+  GetDocumentContentRequest,
+  GetOwnDocumentsRequest,
+  ListDocumentsRequest,
+  RecursiveOptions,
+  TimeRange,
+  CreateDocumentContainerType,
+  DocumentType
+} = messages;
 
-// 请求拦截器
-api.interceptors.request.use(
-  config => {
-    // 从localStorage获取token
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    // 从localStorage获取语言设置
-    const language = localStorage.getItem('language') || 'en';
-    config.headers['Accept-Language'] = language;
-    return config;
-  },
-  error => {
-    return Promise.reject(error);
-  }
-);
+function baseToObject(resp) {
+  const base = resp.base;
+  return {
+    code: base?.code ?? 50000,
+    message: base?.message ?? 'unknown error'
+  };
+}
 
-// 响应拦截器
-api.interceptors.response.use(
-  response => {
-    return response;
-  },
-  error => {
-    // 处理错误响应
-    if (error.response) {
-      // 服务器返回错误状态码
-      switch (error.response.status) {
-        case 401:
-          // 未授权，清除token并跳转到登录页
-          localStorage.removeItem('token');
-          localStorage.removeItem('userInfo');
-          window.location.href = '/login';
-          break;
-        case 403:
-          // 禁止访问
-          console.error('没有权限访问该资源');
-          break;
-        case 404:
-          // 资源不存在
-          console.error('请求的资源不存在');
-          break;
-        case 500:
-          // 服务器错误
-          console.error('服务器内部错误');
-          break;
-        default:
-          console.error('请求失败:', error.response.data.message || '未知错误');
-      }
-    } else if (error.request) {
-      // 请求已发送但没有收到响应
-      console.error('网络错误，请检查网络连接');
-    } else {
-      // 请求配置错误
-      console.error('请求配置错误:', error.message);
-    }
-    return Promise.reject(error);
-  }
-);
+function mapDocument(doc) {
+  if (!doc) return null;
+  return {
+    external_id: doc.externalId,
+    title: doc.title,
+    type: doc.type === DocumentType.DOCUMENT_TYPE_MARKDOWN ? 'markdown' : '',
+    summary: doc.summary,
+    status: doc.status,
+    tags: doc.tags,
+    view_count: doc.viewCount,
+    edit_count: doc.editCount,
+    created_at: doc.createdAt,
+    updated_at: doc.updatedAt,
+    has_children: doc.hasChildren,
+    children: (doc.children || []).map(mapDocument)
+  };
+}
 
-// 统一处理响应
-function handleResponse(response) {
-  if (response.data && response.data.code === 20000) {
-    return response.data
-  } else {
-    const errorMessage = response.data?.message || '请求失败'
-    ElMessage.error(errorMessage)
-    throw new Error(errorMessage)
+function mapKnowledgeBase(kb) {
+  if (!kb) return null;
+  return {
+    external_id: kb.externalId,
+    name: kb.name,
+    description: kb.description,
+    cover: kb.cover,
+    is_public: kb.isPublic,
+    created_at: kb.createdAt,
+    updated_at: kb.updatedAt,
+    deleted_at: kb.deletedAt,
+    creator_user_external_id: kb.creatorUserExternalId,
+    creator_name: kb.creatorName,
+    documents_count: kb.documentsCount
+  };
+}
+
+function handleResponse(base, data) {
+  if (base.code === 20000) {
+    return { ...base, ...data };
   }
+  const errorMessage = base.message || '请求失败';
+  ElMessage.error(errorMessage);
+  throw new Error(errorMessage);
+}
+
+function toTimeRange(input) {
+  if (!input) return null;
+  return new TimeRange({
+    start: input.start || '',
+    end: input.end || ''
+  });
 }
 
 // 获取知识库列表
-export const getKnowledgeBases = (params) => {
-  return api.get('/api/knowledge-bases', { params }).then(handleResponse)
+export const getKnowledgeBases = async (params = {}) => {
+  const req = new ListKnowledgeBasesRequest({
+    onlyMine: typeof params.only_mine === 'boolean' ? params.only_mine : undefined,
+    nameKeyword: params.name_keyword || undefined,
+    isPublic: typeof params.is_public === 'boolean' ? params.is_public : undefined,
+    createTimeRange: params.create_time_range ? toTimeRange(params.create_time_range) : undefined,
+    updateTimeRange: params.update_time_range ? toTimeRange(params.update_time_range) : undefined,
+    orderBy: params.order_by || undefined,
+    orderDesc: typeof params.order_desc === 'boolean' ? params.order_desc : undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(knowledgeBaseClient, 'listKnowledgeBases', req);
+  const base = baseToObject(resp);
+  const data = {
+    knowledge_bases: (resp.knowledgeBases || []).map(mapKnowledgeBase),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
 };
 
 // 获取知识库详情
-export const getKnowledgeBaseDetail = (knowledgeBaseExternalID, params = {}) => {
-  return api.get(`/api/knowledge-base/${knowledgeBaseExternalID}`, { params }).then(handleResponse)
+export const getKnowledgeBaseDetail = async (knowledgeBaseExternalID, params = {}) => {
+  const req = new GetKnowledgeBaseRequest({
+    knowledgeBaseExternalId: knowledgeBaseExternalID,
+    recordRecentLog: Boolean(params.record_recent_log),
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(knowledgeBaseClient, 'getKnowledgeBase', req);
+  const base = baseToObject(resp);
+  const data = {
+    knowledge_base: mapKnowledgeBase(resp.knowledgeBase),
+    documents: (resp.documents || []).map(mapDocument),
+    total_count: resp.totalCount ?? 0
+  };
+  return handleResponse(base, data);
 };
 
 // 获取知识库文档列表
-export const getKnowledgeBaseDocuments = (knowledgeBaseExternalID, params = {}) => {
-  return api.get(`/api/knowledge-base/${knowledgeBaseExternalID}`, {
-    params: {
-      record_recent_log: false,
-      page: 1,
-      page_size: 1000,
-      ...params
-    }
-  }).then(handleResponse)
+export const getKnowledgeBaseDocuments = async (knowledgeBaseExternalID, params = {}) => {
+  return getKnowledgeBaseDetail(knowledgeBaseExternalID, {
+    record_recent_log: false,
+    page: 1,
+    page_size: 1000,
+    ...params
+  });
 };
 
 // 创建文档
-export const createDocument = (data) => {
-  return api.post('/api/document/create', data).then(handleResponse)
+export const createDocument = async (data) => {
+  const req = new CreateDocumentRequest({
+    title: data.title || '',
+    type: DocumentType.DOCUMENT_TYPE_MARKDOWN
+  });
+  if (data.type === 'markdown') {
+    req.type = DocumentType.DOCUMENT_TYPE_MARKDOWN;
+  }
+  if (data.container_type === 'knowledge_base') {
+    req.containerType = CreateDocumentContainerType.CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE;
+    if (data.knowledge_base_external_id) {
+      req.knowledgeBaseExternalId = data.knowledge_base_external_id;
+    }
+  } else if (data.container_type === 'own') {
+    req.containerType = CreateDocumentContainerType.CREATE_DOCUMENT_CONTAINER_TYPE_OWN;
+  }
+  if (data.parent_external_id) {
+    req.parentExternalId = data.parent_external_id;
+  }
+
+  const resp = await unaryCall(documentClient, 'createDocument', req);
+  const base = baseToObject(resp);
+  const dataResp = {
+    external_id: resp.externalId
+  };
+  return handleResponse(base, dataResp);
 };
 
 // 获取文档内容
-export const getDocumentContent = (documentExternalID, params = {}) => {
-  return api.get(`/api/document/${documentExternalID}/content`, { params }).then(handleResponse)
+export const getDocumentContent = async (documentExternalID, params = {}) => {
+  const req = new GetDocumentContentRequest({
+    documentExternalId: documentExternalID
+  });
+
+  const resp = await unaryCall(documentClient, 'getDocumentContent', req);
+  const base = baseToObject(resp);
+  const data = {
+    document: mapDocument(resp.document),
+    content: resp.content
+  };
+  return handleResponse(base, data);
 };
 
 // 获取我的文档列表
-export const getMyDocuments = (params = {}) => {
-  return api.get('/api/documents/my', { params }).then(handleResponse)
+export const getMyDocuments = async (params = {}) => {
+  const req = new GetOwnDocumentsRequest({
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'getOwnDocuments', req);
+  const base = baseToObject(resp);
+  const data = {
+    documents: (resp.documents || []).map(mapDocument),
+    total_count: resp.totalCount ?? 0
+  };
+  return handleResponse(base, data);
 };
 
-export default api;
+// 额外暴露 ListDocuments 供未来使用
+export const listDocuments = async (params = {}) => {
+  const options = params.options
+    ? new RecursiveOptions({
+        includeChildren: typeof params.options.include_children === 'boolean' ? params.options.include_children : undefined,
+        recursive: typeof params.options.recursive === 'boolean' ? params.options.recursive : undefined,
+        depth: typeof params.options.depth === 'number' ? params.options.depth : undefined
+      })
+    : undefined;
+
+  const req = new ListDocumentsRequest({
+    userExternalId: params.user_external_id || undefined,
+    rootDocumentExternalId: params.root_document_external_id || undefined,
+    titleKeyword: params.title_keyword || undefined,
+    type: params.type || undefined,
+    status: typeof params.status === 'number' ? params.status : undefined,
+    tags: Array.isArray(params.tags) ? params.tags : undefined,
+    createTimeRange: params.create_time_range ? toTimeRange(params.create_time_range) : undefined,
+    updateTimeRange: params.update_time_range ? toTimeRange(params.update_time_range) : undefined,
+    orderBy: params.order_by || undefined,
+    orderDesc: typeof params.order_desc === 'boolean' ? params.order_desc : undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined,
+    options
+  });
+
+  const resp = await unaryCall(documentClient, 'listDocuments', req);
+  const base = baseToObject(resp);
+  const data = {
+    documents: (resp.documents || []).map(mapDocument)
+  };
+  return handleResponse(base, data);
+};
+
+export default {
+  getKnowledgeBases,
+  getKnowledgeBaseDetail,
+  getKnowledgeBaseDocuments,
+  createDocument,
+  getDocumentContent,
+  getMyDocuments,
+  listDocuments
+};

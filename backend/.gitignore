@@ -15,3 +15,6 @@ __debug_bin*
 # config
 config.yaml
 config.toml
+
+# generated gRPC code
+pkg/gen/

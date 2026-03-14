@@ -1,0 +1,36 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+ENV GOPROXY=https://goproxy.cn,direct
+
+RUN apk add --no-cache protobuf
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.5 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+
+COPY backend/go.mod backend/go.sum ./backend/
+COPY backend ./backend
+COPY proto ./proto
+COPY deploy ./deploy
+
+WORKDIR /app/backend
+
+RUN go mod download
+RUN bash ../deploy/script/gen_proto.sh
+RUN go mod tidy
+RUN CGO_ENABLED=0 go build -p 1 -o main.out cmd/main.go && \
+    CGO_ENABLED=0 go build -p 1 -o migrate.out ./cmd/migrate && \
+    CGO_ENABLED=0 go build -p 1 -o db_init.out ./cmd/db_init
+
+FROM alpine:latest AS runner
+
+WORKDIR /app
+
+COPY --from=builder /app/backend/main.out .
+COPY --from=builder /app/backend/migrate.out .
+COPY --from=builder /app/backend/db_init.out .
+
+EXPOSE 8080
+EXPOSE 9090
+
+CMD ["sh", "-c", "./migrate.out && ./db_init.out && ./main.out"]
