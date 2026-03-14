@@ -3,7 +3,10 @@ WORKDIR /app
 
 ENV GOPROXY=https://goproxy.cn,direct
 
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
+RUN apk add --no-cache wget && \
+    go install github.com/go-delve/delve/cmd/dlv@latest && \
+    wget -O /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.22/grpc_health_probe-linux-amd64 && \
+    chmod +x /usr/local/bin/grpc_health_probe
 
 EXPOSE 8080
 EXPOSE 9090

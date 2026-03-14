@@ -47,6 +47,11 @@ services:
       - yoresee_doc_postgres_data:/var/lib/postgresql/data
     networks:
       - yoresee_doc_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d yoresee_doc_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
   redis:
@@ -62,6 +67,11 @@ services:
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       - yoresee_doc_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
   rabbitmq:
@@ -78,6 +88,11 @@ services:
       - ./logs/rabbitmq:/var/log/rabbitmq
     networks:
       - yoresee_doc_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
   backend:
@@ -93,17 +108,26 @@ services:
       - "2345:2345"
       - "9090:9090"
     depends_on:
-      - postgres
-      - redis
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://backend:9090/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - yoresee_doc_network
     restart: unless-stopped
 
   collab-core:
     build:
-      context: ../collab
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: collab/Dockerfile
     image: yoresee_doc_collab_core:latest
     container_name: yoresee_doc_collab_core
     environment:
@@ -113,8 +137,10 @@ services:
       - REDIS_DB=0
       - BACKEND_ADDR=backend:9090
     depends_on:
-      - redis
-      - backend
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - yoresee_doc_network
     volumes:

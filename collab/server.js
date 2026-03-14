@@ -4,7 +4,7 @@ const { setupWSConnection, setPersistence } = require('y-websocket/bin/utils');
 const { createClient } = require('redis');
 const { RedisPersistence } = require('y-redis');
 const grpc = require('@grpc/grpc-js');
-const { DocumentServiceClient } = require('./gen/yoresee_doc_grpc_pb');
+const { DocumentServiceClient, SystemServiceClient } = require('./gen/yoresee_doc_grpc_pb');
 const Y = require('yjs');
 
 const port = Number(process.env.PORT || 1234);
@@ -21,6 +21,7 @@ const backendAddr = process.env.BACKEND_ADDR || 'backend:9090';
 let redisClient = null;
 let redisPersistence = null;
 let documentServiceClient = null;
+let systemServiceClient = null;
 
 function initGrpcClient() {
   try {
@@ -33,7 +34,16 @@ function initGrpcClient() {
         })
       }
     );
-    console.log(`gRPC client initialized, connecting to ${backendAddr}`);
+    systemServiceClient = new SystemServiceClient(
+      backendAddr,
+      grpc.credentials.createInsecure(),
+      {
+        'grpc.default_service_config': JSON.stringify({
+          loadBalancingConfig: [{ round_robin: {} }]
+        })
+      }
+    );
+    console.log(`gRPC clients initialized, connecting to ${backendAddr}`);
   } catch (err) {
     console.error('Failed to initialize gRPC client:', err.message);
   }
@@ -47,7 +57,7 @@ async function getDocumentContent(documentExternalId) {
     const GetDocumentContentRequest = require('./gen/yoresee_doc_pb').GetDocumentContentRequest;
     const request = new GetDocumentContentRequest();
     request.setDocumentExternalId(documentExternalId);
-    
+
     documentServiceClient.getDocumentContent(
       request,
       (err, response) => {
@@ -68,7 +78,7 @@ async function checkAndInitRoom(roomName) {
   if (!redisClient || !documentServiceClient) {
     return null;
   }
-  
+
   const yjsKey = `yjs:${roomName}`;
   try {
     const exists = await redisClient.exists(yjsKey);
@@ -76,10 +86,10 @@ async function checkAndInitRoom(roomName) {
       console.log(`Room ${roomName} already has data in Redis, skipping init`);
       return null;
     }
-    
+
     const docId = roomName.replace(/^doc-/, '');
     console.log(`Room ${roomName} is empty, fetching content from backend for doc ${docId}...`);
-    
+
     const content = await getDocumentContent(docId);
     if (content) {
       console.log(`Got content from backend, length: ${content.length}`);
@@ -88,7 +98,7 @@ async function checkAndInitRoom(roomName) {
       ytext.insert(0, content);
       return ydoc;
     }
-    
+
     return null;
   } catch (err) {
     console.error(`Failed to check/init room ${roomName}:`, err.message);
@@ -160,6 +170,33 @@ async function getActiveRooms() {
   }
 }
 
+async function healthCheck() {
+  if (!systemServiceClient) {
+    console.log('System service client not initialized, skipping health check');
+    return;
+  }
+
+  try {
+    const HealthRequest = require('./gen/yoresee_doc_pb').HealthRequest;
+    const request = new HealthRequest();
+
+    systemServiceClient.health(request, (err, response) => {
+      if (err) {
+        console.error('Health check failed:', err);
+      } else {
+        const base = response.getBase();
+        if (base && base.getCode() === 0) {
+          console.log('Health check successful');
+        } else {
+          console.error('Health check failed:', base ? base.getMessage() : 'Unknown error');
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Failed to execute health check:', err.message);
+  }
+}
+
 server.on('request', (req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -200,6 +237,9 @@ server.listen(port, async () => {
   await initRedis();
   initYRedis();
   initGrpcClient();
+
+  // Perform health check on startup
+  await healthCheck();
 
   console.log(`Collab server listening on ${port}`);
   console.log(`Redis config: ${redisHost}:${redisPort}/${redisDb}`);

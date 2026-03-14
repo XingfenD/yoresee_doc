@@ -32,15 +32,19 @@ else
   echo "protoc-gen-es or protoc-gen-connect-es not found; skipping frontend connect-es code generation" >&2
 fi
 
-GRPC_JS_BIN="$(which protoc-gen-grpc-js 2>/dev/null || echo "")"
-if [ -n "$GRPC_JS_BIN" ] && [ -x "$GRPC_JS_BIN" ]; then
+GRPC_PLUGIN="$(which grpc_tools_node_protoc_plugin 2>/dev/null || echo "")"
+
+if [ -n "$GRPC_PLUGIN" ] && [ -x "$GRPC_PLUGIN" ]; then
   mkdir -p "$COLLAB_OUT_DIR"
+
   protoc -I "$PROTO_DIR" \
-    --plugin=protoc-gen-grpc_js="$GRPC_JS_BIN" \
-    --grpc_js_out=import_style=commonjs,grpc_js:"$COLLAB_OUT_DIR" \
-    --js_out=import_style=commonjs:"$COLLAB_OUT_DIR" \
+    --plugin=protoc-gen-grpc="$GRPC_PLUGIN" \
+    --grpc_out=grpc_js:"$COLLAB_OUT_DIR" \
+    --js_out=import_style=commonjs,binary:"$COLLAB_OUT_DIR" \
     "$PROTO_DIR/yoresee_doc/v1/yoresee_doc.proto"
+
   echo "Generated gRPC code for collab at $COLLAB_OUT_DIR"
 else
-  echo "protoc-gen-grpc-js not found; skipping collab gRPC code generation" >&2
+  echo "grpc_tools_node_protoc_plugin not found. Install with: npm install -g grpc-tools" >&2
+  exit 1
 fi

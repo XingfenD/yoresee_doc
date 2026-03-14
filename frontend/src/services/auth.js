@@ -28,7 +28,7 @@ function mapUser(user) {
 }
 
 function handleResponse(base, data) {
-  if (base.code === 20000) {
+  if (base.code === 0) {
     return { ...base, ...data };
   }
   const errorMessage = base.message || '请求失败';

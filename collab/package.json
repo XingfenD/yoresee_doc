@@ -10,6 +10,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.12.0",
     "@grpc/proto-loader": "^0.7.13",
+    "google-protobuf": "^4.0.2",
     "redis": "^4.6.0",
     "ws": "^8.18.0",
     "y-redis": "^1.0.3",

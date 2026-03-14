@@ -26,6 +26,11 @@ func Start(grpcPort, grpcWebPort int) (*http.Server, *http.Server, error) {
 	mux := http.NewServeMux()
 	registerHandlers(mux, opts)
 
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	handler := withCORS(mux)
 	h2cHandler := h2c.NewHandler(handler, &http2.Server{})
 
