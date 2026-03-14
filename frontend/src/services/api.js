@@ -28,7 +28,7 @@ function mapDocument(doc) {
   return {
     external_id: doc.externalId,
     title: doc.title,
-    type: doc.type === DocumentType.DOCUMENT_TYPE_MARKDOWN ? 'markdown' : '',
+    type: doc.type === DocumentType.MARKDOWN ? 'markdown' : '',
     summary: doc.summary,
     status: doc.status,
     tags: doc.tags,
@@ -131,18 +131,18 @@ export const getKnowledgeBaseDocuments = async (knowledgeBaseExternalID, params 
 export const createDocument = async (data) => {
   const req = new CreateDocumentRequest({
     title: data.title || '',
-    type: DocumentType.DOCUMENT_TYPE_MARKDOWN
+    type: DocumentType.MARKDOWN
   });
   if (data.type === 'markdown') {
-    req.type = DocumentType.DOCUMENT_TYPE_MARKDOWN;
+    req.type = DocumentType.MARKDOWN;
   }
   if (data.container_type === 'knowledge_base') {
-    req.containerType = CreateDocumentContainerType.CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE;
+    req.containerType = CreateDocumentContainerType.KNOWLEDGE_BASE;
     if (data.knowledge_base_external_id) {
       req.knowledgeBaseExternalId = data.knowledge_base_external_id;
     }
   } else if (data.container_type === 'own') {
-    req.containerType = CreateDocumentContainerType.CREATE_DOCUMENT_CONTAINER_TYPE_OWN;
+    req.containerType = CreateDocumentContainerType.OWN;
   }
   if (data.parent_external_id) {
     req.parentExternalId = data.parent_external_id;
