@@ -8,6 +8,8 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import Vditor from 'vditor';
 import 'vditor/dist/index.css';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
 
 const props = defineProps({
   modelValue: {
@@ -21,6 +23,22 @@ const props = defineProps({
   height: {
     type: [String, Number],
     default: '100%'
+  },
+  collabEnabled: {
+    type: Boolean,
+    default: false
+  },
+  collabRoom: {
+    type: String,
+    default: ''
+  },
+  collabUrl: {
+    type: String,
+    default: '/collab'
+  },
+  collabToken: {
+    type: String,
+    default: ''
   }
 });
 
@@ -29,6 +47,14 @@ const emit = defineEmits(['update:modelValue']);
 const editorRef = ref(null);
 let vditor = null;
 let themeObserver = null;
+let ydoc = null;
+let provider = null;
+let ytext = null;
+let isVditorReady = false;
+let suppressInput = false;
+let collabSynced = false;
+let pendingSeed = '';
+const debugCollab = false;
 
 const applyVditorTheme = () => {
   if (!vditor || typeof vditor.setTheme !== 'function') {
@@ -44,6 +70,93 @@ const applyVditorTheme = () => {
   } catch (error) {
     // Ignore theme apply errors during init/destroy
   }
+};
+
+const resolveCollabUrl = () => {
+  if (!props.collabUrl) {
+    return '';
+  }
+  if (props.collabUrl.startsWith('ws://') || props.collabUrl.startsWith('wss://')) {
+    return props.collabUrl;
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const host = window.location.host;
+  const path = props.collabUrl.startsWith('/') ? props.collabUrl : `/${props.collabUrl}`;
+  return `${protocol}://${host}${path}`;
+};
+
+const setupCollaboration = () => {
+  if (!props.collabEnabled || !props.collabRoom) {
+    return;
+  }
+  const url = resolveCollabUrl();
+  if (!url) {
+    return;
+  }
+
+  ydoc = new Y.Doc();
+  ytext = ydoc.getText('content');
+  provider = new WebsocketProvider(url, props.collabRoom, ydoc, {
+    params: props.collabToken ? { token: props.collabToken } : {}
+  });
+
+  provider.on('sync', (isSynced) => {
+    collabSynced = isSynced;
+    if (!isSynced || !ytext) {
+      return;
+    }
+    const remote = ytext.toString();
+    if (ytext.length === 0) {
+      const seed = pendingSeed || props.modelValue || '';
+      if (seed) {
+        ytext.insert(0, seed);
+        if (debugCollab) {
+          console.log('[collab] seed from pending', { length: seed.length });
+        }
+      }
+    } else if (remote && remote !== props.modelValue) {
+      if (debugCollab) {
+        console.log('[collab] align local to remote', { remoteLength: remote.length });
+      }
+      emit('update:modelValue', remote);
+      if (vditor && isVditorReady) {
+        suppressInput = true;
+        vditor.setValue(remote);
+        suppressInput = false;
+      }
+    }
+    pendingSeed = '';
+  });
+
+  ytext.observe(() => {
+    if (!vditor || !isVditorReady || typeof vditor.setValue !== 'function') {
+      return;
+    }
+    if (suppressInput) {
+      return;
+    }
+    if (debugCollab) {
+      console.log('[collab] ytext update', { length: ytext.length, room: props.collabRoom });
+    }
+    suppressInput = true;
+    vditor.setValue(ytext.toString());
+    emit('update:modelValue', ytext.toString());
+    suppressInput = false;
+  });
+};
+
+const teardownCollaboration = () => {
+  if (provider) {
+    provider.destroy();
+    provider = null;
+  }
+  if (ydoc) {
+    ydoc.destroy();
+    ydoc = null;
+    ytext = null;
+  }
+  collabSynced = false;
+  pendingSeed = '';
 };
 
 onMounted(() => {
@@ -67,13 +180,25 @@ onMounted(() => {
       }
     },
     after: () => {
+      suppressInput = true;
       vditor.setValue(props.modelValue);
+      suppressInput = false;
+      isVditorReady = true;
       applyVditorTheme();
     },
     input: (value) => {
+      if (suppressInput) {
+        return;
+      }
+      if (props.collabEnabled && ytext) {
+        ytext.delete(0, ytext.length);
+        ytext.insert(0, value);
+      }
       emit('update:modelValue', value);
     }
   });
+
+  setupCollaboration();
 });
 
 onBeforeUnmount(() => {
@@ -85,10 +210,20 @@ onBeforeUnmount(() => {
     vditor.destroy();
     vditor = null;
   }
+  teardownCollaboration();
 });
 
 watch(() => props.modelValue, (newValue) => {
-  if (!vditor || typeof vditor.getValue !== 'function') {
+  if (props.collabEnabled && ytext) {
+    if (ytext.toString() === newValue) {
+      return;
+    }
+    if (!collabSynced || ytext.length === 0) {
+      pendingSeed = newValue || '';
+      return;
+    }
+  }
+  if (!vditor || !isVditorReady || typeof vditor.getValue !== 'function') {
     return;
   }
   let currentValue = '';
@@ -98,9 +233,22 @@ watch(() => props.modelValue, (newValue) => {
     return;
   }
   if (currentValue !== newValue) {
+    suppressInput = true;
     vditor.setValue(newValue);
+    suppressInput = false;
   }
 });
+
+watch(
+  () => props.collabRoom,
+  () => {
+    if (!props.collabEnabled) {
+      return;
+    }
+    teardownCollaboration();
+    setupCollaboration();
+  }
+);
 
 onMounted(() => {
   themeObserver = new MutationObserver(() => {
@@ -201,226 +349,11 @@ onMounted(() => {
   color: var(--text-light);
 }
 
+.markdown-editor :deep(.vditor-ir__marker--heading) {
+  color: var(--text-medium);
+}
+
 .dark-mode .markdown-editor :deep(.vditor-ir__marker) {
-  color: var(--text-light);
-}
-
-.markdown-editor :deep(.vditor-ir__heading) {
-  color: var(--text-dark);
-  font-weight: 600;
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__heading) {
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-content h1),
-.dark-mode .markdown-editor :deep(.vditor-content h2),
-.dark-mode .markdown-editor :deep(.vditor-content h3),
-.dark-mode .markdown-editor :deep(.vditor-content h4),
-.dark-mode .markdown-editor :deep(.vditor-content h5),
-.dark-mode .markdown-editor :deep(.vditor-content h6),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h1),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h2),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h3),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h4),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h5),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg h6) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-ir__codeblock) {
-  background-color: var(--bg-light);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__codeblock) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-ir__quote) {
-  border-left-color: var(--primary-color);
-  color: var(--text-medium);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__quote) {
-  color: var(--text-medium);
-}
-
-.markdown-editor :deep(.vditor-ir__strong) {
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__strong) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-ir__em) {
-  font-style: italic;
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-ir__em) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg) {
-  background-color: var(--bg-white);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg) {
-  background-color: var(--bg-medium);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-content p),
-.dark-mode .markdown-editor :deep(.vditor-content li),
-.dark-mode .markdown-editor :deep(.vditor-content blockquote),
-.dark-mode .markdown-editor :deep(.vditor-content td),
-.dark-mode .markdown-editor :deep(.vditor-content th),
-.dark-mode .markdown-editor :deep(.vditor-ir__node),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg p),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg li),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg blockquote),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg td),
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg th) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg pre) {
-  background-color: var(--bg-light);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg pre) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg code) {
-  background-color: var(--bg-light);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg code) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg blockquote) {
-  border-left-color: var(--primary-color);
-  color: var(--text-medium);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg blockquote) {
-  color: var(--text-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg a) {
-  color: var(--primary-color);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg table) {
-  border-color: var(--border-color);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg th) {
-  background-color: var(--bg-light);
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg th) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-wysiwyg td) {
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-wysiwyg td) {
-  background-color: var(--bg-light);
-}
-
-.markdown-editor :deep(.vditor-preview) {
-  background-color: var(--bg-light);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview h1),
-.markdown-editor :deep(.vditor-preview h2),
-.markdown-editor :deep(.vditor-preview h3) {
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview h1),
-.dark-mode .markdown-editor :deep(.vditor-preview h2),
-.dark-mode .markdown-editor :deep(.vditor-preview h3) {
-  color: var(--text-dark);
-}
-
-.markdown-editor :deep(.vditor-preview code) {
-  background-color: var(--bg-white);
-  color: var(--text-dark);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview code) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview pre) {
-  background-color: var(--bg-white);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview pre) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview blockquote) {
-  border-left-color: var(--primary-color);
-  color: var(--text-medium);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview blockquote) {
-  color: var(--text-medium);
-}
-
-.markdown-editor :deep(.vditor-preview a) {
-  color: var(--primary-color);
-}
-
-.markdown-editor :deep(.vditor-preview table) {
-  border-color: var(--border-color);
-}
-
-.markdown-editor :deep(.vditor-preview th) {
-  background-color: var(--bg-light);
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview th) {
-  background-color: var(--bg-medium);
-}
-
-.markdown-editor :deep(.vditor-preview td) {
-  border-color: var(--border-color);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-preview td) {
-  background-color: var(--bg-light);
-}
-
-.markdown-editor :deep(.vditor-statusbar) {
-  background-color: var(--bg-white);
-  border-top: 1px solid var(--border-color);
-  color: var(--text-light);
-}
-
-.dark-mode .markdown-editor :deep(.vditor-statusbar) {
-  background-color: var(--bg-medium);
-  border-color: var(--border-color);
   color: var(--text-light);
 }
 </style>

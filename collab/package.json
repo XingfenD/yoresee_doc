@@ -1,0 +1,12 @@
+{
+  "name": "yoresee-doc-collab",
+  "version": "0.1.0",
+  "private": true,
+  "main": "server.js",
+  "type": "commonjs",
+  "dependencies": {
+    "ws": "^8.18.0",
+    "y-websocket": "^1.5.4",
+    "yjs": "^13.6.16"
+  }
+}

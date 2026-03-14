@@ -59,7 +59,13 @@
             </div>
             <div class="editor-content">
               <div class="editor-wrapper">
-                <MarkdownEditor v-model="editorContent" :placeholder="t('document.editorPlaceholder')" />
+                <MarkdownEditor
+                  v-model="editorContent"
+                  :placeholder="t('document.editorPlaceholder')"
+                  :collab-enabled="collabEnabled"
+                  :collab-room="collabRoom"
+                  :collab-token="collabToken"
+                />
               </div>
             </div>
             <div class="editor-footer">
@@ -125,7 +131,10 @@ const userInfo = computed(() => userStore.userInfo);
 
 const knowledgeBaseName = ref('示例知识库');
 const currentDocTitle = ref('示例文档');
-const editorContent = ref('# 欢迎使用文档编辑器\n\n这是一个示例文档内容。\n\n## 功能说明\n\n- 左侧显示知识库目录\n- 右侧为 Markdown 编辑器\n- 支持实时预览\n- 支持语法高亮\n\n```javascript\n// 代码块示例\nconst hello = "Hello World";\nconsole.log(hello);\n```\n\n> 引用块示例\n\n**粗体** 和 *斜体* 文本\n\n| 表格 | 示例 | |\n|------|------|---|\n| 列1  | 列2  | 列3 |\n');
+const editorContent = ref('');
+const collabEnabled = computed(() => !!docId.value && docId.value !== 'example');
+const collabRoom = computed(() => (docId.value ? `doc-${docId.value}` : ''));
+const collabToken = computed(() => localStorage.getItem('token') || '');
 const lastSavedTime = ref('--');
 const treeLoading = ref(false);
 const sidebarWidth = ref(280);
@@ -501,6 +510,8 @@ watch(
   () => props.docId || route.params.docId,
   async (newDocId) => {
     docId.value = newDocId;
+    editorContent.value = '';
+    currentDocTitle.value = '';
     await expandToCurrentDoc();
     await fetchDocumentContent();
   }

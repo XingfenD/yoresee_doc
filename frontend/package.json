@@ -21,7 +21,9 @@
     "vditor": "^3.11.2",
     "vue": "^3.5.25",
     "vue-i18n": "^9.10.2",
-    "vue-router": "^5.0.3"
+    "vue-router": "^5.0.3",
+    "y-websocket": "^1.5.4",
+    "yjs": "^13.6.16"
   },
   "devDependencies": {
     "@bufbuild/protoc-gen-es": "^1.10.0",
