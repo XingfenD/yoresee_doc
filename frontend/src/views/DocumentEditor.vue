@@ -330,6 +330,9 @@ const fetchDocumentContent = async () => {
   try {
     const response = await getDocumentContent(docId.value);
     if (response.content !== undefined) {
+      if (collabEnabled.value && editorContent.value) {
+        return;
+      }
       editorContent.value = response.content;
     }
     if (response.document) {

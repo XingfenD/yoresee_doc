@@ -50,11 +50,93 @@ let themeObserver = null;
 let ydoc = null;
 let provider = null;
 let ytext = null;
+let activeRoom = '';
 let isVditorReady = false;
 let suppressInput = false;
 let collabSynced = false;
 let pendingSeed = '';
-const debugCollab = false;
+
+const getEditableElement = () => {
+  if (!vditor) {
+    return null;
+  }
+  return vditor?.vditor?.wysiwyg?.element || vditor?.vditor?.ir?.element || editorRef.value;
+};
+
+const getCaretOffset = (container) => {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    return null;
+  }
+  const range = selection.getRangeAt(0);
+  if (!container.contains(range.startContainer)) {
+    return null;
+  }
+  const preRange = range.cloneRange();
+  preRange.selectNodeContents(container);
+  preRange.setEnd(range.startContainer, range.startOffset);
+  return preRange.toString().length;
+};
+
+const restoreCaretOffset = (container, offset) => {
+  if (offset === null || offset === undefined) {
+    return;
+  }
+  const selection = window.getSelection();
+  if (!selection) {
+    return;
+  }
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let currentOffset = 0;
+  let node = walker.nextNode();
+  while (node) {
+    const nodeLength = node.nodeValue ? node.nodeValue.length : 0;
+    if (currentOffset + nodeLength >= offset) {
+      const range = document.createRange();
+      range.setStart(node, Math.max(0, offset - currentOffset));
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return;
+    }
+    currentOffset += nodeLength;
+    node = walker.nextNode();
+  }
+  if (container.lastChild) {
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+};
+
+const syncEditorToYjs = (fallbackValue = '') => {
+  let nextValue = fallbackValue;
+  if (vditor && typeof vditor.getValue === 'function') {
+    try {
+      nextValue = vditor.getValue();
+    } catch (error) {
+      nextValue = fallbackValue;
+    }
+  }
+  if (props.collabEnabled && ytext) {
+    ytext.delete(0, ytext.length);
+    ytext.insert(0, nextValue);
+  }
+  emit('update:modelValue', nextValue);
+};
+
+const getAwarenessPeerCount = () => {
+  if (!provider || !provider.awareness) {
+    return 0;
+  }
+  try {
+    return provider.awareness.getStates().size;
+  } catch (error) {
+    return 0;
+  }
+};
 
 const applyVditorTheme = () => {
   if (!vditor || typeof vditor.setTheme !== 'function') {
@@ -96,6 +178,7 @@ const setupCollaboration = () => {
 
   ydoc = new Y.Doc();
   ytext = ydoc.getText('content');
+  activeRoom = props.collabRoom;
   provider = new WebsocketProvider(url, props.collabRoom, ydoc, {
     params: props.collabToken ? { token: props.collabToken } : {}
   });
@@ -107,17 +190,15 @@ const setupCollaboration = () => {
     }
     const remote = ytext.toString();
     if (ytext.length === 0) {
+      const peerCount = getAwarenessPeerCount();
+      if (peerCount > 1) {
+        return;
+      }
       const seed = pendingSeed || props.modelValue || '';
       if (seed) {
         ytext.insert(0, seed);
-        if (debugCollab) {
-          console.log('[collab] seed from pending', { length: seed.length });
-        }
       }
     } else if (remote && remote !== props.modelValue) {
-      if (debugCollab) {
-        console.log('[collab] align local to remote', { remoteLength: remote.length });
-      }
       emit('update:modelValue', remote);
       if (vditor && isVditorReady) {
         suppressInput = true;
@@ -128,20 +209,39 @@ const setupCollaboration = () => {
     pendingSeed = '';
   });
 
-  ytext.observe(() => {
+  ytext.observe((event) => {
     if (!vditor || !isVditorReady || typeof vditor.setValue !== 'function') {
       return;
     }
     if (suppressInput) {
       return;
     }
-    if (debugCollab) {
-      console.log('[collab] ytext update', { length: ytext.length, room: props.collabRoom });
+    if (event?.transaction?.local) {
+      return;
     }
+    const remoteValue = ytext.toString();
+    let currentValue = '';
+    try {
+      currentValue = vditor.getValue();
+    } catch (error) {
+      currentValue = '';
+    }
+    if (currentValue === remoteValue) {
+      emit('update:modelValue', remoteValue);
+      return;
+    }
+    const editorElement = getEditableElement();
+    const hasFocus = editorElement && document.activeElement && editorElement.contains(document.activeElement);
+    const caretOffset = hasFocus ? getCaretOffset(editorElement) : null;
     suppressInput = true;
-    vditor.setValue(ytext.toString());
-    emit('update:modelValue', ytext.toString());
+    vditor.setValue(remoteValue);
+    emit('update:modelValue', remoteValue);
     suppressInput = false;
+    if (hasFocus && editorElement) {
+      requestAnimationFrame(() => {
+        restoreCaretOffset(editorElement, caretOffset);
+      });
+    }
   });
 };
 
@@ -155,6 +255,7 @@ const teardownCollaboration = () => {
     ydoc = null;
     ytext = null;
   }
+  activeRoom = '';
   collabSynced = false;
   pendingSeed = '';
 };
@@ -190,15 +291,20 @@ onMounted(() => {
       if (suppressInput) {
         return;
       }
-      if (props.collabEnabled && ytext) {
-        ytext.delete(0, ytext.length);
-        ytext.insert(0, value);
-      }
-      emit('update:modelValue', value);
+      queueMicrotask(() => {
+        syncEditorToYjs(value);
+      });
     }
   });
 
   setupCollaboration();
+  themeObserver = new MutationObserver(() => {
+    applyVditorTheme();
+  });
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
 });
 
 onBeforeUnmount(() => {
@@ -223,11 +329,18 @@ watch(() => props.modelValue, (newValue) => {
       return;
     }
     if (collabSynced && ytext.length === 0) {
+      const peerCount = getAwarenessPeerCount();
+      if (peerCount > 1) {
+        return;
+      }
       const seed = newValue || pendingSeed || '';
       pendingSeed = '';
       if (seed) {
         ytext.insert(0, seed);
       }
+      return;
+    }
+    if (collabSynced && ytext.length > 0 && activeRoom === props.collabRoom) {
       return;
     }
   }
@@ -257,16 +370,6 @@ watch(
     setupCollaboration();
   }
 );
-
-onMounted(() => {
-  themeObserver = new MutationObserver(() => {
-    applyVditorTheme();
-  });
-  themeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['class']
-  });
-});
 </script>
 
 <style scoped>
