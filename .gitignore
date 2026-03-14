@@ -4,6 +4,8 @@
 temp/
 tmp/
 
+node_modules/
+
 .DS_Store
 
 nginx.conf
