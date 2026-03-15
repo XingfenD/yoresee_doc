@@ -269,6 +269,15 @@ const stopResize = () => {
   isResizingSidebar.value = false;
   document.body.style.cursor = '';
   document.body.style.userSelect = '';
+  // 重新启用过渡动画
+  const sidebarContainer = document.querySelector('.sidebar-container');
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebarContainer) {
+    sidebarContainer.style.transition = 'all 0.3s ease-in-out';
+  }
+  if (sidebar) {
+    sidebar.style.transition = 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out, width 0.3s ease-in-out';
+  }
   window.removeEventListener('mousemove', onResizeMove);
   window.removeEventListener('mouseup', stopResize);
 };
@@ -278,6 +287,15 @@ const startResize = (event) => {
   isResizingSidebar.value = true;
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
+  // 禁用过渡动画，使调整更跟手
+  const sidebarContainer = document.querySelector('.sidebar-container');
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebarContainer) {
+    sidebarContainer.style.transition = 'none';
+  }
+  if (sidebar) {
+    sidebar.style.transition = 'none';
+  }
   window.addEventListener('mousemove', onResizeMove);
   window.addEventListener('mouseup', stopResize);
 };
