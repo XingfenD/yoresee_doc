@@ -1,9 +1,11 @@
 const http = require('http');
 const WebSocket = require('ws');
-const { setupWSConnection } = require('y-websocket/bin/utils');
+const Y = require('yjs');
+const { setupWSConnection, docs } = require('./src/ws-utils');
 const config = require('./src/config');
 const redis = require('./src/redis');
 const grpc = require('./src/grpc');
+const mq = require('./src/mq');
 
 const server = http.createServer();
 const wss = new WebSocket.Server({ server });
@@ -14,7 +16,7 @@ server.on('request', (req, res) => {
     res.end(JSON.stringify({
       status: 'ok',
       redis: redis.redisClient ? 'connected' : 'disconnected',
-      persistence: redis.redisPersistence ? 'initialized' : 'not_initialized'
+      persistence: 'custom'
     }));
     return;
   }
@@ -27,11 +29,31 @@ server.on('request', (req, res) => {
     return;
   }
 
+  if (req.url.startsWith('/internal/yjs/doc/')) {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const docId = decodeURIComponent(url.pathname.replace('/internal/yjs/doc/', ''));
+    if (!docId) {
+      res.writeHead(400);
+      res.end('doc id required');
+      return;
+    }
+    const doc = docs.get(`doc-${docId}`) || docs.get(docId);
+    if (!doc) {
+      res.writeHead(404);
+      res.end('doc not loaded');
+      return;
+    }
+    const update = Y.encodeStateAsUpdate(doc);
+    res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
+    res.end(Buffer.from(update));
+    return;
+  }
+
   res.writeHead(404);
   res.end();
 });
 
-wss.on('connection', (conn, req) => {
+wss.on('connection', async (conn, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const roomName = url.pathname.slice(1);
 
@@ -39,9 +61,14 @@ wss.on('connection', (conn, req) => {
     redis.updateRoomActiveTime(roomName);
   }
 
-  setupWSConnection(conn, req, {
-    gc: true
-  });
+  try {
+    await setupWSConnection(conn, req, {
+      gc: true
+    });
+  } catch (err) {
+    console.error('Failed to setup WS connection:', err);
+    conn.close();
+  }
 });
 
 server.listen(config.port, async () => {
@@ -58,6 +85,7 @@ server.listen(config.port, async () => {
 });
 
 process.on('SIGTERM', async () => {
+  await mq.close();
   await redis.closeRedis();
   process.exit(0);
 });

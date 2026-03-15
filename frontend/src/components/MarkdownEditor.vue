@@ -42,7 +42,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'collab-sync']);
 
 const editorRef = ref(null);
 let vditor = null;
@@ -185,6 +185,7 @@ const setupCollaboration = () => {
 
   provider.on('sync', (isSynced) => {
     collabSynced = isSynced;
+    emit('collab-sync', isSynced);
     if (!isSynced || !ytext) {
       return;
     }
@@ -258,6 +259,7 @@ const teardownCollaboration = () => {
   activeRoom = '';
   collabSynced = false;
   pendingSeed = '';
+  emit('collab-sync', false);
 };
 
 onMounted(() => {

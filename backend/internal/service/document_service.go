@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
@@ -16,6 +18,7 @@ type DocumentService struct {
 	userRepo       *repository.UserRepository
 	kbRepo         *repository.KnowledgeBaseRepository
 	docVersionRepo *repository.DocumentVersionRepository
+	snapshotRepo   *repository.DocumentYjsSnapshotRepository
 }
 
 func NewDocumentService() *DocumentService {
@@ -23,6 +26,7 @@ func NewDocumentService() *DocumentService {
 		documentRepo: repository.DocumentRepo,
 		userRepo:     repository.UserRepo,
 		kbRepo:       repository.KnowledgeBaseRepo,
+		snapshotRepo: repository.DocumentYjsSnapshotRepo,
 	}
 }
 
@@ -38,6 +42,34 @@ func (s *DocumentService) GetDocumentByExternalID(externalID string) (*model.Doc
 
 func (s *DocumentService) GetDocumentContent(documentID int64) (string, error) {
 	return s.documentRepo.GetContent(documentID).Exec()
+}
+
+func (s *DocumentService) GetDocumentYjsSnapshot(docExternalID string) ([]byte, error) {
+	document, err := s.GetDocumentByExternalID(docExternalID)
+	if err != nil {
+		return nil, status.StatusDocumentNotFound
+	}
+
+	snapshot, err := s.snapshotRepo.GetByDocID(document.ID).Exec()
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return snapshot.YjsState, nil
+}
+
+func (s *DocumentService) SaveDocumentYjsSnapshot(docExternalID string, state []byte) error {
+	if len(state) == 0 {
+		return status.StatusParamError
+	}
+	document, err := s.GetDocumentByExternalID(docExternalID)
+	if err != nil {
+		return status.StatusDocumentNotFound
+	}
+
+	return s.snapshotRepo.Save(document.ID, state).Exec()
 }
 
 // func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64, requiredPermission string) (bool, error) {

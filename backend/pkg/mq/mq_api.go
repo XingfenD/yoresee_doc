@@ -8,30 +8,43 @@ import (
 )
 
 func Init(cfg *config.MQConfig) error {
-	mq, err := InitMessageQueue(cfg)
+	mqs, err := InitMessageQueues(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to initialize message queue: %w", err)
 	}
 
-	MQ = mq
+	MQs = mqs
 
 	return nil
 }
 
 func Close() error {
-	return MQ.Close()
+	for _, q := range MQs {
+		if q != nil {
+			_ = q.Close()
+		}
+	}
+	return nil
 }
 
-func Publish(ctx context.Context, topic string, data []byte) error {
-	if MQ == nil {
+func PublishTo(ctx context.Context, backend Backend, topic string, data []byte) error {
+	if MQs == nil {
 		return fmt.Errorf("message queue not initialized")
 	}
-	return MQ.Publish(ctx, topic, data)
+	q, ok := MQs[backend]
+	if !ok || q == nil {
+		return fmt.Errorf("message queue backend not initialized: %s", backend)
+	}
+	return q.Publish(ctx, topic, data)
 }
 
-func Subscribe(topic string, handler MessageHandler) error {
-	if MQ == nil {
+func SubscribeTo(backend Backend, topic string, handler MessageHandler) error {
+	if MQs == nil {
 		return fmt.Errorf("message queue not initialized")
 	}
-	return MQ.Subscribe(topic, handler)
+	q, ok := MQs[backend]
+	if !ok || q == nil {
+		return fmt.Errorf("message queue backend not initialized: %s", backend)
+	}
+	return q.Subscribe(topic, handler)
 }

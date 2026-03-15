@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
@@ -40,6 +42,16 @@ func main() {
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/ws/doc/") {
+			http.NotFound(w, r)
+			return
+		}
+		docID := strings.TrimPrefix(r.URL.Path, "/ws/doc/")
+		if docID == "" || strings.Contains(docID, "/") {
+			http.Error(w, "invalid doc id", http.StatusBadRequest)
+			return
+		}
+
 		token := r.URL.Query().Get("token")
 		if err := validateToken(token, secret); err != nil {
 			log.Printf("collab-gateway unauthorized path=%s remote=%s err=%v", r.URL.Path, r.RemoteAddr, err)
@@ -59,7 +71,7 @@ func main() {
 			log.Printf("collab-gateway invalid core url=%s err=%v", coreURL, err)
 			return
 		}
-		u.Path = r.URL.Path
+		u.Path = fmt.Sprintf("/doc-%s", docID)
 		u.RawQuery = ""
 
 		coreConn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)

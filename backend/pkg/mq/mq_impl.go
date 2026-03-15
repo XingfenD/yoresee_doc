@@ -2,7 +2,6 @@ package mq
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 )
@@ -15,25 +14,28 @@ type MessageQueue interface {
 	Close() error
 }
 
-var MQ MessageQueue
+type Backend string
 
-func NewMessageQueue(mqType string, cfg *config.MQConfig) (MessageQueue, error) {
-	switch mqType {
-	case "redis":
-		return NewRedisMQ(), nil
-	case "rabbitmq":
+const (
+	BackendRedis    Backend = "redis"
+	BackendRabbitMQ Backend = "rabbitmq"
+)
+
+var MQs = map[Backend]MessageQueue{}
+
+func InitMessageQueues(cfg *config.MQConfig) (map[Backend]MessageQueue, error) {
+	mqs := map[Backend]MessageQueue{}
+
+	mqs[BackendRedis] = NewRedisMQ()
+
+	if cfg != nil && cfg.RabbitMQ.URL != "" {
 		rabbitCfg := BuildRabbitMQConfig(cfg.RabbitMQ)
-		return NewRabbitMQ(rabbitCfg)
-	default:
-		return nil, fmt.Errorf("unsupported mq type: %s", mqType)
-	}
-}
-
-func InitMessageQueue(cfg *config.MQConfig) (MessageQueue, error) {
-	mqType := cfg.Type
-	if mqType == "" {
-		mqType = "redis"
+		rmq, err := NewRabbitMQ(rabbitCfg)
+		if err != nil {
+			return mqs, err
+		}
+		mqs[BackendRabbitMQ] = rmq
 	}
 
-	return NewMessageQueue(mqType, cfg)
+	return mqs, nil
 }

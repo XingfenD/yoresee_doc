@@ -80,6 +80,8 @@ services:
     container_name: yoresee_doc_backend
     volumes:
       - ../backend/config.toml:/app/config.toml
+    environment:
+      - BACKEND_INTERNAL_RPC_KEY=yoresee_doc_internal_key
     ports:
       - "9090:9090"
     depends_on:
@@ -102,9 +104,14 @@ services:
       - REDIS_PASSWORD=your_redis_password
       - REDIS_DB=0
       - BACKEND_ADDR=backend:9090
+      - DIRTY_DOC_MQ=rabbitmq
+      - DIRTY_DOC_TOPIC=collab.dirty_docs
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - INTERNAL_RPC_KEY=yoresee_doc_internal_key
     depends_on:
       - redis
       - backend
+      - rabbitmq
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -121,6 +128,25 @@ services:
       - COLLAB_CORE_URL=ws://collab-core:1234
     depends_on:
       - collab-core
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+  snapshot-worker:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.snapshot.prod
+    image: yoresee_doc_snapshot_worker:latest
+    container_name: yoresee_doc_snapshot_worker
+    volumes:
+      - ../backend/config.toml:/app/config.toml
+    environment:
+      - DIRTY_DOC_MQ=rabbitmq
+      - DIRTY_DOC_TOPIC=collab.dirty_docs
+      - COLLAB_CORE_HTTP=http://collab-core:1234
+    depends_on:
+      - rabbitmq
+      - redis
     networks:
       - yoresee_doc_network
     restart: unless-stopped

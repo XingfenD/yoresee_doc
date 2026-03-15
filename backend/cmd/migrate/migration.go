@@ -15,6 +15,7 @@ func runMigration() error {
 	err := storage.DB.AutoMigrate(
 		&model.Attachment{},
 		&model.Document{},
+		&model.DocumentYjsSnapshot{},
 		&model.DocumentVersion{},
 		&model.Invitation{},
 		&model.KnowledgeBase{},

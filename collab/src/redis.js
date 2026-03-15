@@ -1,10 +1,7 @@
-const { createClient } = require('redis');
-const { RedisPersistence } = require('y-redis');
-const { setPersistence } = require('y-websocket/bin/utils');
+const { createClient, commandOptions } = require('redis');
 const config = require('./config');
 
 let redisClient = null;
-let redisPersistence = null;
 
 async function initRedis() {
   redisClient = createClient({
@@ -27,24 +24,7 @@ async function initRedis() {
 }
 
 function initYRedis() {
-  try {
-    const redisOpts = {
-      host: config.redisHost,
-      port: config.redisPort,
-      ...(config.redisPassword && { password: config.redisPassword }),
-      db: config.redisDb,
-      maxRetriesPerRequest: null
-    };
-
-    redisPersistence = new RedisPersistence({
-      redisOpts
-    });
-
-    setPersistence(redisPersistence);
-    console.log('Yjs Redis persistence initialized with ioredis');
-  } catch (err) {
-    console.error('Failed to initialize Yjs Redis persistence:', err);
-  }
+  console.log('Yjs Redis persistence initialized (custom loader)');
 }
 
 async function updateRoomActiveTime(roomName) {
@@ -87,8 +67,35 @@ async function closeRedis() {
   if (redisClient) {
     await redisClient.quit();
   }
-  if (redisPersistence) {
-    await redisPersistence.destroy();
+}
+
+async function getBuffer(key) {
+  if (!redisClient) return null;
+  try {
+    return await redisClient.get(commandOptions({ returnBuffers: true }), key);
+  } catch (err) {
+    console.error(`Failed to get buffer for ${key}:`, err.message);
+    return null;
+  }
+}
+
+async function setBuffer(key, buffer) {
+  if (!redisClient) return;
+  try {
+    const payload = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+    await redisClient.set(key, payload);
+  } catch (err) {
+    console.error(`Failed to set buffer for ${key}:`, err.message);
+  }
+}
+
+async function appendBuffer(key, buffer) {
+  if (!redisClient) return;
+  try {
+    const payload = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+    await redisClient.append(key, payload);
+  } catch (err) {
+    console.error(`Failed to append buffer for ${key}:`, err.message);
   }
 }
 
@@ -98,11 +105,11 @@ module.exports = {
   updateRoomActiveTime,
   getActiveRooms,
   checkRoomExists,
+  getBuffer,
+  setBuffer,
+  appendBuffer,
   closeRedis,
   get redisClient() {
     return redisClient;
-  },
-  get redisPersistence() {
-    return redisPersistence;
   }
 };

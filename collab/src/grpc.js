@@ -1,9 +1,18 @@
 const grpc = require('@grpc/grpc-js');
-const { DocumentServiceClient, SystemServiceClient } = require('./gen/yoresee_doc_grpc_pb');
+const { DocumentServiceClient, SystemServiceClient } = require('./gen/yoresee_doc/v1/yoresee_doc_grpc_pb');
+const pb = require('./gen/yoresee_doc/v1/yoresee_doc_pb');
 const config = require('./config');
 
 let documentServiceClient = null;
 let systemServiceClient = null;
+
+const buildMetadata = () => {
+  const md = new grpc.Metadata();
+  if (config.internalRpcKey) {
+    md.set('x-internal-key', config.internalRpcKey);
+  }
+  return md;
+};
 
 function initGrpcClient() {
   try {
@@ -36,23 +45,63 @@ async function getDocumentContent(documentExternalId) {
     if (!documentServiceClient) {
       return reject(new Error('gRPC client not initialized'));
     }
-    const GetDocumentContentRequest = require('./gen/yoresee_doc_pb').GetDocumentContentRequest;
-    const request = new GetDocumentContentRequest();
+    const request = new pb.GetDocumentContentRequest();
     request.setDocumentExternalId(documentExternalId);
 
-    documentServiceClient.getDocumentContent(
-      request,
-      (err, response) => {
-        if (err) {
-          return reject(err);
-        }
-        const base = response.getBase();
-        if (base && base.getCode() !== 0) {
-          return reject(new Error(base.getMessage() || 'Failed to get document content'));
-        }
-        resolve(response.getContent() || '');
+    documentServiceClient.getDocumentContent(request, buildMetadata(), (err, response) => {
+      if (err) {
+        return reject(err);
       }
-    );
+      const base = response?.getBase?.();
+      if (base && base.getCode && base.getCode() !== 0) {
+        return reject(new Error(base.getMessage() || 'Failed to get document content'));
+      }
+      resolve(response?.getContent?.() || '');
+    });
+  });
+}
+
+async function getDocumentYjsSnapshot(documentExternalId) {
+  return new Promise((resolve, reject) => {
+    if (!documentServiceClient) {
+      return reject(new Error('gRPC client not initialized'));
+    }
+    const request = new pb.GetDocumentYjsSnapshotRequest();
+    request.setDocumentExternalId(documentExternalId);
+
+    documentServiceClient.getDocumentYjsSnapshot(request, buildMetadata(), (err, response) => {
+      if (err) {
+        return reject(err);
+      }
+      const base = response?.getBase?.();
+      if (base && base.getCode && base.getCode() !== 0) {
+        return reject(new Error(base.getMessage() || 'Failed to get document snapshot'));
+      }
+      const state = response?.getState_asU8?.();
+      resolve(state && state.length ? Buffer.from(state) : null);
+    });
+  });
+}
+
+async function saveDocumentYjsSnapshot(documentExternalId, state) {
+  return new Promise((resolve, reject) => {
+    if (!documentServiceClient) {
+      return reject(new Error('gRPC client not initialized'));
+    }
+    const request = new pb.SaveDocumentYjsSnapshotRequest();
+    request.setDocumentExternalId(documentExternalId);
+    request.setState(state);
+
+    documentServiceClient.saveDocumentYjsSnapshot(request, buildMetadata(), (err, response) => {
+      if (err) {
+        return reject(err);
+      }
+      const base = response?.getBase?.();
+      if (base && base.getCode && base.getCode() !== 0) {
+        return reject(new Error(base.getMessage() || 'Failed to save document snapshot'));
+      }
+      resolve(true);
+    });
   });
 }
 
@@ -63,15 +112,13 @@ async function healthCheck() {
   }
 
   try {
-    const HealthRequest = require('./gen/yoresee_doc_pb').HealthRequest;
-    const request = new HealthRequest();
-
-    systemServiceClient.health(request, (err, response) => {
+    const request = new pb.HealthRequest();
+    systemServiceClient.health(request, buildMetadata(), (err, response) => {
       if (err) {
         console.error('Health check failed:', err);
       } else {
-        const base = response.getBase();
-        if (base && base.getCode() === 0) {
+        const base = response?.getBase?.();
+        if (base && base.getCode && base.getCode() === 0) {
           console.log('Health check successful');
         } else {
           console.error('Health check failed:', base ? base.getMessage() : 'Unknown error');
@@ -86,6 +133,8 @@ async function healthCheck() {
 module.exports = {
   initGrpcClient,
   getDocumentContent,
+  getDocumentYjsSnapshot,
+  saveDocumentYjsSnapshot,
   healthCheck,
   get documentServiceClient() {
     return documentServiceClient;

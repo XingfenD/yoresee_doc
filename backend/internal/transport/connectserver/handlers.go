@@ -63,6 +63,30 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.DocumentService_GetDocumentYjsSnapshot_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_GetDocumentYjsSnapshot_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.GetDocumentYjsSnapshotRequest]) (*connect.Response[pb.GetDocumentYjsSnapshotResponse], error) {
+			resp, err := docSvc.GetDocumentYjsSnapshot(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.DocumentService_SaveDocumentYjsSnapshot_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_SaveDocumentYjsSnapshot_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.SaveDocumentYjsSnapshotRequest]) (*connect.Response[pb.SaveDocumentYjsSnapshotResponse], error) {
+			resp, err := docSvc.SaveDocumentYjsSnapshot(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.DocumentService_GetOwnDocuments_FullMethodName, connect.NewUnaryHandler(
 		pb.DocumentService_GetOwnDocuments_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.GetOwnDocumentsRequest]) (*connect.Response[pb.GetOwnDocumentsResponse], error) {

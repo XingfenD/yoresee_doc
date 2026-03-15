@@ -211,6 +211,24 @@ message UpdateDocumentResponse {
   BaseResponse base = 1;
 }
 
+message GetDocumentYjsSnapshotRequest {
+  string document_external_id = 1;
+}
+
+message GetDocumentYjsSnapshotResponse {
+  BaseResponse base = 1;
+  bytes state = 2;
+}
+
+message SaveDocumentYjsSnapshotRequest {
+  string document_external_id = 1;
+  bytes state = 2;
+}
+
+message SaveDocumentYjsSnapshotResponse {
+  BaseResponse base = 1;
+}
+
 service AuthService {
   rpc Login(AuthLoginRequest) returns (AuthLoginResponse);
   rpc Register(AuthRegisterRequest) returns (AuthRegisterResponse);
@@ -219,6 +237,8 @@ service AuthService {
 service DocumentService {
   rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
   rpc GetDocumentContent(GetDocumentContentRequest) returns (GetDocumentContentResponse);
+  rpc GetDocumentYjsSnapshot(GetDocumentYjsSnapshotRequest) returns (GetDocumentYjsSnapshotResponse);
+  rpc SaveDocumentYjsSnapshot(SaveDocumentYjsSnapshotRequest) returns (SaveDocumentYjsSnapshotResponse);
   rpc GetOwnDocuments(GetOwnDocumentsRequest) returns (GetOwnDocumentsResponse);
   rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
   rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);

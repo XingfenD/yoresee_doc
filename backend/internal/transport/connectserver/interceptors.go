@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"connectrpc.com/connect"
+	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/middleware"
 )
 
@@ -11,6 +12,11 @@ func UnaryAuthInterceptor(allowUnauth map[string]struct{}) connect.UnaryIntercep
 	return connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			if _, ok := allowUnauth[req.Spec().Procedure]; ok {
+				return next(ctx, req)
+			}
+
+			internalKey := req.Header().Get("x-internal-key")
+			if internalKey != "" && config.GlobalConfig.Backend.InternalRPCKey != "" && internalKey == config.GlobalConfig.Backend.InternalRPCKey {
 				return next(ctx, req)
 			}
 

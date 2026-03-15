@@ -59,12 +59,17 @@
             </div>
             <div class="editor-content">
               <div class="editor-wrapper">
+                <div v-if="collabEnabled && !collabReady" class="editor-loading">
+                  {{ t('document.loading') }}
+                </div>
                 <MarkdownEditor
                   v-model="editorContent"
                   :placeholder="t('document.editorPlaceholder')"
                   :collab-enabled="collabEnabled"
                   :collab-room="collabRoom"
+                  :collab-url="collabUrl"
                   :collab-token="collabToken"
+                  @collab-sync="handleCollabSync"
                 />
               </div>
             </div>
@@ -101,7 +106,7 @@ import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
 import TopNav from '@/components/TopNav.vue';
 import { useUserStore } from '@/store/user';
-import { getKnowledgeBaseDocuments, getDocumentContent, createDocument as createDocumentApi, getMyDocuments } from '@/services/api';
+import { getKnowledgeBaseDocuments, createDocument as createDocumentApi, getMyDocuments } from '@/services/api';
 
 const props = defineProps({
   kbId: {
@@ -133,8 +138,10 @@ const knowledgeBaseName = ref('示例知识库');
 const currentDocTitle = ref('示例文档');
 const editorContent = ref('');
 const collabEnabled = computed(() => !!docId.value && docId.value !== 'example');
-const collabRoom = computed(() => (docId.value ? `doc-${docId.value}` : ''));
+const collabRoom = computed(() => (docId.value ? `${docId.value}` : ''));
+const collabUrl = computed(() => '/ws/doc');
 const collabToken = computed(() => localStorage.getItem('token') || '');
+const collabReady = ref(false);
 const lastSavedTime = ref('--');
 const treeLoading = ref(false);
 const sidebarWidth = ref(280);
@@ -314,6 +321,7 @@ const fetchDocuments = async () => {
     }
 
     await expandToCurrentDoc();
+    updateCurrentDocTitle();
   } catch (error) {
     console.error('获取文档列表失败:', error);
     ElMessage.error(t('knowledgeBase.fetchError'));
@@ -322,25 +330,28 @@ const fetchDocuments = async () => {
   }
 };
 
-const fetchDocumentContent = async () => {
-  if (kbId.value === 'example' || docId.value === 'example') {
+const findNodeById = (nodes, targetId) => {
+  for (const node of nodes) {
+    if (String(node.id) === String(targetId)) {
+      return node;
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeById(node.children, targetId);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return null;
+};
+
+const updateCurrentDocTitle = () => {
+  if (!docId.value || docId.value === 'example') {
     return;
   }
-
-  try {
-    const response = await getDocumentContent(docId.value);
-    if (response.content !== undefined) {
-      if (collabEnabled.value && editorContent.value) {
-        return;
-      }
-      editorContent.value = response.content;
-    }
-    if (response.document) {
-      currentDocTitle.value = response.document.title;
-    }
-  } catch (error) {
-    console.error('获取文档内容失败:', error);
-    ElMessage.error(t('document.fetchContentError'));
+  const node = findNodeById(directoryTree.value, docId.value);
+  if (node) {
+    currentDocTitle.value = node.label;
   }
 };
 
@@ -414,6 +425,14 @@ const saveDocument = () => {
   const now = new Date();
   lastSavedTime.value = now.toLocaleTimeString();
   ElMessage.success(t('message.saveSuccess'));
+};
+
+const handleCollabSync = (isSynced) => {
+  if (!collabEnabled.value) {
+    collabReady.value = true;
+    return;
+  }
+  collabReady.value = isSynced;
 };
 
 const handleLanguageChange = (command) => {
@@ -492,7 +511,7 @@ onMounted(async () => {
     currentDocTitle.value = '示例文档';
   } else {
     await fetchDocuments();
-    await fetchDocumentContent();
+    collabReady.value = !collabEnabled.value;
   }
 
   await fetchSystemInfo();
@@ -515,8 +534,9 @@ watch(
     docId.value = newDocId;
     editorContent.value = '';
     currentDocTitle.value = '';
+    collabReady.value = !collabEnabled.value;
     await expandToCurrentDoc();
-    await fetchDocumentContent();
+    updateCurrentDocTitle();
   }
 );
 
@@ -528,7 +548,8 @@ watch(
     }
     kbId.value = newKbId;
     await fetchDocuments();
-    await fetchDocumentContent();
+    collabReady.value = !collabEnabled.value;
+    updateCurrentDocTitle();
   }
 );
 </script>
@@ -674,6 +695,23 @@ watch(
   display: flex;
   flex-direction: column;
   min-height: 500px;
+  position: relative;
+}
+
+.editor-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--text-medium);
+  font-size: 14px;
+  z-index: 2;
+}
+
+.dark-mode .editor-loading {
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .editor-footer {

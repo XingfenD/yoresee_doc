@@ -107,6 +107,8 @@ services:
     ports:
       - "2345:2345"
       - "9090:9090"
+    environment:
+      - BACKEND_INTERNAL_RPC_KEY=yoresee_doc_internal_key
     depends_on:
       postgres:
         condition: service_healthy
@@ -136,10 +138,16 @@ services:
       - REDIS_PASSWORD=your_redis_password
       - REDIS_DB=0
       - BACKEND_ADDR=backend:9090
+      - DIRTY_DOC_MQ=rabbitmq
+      - DIRTY_DOC_TOPIC=collab.dirty_docs
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - INTERNAL_RPC_KEY=yoresee_doc_internal_key
     depends_on:
       redis:
         condition: service_healthy
       backend:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - yoresee_doc_network
@@ -161,6 +169,29 @@ services:
       - ../collab-go:/app
     depends_on:
       - collab-core
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+  snapshot-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: dev
+    image: yoresee_doc_snapshot_worker_dev:latest
+    container_name: yoresee_doc_snapshot_worker
+    volumes:
+      - ../backend:/app
+    environment:
+      - DIRTY_DOC_MQ=rabbitmq
+      - DIRTY_DOC_TOPIC=collab.dirty_docs
+      - COLLAB_CORE_HTTP=http://collab-core:1234
+    command: sh -c "go mod download && go run ./cmd/snapshot-worker"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - yoresee_doc_network
     restart: unless-stopped

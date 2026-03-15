@@ -3,6 +3,7 @@ package grpcserver
 import (
 	"context"
 
+	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -14,6 +15,14 @@ func UnaryAuthInterceptor(allowUnauth map[string]struct{}) grpc.UnaryServerInter
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if _, ok := allowUnauth[info.FullMethod]; ok {
 			return handler(ctx, req)
+		}
+
+		if md, ok := metadata.FromIncomingContext(ctx); ok {
+			if key := config.GlobalConfig.Backend.InternalRPCKey; key != "" {
+				if values := md.Get("x-internal-key"); len(values) > 0 && values[0] == key {
+					return handler(ctx, req)
+				}
+			}
 		}
 
 		authHeader := ""

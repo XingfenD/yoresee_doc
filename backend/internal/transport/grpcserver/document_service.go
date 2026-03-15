@@ -106,6 +106,36 @@ func (s *DocumentServiceServer) GetDocumentContent(ctx context.Context, req *pb.
 	}, nil
 }
 
+func (s *DocumentServiceServer) GetDocumentYjsSnapshot(ctx context.Context, req *pb.GetDocumentYjsSnapshotRequest) (*pb.GetDocumentYjsSnapshotResponse, error) {
+	if req == nil || req.DocumentExternalId == "" {
+		return &pb.GetDocumentYjsSnapshotResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	state, err := service.DocumentSvc.GetDocumentYjsSnapshot(req.DocumentExternalId)
+	if err != nil {
+		return &pb.GetDocumentYjsSnapshotResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.GetDocumentYjsSnapshotResponse{
+		Base:  baseResponseFromErr(nil),
+		State: state,
+	}, nil
+}
+
+func (s *DocumentServiceServer) SaveDocumentYjsSnapshot(ctx context.Context, req *pb.SaveDocumentYjsSnapshotRequest) (*pb.SaveDocumentYjsSnapshotResponse, error) {
+	if req == nil || req.DocumentExternalId == "" || len(req.State) == 0 {
+		return &pb.SaveDocumentYjsSnapshotResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	if err := service.DocumentSvc.SaveDocumentYjsSnapshot(req.DocumentExternalId, req.State); err != nil {
+		return &pb.SaveDocumentYjsSnapshotResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.SaveDocumentYjsSnapshotResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}
+
 func (s *DocumentServiceServer) GetOwnDocuments(ctx context.Context, req *pb.GetOwnDocumentsRequest) (*pb.GetOwnDocumentsResponse, error) {
 	userExternalID, ok := ctx.Value("user_external_id").(string)
 	if !ok || userExternalID == "" {
