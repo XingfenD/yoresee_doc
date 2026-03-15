@@ -156,10 +156,8 @@ const treeComponentRef = ref(null);
 
 const treeRef = computed(() => treeComponentRef.value?.treeRef);
 const isAllExpanded = ref(true);
-const isSidebarCollapsed = ref(() => {
-  const savedState = localStorage.getItem('sidebarCollapsed');
-  return savedState ? JSON.parse(savedState) : false;
-});
+const savedState = localStorage.getItem('sidebarCollapsed');
+const isSidebarCollapsed = ref(savedState ? JSON.parse(savedState) : false);
 
 // 更新CSS变量以支持宽度调节
 const updateSidebarWidth = () => {
