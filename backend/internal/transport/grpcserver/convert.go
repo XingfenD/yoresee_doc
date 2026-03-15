@@ -55,7 +55,7 @@ func fromDocumentType(t pb.DocumentType) dto.DocumentType {
 	}
 }
 
-func toDocumentResponse(doc *dto.DocumentResponse) *pb.DocumentResponse {
+func toDocumentResponse(doc *dto.DocumentMetaResponse) *pb.DocumentResponse {
 	if doc == nil {
 		return nil
 	}

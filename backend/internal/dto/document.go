@@ -23,14 +23,19 @@ type DocumentBase struct {
 	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
-type DocumentResponse struct {
+type DocumentMetaResponse struct {
 	DocumentBase
-	Children    []*DocumentResponse `json:"children,omitempty"`
-	HasChildren bool                `json:"hasChildren,omitempty"`
+	Children    []*DocumentMetaResponse `json:"children,omitempty"`
+	HasChildren bool                    `json:"hasChildren,omitempty"`
 }
 
-func NewDocumentResponseFromModel(doc *model.Document) *DocumentResponse {
-	response := &DocumentResponse{
+type DocumentResponse struct {
+	DocumentMetaResponse
+	Content string `json:"content"`
+}
+
+func NewDocumentMetaResponseFromModel(doc *model.Document) *DocumentMetaResponse {
+	response := &DocumentMetaResponse{
 		DocumentBase: DocumentBase{
 			ExternalID: doc.ExternalID,
 			Title:      doc.Title,
@@ -43,6 +48,28 @@ func NewDocumentResponseFromModel(doc *model.Document) *DocumentResponse {
 			CreatedAt:  doc.CreatedAt,
 			UpdatedAt:  doc.UpdatedAt,
 		},
+	}
+
+	return response
+}
+
+func NewDocumentResponseFromModel(doc *model.Document) *DocumentResponse {
+	response := &DocumentResponse{
+		DocumentMetaResponse: DocumentMetaResponse{
+			DocumentBase: DocumentBase{
+				ExternalID: doc.ExternalID,
+				Title:      doc.Title,
+				Type:       DocumentType(doc.Type),
+				Summary:    doc.Summary,
+				Status:     doc.Status,
+				Tags:       doc.Tags,
+				ViewCount:  doc.ViewCount,
+				EditCount:  doc.EditCount,
+				CreatedAt:  doc.CreatedAt,
+				UpdatedAt:  doc.UpdatedAt,
+			},
+		},
+		Content: doc.Content,
 	}
 
 	return response

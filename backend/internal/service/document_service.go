@@ -32,25 +32,26 @@ func NewDocumentService() *DocumentService {
 
 var DocumentSvc = NewDocumentService()
 
-func (s *DocumentService) ConvertToDocumentResponse(doc *model.Document) *dto.DocumentResponse {
-	return dto.NewDocumentResponseFromModel(doc)
+func (s *DocumentService) ConvertToDocumentResponse(doc *model.Document) *dto.DocumentMetaResponse {
+	return dto.NewDocumentMetaResponseFromModel(doc)
 }
 
-func (s *DocumentService) GetDocumentByExternalID(externalID string) (*model.Document, error) {
-	return s.documentRepo.GetByExternalID(externalID).Exec()
-}
+func (s *DocumentService) GetDocumentByExternalID(externalID string) (*dto.DocumentResponse, error) {
+	docModel, err := s.documentRepo.GetByExternalID(externalID).Exec()
+	if err != nil {
+		return nil, err
+	}
 
-func (s *DocumentService) GetDocumentContent(documentID int64) (string, error) {
-	return s.documentRepo.GetContent(documentID).Exec()
+	return dto.NewDocumentResponseFromModel(docModel), nil
 }
 
 func (s *DocumentService) GetDocumentYjsSnapshot(docExternalID string) ([]byte, error) {
-	document, err := s.GetDocumentByExternalID(docExternalID)
+	docID, err := repository.DocumentRepo.GetIDByExternalID(docExternalID).Exec()
 	if err != nil {
 		return nil, status.StatusDocumentNotFound
 	}
 
-	snapshot, err := s.snapshotRepo.GetByDocID(document.ID).Exec()
+	snapshot, err := s.snapshotRepo.GetByDocID(docID).Exec()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -64,55 +65,12 @@ func (s *DocumentService) SaveDocumentYjsSnapshot(docExternalID string, state []
 	if len(state) == 0 {
 		return status.StatusParamError
 	}
-	document, err := s.GetDocumentByExternalID(docExternalID)
+	docID, err := repository.DocumentRepo.GetIDByExternalID(docExternalID).Exec()
 	if err != nil {
 		return status.StatusDocumentNotFound
 	}
 
-	return s.snapshotRepo.Save(document.ID, state).Exec()
-}
-
-// func (s *DocumentService) CheckDocumentPermission(userID int64, documentID int64, requiredPermission string) (bool, error) {
-// 	cacheKey := fmt.Sprintf("permission:user:%d:doc:%d:%s", userID, documentID, requiredPermission)
-// 	ctx := context.Background()
-
-// 	cachedResult, err := storage.GetCache(ctx, cacheKey)
-// 	if err == nil {
-// 		return cachedResult == "true", nil
-// 	}
-
-// 	permissionCheck := &dto.PermissionCheck{
-// 		Resource: dto.Resource{
-// 			Type: string(model.ResourceTypeDocument),
-// 			ID:   fmt.Sprintf("%d", documentID),
-// 		},
-// 		Permission: requiredPermission,
-// 	}
-// 	allowed, err := s.permissionSvc.CheckPermission(userID, permissionCheck)
-// 	if err != nil {
-// 		return false, err
-// 	}
-
-// 	err = storage.SetCache(ctx, cacheKey, fmt.Sprintf("%v", allowed), time.Hour)
-// 	if err != nil {
-// 		logrus.Info("Set permission cache failed: %v\n", err)
-// 	}
-
-// 	return allowed, nil
-// }
-
-func (s *DocumentService) GetDocumentWithContent(docExternalID string) (*model.Document, string, error) {
-	document, err := s.GetDocumentByExternalID(docExternalID)
-	if err != nil {
-		return nil, "", err
-	}
-
-	content, err := s.GetDocumentContent(document.ID)
-	if err != nil {
-		return document, "", err
-	}
-
-	return document, content, nil
+	return s.snapshotRepo.Save(docID, state).Exec()
 }
 
 func (s *DocumentService) buildListDocumentsOperation(req *documentsListReq) (*repository.DocumentsListOperation, error) {
@@ -143,24 +101,7 @@ func (s *DocumentService) buildListDocumentsOperation(req *documentsListReq) (*r
 	return listOp, nil
 }
 
-func (s *DocumentService) listDocuments(req *documentsListReq) ([]*dto.DocumentResponse, int64, error) {
-	listOp, err := s.buildListDocumentsOperation(req)
-	if err != nil {
-		return nil, 0, err
-	}
-	models, total, err := listOp.ExecWithTotal()
-
-	if err != nil {
-		return nil, 0, err
-	}
-	responses := make([]*dto.DocumentResponse, 0, len(models))
-	for _, model := range models {
-		responses = append(responses, s.ConvertToDocumentResponse(&model))
-	}
-	return responses, total, nil
-}
-
-func (s *DocumentService) getChildDocuments(parentID int64, options *dto.RecursiveOptions) ([]*dto.DocumentResponse, error) {
+func (s *DocumentService) getChildDocuments(parentID int64, options *dto.RecursiveOptions) ([]*dto.DocumentMetaResponse, error) {
 	models, _, err := s.documentRepo.ListDocuments(&model.Document{}).
 		WithParentID(&parentID).
 		WithSort("created_at", false).
@@ -169,7 +110,7 @@ func (s *DocumentService) getChildDocuments(parentID int64, options *dto.Recursi
 		return nil, err
 	}
 
-	childResponses := make([]*dto.DocumentResponse, len(models))
+	childResponses := make([]*dto.DocumentMetaResponse, len(models))
 	for i, model := range models {
 		childResponses[i] = s.ConvertToDocumentResponse(&model)
 
@@ -192,9 +133,9 @@ func (s *DocumentService) getChildDocuments(parentID int64, options *dto.Recursi
 	return childResponses, nil
 }
 
-func (s *DocumentService) buildDocumentTree(rootDocs []model.Document, allDescendants []model.Document) []*dto.DocumentResponse {
-	docMap := make(map[int64]*dto.DocumentResponse)
-	var rootResponses []*dto.DocumentResponse
+func (s *DocumentService) buildDocumentTree(rootDocs []model.Document, allDescendants []model.Document) []*dto.DocumentMetaResponse {
+	docMap := make(map[int64]*dto.DocumentMetaResponse)
+	var rootResponses []*dto.DocumentMetaResponse
 
 	for i := range rootDocs {
 		resp := s.ConvertToDocumentResponse(&rootDocs[i])
@@ -244,7 +185,7 @@ func (s *DocumentService) getAllDescendantsByParentIDs(parentIDs []int64) ([]mod
 	return allDocs, nil
 }
 
-func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*dto.DocumentResponse, int64, error) {
+func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*dto.DocumentMetaResponse, int64, error) {
 	listOp, err := s.buildListDocumentsOperation(req)
 	if err != nil {
 		return nil, 0, err
@@ -269,7 +210,7 @@ func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*d
 		return docs, total, nil
 	}
 
-	docs := make([]*dto.DocumentResponse, 0, len(models))
+	docs := make([]*dto.DocumentMetaResponse, 0, len(models))
 	for i := range models {
 		docs = append(docs, s.ConvertToDocumentResponse(&models[i]))
 	}
@@ -289,7 +230,7 @@ func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*d
 	return docs, total, nil
 }
 
-func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocumentsByExternalReq) ([]*dto.DocumentResponse, int64, error) {
+func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocumentsByExternalReq) ([]*dto.DocumentMetaResponse, int64, error) {
 	var userID *int64
 	if req == nil {
 		return nil, 0, status.StatusInternalParamsError
@@ -304,7 +245,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocum
 
 	var parentID int64
 	if req.ExternalArgs != nil && req.ExternalArgs.RootDocumentExternalID != nil && *req.ExternalArgs.RootDocumentExternalID != "" {
-		doc, err := s.GetDocumentByExternalID(*req.ExternalArgs.RootDocumentExternalID)
+		doc, err := s.documentRepo.GetByExternalID(*req.ExternalArgs.RootDocumentExternalID).Exec()
 		if err != nil {
 			return nil, 0, err
 		}

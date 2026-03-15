@@ -94,15 +94,10 @@ func (s *DocumentServiceServer) GetDocumentContent(ctx context.Context, req *pb.
 		return &pb.GetDocumentContentResponse{Base: baseResponseFromErr(status.StatusDocumentNotFound)}, nil
 	}
 
-	content, err := service.DocumentSvc.GetDocumentContent(document.ID)
-	if err != nil {
-		return &pb.GetDocumentContentResponse{Base: baseResponseFromErr(err)}, nil
-	}
-
 	return &pb.GetDocumentContentResponse{
 		Base:     baseResponseFromErr(nil),
-		Document: toDocumentResponse(service.DocumentSvc.ConvertToDocumentResponse(document)),
-		Content:  content,
+		Document: toDocumentResponse(&document.DocumentMetaResponse),
+		Content:  document.Content,
 	}, nil
 }
 
