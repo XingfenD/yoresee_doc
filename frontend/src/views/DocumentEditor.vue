@@ -62,14 +62,6 @@
           <main class="editor-main">
             <div class="editor-header">
               <div class="doc-title">{{ currentDocTitle }}</div>
-              <div class="editor-actions">
-                <el-button type="primary" @click="saveDocument">
-                  <el-icon>
-                    <Check />
-                  </el-icon>
-                  {{ t('common.save') }}
-                </el-button>
-              </div>
             </div>
             <div class="editor-content">
               <div class="editor-wrapper">
@@ -87,11 +79,7 @@
                 />
               </div>
             </div>
-            <div class="editor-footer">
-              <div class="editor-info">
-                <span>{{ t('document.lastSaved') }}: {{ lastSavedTime }}</span>
-              </div>
-            </div>
+
           </main>
         </div>
       </div>
@@ -157,7 +145,7 @@ const collabUrl = computed(() => '/ws/doc');
 const collabToken = computed(() => localStorage.getItem('token') || '');
 const collabReady = ref(false);
 const lastSyncedDocId = ref('');
-const lastSavedTime = ref('--');
+
 const treeLoading = ref(false);
 const sidebarWidth = ref(280);
 const isResizingSidebar = ref(false);
@@ -459,11 +447,7 @@ const toggleSidebar = () => {
   localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed.value));
 };
 
-const saveDocument = () => {
-  const now = new Date();
-  lastSavedTime.value = now.toLocaleTimeString();
-  ElMessage.success(t('message.saveSuccess'));
-};
+
 
 const handleCollabSync = (isSynced) => {
   if (!collabEnabled.value) {
