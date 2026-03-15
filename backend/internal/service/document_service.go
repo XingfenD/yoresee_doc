@@ -12,30 +12,27 @@ import (
 )
 
 type DocumentService struct {
-	documentRepo      *repository.DocumentRepository
-	userRepo          *repository.UserRepository
-	kbRepo            *repository.KnowledgeBaseRepository
-	docKBRelationRepo *repository.DocKnowledgeRelationRepository
-	contentRepo       *repository.ContentRepository
-	docVersionRepo    *repository.DocumentVersionRepository
+	documentRepo   *repository.DocumentRepository
+	userRepo       *repository.UserRepository
+	kbRepo         *repository.KnowledgeBaseRepository
+	docVersionRepo *repository.DocumentVersionRepository
 }
 
 func NewDocumentService() *DocumentService {
 	return &DocumentService{
-		documentRepo:      repository.DocumentRepo,
-		userRepo:          repository.UserRepo,
-		kbRepo:            repository.KnowledgeBaseRepo,
-		docKBRelationRepo: repository.DocKnowledgeRelationRepo,
+		documentRepo: repository.DocumentRepo,
+		userRepo:     repository.UserRepo,
+		kbRepo:       repository.KnowledgeBaseRepo,
 	}
 }
 
 var DocumentSvc = NewDocumentService()
 
-func (s *DocumentService) ConvertToDocumentResponse(doc *model.DocumentMeta) *dto.DocumentResponse {
+func (s *DocumentService) ConvertToDocumentResponse(doc *model.Document) *dto.DocumentResponse {
 	return dto.NewDocumentResponseFromModel(doc)
 }
 
-func (s *DocumentService) GetDocumentByExternalID(externalID string) (*model.DocumentMeta, error) {
+func (s *DocumentService) GetDocumentByExternalID(externalID string) (*model.Document, error) {
 	return s.documentRepo.GetByExternalID(externalID).Exec()
 }
 
@@ -72,7 +69,7 @@ func (s *DocumentService) GetDocumentContent(documentID int64) (string, error) {
 // 	return allowed, nil
 // }
 
-func (s *DocumentService) GetDocumentWithContent(docExternalID string) (*model.DocumentMeta, string, error) {
+func (s *DocumentService) GetDocumentWithContent(docExternalID string) (*model.Document, string, error) {
 	document, err := s.GetDocumentByExternalID(docExternalID)
 	if err != nil {
 		return nil, "", err
@@ -93,7 +90,7 @@ func (s *DocumentService) buildListDocumentsOperation(req *documentsListReq) (*r
 	if req == nil {
 		return nil, status.StatusInternalParamsError
 	}
-	listOp := s.documentRepo.ListDocuments(&model.DocumentMeta{})
+	listOp := s.documentRepo.ListDocuments(&model.Document{})
 	if req.MetaArgs != nil {
 		listOp = listOp.WithUserID(req.MetaArgs.UserID).
 			WithParentID(req.MetaArgs.ParentID).
@@ -132,7 +129,7 @@ func (s *DocumentService) listDocuments(req *documentsListReq) ([]*dto.DocumentR
 }
 
 func (s *DocumentService) getChildDocuments(parentID int64, options *dto.RecursiveOptions) ([]*dto.DocumentResponse, error) {
-	models, _, err := s.documentRepo.ListDocuments(&model.DocumentMeta{}).
+	models, _, err := s.documentRepo.ListDocuments(&model.Document{}).
 		WithParentID(&parentID).
 		WithSort("created_at", false).
 		ExecWithTotal()
@@ -163,7 +160,7 @@ func (s *DocumentService) getChildDocuments(parentID int64, options *dto.Recursi
 	return childResponses, nil
 }
 
-func (s *DocumentService) buildDocumentTree(rootDocs []model.DocumentMeta, allDescendants []model.DocumentMeta) []*dto.DocumentResponse {
+func (s *DocumentService) buildDocumentTree(rootDocs []model.Document, allDescendants []model.Document) []*dto.DocumentResponse {
 	docMap := make(map[int64]*dto.DocumentResponse)
 	var rootResponses []*dto.DocumentResponse
 
@@ -190,12 +187,12 @@ func (s *DocumentService) buildDocumentTree(rootDocs []model.DocumentMeta, allDe
 	return rootResponses
 }
 
-func (s *DocumentService) getAllDescendantsByParentIDs(parentIDs []int64) ([]model.DocumentMeta, error) {
+func (s *DocumentService) getAllDescendantsByParentIDs(parentIDs []int64) ([]model.Document, error) {
 	if len(parentIDs) == 0 {
-		return []model.DocumentMeta{}, nil
+		return []model.Document{}, nil
 	}
 
-	allDocs := make([]model.DocumentMeta, 0)
+	allDocs := make([]model.Document, 0)
 	seen := make(map[int64]bool)
 
 	for _, rootParentID := range parentIDs {
@@ -339,7 +336,7 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 	// TODO: redis support
 	docExternalID := utils.GenerateExternalID(utils.ExternalIDContextDocument)
 	err := utils.WithTransaction(func(tx *gorm.DB) error {
-		docModel := &model.DocumentMeta{
+		docModel := &model.Document{
 			ExternalID: docExternalID,
 			Title:      req.Title,
 			Type:       model.DocumentType(req.Type),
@@ -356,15 +353,15 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 		docModel.UserID = userID
 
 		// query knowledge_id
-		var ownerID *int64
 		if !req.CreateAsOwnDoc {
 			kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeExternalID).WithTx(tx).Exec()
 			if err != nil {
 				return status.StatusKnowledgeBaseNotFound
 			}
 			docModel.KnowledgeID = &kbID
+			docModel.ContainerType = model.ContainerType_KnowledgeBase
 		} else {
-			ownerID = &userID
+			docModel.ContainerType = model.ContainerType_Own
 		}
 
 		// TODO: permission check for knowledgebase
@@ -385,26 +382,10 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 			return status.StatusWriteDBError
 		}
 
-		// create doc-kb relation
-		err = s.docKBRelationRepo.CreateDocKBRelation(docModel.ID).
-			WithKnowledgeID(docModel.KnowledgeID).
-			WithOwnerID(ownerID).
-			WithTx(tx).
-			Exec()
-		if err != nil {
-			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create doc-kb relation failed")
-		}
-
-		// create content
-		contentID, err := s.contentRepo.Create("").WithTx(tx).Exec()
-		if err != nil {
-			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create content failed")
-		}
-
 		// create doc version
 		ver := &model.DocumentVersion{
 			DocumentID:    docModel.ID,
-			ContentID:     contentID,
+			Content:       docModel.Content,
 			UserID:        userID,
 			Title:         docModel.Title,
 			ChangeSummary: "Create the document",
@@ -424,4 +405,91 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 	return &dto.CreateDocumentResponse{
 		ExternalID: docExternalID,
 	}, nil
+}
+
+func validateUpdateDocumentReq(req *dto.UpdateDocumentRequest) error {
+	if req == nil {
+		return status.StatusInternalParamsError
+	}
+	if req.ExternalID == "" {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "external_id is zero value")
+	}
+
+	if req.Content == nil && req.KnowledgeBaseExternalID == nil && req.ParentExternalID == nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "no update field")
+	}
+
+	if req.MoveAsOwn && req.ParentExternalID != nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "ParentExternalID not nil when moving as own")
+	}
+
+	return nil
+}
+
+func (s *DocumentService) Update(req *dto.UpdateDocumentRequest) (bool, error) {
+	if err := validateUpdateDocumentReq(req); err != nil {
+		return false, err
+	}
+
+	utils.WithTransaction(func(tx *gorm.DB) error {
+		oldDoc, err := s.documentRepo.GetByExternalID(req.ExternalID).WithTx(tx).Exec()
+		if err != nil {
+			return status.StatusDocumentNotFound
+		}
+
+		docModel := &model.Document{
+			ID: oldDoc.ID,
+		}
+		op := s.documentRepo.Update(docModel).WithTx(tx)
+		if req.Content != nil {
+			docModel.Content = *req.Content
+			op.UpdateContent()
+		}
+		if req.Title != nil {
+			docModel.Title = *req.Title
+		}
+
+		if req.ParentExternalID != nil {
+			parentID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).Exec()
+			if err != nil {
+				return status.StatusDocumentNotFound
+			}
+			docModel.ID = parentID
+			op = op.UpdateParentID()
+		}
+
+		// create version
+		versionModel := &model.DocumentVersion{
+			DocumentID:    oldDoc.ID,
+			Title:         oldDoc.Title,
+			Content:       oldDoc.Content,
+			UserID:        oldDoc.UserID,
+			ChangeSummary: "",
+		}
+
+		if err := s.docVersionRepo.Create(versionModel).WithTx(tx).Exec(); err != nil {
+			return err
+		}
+
+		// update kb relation
+		if req.KnowledgeBaseExternalID != nil && !req.MoveAsOwn {
+			kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeBaseExternalID).Exec()
+			if err != nil {
+				return status.StatusKnowledgeBaseNotFound
+			}
+			docModel.KnowledgeID = &kbID
+			op = op.UpdateKnowledgeID()
+		}
+
+		if req.MoveAsOwn {
+			docModel.KnowledgeID = nil
+			op = op.UpdateKnowledgeID()
+		}
+
+		return nil
+	})
+
+	// TODO: redis support
+
+	return true, nil
 }

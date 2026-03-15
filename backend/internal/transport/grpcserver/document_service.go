@@ -180,3 +180,47 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 		ExternalId: resp.ExternalID,
 	}, nil
 }
+
+func validateUpdateDocumentRequest(req *pb.UpdateDocumentRequest) error {
+	if req == nil {
+		return status.StatusParamError
+	}
+	if req.Content == nil && req.KnowledgeBaseExternalId == nil && req.ParentExternalId == nil && req.Title == nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "no update fields")
+	}
+	if req.MoveToContainer == nil || *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN {
+		if req.KnowledgeBaseExternalId != nil {
+			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId not nil")
+		}
+	}
+	if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE &&
+		req.KnowledgeBaseExternalId == nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId is nil")
+	}
+	return nil
+}
+
+func (s *DocumentServiceServer) UpdateDocument(ctx context.Context, req *pb.UpdateDocumentRequest) (*pb.UpdateDocumentResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.UpdateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if err := validateUpdateDocumentRequest(req); err != nil {
+		return &pb.UpdateDocumentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	serviceReq := &dto.UpdateDocumentRequest{
+		ExternalID:              req.ExternalId,
+		Title:                   req.Title,
+		ParentExternalID:        req.ParentExternalId,
+		KnowledgeBaseExternalID: req.KnowledgeBaseExternalId,
+	}
+
+	if req.GetMoveToContainer() == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN {
+		serviceReq.MoveAsOwn = true
+	}
+
+	return &pb.UpdateDocumentResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}

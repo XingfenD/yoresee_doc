@@ -14,19 +14,17 @@ func runMigration() error {
 
 	err := storage.DB.AutoMigrate(
 		&model.Attachment{},
-		&model.Content{},
-		&model.DocumentMeta{},
+		&model.Document{},
 		&model.DocumentVersion{},
 		&model.Invitation{},
 		&model.KnowledgeBase{},
 		&model.RecentKnowledgeBase{},
-		&model.DocKnowledgeRelation{},
 		&model.MembershipRelation{},
 		&model.OrgNodeMeta{},
 		&model.PermissionRule{},
 		&model.Resource{},
 		&model.SystemConfig{},
-		&model.TemplateMeta{},
+		&model.Template{},
 		&model.UserGroupMeta{},
 		&model.User{},
 	)

@@ -7,7 +7,7 @@ type DocumentVersion struct {
 	DocumentID    int64     `gorm:"not null;index" json:"document_id"`
 	Version       int       `gorm:"not null" json:"version"`
 	Title         string    `gorm:"size:200;not null" json:"title"`
-	ContentID     int64     `gorm:"not null;index" json:"content_id"`
+	Content       string    `gorm:"type:text" json:"content"`
 	UserID        int64     `gorm:"not null;index" json:"user_id"`
 	ChangeSummary string    `gorm:"type:text" json:"change_summary"`
 	CreatedAt     time.Time `json:"created_at"`

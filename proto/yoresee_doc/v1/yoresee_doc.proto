@@ -198,6 +198,19 @@ message UserResponse {
   optional string invitation_code = 9;
 }
 
+message UpdateDocumentRequest {
+  string external_id = 1;
+  optional string title = 2;
+  optional string knowledge_base_external_id = 3;
+  optional string parent_external_id = 4;
+  optional string content = 5;
+  optional CreateDocumentContainerType move_to_container = 6;
+}
+
+message UpdateDocumentResponse {
+  BaseResponse base = 1;
+}
+
 service AuthService {
   rpc Login(AuthLoginRequest) returns (AuthLoginResponse);
   rpc Register(AuthRegisterRequest) returns (AuthRegisterResponse);
@@ -208,6 +221,7 @@ service DocumentService {
   rpc GetDocumentContent(GetDocumentContentRequest) returns (GetDocumentContentResponse);
   rpc GetOwnDocuments(GetOwnDocumentsRequest) returns (GetOwnDocumentsResponse);
   rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
+  rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
 }
 
 service KnowledgeBaseService {

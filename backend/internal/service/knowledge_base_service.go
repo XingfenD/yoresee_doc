@@ -231,11 +231,14 @@ func (op *KnowledgeBaseGetByExternalIDOperation) Exec() (*dto.KnowledgeBaseRespo
 	}
 
 	if op.withDocumentExtend {
-		count, err := op.srvc.knowledgeBaseRepo.GetKnowledgeBaseDocumentsCount(kbModel.ID).Exec()
+		ids := []int64{
+			kbModel.ID,
+		}
+		count, err := op.srvc.knowledgeBaseRepo.MGetKnowledgeBaseDocumentsCount(ids).Exec()
 		if err != nil {
 			return nil, err
 		}
-		extendDTO.DocumentsCount = count
+		extendDTO.DocumentsCount = count[kbModel.ID]
 	}
 
 	return dto.NewKnowledgeBaseResponseFromModel(

@@ -50,27 +50,6 @@ func initializeKnowledgeBasesInTx(tx *gorm.DB) error {
 		return err
 	}
 
-	// 尝试将欢迎文档添加到默认知识库中（可选操作，失败不影响整体初始化）
-	var welcomeDocument model.DocumentMeta
-	if err := tx.Where("title = ?", "欢迎使用 Yoresee Doc").First(&welcomeDocument).Error; err == nil {
-		// 如果找到了欢迎文档，则将其关联到默认知识库
-		relation := model.DocKnowledgeRelation{
-			DocumentID:  welcomeDocument.ID,
-			KnowledgeID: &defaultKnowledgeBase.ID,
-			OwnerID:     &adminUser.ID,
-		}
-
-		if err := tx.Create(&relation).Error; err != nil {
-			// 如果关联失败（例如表不存在），记录警告但不中断整个初始化过程
-			logrus.Warnf("Could not associate document with knowledge base (may be due to table not existing yet): %v", err)
-		} else {
-			logrus.Println("Associated welcome document with default knowledge base")
-		}
-	} else {
-		logrus.Println("Welcome document not found, skipping association with knowledge base")
-	}
-
-	// 为默认知识库添加11个根文档和子文档
 	logrus.Println("Adding documents to default knowledge base...")
 
 	rootDocumentTitles := []string{

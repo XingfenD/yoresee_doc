@@ -15,6 +15,10 @@ func baseResponseFromErr(err error) *pb.BaseResponse {
 	return baseResponseFromStatus(err)
 }
 
+func baseResponceFromStatusWithCustomMsg(err error, msg string) *pb.BaseResponse {
+	return baseResponseFromStatus(status.GenErrWithCustomMsg(err, msg))
+}
+
 func baseResponseFromStatus(err error) *pb.BaseResponse {
 	st, ok := err.(*status.Status)
 	if !ok {

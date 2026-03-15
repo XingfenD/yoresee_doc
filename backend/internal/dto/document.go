@@ -29,7 +29,7 @@ type DocumentResponse struct {
 	HasChildren bool                `json:"hasChildren,omitempty"`
 }
 
-func NewDocumentResponseFromModel(doc *model.DocumentMeta) *DocumentResponse {
+func NewDocumentResponseFromModel(doc *model.Document) *DocumentResponse {
 	response := &DocumentResponse{
 		DocumentBase: DocumentBase{
 			ExternalID: doc.ExternalID,
@@ -96,4 +96,13 @@ type CreateDocumentReq struct {
 
 type CreateDocumentResponse struct {
 	ExternalID string `json:"external_id"`
+}
+
+type UpdateDocumentRequest struct {
+	ExternalID              string  `json:"external_id"`
+	Title                   *string `json:"title,omitempty"`
+	KnowledgeBaseExternalID *string `json:"knowledge_base_external_id,omitempty"`
+	ParentExternalID        *string `json:"parent_external_id,omitempty"`
+	MoveAsOwn               bool    `json:"move_as_own"`
+	Content                 *string `json:"content,omitempty"`
 }

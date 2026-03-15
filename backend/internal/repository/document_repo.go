@@ -28,8 +28,8 @@ func (op *DocumentGetByExternalIDOperation) WithTx(tx *gorm.DB) *DocumentGetByEx
 	return op
 }
 
-func (op *DocumentGetByExternalIDOperation) Exec() (*model.DocumentMeta, error) {
-	var document model.DocumentMeta
+func (op *DocumentGetByExternalIDOperation) Exec() (*model.Document, error) {
+	var document model.Document
 	var err error
 
 	if op.tx != nil {
@@ -60,8 +60,7 @@ func (op *DocumentGetContentOperation) WithTx(tx *gorm.DB) *DocumentGetContentOp
 }
 
 func (op *DocumentGetContentOperation) Exec() (string, error) {
-	var version model.DocumentVersion
-	var content model.Content
+	var docMeta model.Document
 	var err error
 
 	db := storage.DB
@@ -69,17 +68,12 @@ func (op *DocumentGetContentOperation) Exec() (string, error) {
 		db = op.tx
 	}
 
-	err = db.Where("document_id = ?", op.documentID).Order("version DESC").First(&version).Error
+	err = db.Where("id = ?", op.documentID).First(&docMeta).Error
 	if err != nil {
 		return "", err
 	}
 
-	err = db.First(&content, version.ContentID).Error
-	if err != nil {
-		return "", err
-	}
-
-	return content.Content, nil
+	return docMeta.Content, nil
 }
 
 type DocumentGetIDByExternalIDOperation struct {
@@ -106,7 +100,7 @@ func (op DocumentGetIDByExternalIDOperation) Exec() (int64, error) {
 		op.tx = storage.DB
 	}
 
-	err := op.tx.Model(&model.DocumentMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
+	err := op.tx.Model(&model.Document{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	if err != nil {
 		return 0, err
 	}
@@ -115,7 +109,7 @@ func (op DocumentGetIDByExternalIDOperation) Exec() (int64, error) {
 
 type DocumentsListOperation struct {
 	repo                 *DocumentRepository
-	model                *model.DocumentMeta
+	model                *model.Document
 	userID               *int64
 	parentID             *int64
 	knowledgeID          *int64
@@ -135,7 +129,7 @@ type DocumentsListOperation struct {
 	tx                   *gorm.DB
 }
 
-func (r *DocumentRepository) ListDocuments(documentModel *model.DocumentMeta) *DocumentsListOperation {
+func (r *DocumentRepository) ListDocuments(documentModel *model.Document) *DocumentsListOperation {
 	return &DocumentsListOperation{
 		repo:  r,
 		model: documentModel,
@@ -217,7 +211,7 @@ func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 		db = op.tx
 	}
 
-	dbQuery := db.Model(&model.DocumentMeta{})
+	dbQuery := db.Model(&model.Document{})
 
 	if op.model != nil {
 		dbQuery = dbQuery.Where(op.model)
@@ -304,11 +298,11 @@ func (op *DocumentsListOperation) appendOtherArgs(db *gorm.DB) *gorm.DB {
 	return dbQuery
 }
 
-func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
+func (op *DocumentsListOperation) Exec() ([]model.Document, error) {
 	dbQuery := op.buildBaseQuery()
 	dbQuery = op.appendOtherArgs(dbQuery)
 
-	var documents []model.DocumentMeta
+	var documents []model.Document
 	err := dbQuery.Find(&documents).Error
 	if err != nil {
 		return nil, err
@@ -317,7 +311,7 @@ func (op *DocumentsListOperation) Exec() ([]model.DocumentMeta, error) {
 	return documents, nil
 }
 
-func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, error) {
+func (op *DocumentsListOperation) ExecWithTotal() ([]model.Document, int64, error) {
 	dbQuery := op.buildBaseQuery()
 
 	var total int64
@@ -328,7 +322,7 @@ func (op *DocumentsListOperation) ExecWithTotal() ([]model.DocumentMeta, int64, 
 
 	dbQuery = op.appendOtherArgs(dbQuery)
 
-	var documents []model.DocumentMeta
+	var documents []model.Document
 	err = dbQuery.Find(&documents).Error
 	if err != nil {
 		return nil, 0, err
@@ -367,13 +361,13 @@ func (op *DocumentGetSubtreeOperation) WithDepth(depth int) *DocumentGetSubtreeO
 	return op
 }
 
-func (op *DocumentGetSubtreeOperation) Exec() ([]model.DocumentMeta, error) {
+func (op *DocumentGetSubtreeOperation) Exec() ([]model.Document, error) {
 	db := storage.DB
 	if op.tx != nil {
 		db = op.tx
 	}
 
-	var documents []model.DocumentMeta
+	var documents []model.Document
 
 	if op.depth != nil && *op.depth == 0 {
 		return documents, nil
@@ -432,13 +426,13 @@ func (op *DocumentGetSubtreeByKnowledgeIDOperation) WithDepth(depth int) *Docume
 	return op
 }
 
-func (op *DocumentGetSubtreeByKnowledgeIDOperation) Exec() ([]model.DocumentMeta, error) {
+func (op *DocumentGetSubtreeByKnowledgeIDOperation) Exec() ([]model.Document, error) {
 	db := storage.DB
 	if op.tx != nil {
 		db = op.tx
 	}
 
-	var documents []model.DocumentMeta
+	var documents []model.Document
 
 	if op.depth != nil && *op.depth == 0 {
 		return documents, nil
@@ -475,11 +469,11 @@ func (op *DocumentGetSubtreeByKnowledgeIDOperation) Exec() ([]model.DocumentMeta
 
 type DocumentCreateOperation struct {
 	repo *DocumentRepository
-	doc  *model.DocumentMeta
+	doc  *model.Document
 	tx   *gorm.DB
 }
 
-func (r *DocumentRepository) Create(doc *model.DocumentMeta) *DocumentCreateOperation {
+func (r *DocumentRepository) Create(doc *model.Document) *DocumentCreateOperation {
 	return &DocumentCreateOperation{
 		repo: r,
 		doc:  doc,
@@ -500,16 +494,53 @@ func (op *DocumentCreateOperation) Exec() error {
 }
 
 type DocumentUpdateOperation struct {
-	repo *DocumentRepository
-	doc  *model.DocumentMeta
-	tx   *gorm.DB
+	repo         *DocumentRepository
+	doc          *model.Document
+	updateFields map[string]bool
+	tx           *gorm.DB
 }
 
-func (r *DocumentRepository) Update(doc *model.DocumentMeta) *DocumentUpdateOperation {
+func (r *DocumentRepository) Update(doc *model.Document) *DocumentUpdateOperation {
 	return &DocumentUpdateOperation{
-		repo: r,
-		doc:  doc,
+		repo:         r,
+		doc:          doc,
+		updateFields: make(map[string]bool),
 	}
+}
+
+func (op *DocumentUpdateOperation) UpdateTitle() *DocumentUpdateOperation {
+	op.updateFields["title"] = true
+	return op
+}
+
+func (op *DocumentUpdateOperation) UpdateSummary() *DocumentUpdateOperation {
+	op.updateFields["summary"] = true
+	return op
+}
+
+func (op *DocumentUpdateOperation) UpdateContent() *DocumentUpdateOperation {
+	op.updateFields["content"] = true
+	return op
+}
+
+func (op *DocumentUpdateOperation) UpdateParentID() *DocumentUpdateOperation {
+	op.updateFields["parent_id"] = true
+	return op
+}
+
+func (op *DocumentUpdateOperation) UpdateKnowledgeID() *DocumentUpdateOperation {
+	op.updateFields["knowledge_id"] = true
+	return op
+}
+
+func (op *DocumentUpdateOperation) UpdateStatus() *DocumentUpdateOperation {
+	op.updateFields["status"] = true
+	return op
+}
+
+func (op *DocumentUpdateOperation) UpdateTags() *DocumentUpdateOperation {
+	op.updateFields["tags"] = true
+	return op
 }
 
 func (op *DocumentUpdateOperation) WithTx(tx *gorm.DB) *DocumentUpdateOperation {
@@ -522,5 +553,15 @@ func (op *DocumentUpdateOperation) Exec() error {
 		op.tx = storage.DB
 	}
 
-	return op.tx.Save(op.doc).Error
+	query := op.tx.Model(op.doc)
+
+	if len(op.updateFields) > 0 {
+		fields := make([]string, 0, len(op.updateFields))
+		for field := range op.updateFields {
+			fields = append(fields, field)
+		}
+		query = query.Select(fields)
+	}
+
+	return query.Updates(*op.doc).Error
 }
