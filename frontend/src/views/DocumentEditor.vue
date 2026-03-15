@@ -19,31 +19,45 @@
       <!-- 右侧内容 -->
       <div class="content-area">
         <div class="editor-layout">
-          <aside class="sidebar" :style="{ width: `${sidebarWidth}px` }">
-            <div class="sidebar-header">
-              <el-button text class="back-button" @click="goBack">
-                <el-icon>
-                  <ArrowLeft />
-                </el-icon>
-                {{ t('common.back') }}
-              </el-button>
-            </div>
-            <div class="sidebar-title">{{ knowledgeBaseName }}</div>
-            <DocumentTree
-              ref="treeComponentRef"
-              :nodes="directoryTree"
-              :loading="treeLoading"
-              :current-id="docId"
-              :expand-all="isAllExpanded"
-              :disable-delete="!docId"
-              @toggle-expand="toggleExpandAll"
-              @node-click="handleTreeNodeClick"
-              @create="handleCreateFromTree"
-              @delete="handleDeleteDocument"
-              @rename="handleRenameFromTree"
-            />
-          </aside>
-          <div class="sidebar-resizer" role="separator" aria-orientation="vertical" @mousedown="startResize"></div>
+          <div class="sidebar-container" :class="{ 'collapsed': isSidebarCollapsed }">
+            <el-button v-if="isSidebarCollapsed" text class="expand-button" @click="toggleSidebar" :title="t('common.expand')">
+              <el-icon>
+                <ArrowRight />
+              </el-icon>
+            </el-button>
+            <aside class="sidebar">
+              <div class="sidebar-header">
+                <el-button text class="back-button" @click="goBack">
+                  <el-icon>
+                    <ArrowLeft />
+                  </el-icon>
+                  {{ t('common.back') }}
+                </el-button>
+              </div>
+              <div class="sidebar-title">
+                {{ knowledgeBaseName }}
+                <el-button text class="collapse-button" @click="toggleSidebar" :title="t('common.collapse')">
+                  <el-icon>
+                    <ArrowLeft />
+                  </el-icon>
+                </el-button>
+              </div>
+              <DocumentTree
+                ref="treeComponentRef"
+                :nodes="directoryTree"
+                :loading="treeLoading"
+                :current-id="docId"
+                :expand-all="isAllExpanded"
+                :disable-delete="!docId"
+                @toggle-expand="toggleExpandAll"
+                @node-click="handleTreeNodeClick"
+                @create="handleCreateFromTree"
+                @delete="handleDeleteDocument"
+                @rename="handleRenameFromTree"
+              />
+            </aside>
+            <div class="sidebar-resizer" role="separator" aria-orientation="vertical" @mousedown="startResize"></div>
+          </div>
 
           <main class="editor-main">
             <div class="editor-header">
@@ -154,6 +168,24 @@ const treeComponentRef = ref(null);
 
 const treeRef = computed(() => treeComponentRef.value?.treeRef);
 const isAllExpanded = ref(true);
+const isSidebarCollapsed = ref(() => {
+  const savedState = localStorage.getItem('sidebarCollapsed');
+  return savedState ? JSON.parse(savedState) : false;
+});
+
+// 更新CSS变量以支持宽度调节
+const updateSidebarWidth = () => {
+  document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth.value}px`);
+};
+
+// 初始化和监听宽度变化
+onMounted(() => {
+  updateSidebarWidth();
+});
+
+watch(sidebarWidth, () => {
+  updateSidebarWidth();
+});
 
 const directoryTree = ref([]);
 
@@ -422,6 +454,11 @@ const toggleExpandAll = () => {
   }
 };
 
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value;
+  localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed.value));
+};
+
 const saveDocument = () => {
   const now = new Date();
   lastSavedTime.value = now.toLocaleTimeString();
@@ -600,6 +637,31 @@ watch(
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+.sidebar-container {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  width: calc(var(--sidebar-width) + 6px);
+  flex-shrink: 0;
+  transition: all 0.3s ease-in-out;
+  transform: translateX(0);
+}
+
+.sidebar-container.collapsed {
+  width: 32px;
+}
+
+.sidebar-container.collapsed .sidebar {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-container.collapsed .sidebar-resizer {
+  display: none;
 }
 
 .sidebar {
@@ -607,13 +669,42 @@ watch(
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  min-width: 220px;
+  width: var(--sidebar-width);
   max-width: 520px;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, width 0.3s ease-in-out;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .dark-mode .sidebar {
   background-color: var(--bg-white);
   border-color: var(--border-color);
+}
+
+.expand-button {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+  width: 32px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.dark-mode .expand-button {
+  background-color: var(--bg-white);
+  border-color: var(--border-color);
+}
+
+.expand-button:hover {
+  color: var(--primary-color);
 }
 
 .sidebar-header {
@@ -631,11 +722,23 @@ watch(
   font-weight: 600;
   color: var(--text-dark);
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .dark-mode .sidebar-title {
   color: var(--text-dark);
   border-color: var(--border-color);
+}
+
+.collapse-button {
+  padding: 4px;
+  color: var(--text-light);
+}
+
+.collapse-button:hover {
+  color: var(--primary-color);
 }
 
 .sidebar-resizer {
@@ -666,6 +769,7 @@ watch(
   flex-direction: column;
   min-height: 600px;
   background-color: var(--bg-white);
+  transition: all 0.3s ease-in-out;
 }
 
 .dark-mode .editor-main {
@@ -699,6 +803,7 @@ watch(
   display: flex;
   overflow: hidden;
   min-height: 0;
+  transition: all 0.3s ease-in-out;
 }
 
 .editor-wrapper {
