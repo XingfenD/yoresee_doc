@@ -3,8 +3,10 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
+GOPROXY_DIR="$ROOT_DIR/collab-go"
 PROTO_DIR="$ROOT_DIR/proto"
 GO_OUT_DIR="$BACKEND_DIR/pkg/gen"
+GO_OUT_DIR2="$GOPROXY_DIR/pkg/gen"
 FRONTEND_OUT_DIR="$ROOT_DIR/frontend/src/gen"
 COLLAB_OUT_DIR="$ROOT_DIR/collab/src/gen"
 
@@ -15,6 +17,13 @@ mkdir -p "$GO_OUT_DIR"
 protoc -I "$PROTO_DIR" \
   --go_out="$GO_OUT_DIR" --go_opt=paths=source_relative \
   --go-grpc_out="$GO_OUT_DIR" --go-grpc_opt=paths=source_relative \
+  "$PROTO_DIR/yoresee_doc/v1/yoresee_doc.proto"
+
+mkdir -p "$GO_OUT_DIR2"
+
+protoc -I "$PROTO_DIR" \
+  --go_out="$GO_OUT_DIR2" --go_opt=paths=source_relative \
+  --go-grpc_out="$GO_OUT_DIR2" --go-grpc_opt=paths=source_relative \
   "$PROTO_DIR/yoresee_doc/v1/yoresee_doc.proto"
 
 ES_BIN="$ROOT_DIR/frontend/node_modules/.bin/protoc-gen-es"

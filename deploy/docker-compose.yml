@@ -118,8 +118,8 @@ services:
 
   collab:
     build:
-      context: ../collab-go
-      dockerfile: Dockerfile.prod
+      context: ..
+      dockerfile: collab-go/Dockerfile.prod
     image: yoresee_doc_collab_gateway:latest
     container_name: yoresee_doc_collab
     environment:
