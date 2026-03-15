@@ -142,6 +142,7 @@ const collabRoom = computed(() => (docId.value ? `${docId.value}` : ''));
 const collabUrl = computed(() => '/ws/doc');
 const collabToken = computed(() => localStorage.getItem('token') || '');
 const collabReady = ref(false);
+const lastSyncedDocId = ref('');
 const lastSavedTime = ref('--');
 const treeLoading = ref(false);
 const sidebarWidth = ref(280);
@@ -433,7 +434,11 @@ const handleCollabSync = (isSynced) => {
     return;
   }
   collabReady.value = isSynced;
+  if (isSynced) {
+    lastSyncedDocId.value = docId.value || '';
+  }
 };
+
 
 const handleLanguageChange = (command) => {
   locale.value = command;
@@ -511,7 +516,9 @@ onMounted(async () => {
     currentDocTitle.value = '示例文档';
   } else {
     await fetchDocuments();
-    collabReady.value = !collabEnabled.value;
+    if (lastSyncedDocId.value !== docId.value) {
+      collabReady.value = !collabEnabled.value;
+    }
   }
 
   await fetchSystemInfo();
@@ -534,7 +541,9 @@ watch(
     docId.value = newDocId;
     editorContent.value = '';
     currentDocTitle.value = '';
-    collabReady.value = !collabEnabled.value;
+    if (lastSyncedDocId.value !== docId.value) {
+      collabReady.value = !collabEnabled.value;
+    }
     await expandToCurrentDoc();
     updateCurrentDocTitle();
   }
@@ -548,7 +557,9 @@ watch(
     }
     kbId.value = newKbId;
     await fetchDocuments();
-    collabReady.value = !collabEnabled.value;
+    if (lastSyncedDocId.value !== docId.value) {
+      collabReady.value = !collabEnabled.value;
+    }
     updateCurrentDocTitle();
   }
 );
