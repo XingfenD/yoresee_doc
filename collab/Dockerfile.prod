@@ -1,8 +1,6 @@
 FROM node:20-alpine AS builder
 
-RUN apk add --no-cache protobuf protoc
-
-RUN npm install -g protoc-gen-grpc-js
+RUN npm install -g grpc-tools protoc-gen-js
 
 WORKDIR /app
 COPY collab/package.json collab/package-lock.json* ./
@@ -11,16 +9,19 @@ RUN npm install
 COPY proto ./proto
 
 RUN mkdir -p gen && \
-    protoc --proto_path=proto \
-    --plugin=protoc-gen-grpc_js=$(which protoc-gen-grpc-js) \
-    --grpc_js_out=import_style=commonjs,grpc_js:gen \
+    PROTOC="/usr/local/bin/grpc_tools_node_protoc" && \
+    GRPC_PLUGIN="/usr/local/bin/grpc_tools_node_protoc_plugin" && \
+    "$PROTOC" -I proto \
+    --plugin=protoc-gen-grpc="$GRPC_PLUGIN" \
+    --grpc_out=grpc_js:gen \
+    --js_out=import_style=commonjs,binary:gen \
     proto/yoresee_doc/v1/yoresee_doc.proto
 
 FROM node:20-alpine
 WORKDIR /app
-
+RUN mkdir -p src
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/gen ./gen
+COPY --from=builder /app/gen ./src/gen
 COPY collab/. .
 
 EXPOSE 1234

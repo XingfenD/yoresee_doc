@@ -6,7 +6,7 @@ BACKEND_DIR="$ROOT_DIR/backend"
 PROTO_DIR="$ROOT_DIR/proto"
 GO_OUT_DIR="$BACKEND_DIR/pkg/gen"
 FRONTEND_OUT_DIR="$ROOT_DIR/frontend/src/gen"
-COLLAB_OUT_DIR="$ROOT_DIR/collab/gen"
+COLLAB_OUT_DIR="$ROOT_DIR/collab/src/gen"
 
 export PATH="$(go env GOPATH)/bin:$PATH"
 
