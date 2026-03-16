@@ -49,11 +49,10 @@ const debounce = (fn, wait, options = {}) => {
   };
 };
 
-const docs = new Map();
 const docPromises = new Map();
 const updateCounts = new Map();
 
-exports.docs = docs;
+
 
 const messageSync = 0;
 const messageAwareness = 1;
@@ -154,18 +153,15 @@ const createYDoc = async (docname, gc = true) => {
   }
 
   attachPersistence(doc, docId);
-  docs.set(docname, doc);
   return doc;
 };
 
 const getYDoc = async (docname, gc = true) => {
-  const existing = docs.get(docname);
-  if (existing) {
-    return existing;
-  }
   if (docPromises.has(docname)) {
+    console.log(`[ws-utils] returning existing promise docname=${docname}`);
     return docPromises.get(docname);
   }
+  console.log(`[ws-utils] creating new doc docname=${docname}`);
   const createPromise = createYDoc(docname, gc)
     .finally(() => {
       docPromises.delete(docname);
