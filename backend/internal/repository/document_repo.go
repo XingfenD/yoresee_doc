@@ -625,3 +625,33 @@ func (op *DocumentUpdateOperation) Exec() error {
 
 	return query.Updates(*op.doc).Error
 }
+
+type DocumentUpdateContentByExternalIDOperation struct {
+	repo       *DocumentRepository
+	externalID string
+	content    string
+	tx         *gorm.DB
+}
+
+func (r *DocumentRepository) UpdateContentByExternalID(externalID, content string) *DocumentUpdateContentByExternalIDOperation {
+	return &DocumentUpdateContentByExternalIDOperation{
+		repo:       r,
+		externalID: externalID,
+		content:    content,
+	}
+}
+
+func (op *DocumentUpdateContentByExternalIDOperation) WithTx(tx *gorm.DB) *DocumentUpdateContentByExternalIDOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocumentUpdateContentByExternalIDOperation) Exec() error {
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+	return op.tx.Model(&model.Document{}).
+		Where("external_id = ?", op.externalID).
+		Select("content").
+		Updates(map[string]interface{}{"content": op.content}).Error
+}

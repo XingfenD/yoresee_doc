@@ -69,33 +69,37 @@ async function closeRedis() {
   }
 }
 
-async function getBuffer(key) {
-  if (!redisClient) return null;
+async function getListBuffers(key) {
+  if (!redisClient) return [];
   try {
-    return await redisClient.get(commandOptions({ returnBuffers: true }), key);
+    const items = await redisClient.lRange(commandOptions({ returnBuffers: true }), key, 0, -1);
+    return items || [];
   } catch (err) {
-    console.error(`Failed to get buffer for ${key}:`, err.message);
-    return null;
+    console.error(`Failed to lrange buffer for ${key}:`, err.message);
+    return [];
   }
 }
 
-async function setBuffer(key, buffer) {
+async function appendListBuffer(key, buffer) {
   if (!redisClient) return;
   try {
     const payload = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-    await redisClient.set(key, payload);
+    await redisClient.rPush(key, payload);
   } catch (err) {
-    console.error(`Failed to set buffer for ${key}:`, err.message);
+    console.error(`Failed to rpush buffer for ${key}:`, err.message);
   }
 }
 
-async function appendBuffer(key, buffer) {
+async function replaceListBuffer(key, buffer) {
   if (!redisClient) return;
   try {
     const payload = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-    await redisClient.append(key, payload);
+    const pipeline = redisClient.multi();
+    pipeline.del(key);
+    pipeline.rPush(key, payload);
+    await pipeline.exec();
   } catch (err) {
-    console.error(`Failed to append buffer for ${key}:`, err.message);
+    console.error(`Failed to replace list buffer for ${key}:`, err.message);
   }
 }
 
@@ -134,9 +138,9 @@ module.exports = {
   updateRoomActiveTime,
   getActiveRooms,
   checkRoomExists,
-  getBuffer,
-  setBuffer,
-  appendBuffer,
+  getListBuffers,
+  appendListBuffer,
+  replaceListBuffer,
   addDirtyDoc,
   removeDirtyDoc,
   isDirtyDoc,

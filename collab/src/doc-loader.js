@@ -7,18 +7,19 @@ const snapshotTimeoutMs = Number(process.env.BACKEND_SNAPSHOT_TIMEOUT_MS || 3000
 async function loadDoc(docId) {
   const start = Date.now();
   console.log(`[doc-loader] start docId=${docId}`);
-  const redisKey = `yjs:doc:${docId}`;
-  console.log(`[doc-loader] redis key: ${redisKey}`);
+  const redisKey = `yjs:doc:updates:${docId}`;
 
   try {
-    const update = await redis.getBuffer(redisKey);
-    console.log(`[doc-loader] redis ${docId} ${update && update.length ? 'hit' : 'miss'}`);
+    const updates = await redis.getListBuffers(redisKey);
+    console.log(`[doc-loader] redis ${docId} ${updates && updates.length ? 'hit' : 'miss'}`);
 
     const doc = new Y.Doc();
-    if (update && update.length > 0) {
-      console.log(`[doc-loader] applying redis update docId=${docId} bytes=${update.length}`);
-      Y.applyUpdate(doc, update);
-      console.log(`[doc-loader] apply redis update docId=${docId} bytes=${update.length} took=${Date.now() - start}ms`);
+    if (updates && updates.length > 0) {
+      for (const update of updates) {
+        if (update && update.length > 0) {
+          Y.applyUpdate(doc, update);
+        }
+      }
       return doc;
     }
 
@@ -35,7 +36,7 @@ async function loadDoc(docId) {
         console.log(`[doc-loader] applying snapshot docId=${docId} bytes=${snapshot.length}`);
         Y.applyUpdate(doc, snapshot);
         console.log(`[doc-loader] saving snapshot to redis docId=${docId}`);
-        await redis.setBuffer(redisKey, snapshot);
+        await redis.replaceListBuffer(redisKey, snapshot);
         console.log(`[doc-loader] apply snapshot docId=${docId} bytes=${snapshot.length} took=${Date.now() - start}ms`);
       } else {
         console.log(`[doc-loader] snapshot empty docId=${docId} took=${Date.now() - start}ms`);
@@ -49,7 +50,7 @@ async function loadDoc(docId) {
           ytext.insert(0, content);
           const initialUpdate = Y.encodeStateAsUpdate(doc);
           console.log(`[doc-loader] saving initial update to redis docId=${docId}`);
-          await redis.setBuffer(redisKey, initialUpdate);
+          await redis.replaceListBuffer(redisKey, initialUpdate);
           console.log(`[doc-loader] seeded content docId=${docId} bytes=${initialUpdate.length} took=${Date.now() - start}ms`);
         } else {
           console.log(`[doc-loader] no content to seed docId=${docId} took=${Date.now() - start}ms`);
@@ -69,7 +70,7 @@ async function loadDoc(docId) {
           ytext.insert(0, content);
           const initialUpdate = Y.encodeStateAsUpdate(doc);
           console.log(`[doc-loader] fallback: saving initial update to redis docId=${docId}`);
-          await redis.setBuffer(redisKey, initialUpdate);
+          await redis.replaceListBuffer(redisKey, initialUpdate);
           console.log(`[doc-loader] fallback seeded content docId=${docId} bytes=${initialUpdate.length} took=${Date.now() - start}ms`);
         } else {
           console.log(`[doc-loader] fallback no content to seed docId=${docId} took=${Date.now() - start}ms`);

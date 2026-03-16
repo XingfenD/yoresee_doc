@@ -51,9 +51,13 @@ const debounce = (fn, wait, options = {}) => {
   };
 };
 
+const docs = new Map();
 const docPromises = new Map();
 const updateCounts = new Map();
 const notifyCounts = new Map();
+const dirtyLogged = new Set();
+
+exports.docs = docs;
 
 
 
@@ -74,10 +78,14 @@ const persistUpdate = async (docId, doc, update) => {
   if (!docId) {
     return;
   }
-  const redisKey = `yjs:doc:${docId}`;
-  await redis.appendBuffer(redisKey, update);
+  const redisKey = `yjs:doc:updates:${docId}`;
+  await redis.appendListBuffer(redisKey, update);
   await redis.addDirtyDoc(docId);
   await redis.updateRoomActiveTime(`doc-${docId}`);
+  if (!dirtyLogged.has(docId)) {
+    dirtyLogged.add(docId);
+    console.log(`[collab] dirty marked docId=${docId} redisKey=${redisKey}`);
+  }
 
   const nextNotify = (notifyCounts.get(docId) || 0) + 1;
   if (nextNotify >= dirtyNotifyThreshold) {
@@ -90,7 +98,7 @@ const persistUpdate = async (docId, doc, update) => {
   const nextCount = (updateCounts.get(docId) || 0) + 1;
   if (nextCount >= compactThreshold) {
     const merged = Y.encodeStateAsUpdate(doc);
-    await redis.setBuffer(redisKey, merged);
+    await redis.replaceListBuffer(redisKey, merged);
     updateCounts.set(docId, 0);
   } else {
     updateCounts.set(docId, nextCount);

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -139,20 +140,38 @@ func parseDocID(data []byte) string {
 	return payload
 }
 
-func fetchDocState(client *http.Client, baseURL, docID string) ([]byte, error) {
-	url := fmt.Sprintf("%s/internal/yjs/doc/%s", strings.TrimRight(baseURL, "/"), docID)
+func fetchDocSnapshot(client *http.Client, baseURL, docID string) ([]byte, string, error) {
+	url := fmt.Sprintf("%s/internal/yjs/doc-snapshot/%s", strings.TrimRight(baseURL, "/"), docID)
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil
+		return nil, "", nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status %d", resp.StatusCode)
+		return nil, "", fmt.Errorf("unexpected status %d", resp.StatusCode)
 	}
-	return io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", err
+	}
+	var payload struct {
+		State   string `json:"state"`
+		Content string `json:"content"`
+	}
+	if err := sonic.Unmarshal(body, &payload); err != nil {
+		return nil, "", err
+	}
+	if payload.State == "" {
+		return nil, payload.Content, nil
+	}
+	state, err := decodeBase64(payload.State)
+	if err != nil {
+		return nil, "", err
+	}
+	return state, payload.Content, nil
 }
 
 func scanDirtyDocs(client *http.Client, baseURL, dirtySetKey string) ([]string, error) {
@@ -200,7 +219,7 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 	defer inFlight.Delete(docID)
 
 	logrus.Infof("Snapshot start docId=%s force=%v", docID, force)
-	state, err := fetchDocState(client, baseURL, docID)
+	state, content, err := fetchDocSnapshot(client, baseURL, docID)
 	if err != nil {
 		logrus.Errorf("Snapshot fetch failed docId=%s err=%v", docID, err)
 		return err
@@ -216,10 +235,18 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 		return err
 	}
 
+	if err := repository.DocumentRepo.UpdateContentByExternalID(docID, content).Exec(); err != nil {
+		logrus.Errorf("Snapshot content update failed docId=%s err=%v", docID, err)
+		return err
+	}
+
 	if storage.GetRedis() != nil {
-		key := fmt.Sprintf("yjs:doc:%s", docID)
-		if err := storage.GetRedis().Set(ctx, key, state, 0).Err(); err != nil {
-			logrus.Errorf("Snapshot redis set failed docId=%s err=%v", docID, err)
+		key := fmt.Sprintf("yjs:doc:updates:%s", docID)
+		pipe := storage.GetRedis().TxPipeline()
+		pipe.Del(ctx, key)
+		pipe.RPush(ctx, key, state)
+		if _, err := pipe.Exec(ctx); err != nil {
+			logrus.Errorf("Snapshot redis list replace failed docId=%s err=%v", docID, err)
 			return err
 		}
 		if err := storage.GetRedis().SRem(ctx, dirtySetKey, docID).Err(); err != nil {
@@ -240,6 +267,10 @@ func parseInt64(value string) (int64, error) {
 	var result int64
 	_, err := fmt.Sscanf(value, "%d", &result)
 	return result, err
+}
+
+func decodeBase64(value string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(value)
 }
 
 func waitForShutdown() {

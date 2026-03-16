@@ -30,6 +30,39 @@ server.on('request', async (req, res) => {
     return;
   }
 
+  if (req.url.startsWith('/internal/yjs/doc-snapshot/')) {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const docId = decodeURIComponent(url.pathname.replace('/internal/yjs/doc-snapshot/', ''));
+    if (!docId) {
+      res.writeHead(400);
+      res.end('doc id required');
+      return;
+    }
+    const docs = wsUtils.docs;
+    let doc = docs ? (docs.get(`doc-${docId}`) || docs.get(docId)) : null;
+    if (!doc) {
+      const redisKey = `yjs:doc:updates:${docId}`;
+      const updates = await redis.getListBuffers(redisKey);
+      if (!updates || updates.length === 0) {
+        res.writeHead(404);
+        res.end('doc not loaded');
+        return;
+      }
+      doc = new Y.Doc();
+      for (const update of updates) {
+        if (update && update.length > 0) {
+          Y.applyUpdate(doc, update);
+        }
+      }
+    }
+    const update = Y.encodeStateAsUpdate(doc);
+    const ytext = doc.getText('content');
+    const text = ytext ? ytext.toString() : '';
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ state: Buffer.from(update).toString('base64'), content: text }));
+    return;
+  }
+
   if (req.url.startsWith('/internal/yjs/doc/')) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const docId = decodeURIComponent(url.pathname.replace('/internal/yjs/doc/', ''));
@@ -41,15 +74,19 @@ server.on('request', async (req, res) => {
     const docs = wsUtils.docs;
     let doc = docs ? (docs.get(`doc-${docId}`) || docs.get(docId)) : null;
     if (!doc) {
-      const redisKey = `yjs:doc:${docId}`;
-      const update = await redis.getBuffer(redisKey);
-      if (!update || update.length === 0) {
+      const redisKey = `yjs:doc:updates:${docId}`;
+      const updates = await redis.getListBuffers(redisKey);
+      if (!updates || updates.length === 0) {
         res.writeHead(404);
         res.end('doc not loaded');
         return;
       }
       doc = new Y.Doc();
-      Y.applyUpdate(doc, update);
+      for (const update of updates) {
+        if (update && update.length > 0) {
+          Y.applyUpdate(doc, update);
+        }
+      }
     }
     const update = Y.encodeStateAsUpdate(doc);
     res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
