@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,9 +12,11 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
+	"github.com/bytedance/sonic"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,6 +45,8 @@ func main() {
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
 		logrus.Fatalf("Init MQ failed: %v", err)
 	}
+
+	repository.MustInit()
 
 	topic := os.Getenv("DIRTY_DOC_TOPIC")
 	if topic == "" {
@@ -82,7 +85,7 @@ func main() {
 				return nil
 			}
 
-			if err := service.DocumentSvc.SaveDocumentYjsSnapshot(docID, state); err != nil {
+			if err := service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, docID, state); err != nil {
 				return err
 			}
 
@@ -118,7 +121,7 @@ func parseDocID(data []byte) string {
 		return ""
 	}
 	var msg dirtyDocMessage
-	if err := json.Unmarshal(data, &msg); err == nil {
+	if err := sonic.Unmarshal(data, &msg); err == nil {
 		if msg.DocID != "" {
 			return msg.DocID
 		}

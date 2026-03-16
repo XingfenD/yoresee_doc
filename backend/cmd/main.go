@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/transport/connectserver"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
@@ -28,6 +29,8 @@ func main() {
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
 		logrus.Fatalf("Init message queue failed: %v", err)
 	}
+
+	repository.MustInit()
 
 	defer mq.Close()
 

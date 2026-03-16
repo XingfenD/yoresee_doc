@@ -105,20 +105,22 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 		})
 	}
 
-	documents, totalCount, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(
-		&dto.ListDocumentsByExternalReq{
-			ExternalArgs: &dto.DocumentsListExternalArgs{
-				KnowledgeExternalID: utils.Of(kbDTO.ExternalID),
-			},
-			Pagination: dto.Pagination{
-				Page:     int(req.Page),
-				PageSize: int(req.PageSize),
-			},
-			Options: &dto.RecursiveOptions{
-				IncludeChildren: true,
-				Recursive:       true,
-			},
+	svcReq := &dto.ListDocumentsByExternalReq{
+		ExternalArgs: &dto.DocumentsListExternalArgs{
+			KnowledgeExternalID: utils.Of(kbDTO.ExternalID),
 		},
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+		Options: &dto.RecursiveOptions{
+			IncludeChildren: true,
+			Recursive:       true,
+		},
+	}
+	documents, totalCount, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(
+		ctx,
+		svcReq,
 	)
 	if err != nil {
 		return &pb.GetKnowledgeBaseResponse{Base: baseResponseFromErr(status.StatusDocumentNotFound)}, nil

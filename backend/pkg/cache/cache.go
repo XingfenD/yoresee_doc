@@ -2,20 +2,12 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/bytedance/sonic"
 	"github.com/redis/go-redis/v9"
 )
-
-func KeyDocTree(userID, kbID int64) string {
-	if kbID > 0 {
-		return fmt.Sprintf("dms:doc:tree:kb:%d", kbID)
-	}
-	return fmt.Sprintf("dms:doc:tree:u:%d", userID)
-}
 
 func GetJSON(ctx context.Context, key string, dst interface{}) (bool, error) {
 	b, err := storage.KVS.Get(ctx, key).Bytes()

@@ -2,8 +2,9 @@ package model
 
 import (
 	"database/sql/driver"
-	"encoding/json"
 	"errors"
+
+	"github.com/bytedance/sonic"
 )
 
 type ResourceType string
@@ -24,7 +25,7 @@ func (j JSONB) Value() (driver.Value, error) {
 	if j == nil {
 		return nil, nil
 	}
-	return json.Marshal(j)
+	return sonic.Marshal(j)
 }
 
 func (j *JSONB) Scan(value interface{}) error {
@@ -36,7 +37,7 @@ func (j *JSONB) Scan(value interface{}) error {
 	if !ok {
 		return errors.New("type assertion to []byte failed")
 	}
-	return json.Unmarshal(bytes, j)
+	return sonic.Unmarshal(bytes, j)
 }
 
 type Resource struct {

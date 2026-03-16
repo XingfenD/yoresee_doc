@@ -1,14 +1,26 @@
 package repository
 
 import (
+	"context"
+
+	cache_loader "github.com/XingfenD/yoresee_doc/internal/cache"
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/pkg/cache"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
+	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-type DocumentRepository struct{}
+type DocumentRepository struct {
+	Loader cache_loader.Loader
+}
 
-var DocumentRepo = &DocumentRepository{}
+var DocumentRepo DocumentRepository
+
+func initDocumentRepo(redis *redis.Client) {
+	DocumentRepo.Loader = *cache_loader.NewLoader(redis)
+}
 
 type DocumentGetByExternalIDOperation struct {
 	repo       *DocumentRepository
@@ -28,17 +40,38 @@ func (op *DocumentGetByExternalIDOperation) WithTx(tx *gorm.DB) *DocumentGetByEx
 	return op
 }
 
-func (op *DocumentGetByExternalIDOperation) Exec() (*model.Document, error) {
+func (op *DocumentGetByExternalIDOperation) query(db *gorm.DB) (*model.Document, error) {
 	var document model.Document
 	var err error
 
-	if op.tx != nil {
-		err = op.tx.First(&document, "external_id = ?", op.externalID).Error
-	} else {
-		err = storage.DB.First(&document, "external_id = ?", op.externalID).Error
-	}
+	err = db.First(&document, "external_id = ?", op.externalID).Error
 
 	return &document, err
+}
+
+func (op *DocumentGetByExternalIDOperation) Exec(ctx context.Context) (*model.Document, error) {
+	var err error
+
+	if op.tx != nil {
+		return op.query(op.tx)
+	}
+
+	documentCacheKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_Doc, op.externalID)
+	document, err := cache_loader.NewCacheLoadOperation[model.Document](&op.repo.Loader).
+		WithDBLoader(func() (*model.Document, error) {
+			return op.query(storage.DB)
+		}).WithDefaultKeyAndParser(documentCacheKey, nil).
+		WithDBLoader(func() (*model.Document, error) {
+			return op.query(storage.DB)
+		}).
+		Exec(ctx)
+
+	if err != nil {
+		logrus.Errorf("load data failed for DocumentGetByExternalIDOperation: %+v", err)
+		return nil, err
+	}
+
+	return document, nil
 }
 
 type DocumentGetContentOperation struct {
@@ -94,17 +127,44 @@ func (op *DocumentGetIDByExternalIDOperation) WithTx(tx *gorm.DB) *DocumentGetID
 	return op
 }
 
-func (op DocumentGetIDByExternalIDOperation) Exec() (int64, error) {
+func (op DocumentGetIDByExternalIDOperation) query(tx *gorm.DB) (int64, error) {
 	var id int64
-	if op.tx == nil {
-		op.tx = storage.DB
-	}
-
-	err := op.tx.Model(&model.Document{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
+	err := tx.Model(&model.Document{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
+}
+
+func (op *DocumentGetIDByExternalIDOperation) Exec(ctx context.Context) (int64, error) {
+	if op.tx != nil {
+		return op.query(op.tx)
+	}
+
+	// Define cache keys - different formats may have different value structures
+	extidKey := cache.KeyIDByExternalID(cache.KeyObjectTypeEnum_Doc, op.externalID)    // Stores just the ID
+	modelKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_Doc, op.externalID) // Stores the entire model
+
+	// Define parsers for each cache key format
+	id, err := cache_loader.NewCacheLoadOperation[int64](&op.repo.Loader).
+		WithDefaultKeyAndParser(extidKey, cache_loader.ParseInt64).
+		WithKeyAndParser(modelKey, cache_loader.ParseIDFromDocument).
+		WithDBLoader(func() (*int64, error) {
+			id, err := op.query(storage.DB)
+			if err != nil {
+				return nil, err
+			}
+			return &id, nil
+		}).Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if id == nil {
+		return 0, nil
+	}
+
+	return *id, nil
 }
 
 type DocumentsListOperation struct {

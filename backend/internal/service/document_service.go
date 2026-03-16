@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
@@ -23,7 +24,7 @@ type DocumentService struct {
 
 func NewDocumentService() *DocumentService {
 	return &DocumentService{
-		documentRepo: repository.DocumentRepo,
+		documentRepo: &repository.DocumentRepo,
 		userRepo:     repository.UserRepo,
 		kbRepo:       repository.KnowledgeBaseRepo,
 		snapshotRepo: repository.DocumentYjsSnapshotRepo,
@@ -36,8 +37,8 @@ func (s *DocumentService) ConvertToDocumentResponse(doc *model.Document) *dto.Do
 	return dto.NewDocumentMetaResponseFromModel(doc)
 }
 
-func (s *DocumentService) GetDocumentByExternalID(externalID string) (*dto.DocumentResponse, error) {
-	docModel, err := s.documentRepo.GetByExternalID(externalID).Exec()
+func (s *DocumentService) GetDocumentByExternalID(ctx context.Context, externalID string) (*dto.DocumentResponse, error) {
+	docModel, err := s.documentRepo.GetByExternalID(externalID).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +46,8 @@ func (s *DocumentService) GetDocumentByExternalID(externalID string) (*dto.Docum
 	return dto.NewDocumentResponseFromModel(docModel), nil
 }
 
-func (s *DocumentService) GetDocumentYjsSnapshot(docExternalID string) ([]byte, error) {
-	docID, err := repository.DocumentRepo.GetIDByExternalID(docExternalID).Exec()
+func (s *DocumentService) GetDocumentYjsSnapshot(ctx context.Context, docExternalID string) ([]byte, error) {
+	docID, err := repository.DocumentRepo.GetIDByExternalID(docExternalID).Exec(ctx)
 	if err != nil {
 		return nil, status.StatusDocumentNotFound
 	}
@@ -61,11 +62,11 @@ func (s *DocumentService) GetDocumentYjsSnapshot(docExternalID string) ([]byte, 
 	return snapshot.YjsState, nil
 }
 
-func (s *DocumentService) SaveDocumentYjsSnapshot(docExternalID string, state []byte) error {
+func (s *DocumentService) SaveDocumentYjsSnapshot(ctx context.Context, docExternalID string, state []byte) error {
 	if len(state) == 0 {
 		return status.StatusParamError
 	}
-	docID, err := repository.DocumentRepo.GetIDByExternalID(docExternalID).Exec()
+	docID, err := repository.DocumentRepo.GetIDByExternalID(docExternalID).Exec(ctx)
 	if err != nil {
 		return status.StatusDocumentNotFound
 	}
@@ -230,7 +231,7 @@ func (s *DocumentService) listDocumentsWithChildren(req *documentsListReq) ([]*d
 	return docs, total, nil
 }
 
-func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocumentsByExternalReq) ([]*dto.DocumentMetaResponse, int64, error) {
+func (s *DocumentService) ListDocumentsWithChildrenByExternal(ctx context.Context, req *dto.ListDocumentsByExternalReq) ([]*dto.DocumentMetaResponse, int64, error) {
 	var userID *int64
 	if req == nil {
 		return nil, 0, status.StatusInternalParamsError
@@ -245,7 +246,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(req *dto.ListDocum
 
 	var parentID int64
 	if req.ExternalArgs != nil && req.ExternalArgs.RootDocumentExternalID != nil && *req.ExternalArgs.RootDocumentExternalID != "" {
-		doc, err := s.documentRepo.GetByExternalID(*req.ExternalArgs.RootDocumentExternalID).Exec()
+		doc, err := s.documentRepo.GetByExternalID(*req.ExternalArgs.RootDocumentExternalID).Exec(ctx)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -301,7 +302,7 @@ func validateCreateDocumentReq(req *dto.CreateDocumentReq) error {
 	return nil
 }
 
-func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumentResponse, error) {
+func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq) (*dto.CreateDocumentResponse, error) {
 	if err := validateCreateDocumentReq(req); err != nil {
 		return nil, err
 	}
@@ -341,7 +342,7 @@ func (s *DocumentService) Create(req *dto.CreateDocumentReq) (*dto.CreateDocumen
 
 		// query parent_id
 		if req.ParentExternalID != nil {
-			parentDocID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).WithTx(tx).Exec()
+			parentDocID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).WithTx(tx).Exec(ctx)
 			if err != nil {
 				return status.StatusDocumentNotFound
 			}
@@ -399,13 +400,13 @@ func validateUpdateDocumentReq(req *dto.UpdateDocumentRequest) error {
 	return nil
 }
 
-func (s *DocumentService) Update(req *dto.UpdateDocumentRequest) (bool, error) {
+func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentRequest) (bool, error) {
 	if err := validateUpdateDocumentReq(req); err != nil {
 		return false, err
 	}
 
 	utils.WithTransaction(func(tx *gorm.DB) error {
-		oldDoc, err := s.documentRepo.GetByExternalID(req.ExternalID).WithTx(tx).Exec()
+		oldDoc, err := s.documentRepo.GetByExternalID(req.ExternalID).WithTx(tx).Exec(ctx)
 		if err != nil {
 			return status.StatusDocumentNotFound
 		}
@@ -423,7 +424,7 @@ func (s *DocumentService) Update(req *dto.UpdateDocumentRequest) (bool, error) {
 		}
 
 		if req.ParentExternalID != nil {
-			parentID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).Exec()
+			parentID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).Exec(ctx)
 			if err != nil {
 				return status.StatusDocumentNotFound
 			}
