@@ -142,6 +142,7 @@ services:
       - DIRTY_DOC_TOPIC=collab.dirty_docs
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       - INTERNAL_RPC_KEY=yoresee_doc_internal_key
+      - DIRTY_DOC_NOTIFY_THRESHOLD=5
     depends_on:
       redis:
         condition: service_healthy

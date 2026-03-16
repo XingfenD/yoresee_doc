@@ -1,7 +1,8 @@
 const http = require('http');
 const WebSocket = require('ws');
 const Y = require('yjs');
-const { setupWSConnection, docs } = require('./src/ws-utils');
+const wsUtils = require('./src/ws-utils');
+const { setupWSConnection } = wsUtils;
 const config = require('./src/config');
 const redis = require('./src/redis');
 const grpc = require('./src/grpc');
@@ -10,7 +11,7 @@ const mq = require('./src/mq');
 const server = http.createServer();
 const wss = new WebSocket.Server({ server });
 
-server.on('request', (req, res) => {
+server.on('request', async (req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -37,11 +38,18 @@ server.on('request', (req, res) => {
       res.end('doc id required');
       return;
     }
-    const doc = docs.get(`doc-${docId}`) || docs.get(docId);
+    const docs = wsUtils.docs;
+    let doc = docs ? (docs.get(`doc-${docId}`) || docs.get(docId)) : null;
     if (!doc) {
-      res.writeHead(404);
-      res.end('doc not loaded');
-      return;
+      const redisKey = `yjs:doc:${docId}`;
+      const update = await redis.getBuffer(redisKey);
+      if (!update || update.length === 0) {
+        res.writeHead(404);
+        res.end('doc not loaded');
+        return;
+      }
+      doc = new Y.Doc();
+      Y.applyUpdate(doc, update);
     }
     const update = Y.encodeStateAsUpdate(doc);
     res.writeHead(200, { 'Content-Type': 'application/octet-stream' });

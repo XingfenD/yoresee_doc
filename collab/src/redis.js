@@ -99,6 +99,35 @@ async function appendBuffer(key, buffer) {
   }
 }
 
+async function addDirtyDoc(docId) {
+  if (!redisClient) return;
+  try {
+    await redisClient.sAdd(config.dirtyDocSetKey, docId);
+  } catch (err) {
+    console.error(`Failed to add dirty doc ${docId}:`, err.message);
+  }
+}
+
+async function removeDirtyDoc(docId) {
+  if (!redisClient) return;
+  try {
+    await redisClient.sRem(config.dirtyDocSetKey, docId);
+  } catch (err) {
+    console.error(`Failed to remove dirty doc ${docId}:`, err.message);
+  }
+}
+
+async function isDirtyDoc(docId) {
+  if (!redisClient) return false;
+  try {
+    const exists = await redisClient.sIsMember(config.dirtyDocSetKey, docId);
+    return !!exists;
+  } catch (err) {
+    console.error(`Failed to check dirty doc ${docId}:`, err.message);
+    return false;
+  }
+}
+
 module.exports = {
   initRedis,
   initYRedis,
@@ -108,6 +137,9 @@ module.exports = {
   getBuffer,
   setBuffer,
   appendBuffer,
+  addDirtyDoc,
+  removeDirtyDoc,
+  isDirtyDoc,
   closeRedis,
   get redisClient() {
     return redisClient;

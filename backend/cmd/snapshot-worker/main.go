@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 
 const (
 	defaultDirtyDocTopic = "collab.dirty_docs"
+	defaultDirtyDocSet   = "yjs:dirty:doc"
 )
 
 type dirtyDocMessage struct {
@@ -68,6 +70,11 @@ func main() {
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
+	dirtySetKey := os.Getenv("DIRTY_DOC_SET_KEY")
+	if dirtySetKey == "" {
+		dirtySetKey = defaultDirtyDocSet
+	}
+	inFlight := &sync.Map{}
 
 	logrus.Infof("Snapshot worker started: topic=%s collabCore=%s", topic, collabCoreHTTP)
 
@@ -77,29 +84,29 @@ func main() {
 			if docID == "" {
 				return nil
 			}
-			state, err := fetchDocState(client, collabCoreHTTP, docID)
-			if err != nil {
-				return err
-			}
-			if len(state) == 0 {
-				return nil
-			}
-
-			if err := service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, docID, state); err != nil {
-				return err
-			}
-
-			if storage.GetRedis() != nil {
-				key := fmt.Sprintf("yjs:doc:%s", docID)
-				if err := storage.GetRedis().Set(ctx, key, state, 0).Err(); err != nil {
-					return err
-				}
-			}
-
-			logrus.Infof("Snapshot saved for %s", docID)
-			return nil
+			return snapshotDoc(ctx, inFlight, client, collabCoreHTTP, dirtySetKey, docID, true)
 		}); err != nil {
 			logrus.Fatalf("Subscribe failed: %v", err)
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			docIDs, err := scanDirtyDocs(client, collabCoreHTTP, dirtySetKey)
+			if err != nil {
+				logrus.Errorf("Scan dirty docs failed: %v", err)
+				continue
+			}
+			logrus.Infof("Scan dirty docs: candidates=%d", len(docIDs))
+			if len(docIDs) > 0 {
+				logrus.Infof("Dirty doc candidates: %v", docIDs)
+			}
+			for _, docID := range docIDs {
+				ctx := context.Background()
+				_ = snapshotDoc(ctx, inFlight, client, collabCoreHTTP, dirtySetKey, docID, false)
+			}
 		}
 	}()
 
@@ -146,6 +153,93 @@ func fetchDocState(client *http.Client, baseURL, docID string) ([]byte, error) {
 		return nil, fmt.Errorf("unexpected status %d", resp.StatusCode)
 	}
 	return io.ReadAll(resp.Body)
+}
+
+func scanDirtyDocs(client *http.Client, baseURL, dirtySetKey string) ([]string, error) {
+	ctx := context.Background()
+	if storage.GetRedis() == nil {
+		return nil, nil
+	}
+	docIDs, err := storage.GetRedis().SMembers(ctx, dirtySetKey).Result()
+	if err != nil {
+		return nil, err
+	}
+	if len(docIDs) == 0 {
+		return nil, nil
+	}
+	now := time.Now().UnixMilli()
+	candidates := make([]string, 0, len(docIDs))
+	for _, docID := range docIDs {
+		if docID == "" {
+			continue
+		}
+		roomKey := fmt.Sprintf("collab:room:doc-%s", docID)
+		lastStr, err := storage.GetRedis().Get(ctx, roomKey).Result()
+		if err != nil {
+			logrus.Infof("Dirty doc %s skipped: room key missing", docID)
+			continue
+		}
+		last, parseErr := parseInt64(lastStr)
+		if parseErr != nil {
+			logrus.Infof("Dirty doc %s skipped: invalid room timestamp %s", docID, lastStr)
+			continue
+		}
+		if now-last < 10_000 {
+			logrus.Infof("Dirty doc %s skipped: lastEditAgo=%dms", docID, now-last)
+			continue
+		}
+		candidates = append(candidates, docID)
+	}
+	return candidates, nil
+}
+
+func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, baseURL, dirtySetKey, docID string, force bool) error {
+	if _, loaded := inFlight.LoadOrStore(docID, struct{}{}); loaded {
+		return nil
+	}
+	defer inFlight.Delete(docID)
+
+	logrus.Infof("Snapshot start docId=%s force=%v", docID, force)
+	state, err := fetchDocState(client, baseURL, docID)
+	if err != nil {
+		logrus.Errorf("Snapshot fetch failed docId=%s err=%v", docID, err)
+		return err
+	}
+	if len(state) == 0 {
+		logrus.Infof("Snapshot empty docId=%s", docID)
+		return nil
+	}
+	logrus.Infof("Snapshot fetched docId=%s bytes=%d", docID, len(state))
+
+	if err := service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, docID, state); err != nil {
+		logrus.Errorf("Snapshot save failed docId=%s err=%v", docID, err)
+		return err
+	}
+
+	if storage.GetRedis() != nil {
+		key := fmt.Sprintf("yjs:doc:%s", docID)
+		if err := storage.GetRedis().Set(ctx, key, state, 0).Err(); err != nil {
+			logrus.Errorf("Snapshot redis set failed docId=%s err=%v", docID, err)
+			return err
+		}
+		if err := storage.GetRedis().SRem(ctx, dirtySetKey, docID).Err(); err != nil {
+			logrus.Errorf("Snapshot redis srem failed docId=%s err=%v", docID, err)
+			return err
+		}
+	}
+
+	if force {
+		logrus.Infof("Snapshot saved (mq) for %s", docID)
+	} else {
+		logrus.Infof("Snapshot saved (scan) for %s", docID)
+	}
+	return nil
+}
+
+func parseInt64(value string) (int64, error) {
+	var result int64
+	_, err := fmt.Sscanf(value, "%d", &result)
+	return result, err
 }
 
 func waitForShutdown() {

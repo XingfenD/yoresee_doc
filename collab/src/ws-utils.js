@@ -7,6 +7,7 @@ const decoding = require('lib0/dist/decoding.cjs');
 const { loadDoc } = require('./doc-loader');
 const redis = require('./redis');
 const mq = require('./mq');
+const config = require('./config');
 
 const wsReadyStateConnecting = 0;
 const wsReadyStateOpen = 1;
@@ -15,6 +16,7 @@ const wsReadyStateClosed = 3;
 
 const gcEnabled = process.env.GC !== 'false' && process.env.GC !== '0';
 const compactThreshold = parseInt(process.env.DOC_UPDATE_COMPACT_THRESHOLD, 10) || 1000;
+const dirtyNotifyThreshold = config.dirtyDocNotifyThreshold;
 
 const debounce = (fn, wait, options = {}) => {
   let timeout = null;
@@ -51,6 +53,7 @@ const debounce = (fn, wait, options = {}) => {
 
 const docPromises = new Map();
 const updateCounts = new Map();
+const notifyCounts = new Map();
 
 
 
@@ -73,7 +76,16 @@ const persistUpdate = async (docId, doc, update) => {
   }
   const redisKey = `yjs:doc:${docId}`;
   await redis.appendBuffer(redisKey, update);
-  await mq.publishDirtyDoc(docId);
+  await redis.addDirtyDoc(docId);
+  await redis.updateRoomActiveTime(`doc-${docId}`);
+
+  const nextNotify = (notifyCounts.get(docId) || 0) + 1;
+  if (nextNotify >= dirtyNotifyThreshold) {
+    await mq.publishDirtyDoc(docId);
+    notifyCounts.set(docId, 0);
+  } else {
+    notifyCounts.set(docId, nextNotify);
+  }
 
   const nextCount = (updateCounts.get(docId) || 0) + 1;
   if (nextCount >= compactThreshold) {
@@ -201,6 +213,10 @@ const closeConn = (doc, conn) => {
     const controlledIds = doc.conns.get(conn);
     doc.conns.delete(conn);
     awarenessProtocol.removeAwarenessStates(doc.awareness, Array.from(controlledIds), null);
+    if (doc.conns.size === 0) {
+      docs.delete(doc.name);
+      doc.destroy();
+    }
   }
   conn.close();
 };
