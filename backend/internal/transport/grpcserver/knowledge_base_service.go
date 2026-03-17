@@ -119,7 +119,7 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 			Recursive:       true,
 		},
 	}
-	documents, totalCount, err := document_service.DocumentSvc.ListDocumentsWithChildrenByExternal(
+	documents, totalCount, err := document_service.DocumentSvc.ListDocumentsByExternal(
 		ctx,
 		svcReq,
 	)

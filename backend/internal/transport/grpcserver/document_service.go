@@ -68,7 +68,7 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 		}
 	}
 
-	docs, _, err := document_service.DocumentSvc.ListDocumentsWithChildrenByExternal(ctx, serviceReq)
+	docs, _, err := document_service.DocumentSvc.ListDocumentsByExternal(ctx, serviceReq)
 	if err != nil {
 		return &pb.ListDocumentsResponse{Base: baseResponseFromErr(err)}, nil
 	}
@@ -152,7 +152,7 @@ func (s *DocumentServiceServer) GetOwnDocuments(ctx context.Context, req *pb.Get
 		},
 	}
 
-	docs, count, err := document_service.DocumentSvc.ListDocumentsWithChildrenByExternal(ctx, queryReq)
+	docs, count, err := document_service.DocumentSvc.ListDocumentsByExternal(ctx, queryReq)
 	if err != nil {
 		return &pb.GetOwnDocumentsResponse{Base: baseResponseFromErr(err)}, nil
 	}
