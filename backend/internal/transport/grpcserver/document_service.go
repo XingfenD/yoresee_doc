@@ -140,7 +140,10 @@ func (s *DocumentServiceServer) GetOwnDocuments(ctx context.Context, req *pb.Get
 	queryReq := &dto.ListDocumentsByExternalReq{
 		ExternalArgs: &dto.DocumentsListExternalArgs{
 			UserExternalID: &userExternalID,
-			ListOwnDoc:     true,
+		},
+		ListDocumentsBaseArgs: dto.ListDocumentsBaseArgs{
+			ListOwnDoc:    true,
+			DirectoryOnly: req.DirectoryOnly,
 		},
 		Pagination: dto.Pagination{
 			Page:     int(req.Page),

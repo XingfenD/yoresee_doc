@@ -54,6 +54,9 @@ func NewDocumentMetaResponseFromModel(doc *model.Document) *DocumentMetaResponse
 }
 
 func NewDocumentResponseFromModel(doc *model.Document) *DocumentResponse {
+	if doc == nil {
+		return &DocumentResponse{}
+	}
 	response := &DocumentResponse{
 		DocumentMetaResponse: DocumentMetaResponse{
 			DocumentBase: DocumentBase{
@@ -86,7 +89,6 @@ type DocumentsListExternalArgs struct {
 	UserExternalID         *string `json:"user_external_id"`
 	RootDocumentExternalID *string `json:"root_document_external_id"`
 	KnowledgeExternalID    *string `json:"knowledge_external_id"`
-	ListOwnDoc             bool    `json:"list_own_doc"`
 }
 
 type DocumentsListFilterArgs struct {
@@ -100,12 +102,18 @@ type DocumentsListFilterArgs struct {
 	UpdateTimeRangeEnd   *string  `json:"update_time_range_end"`
 }
 
+type ListDocumentsBaseArgs struct {
+	ListOwnDoc    bool `json:"list_own_doc"`
+	DirectoryOnly bool `json:"directory_only"`
+}
+
 type ListDocumentsByExternalReq struct {
 	ExternalArgs *DocumentsListExternalArgs `json:"external_args"`
-	FilterArgs   *DocumentsListFilterArgs   `json:"filter_args"`
-	SortArgs     SortArgs                   `json:"sort_args"`
-	Pagination   Pagination                 `json:"pagination"`
-	Options      *RecursiveOptions          `json:"options"`
+	ListDocumentsBaseArgs
+	FilterArgs *DocumentsListFilterArgs `json:"filter_args"`
+	SortArgs   SortArgs                 `json:"sort_args"`
+	Pagination Pagination               `json:"pagination"`
+	Options    *RecursiveOptions        `json:"options"`
 }
 
 type CreateDocumentReq struct {

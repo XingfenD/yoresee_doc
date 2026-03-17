@@ -110,6 +110,9 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 		ExternalArgs: &dto.DocumentsListExternalArgs{
 			KnowledgeExternalID: utils.Of(kbDTO.ExternalID),
 		},
+		ListDocumentsBaseArgs: dto.ListDocumentsBaseArgs{
+			DirectoryOnly: req.DirectoryOnly,
+		},
 		Pagination: dto.Pagination{
 			Page:     int(req.Page),
 			PageSize: int(req.PageSize),

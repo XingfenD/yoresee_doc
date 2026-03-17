@@ -6,6 +6,8 @@ tmp/
 
 node_modules/
 
+gen/
+
 .DS_Store
 
 nginx.conf

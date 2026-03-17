@@ -13,7 +13,10 @@ type DocumentGetSubtreeOperation struct {
 	rootParentID int64
 	knowledgeID  *int64
 	depth        *int
-	tx           *gorm.DB
+
+	directoryOnly bool
+
+	tx *gorm.DB
 }
 
 func (r *DocumentRepository) GetSubtree(rootParentID int64) *DocumentGetSubtreeOperation {
@@ -38,13 +41,18 @@ func (op *DocumentGetSubtreeOperation) WithDepth(depth *int) *DocumentGetSubtree
 	return op
 }
 
-func (op *DocumentGetSubtreeOperation) Exec() ([]model.Document, error) {
+func (op *DocumentGetSubtreeOperation) WithDirectoryOnly(with bool) *DocumentGetSubtreeOperation {
+	op.directoryOnly = true
+	return op
+}
+
+func (op *DocumentGetSubtreeOperation) Exec() ([]*model.Document, error) {
 	db := storage.DB
 	if op.tx != nil {
 		db = op.tx
 	}
 
-	var documents []model.Document
+	var documents []*model.Document
 
 	if op.depth != nil && *op.depth == 0 {
 		return documents, nil
@@ -73,6 +81,15 @@ func (op *DocumentGetSubtreeOperation) Exec() ([]model.Document, error) {
 			AND id <> ?
 			AND path <@ ?
 	`
+	if op.directoryOnly {
+		query = `
+		SELECT id, external_id, title, parent_id
+		FROM document_metas
+		WHERE deleted_at IS NULL
+			AND id <> ?
+			AND path <@ ?
+	`
+	}
 	args := []interface{}{op.rootParentID, root.Path}
 	if op.knowledgeID != nil {
 		query += " AND knowledge_id = ?"

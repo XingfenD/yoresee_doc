@@ -8,6 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 )
 
+// distributed lock, depredated by usage of singleflight
 type DistributedLock struct {
 	key        string
 	value      string

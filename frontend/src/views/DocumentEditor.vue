@@ -348,11 +348,11 @@ const fetchDocuments = async () => {
   treeLoading.value = true;
   try {
     if (kbId.value === 'personal') {
-      const response = await getMyDocuments({ page: 1, page_size: 1000 });
+      const response = await getMyDocuments({ page: 1, page_size: 1000, directory_only: true });
       knowledgeBaseName.value = t('home.myDocuments');
       directoryTree.value = transformDocumentsToTree(response.documents || []);
     } else {
-      const response = await getKnowledgeBaseDocuments(kbId.value);
+      const response = await getKnowledgeBaseDocuments(kbId.value, { directory_only: true });
       knowledgeBaseName.value = response.knowledge_base.name;
       directoryTree.value = transformDocumentsToTree(response.documents);
     }

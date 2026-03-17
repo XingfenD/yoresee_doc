@@ -104,7 +104,8 @@ export const getKnowledgeBaseDetail = async (knowledgeBaseExternalID, params = {
     knowledgeBaseExternalId: knowledgeBaseExternalID,
     recordRecentLog: Boolean(params.record_recent_log),
     page: params.page || undefined,
-    pageSize: params.page_size || undefined
+    pageSize: params.page_size || undefined,
+    directoryOnly: params.directory_only || false
   });
 
   const resp = await unaryCall(knowledgeBaseClient, 'getKnowledgeBase', req);
@@ -123,6 +124,7 @@ export const getKnowledgeBaseDocuments = async (knowledgeBaseExternalID, params 
     record_recent_log: false,
     page: 1,
     page_size: 1000,
+    directory_only: params.directory_only || false,
     ...params
   });
 };
@@ -175,7 +177,8 @@ export const getDocumentContent = async (documentExternalID, params = {}) => {
 export const getMyDocuments = async (params = {}) => {
   const req = new GetOwnDocumentsRequest({
     page: params.page || undefined,
-    pageSize: params.page_size || undefined
+    pageSize: params.page_size || undefined,
+    directoryOnly: params.directory_only || false
   });
 
   const resp = await unaryCall(documentClient, 'getOwnDocuments', req);

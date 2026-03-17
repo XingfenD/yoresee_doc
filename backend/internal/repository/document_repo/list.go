@@ -25,7 +25,10 @@ type DocumentsListOperation struct {
 	sortDesc             bool
 	page                 int
 	pageSize             int
-	tx                   *gorm.DB
+
+	directoryOnly bool
+
+	tx *gorm.DB
 }
 
 func (r *DocumentRepository) ListDocuments(documentModel *model.Document) *DocumentsListOperation {
@@ -99,6 +102,11 @@ func (op *DocumentsListOperation) WithSort(field string, desc bool) *DocumentsLi
 	return op
 }
 
+func (op *DocumentsListOperation) WithDirectoryOnly(with bool) *DocumentsListOperation {
+	op.directoryOnly = with
+	return op
+}
+
 func (op *DocumentsListOperation) WithTx(tx *gorm.DB) *DocumentsListOperation {
 	op.tx = tx
 	return op
@@ -111,6 +119,9 @@ func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 	}
 
 	dbQuery := db.Model(&model.Document{})
+	if op.directoryOnly {
+		dbQuery = dbQuery.Select("id, external_id, title, parent_id")
+	}
 
 	if op.model != nil {
 		dbQuery = dbQuery.Where(op.model)

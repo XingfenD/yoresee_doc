@@ -113,6 +113,7 @@ message ListDocumentsResponse {
 message GetOwnDocumentsRequest {
   int32 page = 1;
   int32 page_size = 2;
+  bool directory_only = 3;
 }
 
 message GetOwnDocumentsResponse {
@@ -177,6 +178,7 @@ message GetKnowledgeBaseRequest {
   bool record_recent_log = 2;
   int32 page = 3;
   int32 page_size = 4;
+  bool directory_only = 5;
 }
 
 message GetKnowledgeBaseResponse {

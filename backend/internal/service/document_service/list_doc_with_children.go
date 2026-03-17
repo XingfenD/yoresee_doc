@@ -30,7 +30,10 @@ func (s *DocumentService) listDocuments(req *internal_dto.DocumentsListReq) ([]*
 		parentIDs[i] = models[i].ID
 	}
 
-	allDescendants, err := s.getDocumentsWithDescendants(parentIDs, req.Options.Depth)
+	getOp := s.getDocumentsWithDescendants(parentIDs).
+		WithDirectoryOnly(req.DirectoryOnly)
+
+	allDescendants, err := getOp.Exec()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -70,18 +73,16 @@ func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.
 		knowledgeID = &id
 	}
 
-	var listOwnDoc bool
-	if req.ExternalArgs != nil {
-		listOwnDoc = req.ExternalArgs.ListOwnDoc
-	}
-
 	return s.listDocuments(
 		&internal_dto.DocumentsListReq{
 			MetaArgs: &internal_dto.DocumentsListMetaArgs{
 				UserID:      userID,
 				ParentID:    &parentID, // default to root
 				KnowledgeID: knowledgeID,
-				ListOwnDoc:  listOwnDoc,
+			},
+			ListDocumentsBaseArgs: dto.ListDocumentsBaseArgs{
+				ListOwnDoc:    req.ListOwnDoc,
+				DirectoryOnly: req.DirectoryOnly,
 			},
 			FilterArgs: req.FilterArgs,
 			SortArgs:   req.SortArgs,
@@ -91,16 +92,48 @@ func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.
 	)
 }
 
-func (s *DocumentService) getDocumentsWithDescendants(parentIDs []int64, depth *int) ([]model.Document, error) {
-	if len(parentIDs) == 0 {
-		return []model.Document{}, nil
+type GetDocumentsWithDescendantsOption struct {
+	DirectoryOnly bool
+}
+
+type GetDocumentsWithDescendantsOperation struct {
+	svc       *DocumentService
+	parentIDs []int64
+	depth     *int
+
+	directoryOnly bool
+}
+
+func (s *DocumentService) getDocumentsWithDescendants(parentIDs []int64) *GetDocumentsWithDescendantsOperation {
+	return &GetDocumentsWithDescendantsOperation{
+		svc:       s,
+		parentIDs: parentIDs,
+	}
+}
+
+func (op *GetDocumentsWithDescendantsOperation) WithDepth(depth *int) *GetDocumentsWithDescendantsOperation {
+	op.depth = depth
+	return op
+}
+
+func (op *GetDocumentsWithDescendantsOperation) WithDirectoryOnly(with bool) *GetDocumentsWithDescendantsOperation {
+	op.directoryOnly = with
+	return op
+}
+
+func (op *GetDocumentsWithDescendantsOperation) Exec() ([]*model.Document, error) {
+	if len(op.parentIDs) == 0 {
+		return []*model.Document{}, nil
 	}
 
-	allDocs := make([]model.Document, 0)
+	allDocs := make([]*model.Document, 0)
 	seen := make(map[int64]bool)
 
-	for _, rootParentID := range parentIDs {
-		docs, err := s.documentRepo.GetSubtree(rootParentID).WithDepth(depth).Exec()
+	for _, rootParentID := range op.parentIDs {
+		docs, err := op.svc.documentRepo.GetSubtree(rootParentID).
+			WithDepth(op.depth).
+			WithDirectoryOnly(op.directoryOnly).
+			Exec()
 		if err != nil {
 			return nil, err
 		}

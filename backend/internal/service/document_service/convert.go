@@ -24,7 +24,8 @@ func (s *DocumentService) buildListDocumentsOperation(req *internal_dto.Document
 		listOp = listOp.WithUserID(req.MetaArgs.UserID).
 			WithParentID(req.MetaArgs.ParentID).
 			WithKnowledgeID(req.MetaArgs.KnowledgeID).
-			WithListOwnDoc(req.MetaArgs.ListOwnDoc)
+			WithListOwnDoc(req.ListOwnDoc).
+			WithDirectoryOnly(req.DirectoryOnly)
 	}
 	if req.FilterArgs != nil {
 		listOp = listOp.WithTitleKeyword(req.FilterArgs.TitleKeyword).
@@ -40,7 +41,7 @@ func (s *DocumentService) buildListDocumentsOperation(req *internal_dto.Document
 	return listOp, nil
 }
 
-func (s *DocumentService) buildDocumentTree(rootDocs []model.Document, allDescendants []model.Document) []*dto.DocumentMetaResponse {
+func (s *DocumentService) buildDocumentTree(rootDocs []model.Document, allDescendants []*model.Document) []*dto.DocumentMetaResponse {
 	docMap := make(map[int64]*dto.DocumentMetaResponse)
 	var rootResponses []*dto.DocumentMetaResponse
 
@@ -50,8 +51,7 @@ func (s *DocumentService) buildDocumentTree(rootDocs []model.Document, allDescen
 		rootResponses = append(rootResponses, resp)
 	}
 
-	for i := range allDescendants {
-		doc := &allDescendants[i]
+	for _, doc := range allDescendants {
 		childResp := s.ConvertToDocumentResponse(doc)
 		docMap[doc.ID] = childResp
 
