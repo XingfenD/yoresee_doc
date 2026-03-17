@@ -646,12 +646,20 @@ func (op *DocumentUpdateContentByExternalIDOperation) WithTx(tx *gorm.DB) *Docum
 	return op
 }
 
-func (op *DocumentUpdateContentByExternalIDOperation) Exec() error {
+func (op *DocumentUpdateContentByExternalIDOperation) Exec(ctx context.Context) error {
 	if op.tx == nil {
 		op.tx = storage.DB
 	}
-	return op.tx.Model(&model.Document{}).
-		Where("external_id = ?", op.externalID).
-		Select("content").
-		Updates(map[string]interface{}{"content": op.content}).Error
+	docModelCacheKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_Doc, op.externalID)
+	return cache.DoubleDelete(
+		ctx,
+		func() error {
+			return op.tx.Model(&model.Document{}).
+				Where("external_id = ?", op.externalID).
+				Select("content").
+				Updates(map[string]interface{}{"content": op.content}).Error
+		},
+		docModelCacheKey,
+	)
+
 }

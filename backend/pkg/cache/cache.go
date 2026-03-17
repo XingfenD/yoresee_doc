@@ -7,6 +7,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/bytedance/sonic"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 )
 
 func GetJSON(ctx context.Context, key string, dst interface{}) (bool, error) {
@@ -37,4 +38,30 @@ func DeleteByPattern(ctx context.Context, pattern string) error {
 		_ = storage.KVS.Del(ctx, iter.Val()).Err()
 	}
 	return iter.Err()
+}
+
+func DoubleDelete(ctx context.Context, writeDB func() error, keys ...string) error {
+	if err := deleteKeys(ctx, keys); err != nil {
+		logrus.Warn("First cache deletion failed: ", err)
+	}
+
+	if err := writeDB(); err != nil {
+		return err
+	}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		if err := deleteKeys(ctx, keys); err != nil {
+			logrus.Warn("Second cache deletion failed: ", err)
+		}
+	}()
+
+	return nil
+}
+
+func deleteKeys(ctx context.Context, keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	return storage.KVS.Del(ctx, keys...).Err()
 }

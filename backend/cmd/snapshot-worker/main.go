@@ -235,7 +235,7 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 		return err
 	}
 
-	if err := repository.DocumentRepo.UpdateContentByExternalID(docID, content).Exec(); err != nil {
+	if err := repository.DocumentRepo.UpdateContentByExternalID(docID, content).Exec(ctx); err != nil {
 		logrus.Errorf("Snapshot content update failed docId=%s err=%v", docID, err)
 		return err
 	}
