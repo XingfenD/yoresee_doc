@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
-	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
+	"github.com/XingfenD/yoresee_doc/internal/service/knowledge_base_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
@@ -63,7 +64,7 @@ func (s *KnowledgeBaseServiceServer) ListKnowledgeBases(ctx context.Context, req
 		serviceReq.CreatorExternalID = userExternalID
 	}
 
-	kbs, total, err := service.KnowledgeBaseSvc.ListByExternal(serviceReq)
+	kbs, total, err := knowledge_base_service.KnowledgeBaseSvc.ListByExternal(serviceReq)
 	if err != nil {
 		return &pb.ListKnowledgeBasesResponse{Base: baseResponseFromErr(err)}, nil
 	}
@@ -90,7 +91,7 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 		return &pb.GetKnowledgeBaseResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	kbDTO, err := service.KnowledgeBaseSvc.GetByExternalID(&dto.KnowledgeBaseGetByExternalIDReq{
+	kbDTO, err := knowledge_base_service.KnowledgeBaseSvc.GetByExternalID(&dto.KnowledgeBaseGetByExternalIDReq{
 		KnowledgeBaseExternalID: req.KnowledgeBaseExternalId,
 	}).WithExtend().Exec()
 	if err != nil {
@@ -98,7 +99,7 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 	}
 
 	if req.RecordRecentLog {
-		service.KnowledgeBaseSvc.CreateRecentKnowledgeBase(&dto.CreateRecentKnowledgeBaseRequest{
+		knowledge_base_service.KnowledgeBaseSvc.CreateRecentKnowledgeBase(&dto.CreateRecentKnowledgeBaseRequest{
 			UserExternalID:          userExternalID,
 			KnowledgeBaseExternalID: req.KnowledgeBaseExternalId,
 			AssessTime:              time.Now(),
@@ -118,7 +119,7 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 			Recursive:       true,
 		},
 	}
-	documents, totalCount, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(
+	documents, totalCount, err := document_service.DocumentSvc.ListDocumentsWithChildrenByExternal(
 		ctx,
 		svcReq,
 	)

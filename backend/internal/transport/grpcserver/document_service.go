@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
-	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
@@ -68,7 +68,7 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 		}
 	}
 
-	docs, _, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(ctx, serviceReq)
+	docs, _, err := document_service.DocumentSvc.ListDocumentsWithChildrenByExternal(ctx, serviceReq)
 	if err != nil {
 		return &pb.ListDocumentsResponse{Base: baseResponseFromErr(err)}, nil
 	}
@@ -89,7 +89,7 @@ func (s *DocumentServiceServer) GetDocumentContent(ctx context.Context, req *pb.
 		return &pb.GetDocumentContentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	document, err := service.DocumentSvc.GetDocumentByExternalID(ctx, req.DocumentExternalId)
+	document, err := document_service.DocumentSvc.GetDocumentByExternalID(ctx, req.DocumentExternalId)
 	if err != nil {
 		return &pb.GetDocumentContentResponse{Base: baseResponseFromErr(status.StatusDocumentNotFound)}, nil
 	}
@@ -106,7 +106,7 @@ func (s *DocumentServiceServer) GetDocumentYjsSnapshot(ctx context.Context, req 
 		return &pb.GetDocumentYjsSnapshotResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	state, err := service.DocumentSvc.GetDocumentYjsSnapshot(ctx, req.DocumentExternalId)
+	state, err := document_service.DocumentSvc.GetDocumentYjsSnapshot(ctx, req.DocumentExternalId)
 	if err != nil {
 		return &pb.GetDocumentYjsSnapshotResponse{Base: baseResponseFromErr(err)}, nil
 	}
@@ -122,7 +122,7 @@ func (s *DocumentServiceServer) SaveDocumentYjsSnapshot(ctx context.Context, req
 		return &pb.SaveDocumentYjsSnapshotResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	if err := service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, req.DocumentExternalId, req.State); err != nil {
+	if err := document_service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, req.DocumentExternalId, req.State); err != nil {
 		return &pb.SaveDocumentYjsSnapshotResponse{Base: baseResponseFromErr(err)}, nil
 	}
 
@@ -152,7 +152,7 @@ func (s *DocumentServiceServer) GetOwnDocuments(ctx context.Context, req *pb.Get
 		},
 	}
 
-	docs, count, err := service.DocumentSvc.ListDocumentsWithChildrenByExternal(ctx, queryReq)
+	docs, count, err := document_service.DocumentSvc.ListDocumentsWithChildrenByExternal(ctx, queryReq)
 	if err != nil {
 		return &pb.GetOwnDocumentsResponse{Base: baseResponseFromErr(err)}, nil
 	}
@@ -195,7 +195,7 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 		return &pb.CreateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	resp, err := service.DocumentSvc.Create(ctx, dtoReq)
+	resp, err := document_service.DocumentSvc.Create(ctx, dtoReq)
 	if err != nil {
 		return &pb.CreateDocumentResponse{Base: baseResponseFromErr(err)}, nil
 	}

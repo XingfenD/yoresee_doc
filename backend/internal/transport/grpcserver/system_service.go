@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
-	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
 )
 
@@ -30,6 +30,6 @@ func (s *SystemServiceServer) SystemInfo(ctx context.Context, req *pb.SystemInfo
 	return &pb.SystemInfoResponse{
 		Base:               baseResponseFromErr(nil),
 		SystemName:         config.GlobalConfig.Backend.SystemName,
-		SystemRegisterMode: service.ConfigSvc.GetSystemRegisterMode(ctx),
+		SystemRegisterMode: config_service.ConfigSvc.GetSystemRegisterMode(ctx),
 	}, nil
 }

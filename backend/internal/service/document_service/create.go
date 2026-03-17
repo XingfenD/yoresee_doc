@@ -1,0 +1,96 @@
+package document_service
+
+import (
+	"context"
+
+	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+)
+
+func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq) (*dto.CreateDocumentResponse, error) {
+	if err := validateCreateDocumentReq(req); err != nil {
+		return nil, err
+	}
+
+	// TODO: redis support
+	docExternalID := utils.GenerateExternalID(utils.ExternalIDContextDocument)
+	err := utils.WithTransaction(func(tx *gorm.DB) error {
+		docModel := &model.Document{
+			ExternalID: docExternalID,
+			Title:      req.Title,
+			Type:       model.DocumentType(req.Type),
+			Summary:    "",
+			Content:    "",
+			Path:       "0",
+			Depth:      0,
+		}
+
+		// query user_id
+		userID, err := s.userRepo.GetIDByExternalID(*req.CreatorExternalID).WithTx(tx).Exec()
+		if err != nil {
+			return status.StatusUserNotFound
+		}
+
+		docModel.UserID = userID
+
+		// query knowledge_id
+		if !req.CreateAsOwnDoc {
+			kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeExternalID).WithTx(tx).Exec()
+			if err != nil {
+				return status.StatusKnowledgeBaseNotFound
+			}
+			docModel.KnowledgeID = &kbID
+			docModel.ContainerType = model.ContainerType_KnowledgeBase
+		} else {
+			docModel.ContainerType = model.ContainerType_Own
+		}
+
+		// TODO: permission check for knowledgebase
+
+		// query parent_id
+		if req.ParentExternalID != nil {
+			parentDocID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).WithTx(tx).Exec(ctx)
+			if err != nil {
+				return status.StatusDocumentNotFound
+			}
+			docModel.ParentID = parentDocID
+		}
+
+		// create document meta
+		err = s.documentRepo.Create(docModel).WithTx(tx).Exec()
+		if err != nil {
+			status.GenErrWithCustomMsg(status.StatusWriteDBError, "create document meta failed")
+			return status.StatusWriteDBError
+		}
+		if err := s.documentRepo.UpdatePathDepth(docModel.ID, docModel.ParentID).WithTx(tx).Exec(); err != nil {
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "update document path depth failed")
+		}
+
+		// create doc version
+		ver := &model.DocumentVersion{
+			DocumentID:    docModel.ID,
+			Content:       docModel.Content,
+			UserID:        userID,
+			Title:         docModel.Title,
+			ChangeSummary: "Create the document",
+		}
+		err = s.docVersionRepo.Create(ver).WithTx(tx).Exec()
+		if err != nil {
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create version failed")
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logrus.Errorf("[Service layer: DocumentService] Create err: %+v", err)
+		return nil, status.StatusWriteDBError
+	}
+	return &dto.CreateDocumentResponse{
+		ExternalID: docExternalID,
+	}, nil
+}

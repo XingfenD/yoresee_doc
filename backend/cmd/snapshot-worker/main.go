@@ -15,7 +15,8 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
-	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
+	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/bytedance/sonic"
@@ -230,12 +231,12 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 	}
 	logrus.Infof("Snapshot fetched docId=%s bytes=%d", docID, len(state))
 
-	if err := service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, docID, state); err != nil {
+	if err := document_service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, docID, state); err != nil {
 		logrus.Errorf("Snapshot save failed docId=%s err=%v", docID, err)
 		return err
 	}
 
-	if err := repository.DocumentRepo.UpdateContentByExternalID(docID, content).Exec(ctx); err != nil {
+	if err := document_repo.DocumentRepo.UpdateContentByExternalID(docID, content).Exec(ctx); err != nil {
 		logrus.Errorf("Snapshot content update failed docId=%s err=%v", docID, err)
 		return err
 	}

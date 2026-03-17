@@ -3,11 +3,12 @@ package service
 import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	svc_iface "github.com/XingfenD/yoresee_doc/internal/service/interface"
+	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 )
 
 func RegisterTopicConsumer(h svc_iface.TopicConsumer) error {
-	return MQSvc.SubscribeTo(mq.BackendRedis, h.Topic(), h.Consume())
+	return mq_service.MQSvc.SubscribeTo(mq.BackendRedis, h.Topic(), h.Consume())
 
 }
 

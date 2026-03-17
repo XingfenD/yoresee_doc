@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
-	"github.com/XingfenD/yoresee_doc/internal/service"
+	"github.com/XingfenD/yoresee_doc/internal/service/auth_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
 )
@@ -22,7 +22,7 @@ func (s *AuthServiceServer) Login(ctx context.Context, req *pb.AuthLoginRequest)
 		return &pb.AuthLoginResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	token, user, err := service.AuthSvc.Login(req.Email, req.Password)
+	token, user, err := auth_service.AuthSvc.Login(req.Email, req.Password)
 	if err != nil {
 		return &pb.AuthLoginResponse{Base: baseResponseFromErr(err)}, nil
 	}
@@ -48,7 +48,7 @@ func (s *AuthServiceServer) Register(ctx context.Context, req *pb.AuthRegisterRe
 		userCreate.InvitationCode = req.InvitationCode
 	}
 
-	err := service.AuthSvc.Register(ctx, userCreate)
+	err := auth_service.AuthSvc.Register(ctx, userCreate)
 	if err != nil {
 		return &pb.AuthRegisterResponse{Base: baseResponseFromErr(err)}, nil
 	}
