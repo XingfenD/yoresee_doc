@@ -29,6 +29,9 @@ func runMigration() error {
 		&model.UserGroupMeta{},
 		&model.User{},
 	)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }

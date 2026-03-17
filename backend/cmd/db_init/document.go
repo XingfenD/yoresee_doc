@@ -30,9 +30,14 @@ func createDocumentWithAllTables(tx *gorm.DB, adminUserID int64, input DocumentI
 		ViewCount:   0,
 		EditCount:   0,
 		KnowledgeID: input.KnowledgeID,
+		Path:        "0",
+		Depth:       0,
 	}
 
 	if err := tx.Create(&document).Error; err != nil {
+		return nil, err
+	}
+	if err := updateDocumentPathDepth(tx, document.ID, document.ParentID); err != nil {
 		return nil, err
 	}
 
@@ -80,9 +85,14 @@ func initializeDocumentsInTx(tx *gorm.DB) error {
 		Tags:       []string{"guide", "welcome"},
 		ViewCount:  0,
 		EditCount:  0,
+		Path:       "0",
+		Depth:      0,
 	}
 
 	if err := tx.Create(&document).Error; err != nil {
+		return err
+	}
+	if err := updateDocumentPathDepth(tx, document.ID, document.ParentID); err != nil {
 		return err
 	}
 
@@ -143,4 +153,32 @@ func initializeDocumentsInTx(tx *gorm.DB) error {
 
 	logrus.Println("Default document created successfully in transaction")
 	return nil
+}
+
+func updateDocumentPathDepth(tx *gorm.DB, docID int64, parentID int64) error {
+	if parentID == 0 {
+		return tx.Exec(`
+			UPDATE document_metas
+			SET path = (id::text)::ltree, depth = 0
+			WHERE id = ?
+		`, docID).Error
+	}
+
+	type pathDepth struct {
+		Path  string
+		Depth int
+	}
+	var parent pathDepth
+	if err := tx.Model(&model.Document{}).
+		Select("path, depth").
+		Where("id = ?", parentID).
+		Take(&parent).Error; err != nil {
+		return err
+	}
+
+	return tx.Exec(`
+		UPDATE document_metas
+		SET path = (?::ltree) || (id::text)::ltree, depth = ?
+		WHERE id = ?
+	`, parent.Path, parent.Depth+1, docID).Error
 }

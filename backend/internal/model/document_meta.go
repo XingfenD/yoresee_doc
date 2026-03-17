@@ -27,6 +27,8 @@ type Document struct {
 	ContainerType ContainerType  `gorm:"not null;index" json:"containter_type"`
 	Status        int            `gorm:"default:1" json:"status"`
 	Tags          []string       `gorm:"serializer:json" json:"tags"`
+	Path          string         `gorm:"type:ltree;not null;index:idx_path_gist,using:gist"`
+	Depth         int            `gorm:"not null;index"`
 	ViewCount     int            `gorm:"default:0" json:"view_count"`
 	EditCount     int            `gorm:"default:0" json:"edit_count"`
 	Content       string         `gorm:"type:text" json:"content"`

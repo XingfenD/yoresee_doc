@@ -316,6 +316,8 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 			Type:       model.DocumentType(req.Type),
 			Summary:    "",
 			Content:    "",
+			Path:       "0",
+			Depth:      0,
 		}
 
 		// query user_id
@@ -354,6 +356,9 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 		if err != nil {
 			status.GenErrWithCustomMsg(status.StatusWriteDBError, "create document meta failed")
 			return status.StatusWriteDBError
+		}
+		if err := s.documentRepo.UpdatePathDepth(docModel.ID, docModel.ParentID).WithTx(tx).Exec(); err != nil {
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "update document path depth failed")
 		}
 
 		// create doc version
@@ -405,7 +410,7 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		return false, err
 	}
 
-	utils.WithTransaction(func(tx *gorm.DB) error {
+	err := utils.WithTransaction(func(tx *gorm.DB) error {
 		oldDoc, err := s.documentRepo.GetByExternalID(req.ExternalID).WithTx(tx).Exec(ctx)
 		if err != nil {
 			return status.StatusDocumentNotFound
@@ -423,12 +428,16 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 			docModel.Title = *req.Title
 		}
 
+		moved := false
+		var newParentID int64
 		if req.ParentExternalID != nil {
 			parentID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).Exec(ctx)
 			if err != nil {
 				return status.StatusDocumentNotFound
 			}
-			docModel.ID = parentID
+			docModel.ParentID = parentID
+			newParentID = parentID
+			moved = true
 			op = op.UpdateParentID()
 		}
 
@@ -460,8 +469,20 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 			op = op.UpdateKnowledgeID()
 		}
 
+		if err := op.Exec(); err != nil {
+			return err
+		}
+		if moved {
+			if err := s.documentRepo.MoveSubtree(oldDoc.ID, newParentID).WithTx(tx).Exec(); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
+	if err != nil {
+		return false, err
+	}
 
 	// TODO: redis support
 

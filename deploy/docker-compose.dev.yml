@@ -120,7 +120,7 @@ services:
       test: ["CMD", "wget", "--spider", "-q", "http://backend:9090/health"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
       start_period: 10s
     networks:
       - yoresee_doc_network

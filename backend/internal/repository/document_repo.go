@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	cache_loader "github.com/XingfenD/yoresee_doc/internal/cache"
 	"github.com/XingfenD/yoresee_doc/internal/model"
@@ -433,28 +434,42 @@ func (op *DocumentGetSubtreeOperation) Exec() ([]model.Document, error) {
 		return documents, nil
 	}
 
-	depthFilter := ""
-	if op.depth != nil {
-		depthFilter = "AND depth <= " + string(rune(*op.depth+'0'))
+	type pathDepth struct {
+		Path  string
+		Depth int
+	}
+	var root pathDepth
+	err := db.Model(&model.Document{}).
+		Select("path, depth").
+		Where("id = ?", op.rootParentID).
+		Take(&root).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return documents, nil
+		}
+		return nil, err
 	}
 
 	query := `
-		WITH RECURSIVE subtree AS (
-			SELECT d.*, 0 as depth
-			FROM document_metas d
-			WHERE d.parent_id = ? AND d.deleted_at IS NULL
-			UNION ALL
-			SELECT d.*, s.depth + 1 as depth
-			FROM document_metas d
-			INNER JOIN subtree s ON d.parent_id = s.id
-			WHERE d.deleted_at IS NULL
-		)
-		SELECT * FROM subtree s
-		WHERE 1=1 ` + depthFilter + `
-		ORDER BY depth, created_at
+		SELECT *
+		FROM document_metas
+		WHERE deleted_at IS NULL
+			AND id <> ?
+			AND path <@ ?
 	`
+	args := []interface{}{op.rootParentID, root.Path}
+	if op.knowledgeID != nil {
+		query += " AND knowledge_id = ?"
+		args = append(args, *op.knowledgeID)
+	}
+	if op.depth != nil {
+		maxDepth := root.Depth + *op.depth
+		query += " AND depth <= ?"
+		args = append(args, maxDepth)
+	}
+	query += " ORDER BY depth, created_at"
 
-	err := db.Raw(query, op.rootParentID).Find(&documents).Error
+	err = db.Raw(query, args...).Find(&documents).Error
 	if err != nil {
 		return nil, err
 	}
@@ -498,28 +513,21 @@ func (op *DocumentGetSubtreeByKnowledgeIDOperation) Exec() ([]model.Document, er
 		return documents, nil
 	}
 
-	depthFilter := ""
-	if op.depth != nil {
-		depthFilter = "AND depth <= " + string(rune(*op.depth+'0'))
-	}
-
 	query := `
-		WITH RECURSIVE subtree AS (
-			SELECT d.*, 0 as depth
-			FROM document_metas d
-			WHERE d.knowledge_id = ? AND d.parent_id = 0 AND d.deleted_at IS NULL
-			UNION ALL
-			SELECT d.*, s.depth + 1 as depth
-			FROM document_metas d
-			INNER JOIN subtree s ON d.parent_id = s.id
-			WHERE d.deleted_at IS NULL
-		)
-		SELECT * FROM subtree s
-		WHERE 1=1 ` + depthFilter + `
-		ORDER BY depth, created_at
+		SELECT *
+		FROM document_metas
+		WHERE deleted_at IS NULL
+			AND knowledge_id = ?
 	`
 
-	err := db.Raw(query, op.knowledgeID).Find(&documents).Error
+	args := []interface{}{op.knowledgeID}
+	if op.depth != nil {
+		query += " AND depth <= ?"
+		args = append(args, *op.depth)
+	}
+	query += " ORDER BY depth, created_at"
+
+	err := db.Raw(query, args...).Find(&documents).Error
 	if err != nil {
 		return nil, err
 	}
@@ -624,6 +632,130 @@ func (op *DocumentUpdateOperation) Exec() error {
 	}
 
 	return query.Updates(*op.doc).Error
+}
+
+type DocumentUpdatePathDepthOperation struct {
+	repo     *DocumentRepository
+	docID    int64
+	parentID int64
+	tx       *gorm.DB
+}
+
+func (r *DocumentRepository) UpdatePathDepth(docID, parentID int64) *DocumentUpdatePathDepthOperation {
+	return &DocumentUpdatePathDepthOperation{
+		repo:     r,
+		docID:    docID,
+		parentID: parentID,
+	}
+}
+
+func (op *DocumentUpdatePathDepthOperation) WithTx(tx *gorm.DB) *DocumentUpdatePathDepthOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocumentUpdatePathDepthOperation) Exec() error {
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	if op.parentID == 0 {
+		return op.tx.Exec(`
+			UPDATE document_metas
+			SET path = (id::text)::ltree, depth = 0
+			WHERE id = ? AND deleted_at IS NULL
+		`, op.docID).Error
+	}
+
+	type pathDepth struct {
+		Path  string
+		Depth int
+	}
+	var parent pathDepth
+	if err := op.tx.Model(&model.Document{}).
+		Select("path, depth").
+		Where("id = ? AND deleted_at IS NULL", op.parentID).
+		Take(&parent).Error; err != nil {
+		return err
+	}
+
+	return op.tx.Exec(`
+		UPDATE document_metas
+		SET path = (?::ltree) || (id::text)::ltree, depth = ?
+		WHERE id = ? AND deleted_at IS NULL
+	`, parent.Path, parent.Depth+1, op.docID).Error
+}
+
+type DocumentMoveSubtreeOperation struct {
+	repo        *DocumentRepository
+	docID       int64
+	newParentID int64
+	tx          *gorm.DB
+}
+
+func (r *DocumentRepository) MoveSubtree(docID, newParentID int64) *DocumentMoveSubtreeOperation {
+	return &DocumentMoveSubtreeOperation{
+		repo:        r,
+		docID:       docID,
+		newParentID: newParentID,
+	}
+}
+
+func (op *DocumentMoveSubtreeOperation) WithTx(tx *gorm.DB) *DocumentMoveSubtreeOperation {
+	op.tx = tx
+	return op
+}
+
+func (op *DocumentMoveSubtreeOperation) Exec() error {
+	if op.tx == nil {
+		op.tx = storage.DB
+	}
+
+	type pathDepth struct {
+		Path  string
+		Depth int
+	}
+	var old pathDepth
+	if err := op.tx.Model(&model.Document{}).
+		Select("path, depth").
+		Where("id = ? AND deleted_at IS NULL", op.docID).
+		Take(&old).Error; err != nil {
+		return err
+	}
+
+	var newPath string
+	var newDepth int
+	if op.newParentID == 0 {
+		newDepth = 0
+	} else {
+		var parent pathDepth
+		if err := op.tx.Model(&model.Document{}).
+			Select("path, depth").
+			Where("id = ? AND deleted_at IS NULL", op.newParentID).
+			Take(&parent).Error; err != nil {
+			return err
+		}
+		newPath = parent.Path
+		newDepth = parent.Depth + 1
+	}
+
+	depthDelta := newDepth - old.Depth
+
+	if op.newParentID == 0 {
+		return op.tx.Exec(`
+			UPDATE document_metas
+			SET path = (?::text)::ltree || COALESCE(subpath(path, nlevel(?::ltree)), ''::ltree),
+				depth = depth + ?
+			WHERE path <@ ?::ltree AND deleted_at IS NULL
+		`, op.docID, old.Path, depthDelta, old.Path).Error
+	}
+
+	return op.tx.Exec(`
+		UPDATE document_metas
+		SET path = (?::ltree) || (?::text)::ltree || COALESCE(subpath(path, nlevel(?::ltree)), ''::ltree),
+			depth = depth + ?
+		WHERE path <@ ?::ltree AND deleted_at IS NULL
+	`, newPath, op.docID, old.Path, depthDelta, old.Path).Error
 }
 
 type DocumentUpdateContentByExternalIDOperation struct {
