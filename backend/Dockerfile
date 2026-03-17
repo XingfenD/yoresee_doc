@@ -8,6 +8,9 @@ RUN apk add --no-cache wget && \
     wget -O /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.22/grpc_health_probe-linux-amd64 && \
     chmod +x /usr/local/bin/grpc_health_probe
 
+COPY go.mod ./
+RUN go mod download
+
 EXPOSE 8080
 EXPOSE 9090
 EXPOSE 2345

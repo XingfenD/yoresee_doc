@@ -121,7 +121,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-      start_period: 10s
+      start_period: 30s
     networks:
       - yoresee_doc_network
     restart: unless-stopped
