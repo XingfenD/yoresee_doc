@@ -33,8 +33,8 @@ func (op *DocumentGetSubtreeOperation) WithKnowledgeID(knowledgeID *int64) *Docu
 	return op
 }
 
-func (op *DocumentGetSubtreeOperation) WithDepth(depth int) *DocumentGetSubtreeOperation {
-	op.depth = &depth
+func (op *DocumentGetSubtreeOperation) WithDepth(depth *int) *DocumentGetSubtreeOperation {
+	op.depth = depth
 	return op
 }
 

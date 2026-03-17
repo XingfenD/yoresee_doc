@@ -6,7 +6,6 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/internal/repository/config_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/invitation_service"
@@ -16,8 +15,7 @@ import (
 )
 
 type AuthService struct {
-	userRepo   *user_repo.UserRepository
-	configRepo *config_repo.ConfigRepository
+	userRepo *user_repo.UserRepository
 }
 
 func NewAuthService() *AuthService {

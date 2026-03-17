@@ -23,5 +23,5 @@ type SortArgs struct {
 type RecursiveOptions struct {
 	IncludeChildren bool `json:"include_children"`
 	Recursive       bool `json:"recursive"`
-	Depth           int  `json:"depth"`
+	Depth           *int `json:"depth"`
 }

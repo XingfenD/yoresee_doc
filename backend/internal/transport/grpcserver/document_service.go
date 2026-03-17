@@ -64,7 +64,7 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 		serviceReq.Options = &dto.RecursiveOptions{
 			IncludeChildren: req.Options.IncludeChildren,
 			Recursive:       req.Options.Recursive,
-			Depth:           int(req.Options.Depth),
+			Depth:           utils.Of(int(req.Options.Depth)),
 		}
 	}
 

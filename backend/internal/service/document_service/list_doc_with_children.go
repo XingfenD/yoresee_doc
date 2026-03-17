@@ -10,7 +10,7 @@ import (
 	internal_dto "github.com/XingfenD/yoresee_doc/internal/service/dto"
 )
 
-func (s *DocumentService) listDocumentsWithChildren(req *internal_dto.DocumentsListReq) ([]*dto.DocumentMetaResponse, int64, error) {
+func (s *DocumentService) listDocuments(req *internal_dto.DocumentsListReq) ([]*dto.DocumentMetaResponse, int64, error) {
 	listOp, err := s.buildListDocumentsOperation(req)
 	if err != nil {
 		return nil, 0, err
@@ -20,38 +20,22 @@ func (s *DocumentService) listDocumentsWithChildren(req *internal_dto.DocumentsL
 		return nil, 0, err
 	}
 
-	if req.Options != nil && req.Options.IncludeChildren && req.Options.Recursive {
-		parentIDs := make([]int64, len(models))
-		for i := range models {
-			parentIDs[i] = models[i].ID
-		}
-
-		allDescendants, err := s.getAllDescendantsByParentIDs(parentIDs)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		docs := s.buildDocumentTree(models, allDescendants)
-		return docs, total, nil
+	// if children is not needed or depth less than 1, return directly
+	if req.Options == nil || !req.Options.IncludeChildren || (req.Options.Depth != nil && *req.Options.Depth < 1) {
+		return s.buildDocumentTree(models, nil), total, nil
 	}
 
-	docs := make([]*dto.DocumentMetaResponse, 0, len(models))
+	parentIDs := make([]int64, len(models))
 	for i := range models {
-		docs = append(docs, s.ConvertToDocumentResponse(&models[i]))
+		parentIDs[i] = models[i].ID
 	}
 
-	if req.Options != nil && req.Options.IncludeChildren {
-		for i := range models {
-			childDocs, err := s.getChildDocuments(models[i].ID, req.Options)
-			if err == nil {
-				docs[i].Children = childDocs
-				if len(childDocs) > 0 {
-					docs[i].HasChildren = true
-				}
-			}
-		}
+	allDescendants, err := s.getDocumentsWithDescendants(parentIDs, req.Options.Depth)
+	if err != nil {
+		return nil, 0, err
 	}
 
+	docs := s.buildDocumentTree(models, allDescendants)
 	return docs, total, nil
 }
 
@@ -91,7 +75,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(ctx context.Contex
 		listOwnDoc = req.ExternalArgs.ListOwnDoc
 	}
 
-	return s.listDocumentsWithChildren(
+	return s.listDocuments(
 		&internal_dto.DocumentsListReq{
 			MetaArgs: &internal_dto.DocumentsListMetaArgs{
 				UserID:      userID,
@@ -107,39 +91,7 @@ func (s *DocumentService) ListDocumentsWithChildrenByExternal(ctx context.Contex
 	)
 }
 
-func (s *DocumentService) getChildDocuments(parentID int64, options *dto.RecursiveOptions) ([]*dto.DocumentMetaResponse, error) {
-	models, _, err := s.documentRepo.ListDocuments(&model.Document{}).
-		WithParentID(&parentID).
-		WithSort("created_at", false).
-		ExecWithTotal()
-	if err != nil {
-		return nil, err
-	}
-
-	childResponses := make([]*dto.DocumentMetaResponse, len(models))
-	for i, model := range models {
-		childResponses[i] = s.ConvertToDocumentResponse(&model)
-
-		if options != nil && options.Recursive && (options.Depth <= 0 || options.Depth > 1) {
-			subOptions := &dto.RecursiveOptions{
-				IncludeChildren: options.IncludeChildren,
-				Recursive:       options.Recursive,
-				Depth:           options.Depth - 1,
-			}
-			grandChildren, err := s.getChildDocuments(model.ID, subOptions)
-			if err == nil {
-				childResponses[i].Children = grandChildren
-				if len(grandChildren) > 0 {
-					childResponses[i].HasChildren = true
-				}
-			}
-		}
-	}
-
-	return childResponses, nil
-}
-
-func (s *DocumentService) getAllDescendantsByParentIDs(parentIDs []int64) ([]model.Document, error) {
+func (s *DocumentService) getDocumentsWithDescendants(parentIDs []int64, depth *int) ([]model.Document, error) {
 	if len(parentIDs) == 0 {
 		return []model.Document{}, nil
 	}
@@ -148,7 +100,7 @@ func (s *DocumentService) getAllDescendantsByParentIDs(parentIDs []int64) ([]mod
 	seen := make(map[int64]bool)
 
 	for _, rootParentID := range parentIDs {
-		docs, err := s.documentRepo.GetSubtree(rootParentID).Exec()
+		docs, err := s.documentRepo.GetSubtree(rootParentID).WithDepth(depth).Exec()
 		if err != nil {
 			return nil, err
 		}
