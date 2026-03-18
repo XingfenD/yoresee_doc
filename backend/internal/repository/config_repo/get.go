@@ -40,7 +40,6 @@ func (op *ConfigGetOperation) query() (*model.SystemConfig, error) {
 }
 
 func (op *ConfigGetOperation) Exec(ctx context.Context) (*model.SystemConfig, error) {
-
 	if op.tx == nil {
 		op.tx = storage.DB
 	}

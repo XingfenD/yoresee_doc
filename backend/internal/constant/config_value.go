@@ -11,3 +11,8 @@ const (
 	Database_Initialized_True string = "true"
 	// Database_Initialized_False string = "false"
 )
+
+const (
+	RegisterLimit_On  string = "on"
+	RegisterLimit_Off string = "off"
+)

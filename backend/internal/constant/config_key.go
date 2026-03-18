@@ -10,6 +10,7 @@ const (
 )
 
 const (
-	ConfigKey_Third_RegisterMode string = "register_mode"
-	ConfigKey_Third_Initialized  string = "initialized"
+	ConfigKey_Third_RegisterMode  string = "register_mode"
+	ConfigKey_Third_Initialized   string = "initialized"
+	ConfigKey_Third_RegisterLimit string = "register_limit" // token_bucket_limit
 )

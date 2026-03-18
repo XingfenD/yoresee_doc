@@ -53,6 +53,7 @@ var (
 	StatusWriteDBError         = NewStatusErr(50001, "write db error")
 	StatusReadDBError          = NewStatusErr(50002, "read db error")
 	StatusMQNotInitialized     = NewStatusErr(50002, "message queue not initialized")
+	StatusRedisNotInitialized  = NewStatusErr(50003, "redis not initialized")
 
 	StatusInternalParamsError = NewStatusErr(50010, "invalid internal arguments")
 	StatusTypeAssertFailed    = NewStatusErr(50011, "type assert failed")
