@@ -647,7 +647,6 @@ watch(
   width: calc(var(--sidebar-width) + 6px);
   flex-shrink: 0;
   transition: all 0.3s ease-in-out;
-  transform: translateX(0);
 }
 
 .sidebar-container.collapsed {
