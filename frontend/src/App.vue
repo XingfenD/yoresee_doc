@@ -219,12 +219,15 @@ body {
     border-color: var(--border-color) !important;
   }
 
-  .el-dropdown-item {
-    color: var(--text-medium) !important;
+  .el-dropdown-item,
+  .el-dropdown-menu__item {
+    color: var(--text-dark) !important;
   }
 
-  .el-dropdown-item:hover {
+  .el-dropdown-item:hover,
+  .el-dropdown-menu__item:hover {
     background-color: var(--bg-medium) !important;
+    color: var(--text-dark) !important;
   }
 
   /* 菜单 */

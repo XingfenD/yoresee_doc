@@ -89,7 +89,20 @@ export default {
   system: {
     name: 'Yoresee',
     version: '版本',
-    copyright: '© 2026 Yoresee. 保留所有权利。'
+    copyright: '© 2026 Yoresee. 保留所有权利。',
+    management: '系统管理',
+    managementPlaceholder: '系统管理功能即将上线。',
+    menu: {
+      security: '安全设置'
+    },
+    security: {
+      title: '安全管理',
+      registration: '注册设置',
+      registrationMode: '注册模式',
+      freeRegister: '自由注册',
+      inviteOnly: '邀请码',
+      placeholderTitle: '更多设置'
+    }
   },
   button: {
     confirm: '确认',
@@ -130,7 +143,34 @@ export default {
     placeholder: '这是一个模板页面，后端接口完成后再接入。',
     menu: {
       center: '个人中心',
+      invite: '邀请管理',
       security: '账号安全'
+    },
+    invite: {
+      title: '邀请管理',
+      create: '创建邀请码',
+      createTitle: '创建邀请码',
+      code: '邀请码',
+      createdAt: '创建时间',
+      createdBy: '创建人',
+      expiresAt: '过期时间',
+      expiresAtRequired: '请选择过期时间',
+      expireByDays: '按天数',
+      expireByDate: '指定日期',
+      expireDaysRequired: '请填写有效天数',
+      status: '状态',
+      usage: '使用情况',
+      actions: '操作',
+      pause: '暂停',
+      delete: '删除',
+      limitUsage: '限制使用次数',
+      maxUsage: '次数上限',
+      maxUsageRequired: '请填写次数上限',
+      note: '备注/用途',
+      notePlaceholder: '可填写邀请用途说明',
+      active: '有效',
+      expired: '已过期',
+      disabled: '已禁用'
     }
   },
   editor: {

@@ -69,6 +69,23 @@ const router = createRouter({
       name: 'UserInfoExample',
       component: () => import('../views/UserInfoExample.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/user_info/invatations',
+      name: 'UserInvitations',
+      component: () => import('../views/UserInvitations.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/manage/security',
+      name: 'SystemManageSecurity',
+      component: () => import('../views/SystemManageSecurity.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/manage',
+      name: 'SystemManage',
+      redirect: '/manage/security'
     }
   ]
 });

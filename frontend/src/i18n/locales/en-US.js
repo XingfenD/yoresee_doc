@@ -91,7 +91,20 @@ export default {
   system: {
     name: 'Yoresee',
     version: 'Version',
-    copyright: '© 2026 Yoresee. All rights reserved.'
+    copyright: '© 2026 Yoresee. All rights reserved.',
+    management: 'System Management',
+    managementPlaceholder: 'System management will be available soon.',
+    menu: {
+      security: 'Security Settings'
+    },
+    security: {
+      title: 'Security Management',
+      registration: 'Registration Settings',
+      registrationMode: 'Registration Mode',
+      freeRegister: 'Open Registration',
+      inviteOnly: 'Invite Code Only',
+      placeholderTitle: 'More Settings'
+    }
   },
   button: {
     confirm: 'Confirm',
@@ -132,7 +145,34 @@ export default {
     placeholder: 'This is a placeholder page. Backend integration will be added later.',
     menu: {
       center: 'User Center',
+      invite: 'Invite Management',
       security: 'Account Security'
+    },
+    invite: {
+      title: 'Invite Management',
+      create: 'Create Invite',
+      createTitle: 'Create Invitation',
+      code: 'Invite Code',
+      createdAt: 'Created At',
+      createdBy: 'Created By',
+      expiresAt: 'Expires At',
+      expiresAtRequired: 'Please select an expiration date',
+      expireByDays: 'By Days',
+      expireByDate: 'By Date',
+      expireDaysRequired: 'Please enter valid days',
+      status: 'Status',
+      usage: 'Usage',
+      actions: 'Actions',
+      pause: 'Pause',
+      delete: 'Delete',
+      limitUsage: 'Limit Usage Count',
+      maxUsage: 'Max Usage',
+      maxUsageRequired: 'Please set a max usage count',
+      note: 'Note / Purpose',
+      notePlaceholder: 'Optional description for this invite',
+      active: 'Active',
+      expired: 'Expired',
+      disabled: 'Disabled'
     }
   },
   editor: {

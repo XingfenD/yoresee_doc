@@ -6,46 +6,47 @@
     :user-avatar="userAvatar"
     :username="userInfo?.username || '用户'"
     :active-menu="activeMenu"
-    :side-menu-items="userMenuItems"
-    :title="t('user.center')"
+    :side-menu-items="manageMenuItems"
+    :title="t('system.security.title')"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <div class="user-center">
-      <div v-if="activeMenu === 'user-center'" class="user-card">
-        <div class="user-card-header">
-          <el-avatar :size="56" :src="userAvatar" />
-          <div class="user-card-title">
-            <div class="user-name">{{ userInfo?.username || '用户' }}</div>
-            <div class="user-subtitle">{{ t('user.profile') }}</div>
+    <template #actions>
+      <el-button class="page-action-btn" type="primary" size="small" :loading="isSaving" @click="handleSave">
+        {{ t('common.save') }}
+      </el-button>
+    </template>
+    <div class="manage-layout">
+      <section class="manage-section">
+        <div class="section-header">
+          <h3 class="section-title">{{ t('system.security.registration') }}</h3>
+        </div>
+        <div class="section-body">
+          <div class="setting-row setting-row--stacked">
+            <div class="setting-label">{{ t('system.security.registrationMode') }}</div>
+            <el-radio-group v-model="registrationMode">
+              <el-radio value="open">{{ t('system.security.freeRegister') }}</el-radio>
+              <el-radio value="invite">{{ t('system.security.inviteOnly') }}</el-radio>
+            </el-radio-group>
           </div>
         </div>
-        <div class="user-card-body">
-          <div class="info-row">
-            <span class="info-label">{{ t('user.basicInfo') }}</span>
-            <span class="info-value">{{ userInfo?.email || '-' }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">{{ t('user.account') }}</span>
-            <span class="info-value">{{ userInfo?.username || '-' }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">{{ t('user.security') }}</span>
-            <span class="info-value">-</span>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      <div v-else class="user-placeholder">
-        <el-alert
-          type="info"
-          :closable="false"
-          :title="t('user.placeholder')"
-          show-icon
-        />
-      </div>
+      <section class="manage-section">
+        <div class="section-header">
+          <h3 class="section-title">{{ t('system.security.placeholderTitle') }}</h3>
+        </div>
+        <div class="section-body">
+          <el-alert
+            type="info"
+            :closable="false"
+            :title="t('system.managementPlaceholder')"
+            show-icon
+          />
+        </div>
+      </section>
     </div>
   </PageLayout>
 </template>
@@ -56,18 +57,25 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import { House, User, Ticket, Setting } from '@element-plus/icons-vue';
+import { House, Setting } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
-const activeMenu = ref('user-center');
+const activeMenu = ref('manage-security');
 const isDarkMode = ref(false);
+const registrationMode = ref('open');
+const isSaving = ref(false);
 
 const userInfo = computed(() => userStore.userInfo);
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
+
+const manageMenuItems = [
+  { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
+  { key: 'manage-security', labelKey: 'system.menu.security', icon: Setting, route: '/manage/security' }
+];
 
 const currentLanguage = computed({
   get: () => locale.value,
@@ -80,13 +88,6 @@ const currentLanguage = computed({
 const handleLanguageChange = (command) => {
   currentLanguage.value = command;
 };
-
-const userMenuItems = [
-  { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
-  { key: 'user-center', labelKey: 'user.menu.center', icon: User, route: '/user_info/example' },
-  { key: 'user-invite', labelKey: 'user.menu.invite', icon: Ticket, route: '/user_info/invatations' },
-  { key: 'user-security', labelKey: 'user.menu.security', icon: Setting, route: '/user_info/example' }
-];
 
 const initTheme = () => {
   const savedDarkMode = localStorage.getItem('darkMode');
@@ -123,6 +124,15 @@ const handleMenuSelect = (key) => {
   activeMenu.value = key;
 };
 
+const handleSave = () => {
+  if (isSaving.value) {
+    return;
+  }
+  isSaving.value = true;
+  setTimeout(() => {
+    isSaving.value = false;
+  }, 500);
+};
 
 onMounted(() => {
   initTheme();
@@ -131,74 +141,55 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.user-center {
+.manage-layout {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
 }
 
-.user-card {
+.manage-section {
   background: var(--bg-white);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
-.user-card-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+.section-header {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-white);
 }
 
-.user-card-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.user-name {
-  font-size: 18px;
+.section-title {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-dark);
 }
 
-.user-subtitle {
-  font-size: 13px;
-  color: var(--text-light);
+.section-body {
+  padding: var(--spacing-md);
 }
 
-.user-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.info-row {
+.setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-xs) 0;
-  border-bottom: 1px dashed var(--border-color);
+  gap: var(--spacing-md);
 }
 
-.info-row:last-child {
-  border-bottom: none;
+.setting-row--stacked {
+  align-items: flex-start;
+  flex-direction: column;
 }
 
-.info-label {
-  color: var(--text-light);
-  font-size: 13px;
-}
-
-.info-value {
-  color: var(--text-dark);
+.setting-label {
+  color: var(--text-medium);
   font-size: 14px;
 }
 
-.user-placeholder {
-  display: flex;
-  flex-direction: column;
+.setting-control {
+  min-width: 200px;
 }
 </style>
