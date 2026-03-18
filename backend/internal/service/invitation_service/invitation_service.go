@@ -62,6 +62,14 @@ func (s *InvitationService) ListInvitations(req *dto.ListInvitationsReq) ([]mode
 }
 
 func (s *InvitationService) ValidateAndUse(code string) error {
+	ok, err := s.invitationRepo.ValidateAndUse(code).Exec()
+	if err != nil {
+		return status.StatusWriteDBError
+	}
+	if ok {
+		return nil
+	}
+
 	invitation, err := s.invitationRepo.GetByCode(code).Exec()
 	if err != nil {
 		return status.StatusInvitationInvalid
@@ -80,11 +88,18 @@ func (s *InvitationService) ValidateAndUse(code string) error {
 		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s used up", code))
 	}
 
-	invitation.UsedCnt++
-	return s.invitationRepo.Update(invitation).Exec()
+	return status.StatusInvitationInvalid
 }
 
 func (s *InvitationService) ValidateAndUseWithTx(tx *gorm.DB, code string) error {
+	ok, err := s.invitationRepo.ValidateAndUse(code).WithTx(tx).Exec()
+	if err != nil {
+		return status.StatusWriteDBError
+	}
+	if ok {
+		return nil
+	}
+
 	invitation, err := s.invitationRepo.GetByCode(code).WithTx(tx).Exec()
 	if err != nil {
 		return status.StatusInvitationInvalid
@@ -103,8 +118,7 @@ func (s *InvitationService) ValidateAndUseWithTx(tx *gorm.DB, code string) error
 		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s used up", code))
 	}
 
-	invitation.UsedCnt++
-	return s.invitationRepo.Update(invitation).WithTx(tx).Exec()
+	return status.StatusInvitationInvalid
 }
 
 func (s *InvitationService) UpdateCode(code string, newExpireTime *time.Time, newMaxUsedCnt *int64, isDisabled *bool) error {
