@@ -12,26 +12,30 @@
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <div class="home-vertical-layout">
-      <RecentDocumentsSection
-        :title="t('home.recentDocuments')"
-        :items="recentDocuments"
-        :empty-text="t('home.noRecentDocuments')"
-        :show-view-all="true"
-        @view-all="goToDocuments"
-        @view-item="viewDocument"
-        @edit-item="editDocument"
-      />
+    <div class="home-horizontal-layout">
+      <div class="home-column">
+        <RecentDocumentsSection
+          :title="t('home.recentDocuments')"
+          :items="recentDocuments"
+          :empty-text="t('home.noRecentDocuments')"
+          :show-view-all="true"
+          @view-all="goToDocuments"
+          @view-item="viewDocument"
+          @edit-item="editDocument"
+        />
+      </div>
 
-      <RecentKnowledgeBaseSection
-        :title="t('home.recentKnowledgeBases')"
-        :items="recentKnowledgeBases"
-        :empty-text="t('home.noRecentKnowledgeBases')"
-        :show-view-all="true"
-        @view-all="goToKnowledgeBases"
-        @view-item="viewKnowledgeBase"
-        @access-item="accessKnowledgeBase"
-      />
+      <div class="home-column">
+        <KnowledgeBaseListSection
+          :title="t('home.recentKnowledgeBases')"
+          :items="recentKnowledgeBases"
+          :empty-text="t('home.noRecentKnowledgeBases')"
+          :tag-mapper="recentTagMapper"
+          :fallback-description="t('knowledgeBase.noDescription')"
+          :action-label="t('common.open')"
+          @open="accessKnowledgeBase"
+        />
+      </div>
     </div>
   </PageLayout>
 </template>
@@ -43,7 +47,8 @@ import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
 import PageLayout from '@/components/PageLayout.vue';
 import RecentDocumentsSection from '@/components/RecentDocumentsSection.vue';
-import RecentKnowledgeBaseSection from '@/components/RecentKnowledgeBaseSection.vue';
+import KnowledgeBaseListSection from '@/components/KnowledgeBaseListSection.vue';
+import { getRecentKnowledgeBases } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -136,35 +141,9 @@ const recentDocuments = ref([
 ]);
 
 // 最近知识库数据
-const recentKnowledgeBases = ref([
-  {
-    externalId: 'kb1',
-    name: '项目知识库',
-    description: '项目相关的技术文档和规范',
-    creatorName: '张三',
-    updatedAt: '2024-01-15T09:00:00Z',
-    is_public: true,
-    documentsCount: 24
-  },
-  {
-    externalId: 'kb2',
-    name: '公司规章制度',
-    description: '公司各项规章制度和政策',
-    creatorName: '李四',
-    updatedAt: '2024-01-14T15:30:00Z',
-    is_public: true,
-    documentsCount: 15
-  },
-  {
-    externalId: 'kb3',
-    name: '技术分享',
-    description: '团队技术分享资料',
-    creatorName: '王五',
-    updatedAt: '2024-01-13T11:20:00Z',
-    is_public: false,
-    documentsCount: 8
-  }
-]);
+const recentKnowledgeBases = ref([]);
+const recentTagMapper = (kb) =>
+  kb.is_public ? { type: 'success', label: t('knowledgeBase.public') } : null;
 
 // 页面跳转方法
 const goToDocuments = () => {
@@ -186,15 +165,12 @@ const editDocument = (doc) => {
   // TODO: 实现编辑文档功能
 };
 
-// 知识库相关方法
-const viewKnowledgeBase = (kb) => {
-  console.log('View knowledge base:', kb);
-  // TODO: 实现查看知识库功能
-};
-
 const accessKnowledgeBase = (kb) => {
-  console.log('Access knowledge base:', kb);
-  // TODO: 实现访问知识库功能
+  const kbId = kb?.external_id || kb?.externalId;
+  if (!kbId) {
+    return;
+  }
+  router.push(`/knowledge-base/${kbId}`);
 };
 
 const handleMenuSelect = (key) => {
@@ -226,19 +202,53 @@ const fetchSystemInfo = async () => {
   }
 };
 
+const fetchRecentKnowledgeBases = async () => {
+  try {
+    const data = await getRecentKnowledgeBases({ page: 1, page_size: 6 });
+    recentKnowledgeBases.value = data.knowledge_bases || [];
+  } catch (err) {
+    console.error('获取最近知识库失败:', err);
+    recentKnowledgeBases.value = [];
+  }
+};
+
 onMounted(() => {
   fetchSystemInfo();
+  fetchRecentKnowledgeBases();
   initTheme();
   initLanguage();
 });
 </script>
 
 <style scoped>
-.home-vertical-layout {
+.home-horizontal-layout {
   display: flex;
-  flex-direction: column;
   gap: var(--spacing-lg);
-  height: auto;
+  height: calc(100vh - 60px - 120px);
+  align-items: stretch;
+}
+
+.home-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.home-column :deep(.section-content) {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.home-column :deep(.vertical-section),
+.home-column :deep(.recent-documents-section) {
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .home-horizontal-layout {
+    flex-direction: column;
+    height: auto;
+  }
 }
 
 </style>

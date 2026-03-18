@@ -121,6 +121,25 @@ export default {
     english: 'English',
     chinese: '中文'
   },
+  user: {
+    center: '个人中心',
+    profile: '个人信息',
+    basicInfo: '基础信息',
+    account: '账号信息',
+    security: '安全设置',
+    placeholder: '这是一个模板页面，后端接口完成后再接入。',
+    menu: {
+      center: '个人中心',
+      security: '账号安全'
+    }
+  },
+  editor: {
+    menu: {
+      workspace: '编辑工作台',
+      documents: '我的文档',
+      knowledgeBase: '知识库'
+    }
+  },
   knowledgeBase: {
     title: '知识库',
     searchPlaceholder: '搜索知识库...',

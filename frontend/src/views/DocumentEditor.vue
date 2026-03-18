@@ -14,7 +14,7 @@
     <!-- 主内容区 -->
     <div class="main-content">
       <!-- 左侧导航 -->
-      <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
+      <SideNav :active-menu="activeMenu" :menu-items="editorMenuItems" @menu-select="handleMenuSelect" />
 
       <!-- 右侧内容 -->
       <div class="content-area">
@@ -118,7 +118,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, Check } from '@element-plus/icons-vue';
+import { ArrowLeft, Check, Edit, Document, Collection } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentTree from '@/components/DocumentTree.vue';
@@ -150,7 +150,7 @@ const systemName = ref(userStore.systemName || 'Yoresee');
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 const currentLanguage = computed(() => locale.value);
 const isDarkMode = ref(document.documentElement.classList.contains('dark-mode'));
-const activeMenu = ref('knowledge-base');
+const activeMenu = ref('editor-workspace');
 const userInfo = computed(() => userStore.userInfo);
 
 const knowledgeBaseName = ref('示例知识库');
@@ -573,23 +573,14 @@ const toggleTheme = () => {
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
 };
 
+const editorMenuItems = [
+  { key: 'editor-workspace', labelKey: 'editor.menu.workspace', icon: Edit },
+  { key: 'editor-documents', labelKey: 'editor.menu.documents', icon: Document, route: '/mydocuments' },
+  { key: 'editor-knowledge-base', labelKey: 'editor.menu.knowledgeBase', icon: Collection, route: '/knowledge-base' }
+];
+
 const handleMenuSelect = (menu) => {
   activeMenu.value = menu;
-  if (menu === 'home') {
-    router.push('/');
-  } else if (menu === 'knowledge-base') {
-    router.push('/knowledge-base');
-  } else if (menu === 'documents') {
-    router.push('/mydocuments');
-  } else if (menu === 'folders') {
-    router.push('/folders');
-  } else if (menu === 'trash') {
-    router.push('/trash');
-  } else if (menu === 'templates') {
-    router.push('/templates');
-  } else if (menu === 'settings') {
-    router.push('/settings');
-  }
 };
 
 const handleLogout = () => {
@@ -630,7 +621,9 @@ onMounted(async () => {
   initLanguage();
 
   if (kbId.value === 'personal') {
-    activeMenu.value = 'documents';
+    activeMenu.value = 'editor-documents';
+  } else {
+    activeMenu.value = 'editor-knowledge-base';
   }
 
   if (kbId.value === 'example' && docId.value === 'example') {

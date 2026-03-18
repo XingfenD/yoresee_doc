@@ -1,7 +1,9 @@
 <template>
   <header class="top-nav">
     <div class="nav-left">
-      <h1 class="system-title">{{ systemName }}</h1>
+      <router-link class="system-link" to="/">
+        <h1 class="system-title">{{ systemName }}</h1>
+      </router-link>
     </div>
     <div class="nav-right">
       <el-dropdown trigger="click" @command="emit('change-language', $event)" class="nav-item">
@@ -42,7 +44,8 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item @click="emit('logout')">{{ t('button.logout') }}</el-dropdown-item>
+            <el-dropdown-item @click="goToUserCenter">{{ t('user.center') }}</el-dropdown-item>
+            <el-dropdown-item divided @click="emit('logout')">{{ t('button.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -51,6 +54,7 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ArrowDown, Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
 
@@ -79,6 +83,11 @@ const props = defineProps({
 
 const emit = defineEmits(['change-language', 'toggle-theme', 'logout']);
 const { t } = useI18n();
+const router = useRouter();
+
+const goToUserCenter = () => {
+  router.push('/user_info/example');
+};
 </script>
 
 <style scoped>
@@ -99,6 +108,17 @@ const { t } = useI18n();
   font-weight: 600;
   color: var(--primary-color);
   margin: 0;
+}
+
+.system-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.system-link:hover .system-title {
+  color: var(--primary-color);
+  opacity: 0.9;
 }
 
 .nav-right {

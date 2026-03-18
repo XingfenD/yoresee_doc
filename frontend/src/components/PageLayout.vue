@@ -12,7 +12,11 @@
     />
 
     <div class="page-main">
-      <SideNav :active-menu="activeMenu" @menu-select="$emit('menu-select', $event)" />
+      <SideNav
+        :active-menu="activeMenu"
+        :menu-items="sideMenuItems"
+        @menu-select="$emit('menu-select', $event)"
+      />
 
       <div class="page-content">
         <div class="page-header">
@@ -57,6 +61,10 @@ defineProps({
   activeMenu: {
     type: String,
     default: 'home'
+  },
+  sideMenuItems: {
+    type: Array,
+    default: () => []
   },
   title: {
     type: String,

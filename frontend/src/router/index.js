@@ -63,6 +63,12 @@ const router = createRouter({
       component: () => import('../views/DocumentEditor.vue'),
       meta: { requiresAuth: true },
       props: true
+    },
+    {
+      path: '/user_info/example',
+      name: 'UserInfoExample',
+      component: () => import('../views/UserInfoExample.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 });

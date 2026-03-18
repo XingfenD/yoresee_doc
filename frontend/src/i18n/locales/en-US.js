@@ -123,6 +123,25 @@ export default {
     english: 'English',
     chinese: '中文'
   },
+  user: {
+    center: 'User Center',
+    profile: 'Profile',
+    basicInfo: 'Basic Info',
+    account: 'Account',
+    security: 'Security',
+    placeholder: 'This is a placeholder page. Backend integration will be added later.',
+    menu: {
+      center: 'User Center',
+      security: 'Account Security'
+    }
+  },
+  editor: {
+    menu: {
+      workspace: 'Editor Workspace',
+      documents: 'My Documents',
+      knowledgeBase: 'Knowledge Base'
+    }
+  },
   knowledgeBase: {
     title: 'Knowledge Bases',
     searchPlaceholder: 'Search knowledge bases...',

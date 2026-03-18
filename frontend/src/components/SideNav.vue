@@ -1,29 +1,11 @@
 <template>
   <aside class="side-nav" :class="{ 'collapsed': isCollapsed }">
     <el-menu :default-active="currentActiveMenu" class="side-menu" @select="handleMenuSelect">
-      <el-menu-item index="home">
-        <el-icon>
-          <House />
+      <el-menu-item v-for="item in resolvedMenuItems" :key="item.key" :index="item.key">
+        <el-icon v-if="item.icon">
+          <component :is="item.icon" />
         </el-icon>
-        <span class="menu-text">{{ t('navigation.home') }}</span>
-      </el-menu-item>
-      <el-menu-item index="documents">
-        <el-icon>
-          <Document />
-        </el-icon>
-        <span class="menu-text">{{ t('navigation.myDocuments') }}</span>
-      </el-menu-item>
-      <el-menu-item index="knowledge-base">
-        <el-icon>
-          <Collection />
-        </el-icon>
-        <span class="menu-text">{{ t('navigation.knowledgeBase') }}</span>
-      </el-menu-item>
-      <el-menu-item index="templates">
-        <el-icon>
-          <Tickets />
-        </el-icon>
-        <span class="menu-text">{{ t('navigation.templates') }}</span>
+        <span class="menu-text">{{ getMenuLabel(item) }}</span>
       </el-menu-item>
     </el-menu>
     <button class="collapse-btn" @click="toggleCollapse"
@@ -53,10 +35,21 @@ const toggleCollapse = () => {
 };
 
 // 接收当前激活的菜单作为 props
+const defaultMenuItems = [
+  { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
+  { key: 'documents', labelKey: 'navigation.myDocuments', icon: Document, route: '/mydocuments' },
+  { key: 'knowledge-base', labelKey: 'navigation.knowledgeBase', icon: Collection, route: '/knowledge-base' },
+  { key: 'templates', labelKey: 'navigation.templates', icon: Tickets, route: '/templates' }
+];
+
 const props = defineProps({
   activeMenu: {
     type: String,
     default: 'home'
+  },
+  menuItems: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -65,10 +58,28 @@ const emit = defineEmits(['menuSelect']);
 
 // 计算属性：当前激活的菜单项
 const currentActiveMenu = computed(() => props.activeMenu);
+const resolvedMenuItems = computed(() => (
+  Array.isArray(props.menuItems) && props.menuItems.length ? props.menuItems : defaultMenuItems
+));
+
+const getMenuLabel = (item) => {
+  if (item.label) {
+    return item.label;
+  }
+  if (item.labelKey) {
+    return t(item.labelKey);
+  }
+  return item.key;
+};
 
 // 处理菜单选择
 const handleMenuSelect = (key) => {
   emit('menuSelect', key);
+  const selected = resolvedMenuItems.value.find((item) => item.key === key);
+  if (selected?.route) {
+    router.push(selected.route);
+    return;
+  }
   if (key === 'home') {
     router.push('/');
   } else if (key === 'documents') {
