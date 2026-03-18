@@ -147,6 +147,18 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.KnowledgeBaseService_CreateKnowledgeBase_FullMethodName, connect.NewUnaryHandler(
+		pb.KnowledgeBaseService_CreateKnowledgeBase_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.CreateKnowledgeBaseRequest]) (*connect.Response[pb.CreateKnowledgeBaseResponse], error) {
+			resp, err := kbSvc.CreateKnowledgeBase(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.KnowledgeBaseService_ListRecentKnowledgeBases_FullMethodName, connect.NewUnaryHandler(
 		pb.KnowledgeBaseService_ListRecentKnowledgeBases_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.ListRecentKnowledgeBasesRequest]) (*connect.Response[pb.ListRecentKnowledgeBasesResponse], error) {

@@ -58,6 +58,18 @@ type CreateRecentKnowledgeBaseRequest struct {
 	AssessTime              time.Time
 }
 
+type CreateKnowledgeBaseRequest struct {
+	CreatorExternalID string `json:"creator_external_id"`
+	Name              string `json:"name"`
+	Description       string `json:"description"`
+	Cover             string `json:"cover"`
+	IsPublic          bool   `json:"is_public"`
+}
+
+type CreateKnowledgeBaseResponse struct {
+	ExternalID string `json:"external_id"`
+}
+
 type ListRecentKnowledgeBasesRequest struct {
 	UserExternalID string
 	StartTime      *time.Time

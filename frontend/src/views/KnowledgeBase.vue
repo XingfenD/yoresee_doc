@@ -79,7 +79,7 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/store/user";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
 import PageLayout from "@/components/PageLayout.vue";
 import KnowledgeBaseListSection from "@/components/KnowledgeBaseListSection.vue";
@@ -126,7 +126,7 @@ const myTotal = ref(0);
 const myLoading = ref(false);
 const myHasMore = computed(() => myKnowledgeBases.value.length < myTotal.value);
 const myTagMapper = (kb) =>
-  kb.isPublic ? null : { type: "info", label: t("knowledgeBase.private") };
+  kb.is_public ? null : { type: "info", label: t("knowledgeBase.private") };
 const myMetaMapper = (kb) => [
   { label: t("knowledgeBase.documentsCount"), value: kb.documents_count || 0 },
   { label: t("knowledgeBase.updatedAt"), value: formatDate(kb.updated_at) },
@@ -147,7 +147,7 @@ const publicMetaMapper = (kb) => [
 ];
 
 const recentTagMapper = (kb) =>
-  kb.isPublic ? { type: "success", label: t("knowledgeBase.public") } : null;
+  kb.is_public ? { type: "success", label: t("knowledgeBase.public") } : null;
 
 const myLoaded = ref(false);
 const publicLoaded = ref(false);
@@ -260,9 +260,40 @@ const loadMorePublicKnowledgeBases = async () => {
 };
 
 // 创建知识库
-const createKnowledgeBase = () => {
-  // TODO: 实现创建知识库功能
-  ElMessage.info(t("knowledgeBase.createComingSoon"));
+const createKnowledgeBase = async () => {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      t("knowledgeBase.createPrompt"),
+      t("knowledgeBase.createNew"),
+      {
+        confirmButtonText: t("button.confirm"),
+        cancelButtonText: t("button.cancel"),
+        inputPlaceholder: t("knowledgeBase.createPlaceholder"),
+        inputValidator: (val) => {
+          if (!val || !val.trim()) {
+            return t("knowledgeBase.titleRequired");
+          }
+          return true;
+        }
+      }
+    );
+
+    const name = value.trim();
+    const resp = await api.createKnowledgeBase({ name, is_public: false });
+    ElMessage.success(t("knowledgeBase.createSuccess"));
+
+    activeTab.value = "my";
+    myPage.value = 1;
+    await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
+
+    if (resp?.external_id) {
+      router.push(`/knowledge-base/${resp.external_id}`);
+    }
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error(t("common.requestFailed"));
+    }
+  }
 };
 
 // 格式化日期
@@ -493,5 +524,6 @@ watch(activeTab, async (tab) => {
   background-color: var(--bg-medium);
   border-bottom: 1px solid var(--border-color);
 }
+
 
 </style>

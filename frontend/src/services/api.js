@@ -6,6 +6,7 @@ const {
   ListRecentKnowledgeBasesRequest,
   GetKnowledgeBaseRequest,
   UpdateDocumentMetaRequest,
+  CreateKnowledgeBaseRequest,
   CreateDocumentRequest,
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
@@ -95,6 +96,23 @@ export const getKnowledgeBases = async (params = {}) => {
     total: resp.total ?? 0
   };
   return handleResponse(base, data);
+};
+
+// 创建知识库
+export const createKnowledgeBase = async (data = {}) => {
+  const req = new CreateKnowledgeBaseRequest({
+    name: data.name || '',
+    description: data.description || '',
+    cover: data.cover || '',
+    isPublic: Boolean(data.is_public)
+  });
+
+  const resp = await unaryCall(knowledgeBaseClient, 'createKnowledgeBase', req);
+  const base = baseToObject(resp);
+  const dataResp = {
+    external_id: resp.externalId
+  };
+  return handleResponse(base, dataResp);
 };
 
 // 获取知识库详情
@@ -258,6 +276,7 @@ export const listDocuments = async (params = {}) => {
 
 export default {
   getKnowledgeBases,
+  createKnowledgeBase,
   getRecentKnowledgeBases,
   getKnowledgeBaseDetail,
   getKnowledgeBaseDocuments,

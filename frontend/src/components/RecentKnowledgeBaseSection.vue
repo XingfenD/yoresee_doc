@@ -12,7 +12,7 @@
         <template #header>
           <div class="card-header">
             <span class="kb-name">{{ kb.name }}</span>
-            <el-tag v-if="kb.isPublic" type="success" size="small">
+            <el-tag v-if="kb.is_public" type="success" size="small">
               {{ t("knowledgeBase.public") }}
             </el-tag>
             <el-tag v-else type="info" size="small">

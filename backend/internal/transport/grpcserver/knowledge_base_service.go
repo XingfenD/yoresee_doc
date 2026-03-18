@@ -143,6 +143,32 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 	}, nil
 }
 
+func (s *KnowledgeBaseServiceServer) CreateKnowledgeBase(ctx context.Context, req *pb.CreateKnowledgeBaseRequest) (*pb.CreateKnowledgeBaseResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.CreateKnowledgeBaseResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.Name == "" {
+		return &pb.CreateKnowledgeBaseResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	resp, err := knowledge_base_service.KnowledgeBaseSvc.Create(&dto.CreateKnowledgeBaseRequest{
+		CreatorExternalID: userExternalID,
+		Name:              req.Name,
+		Description:       req.Description,
+		Cover:             req.Cover,
+		IsPublic:          req.IsPublic,
+	})
+	if err != nil {
+		return &pb.CreateKnowledgeBaseResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.CreateKnowledgeBaseResponse{
+		Base:       baseResponseFromErr(nil),
+		ExternalId: resp.ExternalID,
+	}, nil
+}
+
 func (s *KnowledgeBaseServiceServer) ListRecentKnowledgeBases(ctx context.Context, req *pb.ListRecentKnowledgeBasesRequest) (*pb.ListRecentKnowledgeBasesResponse, error) {
 	if req == nil {
 		return &pb.ListRecentKnowledgeBasesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil

@@ -139,6 +139,32 @@ body {
     color: var(--input-placeholder) !important;
   }
 
+  /* message box (used by create knowledge base prompt) */
+  .el-message-box {
+    background-color: var(--bg-white) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-dark) !important;
+  }
+
+  .el-message-box__header {
+    background-color: var(--bg-white) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+
+  .el-message-box__content {
+    background-color: var(--bg-white) !important;
+    color: var(--text-dark) !important;
+  }
+
+  .el-message-box__btns {
+    background-color: var(--bg-white) !important;
+    border-top: 1px solid var(--border-color) !important;
+  }
+
+  .el-message-box__title {
+    color: var(--text-dark) !important;
+  }
+
   .el-select-dropdown {
     background-color: var(--select-option-bg) !important;
     border-color: var(--select-border) !important;

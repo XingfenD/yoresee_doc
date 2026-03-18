@@ -143,7 +143,7 @@ const recentKnowledgeBases = ref([
     description: '项目相关的技术文档和规范',
     creatorName: '张三',
     updatedAt: '2024-01-15T09:00:00Z',
-    isPublic: true,
+    is_public: true,
     documentsCount: 24
   },
   {
@@ -152,7 +152,7 @@ const recentKnowledgeBases = ref([
     description: '公司各项规章制度和政策',
     creatorName: '李四',
     updatedAt: '2024-01-14T15:30:00Z',
-    isPublic: true,
+    is_public: true,
     documentsCount: 15
   },
   {
@@ -161,7 +161,7 @@ const recentKnowledgeBases = ref([
     description: '团队技术分享资料',
     creatorName: '王五',
     updatedAt: '2024-01-13T11:20:00Z',
-    isPublic: false,
+    is_public: false,
     documentsCount: 8
   }
 ]);
