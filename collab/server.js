@@ -41,7 +41,7 @@ server.on('request', async (req, res) => {
     const docs = wsUtils.docs;
     let doc = docs ? (docs.get(`doc-${docId}`) || docs.get(docId)) : null;
     if (!doc) {
-      const redisKey = `yjs:doc:updates:${docId}`;
+      const redisKey = `collab:yjs:doc:updates:${docId}`;
       const updates = await redis.getListBuffers(redisKey);
       if (!updates || updates.length === 0) {
         res.writeHead(404);
@@ -74,7 +74,7 @@ server.on('request', async (req, res) => {
     const docs = wsUtils.docs;
     let doc = docs ? (docs.get(`doc-${docId}`) || docs.get(docId)) : null;
     if (!doc) {
-      const redisKey = `yjs:doc:updates:${docId}`;
+      const redisKey = `collab:yjs:doc:updates:${docId}`;
       const updates = await redis.getListBuffers(redisKey);
       if (!updates || updates.length === 0) {
         res.writeHead(404);

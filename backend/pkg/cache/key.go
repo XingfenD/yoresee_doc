@@ -4,13 +4,6 @@ import (
 	"fmt"
 )
 
-func KeyDocTree(userID, kbID *int64) string {
-	if kbID != nil {
-		return fmt.Sprintf("doc:tree:kb:%d", *kbID)
-	}
-	return fmt.Sprintf("doc:tree:u:%d", userID)
-}
-
 type KeyObjectTypeEnum int
 
 const (
@@ -47,4 +40,16 @@ func KeyModelByExternalID(obj KeyObjectTypeEnum, externalID string) string {
 
 func KeySystemConfig(configKey string) string {
 	return fmt.Sprintf("dms:config:%s", configKey)
+}
+
+func KeyDocSubtreeVersion(path string) string {
+	return fmt.Sprintf("dms:doc:version:%s", path)
+}
+
+func KeyDocSubtree(path string, version int64, depth *int) string {
+	depthKey := "all"
+	if depth != nil {
+		depthKey = fmt.Sprintf("%d", *depth)
+	}
+	return fmt.Sprintf("dms:doc:subtree:%s:v%d:%s", path, version, depthKey)
 }

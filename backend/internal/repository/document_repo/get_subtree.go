@@ -1,9 +1,11 @@
 package document_repo
 
 import (
+	"context"
 	"errors"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/pkg/cache"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -42,11 +44,11 @@ func (op *DocumentGetSubtreeOperation) WithDepth(depth *int) *DocumentGetSubtree
 }
 
 func (op *DocumentGetSubtreeOperation) WithDirectoryOnly(with bool) *DocumentGetSubtreeOperation {
-	op.directoryOnly = true
+	op.directoryOnly = with
 	return op
 }
 
-func (op *DocumentGetSubtreeOperation) Exec() ([]*model.Document, error) {
+func (op *DocumentGetSubtreeOperation) Exec(ctx context.Context) ([]*model.Document, error) {
 	db := storage.DB
 	if op.tx != nil {
 		db = op.tx
@@ -74,6 +76,44 @@ func (op *DocumentGetSubtreeOperation) Exec() ([]*model.Document, error) {
 		return nil, err
 	}
 
+	// in-transaction query should bypass cache to avoid stale reads
+	if op.tx != nil || storage.KVS == nil {
+		return op.queryWithRoot(db, root.Path, root.Depth)
+	}
+
+	version, err := getSubtreeVersion(ctx, root.Path)
+	if err == nil {
+		cacheKey := cache.KeyDocSubtree(root.Path, version, op.depth)
+		if cachedIDs, ok, err := getCachedSubtreeIDs(ctx, cacheKey); err == nil && ok {
+			return fetchDocumentsByIDs(cachedIDs)
+		}
+
+		val, err, _ := subtreeCacheSF.Do(cacheKey, func() (interface{}, error) {
+			dbDocs, err := op.queryWithRoot(db, root.Path, root.Depth)
+			if err != nil {
+				return nil, err
+			}
+			ids := make([]int64, 0, len(dbDocs))
+			for _, doc := range dbDocs {
+				ids = append(ids, doc.ID)
+			}
+			setCachedSubtreeIDs(ctx, cacheKey, ids)
+			return dbDocs, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		if typed, ok := val.([]*model.Document); ok {
+			return typed, nil
+		}
+	}
+
+	return op.queryWithRoot(db, root.Path, root.Depth)
+}
+
+func (op *DocumentGetSubtreeOperation) queryWithRoot(db *gorm.DB, rootPath string, rootDepth int) ([]*model.Document, error) {
+	var documents []*model.Document
+
 	query := `
 		SELECT *
 		FROM document_metas
@@ -90,20 +130,19 @@ func (op *DocumentGetSubtreeOperation) Exec() ([]*model.Document, error) {
 			AND path <@ ?
 	`
 	}
-	args := []interface{}{op.rootParentID, root.Path}
+	args := []interface{}{op.rootParentID, rootPath}
 	if op.knowledgeID != nil {
 		query += " AND knowledge_id = ?"
 		args = append(args, *op.knowledgeID)
 	}
 	if op.depth != nil {
-		maxDepth := root.Depth + *op.depth
+		maxDepth := rootDepth + *op.depth
 		query += " AND depth <= ?"
 		args = append(args, maxDepth)
 	}
 	query += " ORDER BY depth, created_at"
 
-	err = db.Raw(query, args...).Find(&documents).Error
-	if err != nil {
+	if err := db.Raw(query, args...).Find(&documents).Error; err != nil {
 		return nil, err
 	}
 

@@ -10,7 +10,7 @@ import (
 	internal_dto "github.com/XingfenD/yoresee_doc/internal/service/dto"
 )
 
-func (s *DocumentService) listDocuments(req *internal_dto.DocumentsListReq) ([]*dto.DocumentMetaResponse, int64, error) {
+func (s *DocumentService) listDocuments(ctx context.Context, req *internal_dto.DocumentsListReq) ([]*dto.DocumentMetaResponse, int64, error) {
 	listOp, err := s.buildListDocumentsOperation(req)
 	if err != nil {
 		return nil, 0, err
@@ -32,8 +32,11 @@ func (s *DocumentService) listDocuments(req *internal_dto.DocumentsListReq) ([]*
 
 	getOp := s.getDocumentsWithDescendants(parentIDs).
 		WithDirectoryOnly(req.DirectoryOnly)
+	if req.Options != nil {
+		getOp = getOp.WithDepth(req.Options.Depth)
+	}
 
-	allDescendants, err := getOp.Exec()
+	allDescendants, err := getOp.Exec(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -74,6 +77,7 @@ func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.
 	}
 
 	return s.listDocuments(
+		ctx,
 		&internal_dto.DocumentsListReq{
 			MetaArgs: &internal_dto.DocumentsListMetaArgs{
 				UserID:      userID,
@@ -121,7 +125,7 @@ func (op *GetDocumentsWithDescendantsOperation) WithDirectoryOnly(with bool) *Ge
 	return op
 }
 
-func (op *GetDocumentsWithDescendantsOperation) Exec() ([]*model.Document, error) {
+func (op *GetDocumentsWithDescendantsOperation) Exec(ctx context.Context) ([]*model.Document, error) {
 	if len(op.parentIDs) == 0 {
 		return []*model.Document{}, nil
 	}
@@ -133,7 +137,7 @@ func (op *GetDocumentsWithDescendantsOperation) Exec() ([]*model.Document, error
 		docs, err := op.svc.documentRepo.GetSubtree(rootParentID).
 			WithDepth(op.depth).
 			WithDirectoryOnly(op.directoryOnly).
-			Exec()
+			Exec(ctx)
 		if err != nil {
 			return nil, err
 		}

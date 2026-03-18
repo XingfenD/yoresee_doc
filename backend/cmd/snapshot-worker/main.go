@@ -25,7 +25,7 @@ import (
 
 const (
 	defaultDirtyDocTopic = "collab.dirty_docs"
-	defaultDirtyDocSet   = "yjs:dirty:doc"
+	defaultDirtyDocSet   = "collab:yjs:dirty:doc"
 )
 
 type dirtyDocMessage struct {
@@ -242,7 +242,7 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 	}
 
 	if storage.GetRedis() != nil {
-		key := fmt.Sprintf("yjs:doc:updates:%s", docID)
+		key := fmt.Sprintf("collab:yjs:doc:updates:%s", docID)
 		pipe := storage.GetRedis().TxPipeline()
 		pipe.Del(ctx, key)
 		pipe.RPush(ctx, key, state)

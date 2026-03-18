@@ -90,6 +90,12 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 		logrus.Errorf("[Service layer: DocumentService] Create err: %+v", err)
 		return nil, status.StatusWriteDBError
 	}
+
+	if createdDoc, err := s.documentRepo.GetByExternalID(docExternalID).Exec(ctx); err == nil {
+		if err := s.documentRepo.BumpSubtreeVersionsByPath(ctx, createdDoc.Path); err != nil {
+			logrus.Warnf("bump subtree version failed: %v", err)
+		}
+	}
 	return &dto.CreateDocumentResponse{
 		ExternalID: docExternalID,
 	}, nil

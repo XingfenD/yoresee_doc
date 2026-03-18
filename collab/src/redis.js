@@ -54,7 +54,7 @@ async function checkRoomExists(roomName) {
   if (!redisClient) return false;
 
   try {
-    const yjsKey = `yjs:${roomName}`;
+    const yjsKey = `collab:yjs:${roomName}`;
     const exists = await redisClient.exists(yjsKey);
     return exists;
   } catch (err) {

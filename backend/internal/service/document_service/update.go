@@ -7,6 +7,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -15,11 +16,18 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		return false, err
 	}
 
+	var (
+		moved   bool
+		oldPath string
+		newPath string
+	)
+
 	err := utils.WithTransaction(func(tx *gorm.DB) error {
 		oldDoc, err := s.documentRepo.GetByExternalID(req.ExternalID).WithTx(tx).Exec(ctx)
 		if err != nil {
 			return status.StatusDocumentNotFound
 		}
+		oldPath = oldDoc.Path
 
 		docModel := &model.Document{
 			ID: oldDoc.ID,
@@ -33,7 +41,6 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 			docModel.Title = *req.Title
 		}
 
-		moved := false
 		var newParentID int64
 		if req.ParentExternalID != nil {
 			parentID, err := s.documentRepo.GetIDByExternalID(*req.ParentExternalID).Exec(ctx)
@@ -81,6 +88,11 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 			if err := s.documentRepo.MoveSubtree(oldDoc.ID, newParentID).WithTx(tx).Exec(); err != nil {
 				return err
 			}
+			path, err := s.documentRepo.GetPathByIDWithTx(tx, oldDoc.ID)
+			if err != nil {
+				return err
+			}
+			newPath = path
 		}
 
 		return nil
@@ -89,7 +101,18 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		return false, err
 	}
 
-	// TODO: redis support
+	if moved {
+		if err := s.documentRepo.BumpSubtreeVersionsByPath(ctx, oldPath); err != nil {
+			logrus.Warnf("bump subtree version failed: %v", err)
+			return true, nil
+		}
+		if newPath != "" && newPath != oldPath {
+			if err := s.documentRepo.BumpSubtreeVersionsByPath(ctx, newPath); err != nil {
+				logrus.Warnf("bump subtree version failed: %v", err)
+				return true, nil
+			}
+		}
+	}
 
 	return true, nil
 }

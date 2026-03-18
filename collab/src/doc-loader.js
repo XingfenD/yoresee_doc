@@ -7,7 +7,7 @@ const snapshotTimeoutMs = Number(process.env.BACKEND_SNAPSHOT_TIMEOUT_MS || 3000
 async function loadDoc(docId) {
   const start = Date.now();
   console.log(`[doc-loader] start docId=${docId}`);
-  const redisKey = `yjs:doc:updates:${docId}`;
+  const redisKey = `collab:yjs:doc:updates:${docId}`;
 
   try {
     const updates = await redis.getListBuffers(redisKey);

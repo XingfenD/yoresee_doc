@@ -10,7 +10,7 @@ const dirtyDocTopic = process.env.DIRTY_DOC_TOPIC || 'collab.dirty_docs';
 const dirtyDocMqType = process.env.DIRTY_DOC_MQ || 'redis';
 const rabbitmqUrl = process.env.RABBITMQ_URL || '';
 const internalRpcKey = process.env.INTERNAL_RPC_KEY || '';
-const dirtyDocSetKey = process.env.DIRTY_DOC_SET_KEY || 'yjs:dirty:doc';
+const dirtyDocSetKey = process.env.DIRTY_DOC_SET_KEY || 'collab:yjs:dirty:doc';
 const dirtyDocNotifyThreshold = Number(process.env.DIRTY_DOC_NOTIFY_THRESHOLD || 200);
 
 module.exports = {

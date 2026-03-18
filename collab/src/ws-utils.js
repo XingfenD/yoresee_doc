@@ -78,7 +78,7 @@ const persistUpdate = async (docId, doc, update) => {
   if (!docId) {
     return;
   }
-  const redisKey = `yjs:doc:updates:${docId}`;
+  const redisKey = `collab:yjs:doc:updates:${docId}`;
   await redis.appendListBuffer(redisKey, update);
   await redis.addDirtyDoc(docId);
   await redis.updateRoomActiveTime(`doc-${docId}`);
