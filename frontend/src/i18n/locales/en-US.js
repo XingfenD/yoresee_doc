@@ -95,7 +95,8 @@ export default {
     management: 'System Management',
     managementPlaceholder: 'System management will be available soon.',
     menu: {
-      security: 'Security Settings'
+      security: 'Security Settings',
+      invite: 'Invite Management'
     },
     security: {
       title: 'Security Management',
@@ -104,6 +105,22 @@ export default {
       freeRegister: 'Open Registration',
       inviteOnly: 'Invite Code Only',
       placeholderTitle: 'More Settings'
+    },
+    invite: {
+      title: 'Invite Management',
+      tabs: {
+        list: 'Invites',
+        records: 'Usage Records'
+      },
+      records: {
+        code: 'Invite Code',
+        usedBy: 'Used By',
+        usedAt: 'Used At',
+        result: 'Result',
+        success: 'Success',
+        failed: 'Failed',
+        empty: 'No records'
+      }
     }
   },
   button: {

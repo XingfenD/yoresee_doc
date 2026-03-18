@@ -57,7 +57,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import { House, Setting } from '@element-plus/icons-vue';
+import { House, Setting, Ticket } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -74,7 +74,8 @@ const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemec
 
 const manageMenuItems = [
   { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
-  { key: 'manage-security', labelKey: 'system.menu.security', icon: Setting, route: '/manage/security' }
+  { key: 'manage-security', labelKey: 'system.menu.security', icon: Setting, route: '/manage/security' },
+  { key: 'manage-invite', labelKey: 'system.menu.invite', icon: Ticket, route: '/manage/invitations' }
 ];
 
 const currentLanguage = computed({

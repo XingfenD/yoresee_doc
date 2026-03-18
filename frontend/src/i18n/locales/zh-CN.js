@@ -93,7 +93,8 @@ export default {
     management: '系统管理',
     managementPlaceholder: '系统管理功能即将上线。',
     menu: {
-      security: '安全设置'
+      security: '安全设置',
+      invite: '邀请管理'
     },
     security: {
       title: '安全管理',
@@ -102,6 +103,22 @@ export default {
       freeRegister: '自由注册',
       inviteOnly: '邀请码',
       placeholderTitle: '更多设置'
+    },
+    invite: {
+      title: '邀请管理',
+      tabs: {
+        list: '邀请码列表',
+        records: '使用记录'
+      },
+      records: {
+        code: '邀请码',
+        usedBy: '使用人',
+        usedAt: '使用时间',
+        result: '结果',
+        success: '成功',
+        failed: '失败',
+        empty: '暂无使用记录'
+      }
     }
   },
   button: {

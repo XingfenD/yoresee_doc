@@ -230,6 +230,56 @@ body {
     color: var(--text-dark) !important;
   }
 
+  /* 日期选择器 */
+  .el-picker__popper {
+    background-color: var(--bg-white) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .el-date-picker__header,
+  .el-picker-panel__body,
+  .el-picker-panel__content {
+    background-color: var(--bg-white) !important;
+    color: var(--text-dark) !important;
+  }
+
+  .el-date-table th,
+  .el-date-table td,
+  .el-date-table td .el-date-table-cell {
+    color: var(--text-dark) !important;
+  }
+
+  .el-date-table td.in-range div,
+  .el-date-table td.available:hover div {
+    background-color: var(--bg-medium) !important;
+  }
+
+  /* 文本域 */
+  .el-textarea__inner {
+    background-color: var(--bg-white) !important;
+    color: var(--text-dark) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* 数字输入 */
+  .el-input-number__decrease,
+  .el-input-number__increase {
+    background-color: var(--bg-medium) !important;
+    color: var(--text-dark) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .el-input-number__decrease:hover,
+  .el-input-number__increase:hover {
+    background-color: var(--bg-light) !important;
+  }
+
+  /* 开关 */
+  .el-switch {
+    --el-switch-on-color: #3a7afe !important;
+    --el-switch-off-color: #3a3a3a !important;
+  }
+
   /* 菜单 */
   .el-menu {
     background-color: var(--bg-white) !important;

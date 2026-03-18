@@ -173,4 +173,26 @@ watch(
   align-items: center;
   gap: var(--spacing-md);
 }
+
+.dark-mode :deep(.el-input-number__decrease),
+.dark-mode :deep(.el-input-number__increase) {
+  background-color: var(--bg-medium);
+  color: var(--text-dark);
+  border-color: var(--border-color);
+}
+
+.dark-mode :deep(.el-switch) {
+  --el-switch-on-color: #3a7afe;
+  --el-switch-off-color: #3a3a3a;
+}
+
+.dark-mode :deep(.el-date-editor),
+.dark-mode :deep(.el-date-editor .el-input__wrapper) {
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
+}
+
+.dark-mode :deep(.el-date-editor .el-input__inner) {
+  color: var(--text-dark);
+}
 </style>

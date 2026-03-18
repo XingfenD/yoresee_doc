@@ -83,6 +83,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/manage/invitations',
+      name: 'SystemManageInvitations',
+      component: () => import('../views/SystemManageInvitations.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/manage',
       name: 'SystemManage',
       redirect: '/manage/security'
