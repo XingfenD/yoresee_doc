@@ -141,3 +141,11 @@ type UpdateDocumentRequest struct {
 	MoveAsOwn               bool    `json:"move_as_own"`
 	Content                 *string `json:"content,omitempty"`
 }
+
+type UpdateDocumentMetaRequest struct {
+	ExternalID string    `json:"external_id"`
+	Title      *string   `json:"title,omitempty"`
+	Summary    *string   `json:"summary,omitempty"`
+	Tags       *[]string `json:"tags,omitempty"`
+	Status     *int      `json:"status,omitempty"`
+}

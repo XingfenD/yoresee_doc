@@ -252,3 +252,38 @@ func (s *DocumentServiceServer) UpdateDocument(ctx context.Context, req *pb.Upda
 		Base: baseResponseFromErr(nil),
 	}, nil
 }
+
+func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.UpdateDocumentMetaRequest) (*pb.UpdateDocumentMetaResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.ExternalId == "" {
+		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req.Title == nil && req.Summary == nil && req.Status == nil && req.Tags == nil {
+		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	serviceReq := &dto.UpdateDocumentMetaRequest{
+		ExternalID: req.ExternalId,
+		Title:      req.Title,
+		Summary:    req.Summary,
+	}
+	if req.Status != nil {
+		statusVal := int(req.GetStatus())
+		serviceReq.Status = &statusVal
+	}
+	if req.Tags != nil {
+		tags := req.Tags
+		serviceReq.Tags = &tags
+	}
+
+	if _, err := document_service.DocumentSvc.UpdateDocumentMeta(ctx, serviceReq); err != nil {
+		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.UpdateDocumentMetaResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}

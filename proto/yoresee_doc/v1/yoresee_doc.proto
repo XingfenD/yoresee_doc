@@ -213,6 +213,18 @@ message UpdateDocumentResponse {
   BaseResponse base = 1;
 }
 
+message UpdateDocumentMetaRequest {
+  string external_id = 1;
+  optional string title = 2;
+  optional string summary = 3;
+  repeated string tags = 4;
+  optional int32 status = 5;
+}
+
+message UpdateDocumentMetaResponse {
+  BaseResponse base = 1;
+}
+
 message GetDocumentYjsSnapshotRequest {
   string document_external_id = 1;
 }
@@ -276,6 +288,8 @@ service DocumentService {
   rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
   // updateDocument updates an existing document.
   rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
+  // updateDocumentMeta updates document metadata without changing content.
+  rpc UpdateDocumentMeta(UpdateDocumentMetaRequest) returns (UpdateDocumentMetaResponse);
 }
 
 // knowledgeBaseService provides knowledge base management and discovery APIs.

@@ -5,6 +5,7 @@ const {
   ListKnowledgeBasesRequest,
   ListRecentKnowledgeBasesRequest,
   GetKnowledgeBaseRequest,
+  UpdateDocumentMetaRequest,
   CreateDocumentRequest,
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
@@ -145,6 +146,21 @@ export const getKnowledgeBaseDocuments = async (knowledgeBaseExternalID, params 
   });
 };
 
+// 更新文档元数据
+export const updateDocumentMeta = async (documentExternalID, data = {}) => {
+  const req = new UpdateDocumentMetaRequest({
+    externalId: documentExternalID,
+    title: data.title ?? undefined,
+    summary: data.summary ?? undefined,
+    tags: Array.isArray(data.tags) ? data.tags : undefined,
+    status: typeof data.status === 'number' ? data.status : undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'updateDocumentMeta', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
 // 创建文档
 export const createDocument = async (data) => {
   const req = new CreateDocumentRequest({
@@ -245,6 +261,7 @@ export default {
   getRecentKnowledgeBases,
   getKnowledgeBaseDetail,
   getKnowledgeBaseDocuments,
+  updateDocumentMeta,
   createDocument,
   getDocumentContent,
   getMyDocuments,

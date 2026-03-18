@@ -61,7 +61,24 @@
 
           <main class="editor-main">
             <div class="editor-header">
-              <div class="doc-title">{{ currentDocTitle }}</div>
+              <div
+                class="doc-title"
+                v-if="!isEditingTitle"
+                @click="startEditTitle"
+                :title="t('knowledgeBase.enterDocumentTitle')"
+              >
+                {{ currentDocTitle || t('knowledgeBase.enterDocumentTitle') }}
+              </div>
+              <el-input
+                v-else
+                ref="titleInputRef"
+                v-model="pendingTitle"
+                class="doc-title-input"
+                maxlength="200"
+                @blur="commitTitle"
+                @keyup.enter="commitTitle"
+                @keyup.esc="cancelEditTitle"
+              />
             </div>
             <div class="editor-content">
               <div class="editor-wrapper">
@@ -108,7 +125,7 @@ import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
 import TopNav from '@/components/TopNav.vue';
 import { useUserStore } from '@/store/user';
-import { getKnowledgeBaseDocuments, createDocument as createDocumentApi, getMyDocuments } from '@/services/api';
+import { getKnowledgeBaseDocuments, createDocument as createDocumentApi, getMyDocuments, updateDocumentMeta } from '@/services/api';
 
 const props = defineProps({
   kbId: {
@@ -138,6 +155,10 @@ const userInfo = computed(() => userStore.userInfo);
 
 const knowledgeBaseName = ref('示例知识库');
 const currentDocTitle = ref('示例文档');
+const isEditingTitle = ref(false);
+const pendingTitle = ref('');
+const titleInputRef = ref(null);
+const savingTitle = ref(false);
 const editorContent = ref('');
 const collabEnabled = computed(() => !!docId.value && docId.value !== 'example');
 const collabRoom = computed(() => (docId.value ? `${docId.value}` : ''));
@@ -392,6 +413,70 @@ const updateCurrentDocTitle = () => {
   }
 };
 
+const updateTreeNodeTitle = (nodes, targetId, title) => {
+  for (const node of nodes) {
+    if (String(node.id) === String(targetId)) {
+      node.label = title;
+      return true;
+    }
+    if (node.children && node.children.length > 0) {
+      if (updateTreeNodeTitle(node.children, targetId, title)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+const startEditTitle = async () => {
+  if (!docId.value || docId.value === 'example') {
+    return;
+  }
+  isEditingTitle.value = true;
+  pendingTitle.value = currentDocTitle.value || '';
+  await nextTick();
+  titleInputRef.value?.focus?.();
+};
+
+const cancelEditTitle = () => {
+  isEditingTitle.value = false;
+  pendingTitle.value = '';
+};
+
+const commitTitle = async () => {
+  if (!isEditingTitle.value) {
+    return;
+  }
+  const nextTitle = pendingTitle.value.trim();
+  if (!nextTitle) {
+    ElMessage.error(t('knowledgeBase.titleRequired'));
+    return;
+  }
+  if (nextTitle === currentDocTitle.value) {
+    cancelEditTitle();
+    return;
+  }
+  if (!docId.value) {
+    cancelEditTitle();
+    return;
+  }
+  if (savingTitle.value) {
+    return;
+  }
+  savingTitle.value = true;
+  try {
+    await updateDocumentMeta(docId.value, { title: nextTitle });
+    currentDocTitle.value = nextTitle;
+    updateTreeNodeTitle(directoryTree.value, docId.value, nextTitle);
+    cancelEditTitle();
+  } catch (error) {
+    console.error('更新文档标题失败:', error);
+    ElMessage.error(t('common.requestFailed'));
+  } finally {
+    savingTitle.value = false;
+  }
+};
+
 const findPathToNode = (tree, targetId, path = []) => {
   for (const node of tree) {
     if (node.id === targetId) {
@@ -578,6 +663,7 @@ watch(
     docId.value = newDocId;
     editorContent.value = '';
     currentDocTitle.value = '';
+    cancelEditTitle();
     if (lastSyncedDocId.value !== docId.value) {
       collabReady.value = !collabEnabled.value;
     }
@@ -593,6 +679,7 @@ watch(
       return;
     }
     kbId.value = newKbId;
+    cancelEditTitle();
     await fetchDocuments();
     if (lastSyncedDocId.value !== docId.value) {
       collabReady.value = !collabEnabled.value;
@@ -791,9 +878,30 @@ watch(
   font-size: 18px;
   font-weight: 600;
   color: var(--text-dark);
+  cursor: text;
 }
 
 .dark-mode .doc-title {
+  color: var(--text-dark);
+}
+
+.doc-title-input :deep(.el-input__wrapper) {
+  box-shadow: none;
+  border-radius: 0;
+  background-color: transparent;
+  padding: 0;
+}
+
+.doc-title-input :deep(.el-input__inner) {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  padding: 0;
+  height: 28px;
+  line-height: 28px;
+}
+
+.dark-mode .doc-title-input :deep(.el-input__inner) {
   color: var(--text-dark);
 }
 

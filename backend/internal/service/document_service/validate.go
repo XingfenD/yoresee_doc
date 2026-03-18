@@ -43,3 +43,16 @@ func validateUpdateDocumentReq(req *dto.UpdateDocumentRequest) error {
 
 	return nil
 }
+
+func validateUpdateDocumentMetaReq(req *dto.UpdateDocumentMetaRequest) error {
+	if req == nil {
+		return status.StatusInternalParamsError
+	}
+	if req.ExternalID == "" {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "external_id is zero value")
+	}
+	if req.Title == nil && req.Summary == nil && req.Tags == nil && req.Status == nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "no update field")
+	}
+	return nil
+}

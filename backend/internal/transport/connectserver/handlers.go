@@ -111,6 +111,18 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.DocumentService_UpdateDocumentMeta_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_UpdateDocumentMeta_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateDocumentMetaRequest]) (*connect.Response[pb.UpdateDocumentMetaResponse], error) {
+			resp, err := docSvc.UpdateDocumentMeta(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.KnowledgeBaseService_ListKnowledgeBases_FullMethodName, connect.NewUnaryHandler(
 		pb.KnowledgeBaseService_ListKnowledgeBases_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.ListKnowledgeBasesRequest]) (*connect.Response[pb.ListKnowledgeBasesResponse], error) {
