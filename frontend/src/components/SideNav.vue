@@ -109,6 +109,7 @@ const handleMenuSelect = (key) => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  padding-left: var(--spacing-md);
 }
 
 .side-menu .el-menu-item:hover {
@@ -123,18 +124,19 @@ const handleMenuSelect = (key) => {
 }
 
 .menu-text {
-  transition: opacity 0.3s ease;
+  display: inline-block;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateX(0);
+  transition: max-width 0.25s ease, opacity 0.2s ease, transform 0.25s ease;
 }
 
 .side-nav.collapsed .menu-text {
+  max-width: 0;
   opacity: 0;
-  width: 0;
-  overflow: hidden;
-}
-
-.side-nav.collapsed .el-menu-item {
-  justify-content: center;
-  gap: 0;
+  transform: translateX(-8px);
 }
 
 .collapse-btn {
@@ -180,11 +182,6 @@ const handleMenuSelect = (key) => {
 
   .menu-text {
     display: none;
-  }
-
-  .side-menu .el-menu-item {
-    justify-content: center;
-    gap: 0;
   }
 
   .collapse-btn {
