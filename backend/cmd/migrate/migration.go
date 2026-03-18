@@ -4,6 +4,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func runMigration() error {
@@ -33,5 +34,13 @@ func runMigration() error {
 		return err
 	}
 
+	if err := migrateRecentKnowledgeBaseIndex(storage.DB); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func migrateRecentKnowledgeBaseIndex(db *gorm.DB) error {
+	return db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_kb_user_kb ON recent_knowledge_bases (user_id, knowledge_base_id)").Error
 }

@@ -142,3 +142,58 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 		TotalCount:    totalCount,
 	}, nil
 }
+
+func (s *KnowledgeBaseServiceServer) ListRecentKnowledgeBases(ctx context.Context, req *pb.ListRecentKnowledgeBasesRequest) (*pb.ListRecentKnowledgeBasesResponse, error) {
+	if req == nil {
+		return &pb.ListRecentKnowledgeBasesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.ListRecentKnowledgeBasesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	var startTime *time.Time
+	if req.StartTime != nil && *req.StartTime != "" {
+		t, err := time.Parse(time.RFC3339, *req.StartTime)
+		if err != nil {
+			return &pb.ListRecentKnowledgeBasesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		}
+		startTime = &t
+	}
+
+	var endTime *time.Time
+	if req.EndTime != nil && *req.EndTime != "" {
+		t, err := time.Parse(time.RFC3339, *req.EndTime)
+		if err != nil {
+			return &pb.ListRecentKnowledgeBasesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		}
+		endTime = &t
+	}
+
+	serviceReq := &dto.ListRecentKnowledgeBasesRequest{
+		UserExternalID: userExternalID,
+		StartTime:      startTime,
+		EndTime:        endTime,
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+	}
+
+	kbs, total, err := knowledge_base_service.KnowledgeBaseSvc.ListRecentKnowledgeBases(serviceReq)
+	if err != nil {
+		return &pb.ListRecentKnowledgeBasesResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	respKBs := make([]*pb.KnowledgeBaseResponse, 0, len(kbs))
+	for _, kb := range kbs {
+		respKBs = append(respKBs, toKnowledgeBaseResponse(kb))
+	}
+
+	return &pb.ListRecentKnowledgeBasesResponse{
+		Base:           baseResponseFromErr(nil),
+		KnowledgeBases: respKBs,
+		Total:          total,
+	}, nil
+}

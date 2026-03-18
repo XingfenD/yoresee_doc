@@ -231,27 +231,67 @@ message SaveDocumentYjsSnapshotResponse {
   BaseResponse base = 1;
 }
 
+// listRecentKnowledgeBasesRequest requests the caller's recent knowledge bases.
+// Note: This RPC does not accept any external user identifiers. The backend
+// resolves the user from the authenticated context.
+message ListRecentKnowledgeBasesRequest {
+  // Optional inclusive start time (RFC3339). If omitted, no lower bound.
+  optional string start_time = 1;
+  // Optional inclusive end time (RFC3339). If omitted, no upper bound.
+  optional string end_time = 2;
+  // 1-based page index. Defaults to 1 when <= 0.
+  int32 page = 3;
+  // Page size. Defaults to 10 when <= 0, capped by server.
+  int32 page_size = 4;
+}
+
+// listRecentKnowledgeBasesResponse contains the recent knowledge bases.
+message ListRecentKnowledgeBasesResponse {
+  BaseResponse base = 1;
+  repeated KnowledgeBaseResponse knowledge_bases = 2;
+  int64 total = 3;
+}
+
+// authService provides authentication APIs.
 service AuthService {
+  // login authenticates a user and returns a token.
   rpc Login(AuthLoginRequest) returns (AuthLoginResponse);
+  // register creates a new user account.
   rpc Register(AuthRegisterRequest) returns (AuthRegisterResponse);
 }
 
+// documentService provides document APIs.
 service DocumentService {
+  // listDocuments lists documents with filters and pagination.
   rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+  // getDocumentContent fetches a document with its content.
   rpc GetDocumentContent(GetDocumentContentRequest) returns (GetDocumentContentResponse);
+  // getDocumentYjsSnapshot fetches yjs snapshot by document external id.
   rpc GetDocumentYjsSnapshot(GetDocumentYjsSnapshotRequest) returns (GetDocumentYjsSnapshotResponse);
+  // saveDocumentYjsSnapshot saves yjs snapshot state.
   rpc SaveDocumentYjsSnapshot(SaveDocumentYjsSnapshotRequest) returns (SaveDocumentYjsSnapshotResponse);
+  // getOwnDocuments lists documents owned by the caller.
   rpc GetOwnDocuments(GetOwnDocumentsRequest) returns (GetOwnDocumentsResponse);
+  // createDocument creates a new document.
   rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
+  // updateDocument updates an existing document.
   rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
 }
 
+// knowledgeBaseService provides knowledge base management and discovery APIs.
 service KnowledgeBaseService {
+  // list knowledge bases with filters and pagination.
   rpc ListKnowledgeBases(ListKnowledgeBasesRequest) returns (ListKnowledgeBasesResponse);
+  // get a knowledge base by external ID, optionally recording a recent-access log.
   rpc GetKnowledgeBase(GetKnowledgeBaseRequest) returns (GetKnowledgeBaseResponse);
+  // list the caller's recent knowledge bases. User identity is derived from auth context.
+  rpc ListRecentKnowledgeBases(ListRecentKnowledgeBasesRequest) returns (ListRecentKnowledgeBasesResponse);
 }
 
+// systemService provides system health and info APIs.
 service SystemService {
+  // health returns service health status.
   rpc Health(HealthRequest) returns (HealthResponse);
+  // systemInfo returns system info and config.
   rpc SystemInfo(SystemInfoRequest) returns (SystemInfoResponse);
 }

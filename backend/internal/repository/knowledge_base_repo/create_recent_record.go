@@ -4,6 +4,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CreateRecentKnowledgeBaseOperation struct {
@@ -28,5 +29,11 @@ func (op *CreateRecentKnowledgeBaseOperation) Exec() error {
 		op.tx = storage.DB
 	}
 
-	return op.tx.Create(op.m).Error
+	return op.tx.Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "user_id"},
+			{Name: "knowledge_base_id"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{"accessed_at"}),
+	}).Create(op.m).Error
 }

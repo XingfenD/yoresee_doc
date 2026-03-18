@@ -58,6 +58,13 @@ type CreateRecentKnowledgeBaseRequest struct {
 	AssessTime              time.Time
 }
 
+type ListRecentKnowledgeBasesRequest struct {
+	UserExternalID string
+	StartTime      *time.Time
+	EndTime        *time.Time
+	Pagination     Pagination
+}
+
 type KnowledgeBaseListByExternalReq struct {
 	CreatorExternalID string                       `json:"creator_external_id"`
 	FilterArgs        *KnowledgeBaseListFilterArgs `json:"filter_args"`
