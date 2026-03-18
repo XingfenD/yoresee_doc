@@ -35,6 +35,7 @@
 
 <script setup>
 import { computed, reactive, watch } from 'vue';
+import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -84,6 +85,10 @@ const handleCancel = () => {
 };
 
 const handleCreate = () => {
+  if (!formState.title.trim()) {
+    ElMessage.error(t('knowledgeBase.titleRequired'));
+    return;
+  }
   emit('submit', {
     title: formState.title.trim(),
     type: formState.type,
