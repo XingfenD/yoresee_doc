@@ -23,8 +23,6 @@ func runMigration() error {
 		&model.RecentKnowledgeBase{},
 		&model.MembershipRelation{},
 		&model.OrgNodeMeta{},
-		&model.PermissionRule{},
-		&model.Resource{},
 		&model.SystemConfig{},
 		&model.Template{},
 		&model.UserGroupMeta{},
