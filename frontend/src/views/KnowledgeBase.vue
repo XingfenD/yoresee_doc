@@ -110,36 +110,13 @@ const currentLanguage = computed({
 const userInfo = computed(() => userStore.userInfo);
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 
-// 最近访问的知识库（API尚未实现，使用模拟数据）
-const recentKnowledgeBases = ref([
-  {
-    externalId: "kb1",
-    name: "项目知识库",
-    description: "项目相关的技术文档和规范",
-    creatorName: "张三",
-    updatedAt: "2024-01-15T09:00:00Z",
-    isPublic: true,
-    documentsCount: 24,
-  },
-  {
-    externalId: "kb2",
-    name: "公司规章制度",
-    description: "公司各项规章制度和政策",
-    creatorName: "李四",
-    updatedAt: "2024-01-14T15:30:00Z",
-    isPublic: true,
-    documentsCount: 15,
-  },
-  {
-    externalId: "kb3",
-    name: "技术分享",
-    description: "团队技术分享资料",
-    creatorName: "王五",
-    updatedAt: "2024-01-13T11:20:00Z",
-    isPublic: false,
-    documentsCount: 8,
-  },
-]);
+// 最近访问的知识库
+const recentKnowledgeBases = ref([]);
+const recentPage = ref(1);
+const recentPageSize = ref(10);
+const recentTotal = ref(0);
+const recentLoading = ref(false);
+const recentLoaded = ref(false);
 
 // 我的知识库
 const myKnowledgeBases = ref([]);
@@ -174,6 +151,35 @@ const recentTagMapper = (kb) =>
 
 const myLoaded = ref(false);
 const publicLoaded = ref(false);
+
+// 获取最近访问的知识库
+const fetchRecentKnowledgeBases = async (page = 1, pageSize = 10) => {
+  if (recentLoading.value) return;
+
+  recentLoading.value = true;
+
+  try {
+    const params = {
+      page: page,
+      page_size: pageSize,
+    };
+    const data = await api.getRecentKnowledgeBases(params);
+
+    if (page === 1) {
+      recentKnowledgeBases.value = data.knowledge_bases || [];
+    } else {
+      recentKnowledgeBases.value.push(...(data.knowledge_bases || []));
+    }
+
+    recentTotal.value = data.total || 0;
+    recentLoaded.value = true;
+  } catch (error) {
+    console.error("Failed to fetch recent knowledge bases:", error);
+    ElMessage.error(t("knowledgeBase.fetchError"));
+  } finally {
+    recentLoading.value = false;
+  }
+};
 
 // 获取我的知识库
 const fetchMyKnowledgeBases = async (page = 1, pageSize = 10) => {
@@ -347,6 +353,9 @@ onMounted(async () => {
 watch(activeTab, async (tab) => {
   if (tab === "my" && !myLoaded.value) {
     await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
+  }
+  if (tab === "recent" && !recentLoaded.value) {
+    await fetchRecentKnowledgeBases(recentPage.value, recentPageSize.value);
   }
   if (tab === "public" && !publicLoaded.value) {
     await fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value);

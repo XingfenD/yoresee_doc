@@ -1,9 +1,9 @@
-import { ElMessage } from 'element-plus';
 import { clients, messages, unaryCall } from './grpc_client';
 
 const { documentClient, knowledgeBaseClient } = clients;
 const {
   ListKnowledgeBasesRequest,
+  ListRecentKnowledgeBasesRequest,
   GetKnowledgeBaseRequest,
   CreateDocumentRequest,
   GetDocumentContentRequest,
@@ -62,9 +62,7 @@ function handleResponse(base, data) {
   if (base.code === 0) {
     return { ...base, ...data };
   }
-  const errorMessage = base.message || '请求失败';
-  ElMessage.error(errorMessage);
-  throw new Error(errorMessage);
+  throw new Error('request failed');
 }
 
 function toTimeRange(input) {
@@ -114,6 +112,24 @@ export const getKnowledgeBaseDetail = async (knowledgeBaseExternalID, params = {
     knowledge_base: mapKnowledgeBase(resp.knowledgeBase),
     documents: (resp.documents || []).map(mapDocument),
     total_count: resp.totalCount ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+// 获取最近访问的知识库
+export const getRecentKnowledgeBases = async (params = {}) => {
+  const req = new ListRecentKnowledgeBasesRequest({
+    startTime: params.start_time || undefined,
+    endTime: params.end_time || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(knowledgeBaseClient, 'listRecentKnowledgeBases', req);
+  const base = baseToObject(resp);
+  const data = {
+    knowledge_bases: (resp.knowledgeBases || []).map(mapKnowledgeBase),
+    total: resp.total ?? 0
   };
   return handleResponse(base, data);
 };
@@ -226,6 +242,7 @@ export const listDocuments = async (params = {}) => {
 
 export default {
   getKnowledgeBases,
+  getRecentKnowledgeBases,
   getKnowledgeBaseDetail,
   getKnowledgeBaseDocuments,
   createDocument,

@@ -230,10 +230,10 @@ const handleRegister = async () => {
         if (success) {
           router.push({ path: '/login', query: { email: registerForm.email } });
         } else {
-          error.value = userStore.error;
+          error.value = t('common.requestFailed');
         }
       } catch (err) {
-        error.value = '注册失败，请稍后重试';
+        error.value = t('common.requestFailed');
       } finally {
         loading.value = false;
       }

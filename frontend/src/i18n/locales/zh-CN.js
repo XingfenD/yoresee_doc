@@ -188,6 +188,7 @@ export default {
   common: {
     yes: '是',
     no: '否',
+    requestFailed: '请求失败，请稍后重试',
     search: '搜索',
     view: '查看',
     viewAll: '查看全部',

@@ -31,7 +31,7 @@ export const useUserStore = defineStore('user', {
         localStorage.setItem('userInfo', JSON.stringify(response.user));
         return true;
       } catch (error) {
-        this.error = error.response?.data?.message || '登录失败';
+        this.error = 'request_failed';
         return false;
       } finally {
         this.loading = false;
@@ -56,7 +56,7 @@ export const useUserStore = defineStore('user', {
         localStorage.setItem('userInfo', JSON.stringify(response.user));
         return true;
       } catch (error) {
-        this.error = error.response?.data?.message || '注册失败';
+        this.error = 'request_failed';
         return false;
       } finally {
         this.loading = false;

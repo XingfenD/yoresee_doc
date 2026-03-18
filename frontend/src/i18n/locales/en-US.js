@@ -190,6 +190,7 @@ export default {
   common: {
     yes: 'Yes',
     no: 'No',
+    requestFailed: 'Request failed, please try again later',
     search: 'Search',
     view: 'View',
     viewAll: 'View All',

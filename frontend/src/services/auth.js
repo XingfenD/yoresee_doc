@@ -1,5 +1,4 @@
 import { clients, messages, unaryCall } from './grpc_client';
-import { ElMessage } from 'element-plus';
 
 const { authClient, systemClient } = clients;
 const { AuthLoginRequest, AuthRegisterRequest, SystemInfoRequest } = messages;
@@ -31,9 +30,7 @@ function handleResponse(base, data) {
   if (base.code === 0) {
     return { ...base, ...data };
   }
-  const errorMessage = base.message || '请求失败';
-  ElMessage.error(errorMessage);
-  throw new Error(errorMessage);
+  throw new Error('request failed');
 }
 
 // 登录

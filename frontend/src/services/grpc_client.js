@@ -1,6 +1,5 @@
 import { createPromiseClient, Code } from '@connectrpc/connect';
 import { createConnectTransport } from '@connectrpc/connect-web';
-import { ElMessage } from 'element-plus';
 import {
   AuthService,
   DocumentService,
@@ -42,8 +41,6 @@ export async function unaryCall(client, method, request) {
       localStorage.removeItem('token');
       localStorage.removeItem('userInfo');
       window.location.href = '/login';
-    } else {
-      ElMessage.error(err?.message || '请求失败');
     }
     throw err;
   }
