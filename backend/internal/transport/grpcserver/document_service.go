@@ -287,3 +287,19 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 		Base: baseResponseFromErr(nil),
 	}, nil
 }
+
+func (s *DocumentServiceServer) SaveAsTemplate(ctx context.Context, req *pb.SaveAsTemplateRequest) (*pb.SaveAsTemplateResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.SaveAsTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil {
+		return &pb.SaveAsTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	// TODO: validate authority
+
+	return &pb.SaveAsTemplateResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}

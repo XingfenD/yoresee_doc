@@ -19,7 +19,7 @@
       </el-button>
     </template>
 
-    <InviteList :items="inviteList" :is-dark="isDarkMode" />
+    <InviteList :items="inviteList" :is-dark="isDarkMode" :show-creator="false" />
 
     <InviteCreateDialog v-model="showCreateDialog" @submit="handleCreateInvite" />
   </PageLayout>

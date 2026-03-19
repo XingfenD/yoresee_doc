@@ -206,4 +206,16 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		},
 		opts...,
 	))
+
+	mux.Handle(pb.DocumentService_SaveAsTemplate_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_SaveAsTemplate_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.SaveAsTemplateRequest]) (*connect.Response[pb.SaveAsTemplateResponse], error) {
+			resp, err := docSvc.SaveAsTemplate(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
 }

@@ -276,6 +276,22 @@ message ListRecentKnowledgeBasesResponse {
   int64 total = 3;
 }
 
+enum SaveAsTemplateContainer {
+  OWN_TEMPLATE = 0;
+  KNOWLEDGEBASE_TEMPLATE = 1;
+  PUBLIC_TEMPLATE = 2;
+}
+
+message SaveAsTemplateRequest {
+  SaveAsTemplateContainer target_container = 1;
+  string knowledge_base_id = 2;
+  string template_content = 3;
+}
+
+message SaveAsTemplateResponse {
+  BaseResponse base = 1;
+}
+
 // authService provides authentication APIs.
 service AuthService {
   // login authenticates a user and returns a token.
@@ -302,6 +318,8 @@ service DocumentService {
   rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
   // updateDocumentMeta updates document metadata without changing content.
   rpc UpdateDocumentMeta(UpdateDocumentMetaRequest) returns (UpdateDocumentMetaResponse);
+  // save document as template
+  rpc SaveAsTemplate(SaveAsTemplateRequest) returns (SaveAsTemplateResponse);
 }
 
 // knowledgeBaseService provides knowledge base management and discovery APIs.
