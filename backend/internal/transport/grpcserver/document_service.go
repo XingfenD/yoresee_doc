@@ -288,18 +288,29 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 	}, nil
 }
 
-func (s *DocumentServiceServer) SaveAsTemplate(ctx context.Context, req *pb.SaveAsTemplateRequest) (*pb.SaveAsTemplateResponse, error) {
+func (s *DocumentServiceServer) CreateTemplate(ctx context.Context, req *pb.CreateTemplateRequest) (*pb.CreateTemplateResponse, error) {
 	userExternalID, ok := ctx.Value("user_external_id").(string)
 	if !ok || userExternalID == "" {
-		return &pb.SaveAsTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		return &pb.CreateTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 	if req == nil {
-		return &pb.SaveAsTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		return &pb.CreateTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	// TODO: validate authority
+	serviceReq := &dto.CreateTemplateRequest{
+		UserExternalID:  userExternalID,
+		TargetContainer: fromCreateTemplateContainer(req.TargetContainer),
+		TemplateContent: req.TemplateContent,
+	}
+	if req.KnowledgeBaseId != "" {
+		serviceReq.KnowledgeBaseExternalID = utils.Of(req.KnowledgeBaseId)
+	}
 
-	return &pb.SaveAsTemplateResponse{
+	if err := document_service.DocumentSvc.CreateTemplate(ctx, serviceReq); err != nil {
+		return &pb.CreateTemplateResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.CreateTemplateResponse{
 		Base: baseResponseFromErr(nil),
 	}, nil
 }

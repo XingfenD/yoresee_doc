@@ -55,6 +55,17 @@ func fromDocumentType(t pb.DocumentType) dto.DocumentType {
 	}
 }
 
+func fromCreateTemplateContainer(t pb.CreateTemplateContainer) dto.TemplateContainer {
+	switch t {
+	case pb.CreateTemplateContainer_KNOWLEDGEBASE_TEMPLATE:
+		return dto.TemplateContainerKnowledgeBase
+	case pb.CreateTemplateContainer_PUBLIC_TEMPLATE:
+		return dto.TemplateContainerPublic
+	default:
+		return dto.TemplateContainerOwn
+	}
+}
+
 func toDocumentResponse(doc *dto.DocumentMetaResponse) *pb.DocumentResponse {
 	if doc == nil {
 		return nil

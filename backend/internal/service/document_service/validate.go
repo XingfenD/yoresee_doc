@@ -56,3 +56,26 @@ func validateUpdateDocumentMetaReq(req *dto.UpdateDocumentMetaRequest) error {
 	}
 	return nil
 }
+
+func validateCreateTemplateReq(req *dto.CreateTemplateRequest) error {
+	if req == nil {
+		return status.StatusInternalParamsError
+	}
+	if req.UserExternalID == "" {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "user external id is empty")
+	}
+	if req.TemplateContent == "" {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "template content is empty")
+	}
+	switch req.TargetContainer {
+	case dto.TemplateContainerOwn, dto.TemplateContainerPublic:
+		return nil
+	case dto.TemplateContainerKnowledgeBase:
+		if req.KnowledgeBaseExternalID == nil || *req.KnowledgeBaseExternalID == "" {
+			return status.GenErrWithCustomMsg(status.StatusParamError, "knowledge_base_id is empty")
+		}
+		return nil
+	default:
+		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid template container")
+	}
+}
