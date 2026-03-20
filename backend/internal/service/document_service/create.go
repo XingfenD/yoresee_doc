@@ -2,6 +2,7 @@ package document_service
 
 import (
 	"context"
+	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
@@ -105,6 +106,13 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 		if err := s.documentRepo.BumpSubtreeVersionsByPath(ctx, createdDoc.Path); err != nil {
 			logrus.Warnf("bump subtree version failed: %v", err)
 		}
+	}
+	if req.TemplateID != nil && req.CreatorExternalID != nil && *req.CreatorExternalID != "" {
+		_ = s.CreateRecentTemplate(&dto.CreateRecentTemplateRequest{
+			UserExternalID: *req.CreatorExternalID,
+			TemplateID:     *req.TemplateID,
+			AccessTime:     time.Now(),
+		})
 	}
 	return &dto.CreateDocumentResponse{
 		ExternalID: docExternalID,

@@ -41,3 +41,16 @@ type TemplateListByExternalReq struct {
 	SortArgs          SortArgs                `json:"sort_args"`
 	Pagination        Pagination              `json:"pagination"`
 }
+
+type CreateRecentTemplateRequest struct {
+	UserExternalID string
+	TemplateID     int64
+	AccessTime     time.Time
+}
+
+type ListRecentTemplatesRequest struct {
+	UserExternalID string
+	StartTime      *time.Time
+	EndTime        *time.Time
+	Pagination     Pagination
+}

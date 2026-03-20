@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
@@ -294,7 +295,7 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 func (s *DocumentServiceServer) CreateTemplate(ctx context.Context, req *pb.CreateTemplateRequest) (*pb.CreateTemplateResponse, error) {
 	userExternalID, ok := ctx.Value("user_external_id").(string)
 	if !ok || userExternalID == "" {
-		return &pb.CreateTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		return &pb.CreateTemplateResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
 	}
 	if req == nil {
 		return &pb.CreateTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
@@ -322,13 +323,74 @@ func (s *DocumentServiceServer) GetTemplate(ctx context.Context, req *pb.GetTemp
 	if req == nil || req.TemplateId <= 0 {
 		return &pb.GetTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.GetTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
 	resp, err := document_service.DocumentSvc.GetTemplateByID(req.TemplateId)
 	if err != nil {
 		return &pb.GetTemplateResponse{Base: baseResponseFromErr(err)}, nil
 	}
+	if req.RecordRecentLog {
+		_ = document_service.DocumentSvc.CreateRecentTemplate(&dto.CreateRecentTemplateRequest{
+			UserExternalID: userExternalID,
+			TemplateID:     req.TemplateId,
+			AccessTime:     time.Now(),
+		})
+	}
 	return &pb.GetTemplateResponse{
 		Base:     baseResponseFromErr(nil),
 		Template: toTemplateResponse(resp),
+	}, nil
+}
+
+func (s *DocumentServiceServer) ListRecentTemplates(ctx context.Context, req *pb.ListRecentTemplatesRequest) (*pb.ListRecentTemplatesResponse, error) {
+	if req == nil {
+		return &pb.ListRecentTemplatesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.ListRecentTemplatesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	var startTime *time.Time
+	if req.StartTime != nil && *req.StartTime != "" {
+		t, err := time.Parse(time.RFC3339, *req.StartTime)
+		if err != nil {
+			return &pb.ListRecentTemplatesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		}
+		startTime = &t
+	}
+	var endTime *time.Time
+	if req.EndTime != nil && *req.EndTime != "" {
+		t, err := time.Parse(time.RFC3339, *req.EndTime)
+		if err != nil {
+			return &pb.ListRecentTemplatesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		}
+		endTime = &t
+	}
+
+	serviceReq := &dto.ListRecentTemplatesRequest{
+		UserExternalID: userExternalID,
+		StartTime:      startTime,
+		EndTime:        endTime,
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+	}
+	templates, total, err := document_service.DocumentSvc.ListRecentTemplates(serviceReq)
+	if err != nil {
+		return &pb.ListRecentTemplatesResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	respTemplates := make([]*pb.TemplateResponse, 0, len(templates))
+	for _, tpl := range templates {
+		respTemplates = append(respTemplates, toTemplateResponse(tpl))
+	}
+	return &pb.ListRecentTemplatesResponse{
+		Base:      baseResponseFromErr(nil),
+		Templates: respTemplates,
+		Total:     total,
 	}, nil
 }
 

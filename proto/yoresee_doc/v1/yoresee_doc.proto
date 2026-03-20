@@ -324,11 +324,25 @@ message ListTemplatesResponse {
 
 message GetTemplateRequest {
   int64 template_id = 1;
+  bool record_recent_log = 2;
 }
 
 message GetTemplateResponse {
   BaseResponse base = 1;
   TemplateResponse template = 2;
+}
+
+message ListRecentTemplatesRequest {
+  optional string start_time = 1;
+  optional string end_time = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListRecentTemplatesResponse {
+  BaseResponse base = 1;
+  repeated TemplateResponse templates = 2;
+  int64 total = 3;
 }
 
 // authService provides authentication APIs.
@@ -361,6 +375,8 @@ service DocumentService {
   rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
   // list templates with filters and pagination.
   rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  // list recent templates for caller.
+  rpc ListRecentTemplates(ListRecentTemplatesRequest) returns (ListRecentTemplatesResponse);
   // get template by id.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
 }
