@@ -130,3 +130,20 @@ func toUserResponse(user *dto.UserResponse) *pb.UserResponse {
 	}
 	return resp
 }
+
+func toTemplateResponse(tpl *dto.TemplateResponse) *pb.TemplateResponse {
+	if tpl == nil {
+		return nil
+	}
+	return &pb.TemplateResponse{
+		Id:                      tpl.ID,
+		Name:                    tpl.Name,
+		Description:             tpl.Description,
+		Content:                 tpl.Content,
+		Scope:                   tpl.Scope,
+		KnowledgeBaseExternalId: tpl.KnowledgeBaseExternalID,
+		Tags:                    tpl.Tags,
+		CreatedAt:               timeToString(tpl.CreatedAt),
+		UpdatedAt:               timeToString(tpl.UpdatedAt),
+	}
+}

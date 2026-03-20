@@ -187,6 +187,9 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 		CreatorExternalID: utils.Of(userExternalID),
 		ParentExternalID:  req.ParentExternalId,
 	}
+	if req.TemplateId != nil && *req.TemplateId > 0 {
+		dtoReq.TemplateID = req.TemplateId
+	}
 
 	switch req.ContainerType {
 	case pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE:
@@ -312,5 +315,63 @@ func (s *DocumentServiceServer) CreateTemplate(ctx context.Context, req *pb.Crea
 
 	return &pb.CreateTemplateResponse{
 		Base: baseResponseFromErr(nil),
+	}, nil
+}
+
+func (s *DocumentServiceServer) ListTemplates(ctx context.Context, req *pb.ListTemplatesRequest) (*pb.ListTemplatesResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.ListTemplatesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil {
+		return &pb.ListTemplatesResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	filterArgs := &dto.TemplateListFilterArgs{
+		NameKeyword:     req.NameKeyword,
+		KnowledgeBaseID: req.KnowledgeBaseId,
+	}
+	if req.TargetContainer != nil {
+		container := fromCreateTemplateContainer(req.GetTargetContainer())
+		filterArgs.TargetContainer = utils.Of(container)
+	}
+
+	sortArgs := dto.SortArgs{Field: "created_at", Desc: true}
+	if req.OrderBy != nil {
+		sortArgs.Field = req.GetOrderBy()
+	}
+	if req.OrderDesc != nil {
+		sortArgs.Desc = req.GetOrderDesc()
+	}
+
+	serviceReq := &dto.TemplateListByExternalReq{
+		FilterArgs: filterArgs,
+		SortArgs:   sortArgs,
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+	}
+	if req.OnlyMine {
+		serviceReq.CreatorExternalID = userExternalID
+	}
+	if req.TargetContainer != nil && req.GetTargetContainer() == pb.CreateTemplateContainer_OWN_TEMPLATE {
+		serviceReq.CreatorExternalID = userExternalID
+	}
+
+	templates, total, err := document_service.DocumentSvc.ListTemplatesByExternal(serviceReq)
+	if err != nil {
+		return &pb.ListTemplatesResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	respTemplates := make([]*pb.TemplateResponse, 0, len(templates))
+	for _, tpl := range templates {
+		respTemplates = append(respTemplates, toTemplateResponse(tpl))
+	}
+
+	return &pb.ListTemplatesResponse{
+		Base:      baseResponseFromErr(nil),
+		Templates: respTemplates,
+		Total:     total,
 	}, nil
 }

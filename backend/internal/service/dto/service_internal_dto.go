@@ -23,3 +23,10 @@ type KnowledgeBaseListReq struct {
 	SortArgs   dto.SortArgs                     `json:"sort_args"`
 	Pagination dto.Pagination                   `json:"pagination"`
 }
+
+type TemplateListReq struct {
+	CreatorID  *int64                      `json:"creator_id"`
+	FilterArgs *dto.TemplateListFilterArgs `json:"filter_args"`
+	SortArgs   dto.SortArgs                `json:"sort_args"`
+	Pagination dto.Pagination              `json:"pagination"`
+}

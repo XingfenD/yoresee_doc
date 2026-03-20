@@ -120,6 +120,7 @@ type CreateDocumentReq struct {
 	Title             string       `json:"title"`
 	Type              DocumentType `json:"type"`
 	CreatorExternalID *string      `json:"creator_external_id"`
+	TemplateID        *int64       `json:"template_id"`
 
 	// own doc or in knowledge_base
 	CreateAsOwnDoc bool `json:"create_as_own_doc"`

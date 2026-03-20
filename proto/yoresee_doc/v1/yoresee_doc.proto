@@ -134,6 +134,7 @@ message CreateDocumentRequest {
   CreateDocumentContainerType container_type = 3;
   optional string knowledge_base_external_id = 4;
   optional string parent_external_id = 5;
+  optional int64 template_id = 6;
 }
 
 message CreateDocumentResponse {
@@ -292,6 +293,35 @@ message CreateTemplateResponse {
   BaseResponse base = 1;
 }
 
+message TemplateResponse {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  string content = 4;
+  string scope = 5;
+  string knowledge_base_external_id = 6;
+  repeated string tags = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message ListTemplatesRequest {
+  bool only_mine = 1;
+  optional CreateTemplateContainer target_container = 2;
+  optional string knowledge_base_id = 3;
+  optional string name_keyword = 4;
+  optional string order_by = 5;
+  optional bool order_desc = 6;
+  int32 page = 7;
+  int32 page_size = 8;
+}
+
+message ListTemplatesResponse {
+  BaseResponse base = 1;
+  repeated TemplateResponse templates = 2;
+  int64 total = 3;
+}
+
 // authService provides authentication APIs.
 service AuthService {
   // login authenticates a user and returns a token.
@@ -320,6 +350,8 @@ service DocumentService {
   rpc UpdateDocumentMeta(UpdateDocumentMetaRequest) returns (UpdateDocumentMetaResponse);
   // save document as template
   rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
+  // list templates with filters and pagination.
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
 }
 
 // knowledgeBaseService provides knowledge base management and discovery APIs.

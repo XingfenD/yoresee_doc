@@ -60,6 +60,16 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 			docModel.ParentID = parentDocID
 		}
 
+		// apply template content if provided
+		if req.TemplateID != nil && *req.TemplateID > 0 {
+			tpl, err := s.templateRepo.GetByID(*req.TemplateID).WithTx(tx).Exec()
+			if err != nil || tpl == nil {
+				logrus.Errorf("template not found: err:%+v", err)
+				return status.GenErrWithCustomMsg(status.StatusParamError, "template not found")
+			}
+			docModel.Content = tpl.Content
+		}
+
 		// create document meta
 		err = s.documentRepo.Create(docModel).WithTx(tx).Exec()
 		if err != nil {
