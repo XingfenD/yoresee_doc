@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -67,8 +67,7 @@ const { locale, t } = useI18n();
 const systemName = ref('Yoresee');
 const activeMenu = ref('manage-invite');
 const activeTab = ref('list');
-const isDarkMode = ref(document.documentElement.classList.contains('dark-mode'));
-let classObserver = null;
+const isDarkMode = computed(() => userStore.darkMode);
 
 const userInfo = computed(() => userStore.userInfo);
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
@@ -92,10 +91,7 @@ const handleLanguageChange = (command) => {
 };
 
 const toggleTheme = () => {
-  const next = !document.documentElement.classList.contains('dark-mode');
-  document.documentElement.classList.toggle('dark-mode', next);
-  localStorage.setItem('darkMode', next ? 'true' : 'false');
-  isDarkMode.value = next;
+  userStore.toggleDarkMode();
 };
 
 const handleLogout = () => {
@@ -165,14 +161,6 @@ const initLanguage = () => {
 
 onMounted(() => {
   initLanguage();
-  classObserver = new MutationObserver(() => {
-    isDarkMode.value = document.documentElement.classList.contains('dark-mode');
-  });
-  classObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-});
-
-onBeforeUnmount(() => {
-  classObserver?.disconnect();
 });
 </script>
 

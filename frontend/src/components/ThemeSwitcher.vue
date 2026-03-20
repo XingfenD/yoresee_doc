@@ -1,38 +1,25 @@
 <template>
-  <el-button :size="'small'" :icon="isDarkMode ? 'Moon' : 'Sunny'" @click="toggleTheme" :class="['theme-toggle-btn']" :style="{ color: isDarkMode ? 'var(--text-light)' : 'var(--text-medium)' }">
+  <el-button
+    :size="'small'"
+    :icon="isDarkMode ? 'Moon' : 'Sunny'"
+    @click="toggleTheme"
+    :class="['theme-toggle-btn']"
+    :style="{ color: isDarkMode ? 'var(--text-light)' : 'var(--text-medium)' }"
+  >
   </el-button>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { computed } from 'vue';
 import { Moon, Sunny } from '@element-plus/icons-vue';
+import { useUserStore } from '@/store/user';
 
-// 响应式数据
-const isDarkMode = ref(false);
+const userStore = useUserStore();
+const isDarkMode = computed(() => userStore.darkMode);
 
-// 初始化主题
-const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
-  }
-};
-
-// 处理主题切换
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-mode');
-    localStorage.setItem('darkMode', 'true');
-  } else {
-    document.documentElement.classList.remove('dark-mode');
-    localStorage.setItem('darkMode', 'false');
-  }
+  userStore.toggleDarkMode();
 };
-
-// 初始化
-initTheme();
 </script>
 
 <style scoped>

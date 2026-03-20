@@ -65,7 +65,7 @@ const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
 const activeMenu = ref('manage-security');
-const isDarkMode = ref(false);
+const isDarkMode = computed(() => userStore.darkMode);
 const registrationMode = ref('open');
 const isSaving = ref(false);
 
@@ -90,14 +90,6 @@ const handleLanguageChange = (command) => {
   currentLanguage.value = command;
 };
 
-const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
-  }
-};
-
 const initLanguage = () => {
   const savedLanguage = localStorage.getItem('language');
   if (savedLanguage) {
@@ -106,14 +98,7 @@ const initLanguage = () => {
 };
 
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-mode');
-    localStorage.setItem('darkMode', 'true');
-  } else {
-    document.documentElement.classList.remove('dark-mode');
-    localStorage.setItem('darkMode', 'false');
-  }
+  userStore.toggleDarkMode();
 };
 
 const handleLogout = () => {
@@ -136,7 +121,6 @@ const handleSave = () => {
 };
 
 onMounted(() => {
-  initTheme();
   initLanguage();
 });
 </script>

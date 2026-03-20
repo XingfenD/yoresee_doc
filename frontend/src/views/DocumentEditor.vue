@@ -61,24 +61,40 @@
 
           <main class="editor-main">
             <div class="editor-header">
-              <div
-                class="doc-title"
-                v-if="!isEditingTitle"
-                @click="startEditTitle"
-                :title="t('knowledgeBase.enterDocumentTitle')"
-              >
-                {{ currentDocTitle || t('knowledgeBase.enterDocumentTitle') }}
+              <div class="editor-title">
+                <div
+                  class="doc-title"
+                  v-if="!isEditingTitle"
+                  @click="startEditTitle"
+                  :title="t('knowledgeBase.enterDocumentTitle')"
+                >
+                  {{ currentDocTitle || t('knowledgeBase.enterDocumentTitle') }}
+                </div>
+                <el-input
+                  v-else
+                  ref="titleInputRef"
+                  v-model="pendingTitle"
+                  class="doc-title-input"
+                  maxlength="200"
+                  @blur="commitTitle"
+                  @keyup.enter="commitTitle"
+                  @keyup.esc="cancelEditTitle"
+                />
               </div>
-              <el-input
-                v-else
-                ref="titleInputRef"
-                v-model="pendingTitle"
-                class="doc-title-input"
-                maxlength="200"
-                @blur="commitTitle"
-                @keyup.enter="commitTitle"
-                @keyup.esc="cancelEditTitle"
-              />
+              <div class="editor-actions">
+                <el-dropdown trigger="click" @command="handleHeaderCommand">
+                  <el-button class="editor-action-button" text>
+                    <el-icon><MoreFilled /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="create_template">
+                        {{ t('templates.saveAs') }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
             </div>
             <div class="editor-content">
               <div class="editor-wrapper">
@@ -104,6 +120,32 @@
     <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
       :parent-external-id="pendingParentId" @submit="createDocument"
       @cancel="cancelCreateDocument" />
+    <el-dialog v-model="showTemplateDialog" :title="t('templates.createDialogTitle')" width="520px">
+      <el-form label-position="top" :model="templateForm">
+        <el-form-item :label="t('templates.nameLabel')">
+          <el-input v-model="templateForm.name" maxlength="100" />
+        </el-form-item>
+        <el-form-item :label="t('templates.descLabel')">
+          <el-input v-model="templateForm.description" type="textarea" :rows="3" maxlength="255" />
+        </el-form-item>
+        <el-form-item :label="t('templates.scopeLabel')">
+          <el-select v-model="templateForm.scope" style="width: 100%">
+            <el-option value="own" :label="t('templates.scopeOwn')" />
+            <el-option v-if="kbId !== 'personal'" value="knowledge_base" :label="t('templates.scopeKb')" />
+            <el-option value="public" :label="t('templates.scopePublic')" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('templates.tagsLabel')">
+          <el-input v-model="templateForm.tags" :placeholder="t('templates.tagsPlaceholder')" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showTemplateDialog = false">{{ t('button.cancel') }}</el-button>
+        <el-button type="primary" :loading="savingTemplate" @click="submitCreateTemplate">
+          {{ t('button.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -118,14 +160,20 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, Check, Edit, Document, Collection } from '@element-plus/icons-vue';
+import { ArrowLeft, Check, Edit, Document, Collection, MoreFilled, HomeFilled } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
 import TopNav from '@/components/TopNav.vue';
 import { useUserStore } from '@/store/user';
-import { getKnowledgeBaseDocuments, createDocument as createDocumentApi, getMyDocuments, updateDocumentMeta } from '@/services/api';
+import {
+  getKnowledgeBaseDocuments,
+  createDocument as createDocumentApi,
+  createTemplate as createTemplateApi,
+  getMyDocuments,
+  updateDocumentMeta
+} from '@/services/api';
 
 const props = defineProps({
   kbId: {
@@ -149,8 +197,8 @@ const docId = ref(props.docId || route.params.docId);
 const systemName = ref(userStore.systemName || 'Yoresee');
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 const currentLanguage = computed(() => locale.value);
-const isDarkMode = ref(document.documentElement.classList.contains('dark-mode'));
-const activeMenu = ref('editor-workspace');
+const isDarkMode = computed(() => userStore.darkMode);
+const activeMenu = ref('editor-home');
 const userInfo = computed(() => userStore.userInfo);
 
 const knowledgeBaseName = ref('示例知识库');
@@ -179,6 +227,14 @@ const treeRef = computed(() => treeComponentRef.value?.treeRef);
 const isAllExpanded = ref(true);
 const savedState = localStorage.getItem('sidebarCollapsed');
 const isSidebarCollapsed = ref(savedState ? JSON.parse(savedState) : false);
+const savingTemplate = ref(false);
+const showTemplateDialog = ref(false);
+const templateForm = ref({
+  name: '',
+  description: '',
+  scope: 'own',
+  tags: ''
+});
 
 // 更新CSS变量以支持宽度调节
 const updateSidebarWidth = () => {
@@ -266,6 +322,65 @@ const handleDeleteDocument = async () => {
     ElMessage.warning(t('document.deleteNotSupported'));
   } catch (error) {
     // cancel
+  }
+};
+
+const handleHeaderCommand = (command) => {
+  if (command === 'create_template') {
+    openCreateTemplateDialog();
+  }
+};
+
+const openCreateTemplateDialog = () => {
+  const defaultScope = kbId.value && kbId.value !== 'personal' ? 'knowledge_base' : 'own';
+  templateForm.value = {
+    name: currentDocTitle.value || t('templates.untitled'),
+    description: '',
+    scope: defaultScope,
+    tags: ''
+  };
+  showTemplateDialog.value = true;
+};
+
+const submitCreateTemplate = async () => {
+  if (savingTemplate.value) {
+    return;
+  }
+  if (!editorContent.value || !editorContent.value.trim()) {
+    ElMessage.error(t('templates.emptyContent'));
+    return;
+  }
+  if (!templateForm.value.name || !templateForm.value.name.trim()) {
+    ElMessage.error(t('templates.nameRequired'));
+    return;
+  }
+
+  try {
+    savingTemplate.value = true;
+    const tags = templateForm.value.tags
+      ? templateForm.value.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+      : [];
+    const payload = {
+      name: templateForm.value.name.trim(),
+      description: templateForm.value.description || '',
+      content: editorContent.value,
+      tags
+    };
+    const requestBody = {
+      target_container: templateForm.value.scope,
+      template_content: JSON.stringify(payload)
+    };
+    if (templateForm.value.scope === 'knowledge_base' && kbId.value && kbId.value !== 'personal') {
+      requestBody.knowledge_base_id = kbId.value;
+    }
+    await createTemplateApi(requestBody);
+    showTemplateDialog.value = false;
+    ElMessage.success(t('templates.saveSuccess'));
+  } catch (error) {
+    console.error('创建模板失败:', error);
+    ElMessage.error(t('templates.saveFailed'));
+  } finally {
+    savingTemplate.value = false;
   }
 };
 
@@ -568,13 +683,11 @@ const handleLanguageChange = (command) => {
 };
 
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  document.documentElement.classList.toggle('dark-mode', isDarkMode.value);
-  localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
+  userStore.toggleDarkMode();
 };
 
 const editorMenuItems = [
-  { key: 'editor-workspace', labelKey: 'editor.menu.workspace', icon: Edit },
+  { key: 'editor-home', labelKey: 'navigation.home', icon: HomeFilled, route: '/' },
   { key: 'editor-documents', labelKey: 'editor.menu.documents', icon: Document, route: '/mydocuments' },
   { key: 'editor-knowledge-base', labelKey: 'editor.menu.knowledgeBase', icon: Collection, route: '/knowledge-base' }
 ];
@@ -586,18 +699,6 @@ const handleMenuSelect = (menu) => {
 const handleLogout = () => {
   userStore.logout();
   router.push('/login');
-};
-
-const initTheme = () => {
-  const savedTheme = localStorage.getItem('theme');
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedTheme === 'dark' || savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
-  } else if (savedTheme === 'light' || savedDarkMode === 'false') {
-    isDarkMode.value = false;
-    document.documentElement.classList.remove('dark-mode');
-  }
 };
 
 const initLanguage = () => {
@@ -617,7 +718,6 @@ const fetchSystemInfo = async () => {
 };
 
 onMounted(async () => {
-  initTheme();
   initLanguage();
 
   if (kbId.value === 'personal') {
@@ -861,6 +961,26 @@ watch(
   align-items: center;
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
+}
+
+.editor-title {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.editor-action-button {
+  color: var(--text-medium);
+}
+
+.editor-action-button:hover {
+  color: var(--primary-color);
 }
 
 .dark-mode .editor-header {

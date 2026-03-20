@@ -64,7 +64,7 @@ const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
 const activeMenu = ref('user-center');
-const isDarkMode = ref(false);
+const isDarkMode = computed(() => userStore.darkMode);
 
 const userInfo = computed(() => userStore.userInfo);
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
@@ -88,14 +88,6 @@ const userMenuItems = [
   { key: 'user-security', labelKey: 'user.menu.security', icon: Setting, route: '/user_info/example' }
 ];
 
-const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
-  }
-};
-
 const initLanguage = () => {
   const savedLanguage = localStorage.getItem('language');
   if (savedLanguage) {
@@ -104,14 +96,7 @@ const initLanguage = () => {
 };
 
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-mode');
-    localStorage.setItem('darkMode', 'true');
-  } else {
-    document.documentElement.classList.remove('dark-mode');
-    localStorage.setItem('darkMode', 'false');
-  }
+  userStore.toggleDarkMode();
 };
 
 const handleLogout = () => {
@@ -125,7 +110,6 @@ const handleMenuSelect = (key) => {
 
 
 onMounted(() => {
-  initTheme();
   initLanguage();
 });
 </script>

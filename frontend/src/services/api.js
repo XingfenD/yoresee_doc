@@ -8,12 +8,14 @@ const {
   UpdateDocumentMetaRequest,
   CreateKnowledgeBaseRequest,
   CreateDocumentRequest,
+  CreateTemplateRequest,
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
   ListDocumentsRequest,
   RecursiveOptions,
   TimeRange,
   CreateDocumentContainerType,
+  CreateTemplateContainer,
   DocumentType
 } = messages;
 
@@ -208,6 +210,24 @@ export const createDocument = async (data) => {
   return handleResponse(base, dataResp);
 };
 
+// 创建模板
+export const createTemplate = async (data = {}) => {
+  const containerMap = {
+    own: CreateTemplateContainer.OWN_TEMPLATE,
+    knowledge_base: CreateTemplateContainer.KNOWLEDGEBASE_TEMPLATE,
+    public: CreateTemplateContainer.PUBLIC_TEMPLATE
+  };
+  const req = new CreateTemplateRequest({
+    targetContainer: containerMap[data.target_container] ?? CreateTemplateContainer.OWN_TEMPLATE,
+    knowledgeBaseId: data.knowledge_base_id || '',
+    templateContent: data.template_content || ''
+  });
+
+  const resp = await unaryCall(documentClient, 'createTemplate', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
 // 获取文档内容
 export const getDocumentContent = async (documentExternalID, params = {}) => {
   const req = new GetDocumentContentRequest({
@@ -282,6 +302,7 @@ export default {
   getKnowledgeBaseDocuments,
   updateDocumentMeta,
   createDocument,
+  createTemplate,
   getDocumentContent,
   getMyDocuments,
   listDocuments

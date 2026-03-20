@@ -72,7 +72,7 @@ const { locale, t } = useI18n();
 const systemName = ref(userStore.systemName || 'Yoresee');
 const activeMenu = ref('templates');
 const activeTab = ref('my');
-const isDarkMode = ref(false);
+const isDarkMode = computed(() => userStore.darkMode);
 
 const userInfo = computed(() => userStore.userInfo);
 const userAvatar = computed(
@@ -123,27 +123,12 @@ const handleLanguageChange = (command) => {
 };
 
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-mode');
-    localStorage.setItem('darkMode', 'true');
-  } else {
-    document.documentElement.classList.remove('dark-mode');
-    localStorage.setItem('darkMode', 'false');
-  }
+  userStore.toggleDarkMode();
 };
 
 const handleLogout = () => {
   userStore.logout();
   router.push('/login');
-};
-
-const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
-  }
 };
 
 const initLanguage = () => {
@@ -164,7 +149,6 @@ const fetchSystemInfo = async () => {
 
 onMounted(() => {
   fetchSystemInfo();
-  initTheme();
   initLanguage();
 });
 

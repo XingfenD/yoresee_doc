@@ -97,7 +97,7 @@ const systemName = ref("Yoresee");
 // 导航相关
 const activeMenu = ref("knowledge-base");
 const activeTab = ref("my");
-const isDarkMode = ref(false);
+const isDarkMode = computed(() => userStore.darkMode);
 const currentLanguage = computed({
   get: () => locale.value,
   set: (value) => {
@@ -326,23 +326,7 @@ const handleLanguageChange = (command) => {
 
 // 处理主题切换
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  if (isDarkMode.value) {
-    document.documentElement.classList.add("dark-mode");
-    localStorage.setItem("darkMode", "true");
-  } else {
-    document.documentElement.classList.remove("dark-mode");
-    localStorage.setItem("darkMode", "false");
-  }
-};
-
-// 初始化主题
-const initTheme = () => {
-  const savedDarkMode = localStorage.getItem("darkMode");
-  if (savedDarkMode === "true") {
-    isDarkMode.value = true;
-    document.documentElement.classList.add("dark-mode");
-  }
+  userStore.toggleDarkMode();
 };
 
 // 初始化语言
@@ -374,7 +358,6 @@ onMounted(async () => {
   await fetchSystemInfo();
 
   // 初始化主题和语言
-  initTheme();
   initLanguage();
 
   // 默认加载我的知识库

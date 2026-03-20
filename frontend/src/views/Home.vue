@@ -56,7 +56,7 @@ const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
 const activeMenu = ref('home');
-const isDarkMode = ref(false);
+const isDarkMode = computed(() => userStore.darkMode);
 
 const userInfo = computed(() => userStore.userInfo);
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
@@ -77,23 +77,7 @@ const handleLanguageChange = (command) => {
 
 // 处理主题切换
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-mode');
-    localStorage.setItem('darkMode', 'true');
-  } else {
-    document.documentElement.classList.remove('dark-mode');
-    localStorage.setItem('darkMode', 'false');
-  }
-};
-
-// 初始化主题
-const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
-  }
+  userStore.toggleDarkMode();
 };
 
 // 初始化语言
@@ -215,7 +199,6 @@ const fetchRecentKnowledgeBases = async () => {
 onMounted(() => {
   fetchSystemInfo();
   fetchRecentKnowledgeBases();
-  initTheme();
   initLanguage();
 });
 </script>

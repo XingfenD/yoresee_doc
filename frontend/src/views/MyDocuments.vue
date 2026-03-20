@@ -67,7 +67,7 @@ const { locale, t } = useI18n();
 
 const systemName = ref(userStore.systemName || 'Yoresee');
 const activeMenu = ref('documents');
-const isDarkMode = ref(false);
+const isDarkMode = computed(() => userStore.darkMode);
 const loading = ref(false);
 const showCreateDialog = ref(false);
 const creatingLoading = ref(false);
@@ -178,22 +178,12 @@ const handleLanguageChange = (command) => {
 };
 
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  document.documentElement.classList.toggle('dark-mode', isDarkMode.value);
-  localStorage.setItem('darkMode', isDarkMode.value ? 'true' : 'false');
+  userStore.toggleDarkMode();
 };
 
 const handleLogout = () => {
   userStore.logout();
   router.push('/login');
-};
-
-const initTheme = () => {
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark-mode');
-  }
 };
 
 const initLanguage = () => {
@@ -218,7 +208,6 @@ const viewDocument = (doc) => {
 
 onMounted(() => {
   fetchSystemInfo();
-  initTheme();
   initLanguage();
   fetchMyDocuments();
 });
