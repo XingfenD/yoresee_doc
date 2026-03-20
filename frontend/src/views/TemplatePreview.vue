@@ -14,6 +14,9 @@
   >
     <template #actions>
       <el-button size="small" @click="goBack">{{ t('common.back') }}</el-button>
+      <el-button type="primary" size="small" @click="openCreateDocumentDialog">
+        {{ t('document.createDocument') }}
+      </el-button>
     </template>
 
     <div class="template-preview" v-loading="loading">
@@ -42,6 +45,18 @@
       </div>
     </div>
   </PageLayout>
+
+  <DocumentCreateDialog
+    v-model="showCreateDialog"
+    :loading="creatingLoading"
+    :initial-title="template?.name || ''"
+    :initial-template-id="template?.id"
+    :initial-template-meta="template || null"
+    :knowledge-base-id="template?.knowledge_base_external_id || ''"
+    :show-template-selector="false"
+    @submit="createDocument"
+    @cancel="cancelCreateDocument"
+  />
 </template>
 
 <script setup>
@@ -53,7 +68,8 @@ import Vditor from 'vditor';
 import 'vditor/dist/index.css';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import { getTemplate } from '@/services/api';
+import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
+import { getTemplate, createDocument as createDocumentApi } from '@/services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -75,6 +91,8 @@ const userAvatar = computed(
 const loading = ref(false);
 const template = ref(null);
 const previewRef = ref(null);
+const showCreateDialog = ref(false);
+const creatingLoading = ref(false);
 
 const templateId = computed(() => route.params.templateId || route.params.id);
 
@@ -132,7 +150,7 @@ const fetchTemplate = async () => {
   if (!templateId.value) return;
   loading.value = true;
   try {
-    const data = await getTemplate(templateId.value);
+    const data = await getTemplate(templateId.value, { record_recent_log: true });
     template.value = data.template;
   } catch (error) {
     console.error('获取模板失败:', error);
@@ -144,6 +162,54 @@ const fetchTemplate = async () => {
 
 const goBack = () => {
   router.push('/templates');
+};
+
+const openCreateDocumentDialog = () => {
+  showCreateDialog.value = true;
+};
+
+const cancelCreateDocument = () => {
+  showCreateDialog.value = false;
+};
+
+const createDocument = async (payload) => {
+  if (!payload?.title?.trim()) {
+    ElMessage.error(t('knowledgeBase.titleRequired'));
+    return;
+  }
+  try {
+    creatingLoading.value = true;
+    const kbExternalId = template.value?.knowledge_base_external_id || '';
+    const isKnowledgeBase = template.value?.scope === 'knowledge_base' && !!kbExternalId;
+    const requestBody = {
+      title: payload.title,
+      type: payload.type || 'markdown',
+      container_type: isKnowledgeBase ? 'knowledge_base' : 'own'
+    };
+    if (isKnowledgeBase) {
+      requestBody.knowledge_base_external_id = kbExternalId;
+    }
+    if (payload?.parent_external_id) {
+      requestBody.parent_external_id = payload.parent_external_id;
+    }
+    if (payload?.template) {
+      requestBody.template_id = payload.template;
+    }
+    const response = await createDocumentApi(requestBody);
+    showCreateDialog.value = false;
+    if (response?.external_id) {
+      if (isKnowledgeBase) {
+        router.push(`/knowledge-base/${kbExternalId}/document/${response.external_id}`);
+      } else {
+        router.push(`/mydocument/${response.external_id}`);
+      }
+    }
+  } catch (error) {
+    console.error('创建文档失败:', error);
+    ElMessage.error(t('knowledgeBase.createDocumentError'));
+  } finally {
+    creatingLoading.value = false;
+  }
 };
 
 const handleMenuSelect = (key) => {

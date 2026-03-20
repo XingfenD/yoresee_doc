@@ -7,7 +7,7 @@
           show-word-limit />
       </el-form-item>
 
-      <el-form-item :label="t('knowledgeBase.template')">
+      <el-form-item v-if="showTemplateSelector" :label="t('knowledgeBase.template')">
         <el-tabs v-model="activeTab" class="template-tabs">
           <el-tab-pane :label="t('templates.recent')" name="recent">
             <div v-loading="loadingRecent">
@@ -112,7 +112,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
-import { listTemplates } from '@/services/api';
+import { listTemplates, listRecentTemplates } from '@/services/api';
 
 const props = defineProps({
   modelValue: {
@@ -134,6 +134,18 @@ const props = defineProps({
   knowledgeBaseId: {
     type: String,
     default: ''
+  },
+  initialTemplateId: {
+    type: [String, Number],
+    default: ''
+  },
+  initialTemplateMeta: {
+    type: Object,
+    default: null
+  },
+  showTemplateSelector: {
+    type: Boolean,
+    default: true
   }
 });
 
@@ -170,8 +182,8 @@ const showKnowledgeBaseTemplates = computed(() => !!props.knowledgeBaseId);
 
 const resetForm = () => {
   formState.title = props.initialTitle || '';
-  formState.template = '';
-  formState.templateMeta = null;
+  formState.template = props.initialTemplateId ? String(props.initialTemplateId) : '';
+  formState.templateMeta = props.initialTemplateMeta || null;
   formState.parentExternalId = props.parentExternalId || '';
 };
 
@@ -209,9 +221,7 @@ const fetchTemplates = async (tab) => {
     if (loadingRecent.value) return;
     loadingRecent.value = true;
     try {
-      const data = await listTemplates({
-        order_by: 'updated_at',
-        order_desc: true,
+      const data = await listRecentTemplates({
         page: 1,
         page_size: 50
       });

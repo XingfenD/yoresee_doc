@@ -11,6 +11,7 @@ const {
   CreateTemplateRequest,
   ListTemplatesRequest,
   GetTemplateRequest,
+  ListRecentTemplatesRequest,
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
   ListDocumentsRequest,
@@ -277,15 +278,34 @@ export const listTemplates = async (params = {}) => {
 };
 
 // 获取模板详情
-export const getTemplate = async (templateId) => {
+export const getTemplate = async (templateId, options = {}) => {
   const req = new GetTemplateRequest({
-    templateId: Number(templateId) || 0
+    templateId: Number(templateId) || 0,
+    recordRecentLog: Boolean(options.record_recent_log)
   });
 
   const resp = await unaryCall(documentClient, 'getTemplate', req);
   const base = baseToObject(resp);
   const data = {
     template: resp.template ? mapTemplate(resp.template) : null
+  };
+  return handleResponse(base, data);
+};
+
+// 获取最近模板
+export const listRecentTemplates = async (params = {}) => {
+  const req = new ListRecentTemplatesRequest({
+    startTime: params.start_time || undefined,
+    endTime: params.end_time || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'listRecentTemplates', req);
+  const base = baseToObject(resp);
+  const data = {
+    templates: (resp.templates || []).map(mapTemplate),
+    total: resp.total ?? 0
   };
   return handleResponse(base, data);
 };
@@ -369,5 +389,6 @@ export default {
   getMyDocuments,
   listDocuments,
   listTemplates,
-  getTemplate
+  getTemplate,
+  listRecentTemplates
 };

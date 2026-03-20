@@ -91,7 +91,7 @@ import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import TemplateListSection from '@/components/TemplateListSection.vue';
 import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
-import { listTemplates, createTemplate as createTemplateApi } from '@/services/api';
+import { listTemplates, listRecentTemplates, createTemplate as createTemplateApi } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -213,9 +213,7 @@ const fetchRecentTemplates = async () => {
   if (loadingRecent.value) return;
   loadingRecent.value = true;
   try {
-    const data = await listTemplates({
-      order_by: 'updated_at',
-      order_desc: true,
+    const data = await listRecentTemplates({
       page: 1,
       page_size: 50
     });
