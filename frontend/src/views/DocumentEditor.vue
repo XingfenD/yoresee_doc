@@ -118,34 +118,21 @@
       </div>
     </div>
     <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
-      :parent-external-id="pendingParentId" @submit="createDocument"
-      @cancel="cancelCreateDocument" />
-    <el-dialog v-model="showTemplateDialog" :title="t('templates.createDialogTitle')" width="520px">
-      <el-form label-position="top" :model="templateForm">
-        <el-form-item :label="t('templates.nameLabel')">
-          <el-input v-model="templateForm.name" maxlength="100" />
-        </el-form-item>
-        <el-form-item :label="t('templates.descLabel')">
-          <el-input v-model="templateForm.description" type="textarea" :rows="3" maxlength="255" />
-        </el-form-item>
-        <el-form-item :label="t('templates.scopeLabel')">
-          <el-select v-model="templateForm.scope" style="width: 100%">
-            <el-option value="own" :label="t('templates.scopeOwn')" />
-            <el-option v-if="kbId !== 'personal'" value="knowledge_base" :label="t('templates.scopeKb')" />
-            <el-option value="public" :label="t('templates.scopePublic')" />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('templates.tagsLabel')">
-          <el-input v-model="templateForm.tags" :placeholder="t('templates.tagsPlaceholder')" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showTemplateDialog = false">{{ t('button.cancel') }}</el-button>
-        <el-button type="primary" :loading="savingTemplate" @click="submitCreateTemplate">
-          {{ t('button.confirm') }}
-        </el-button>
-      </template>
-    </el-dialog>
+      :parent-external-id="pendingParentId" :knowledge-base-id="kbId !== 'personal' ? kbId : ''"
+      @submit="createDocument" @cancel="cancelCreateDocument" />
+    <TemplateCreateDialog
+      v-model="showTemplateDialog"
+      :loading="savingTemplate"
+      :title="t('templates.createDialogTitle')"
+      :show-content="false"
+      :show-kb-scope="kbId !== 'personal'"
+      :initial-name="templateDialogInit.name"
+      :initial-description="templateDialogInit.description"
+      :initial-scope="templateDialogInit.scope"
+      :initial-tags="templateDialogInit.tags"
+      :initial-content="templateDialogInit.content"
+      @submit="submitCreateTemplate"
+    />
   </div>
 </template>
 
@@ -166,6 +153,7 @@ import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
 import TopNav from '@/components/TopNav.vue';
+import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
 import { useUserStore } from '@/store/user';
 import {
   getKnowledgeBaseDocuments,
@@ -229,11 +217,12 @@ const savedState = localStorage.getItem('sidebarCollapsed');
 const isSidebarCollapsed = ref(savedState ? JSON.parse(savedState) : false);
 const savingTemplate = ref(false);
 const showTemplateDialog = ref(false);
-const templateForm = ref({
+const templateDialogInit = ref({
   name: '',
   description: '',
   scope: 'own',
-  tags: ''
+  tags: '',
+  content: ''
 });
 
 // 更新CSS变量以支持宽度调节
@@ -285,6 +274,9 @@ const createDocument = async (payload) => {
     } else if (pendingParentId.value) {
       requestBody.parent_external_id = pendingParentId.value;
     }
+    if (payload?.template) {
+      requestBody.template_id = payload.template;
+    }
     const response = await createDocumentApi(requestBody);
 
     showCreateDialog.value = false;
@@ -333,16 +325,17 @@ const handleHeaderCommand = (command) => {
 
 const openCreateTemplateDialog = () => {
   const defaultScope = kbId.value && kbId.value !== 'personal' ? 'knowledge_base' : 'own';
-  templateForm.value = {
+  templateDialogInit.value = {
     name: currentDocTitle.value || t('templates.untitled'),
     description: '',
     scope: defaultScope,
-    tags: ''
+    tags: '',
+    content: editorContent.value || ''
   };
   showTemplateDialog.value = true;
 };
 
-const submitCreateTemplate = async () => {
+const submitCreateTemplate = async (payload) => {
   if (savingTemplate.value) {
     return;
   }
@@ -350,27 +343,19 @@ const submitCreateTemplate = async () => {
     ElMessage.error(t('templates.emptyContent'));
     return;
   }
-  if (!templateForm.value.name || !templateForm.value.name.trim()) {
-    ElMessage.error(t('templates.nameRequired'));
-    return;
-  }
 
   try {
     savingTemplate.value = true;
-    const tags = templateForm.value.tags
-      ? templateForm.value.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
-      : [];
-    const payload = {
-      name: templateForm.value.name.trim(),
-      description: templateForm.value.description || '',
-      content: editorContent.value,
-      tags
-    };
     const requestBody = {
-      target_container: templateForm.value.scope,
-      template_content: JSON.stringify(payload)
+      target_container: payload.scope,
+      template_content: JSON.stringify({
+        name: payload.name,
+        description: payload.description,
+        content: editorContent.value,
+        tags: payload.tags || []
+      })
     };
-    if (templateForm.value.scope === 'knowledge_base' && kbId.value && kbId.value !== 'personal') {
+    if (payload.scope === 'knowledge_base' && kbId.value && kbId.value !== 'personal') {
       requestBody.knowledge_base_id = kbId.value;
     }
     await createTemplateApi(requestBody);

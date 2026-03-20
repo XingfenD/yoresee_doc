@@ -9,6 +9,8 @@ const {
   CreateKnowledgeBaseRequest,
   CreateDocumentRequest,
   CreateTemplateRequest,
+  ListTemplatesRequest,
+  GetTemplateRequest,
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
   ListDocumentsRequest,
@@ -59,6 +61,21 @@ function mapKnowledgeBase(kb) {
     creator_user_external_id: kb.creatorUserExternalId,
     creator_name: kb.creatorName,
     documents_count: kb.documentsCount
+  };
+}
+
+function mapTemplate(tpl) {
+  if (!tpl) return null;
+  return {
+    id: tpl.id,
+    name: tpl.name,
+    description: tpl.description,
+    content: tpl.content,
+    scope: tpl.scope,
+    knowledge_base_external_id: tpl.knowledgeBaseExternalId,
+    tags: tpl.tags,
+    created_at: tpl.createdAt,
+    updated_at: tpl.updatedAt
   };
 }
 
@@ -201,6 +218,9 @@ export const createDocument = async (data) => {
   if (data.parent_external_id) {
     req.parentExternalId = data.parent_external_id;
   }
+  if (data.template_id) {
+    req.templateId = data.template_id;
+  }
 
   const resp = await unaryCall(documentClient, 'createDocument', req);
   const base = baseToObject(resp);
@@ -226,6 +246,48 @@ export const createTemplate = async (data = {}) => {
   const resp = await unaryCall(documentClient, 'createTemplate', req);
   const base = baseToObject(resp);
   return handleResponse(base, {});
+};
+
+// 获取模板列表
+export const listTemplates = async (params = {}) => {
+  const containerMap = {
+    own: CreateTemplateContainer.OWN_TEMPLATE,
+    knowledge_base: CreateTemplateContainer.KNOWLEDGEBASE_TEMPLATE,
+    public: CreateTemplateContainer.PUBLIC_TEMPLATE
+  };
+
+  const req = new ListTemplatesRequest({
+    onlyMine: Boolean(params.only_mine),
+    targetContainer: params.target_container ? containerMap[params.target_container] : undefined,
+    knowledgeBaseId: params.knowledge_base_id || undefined,
+    nameKeyword: params.name_keyword || undefined,
+    orderBy: params.order_by || undefined,
+    orderDesc: typeof params.order_desc === 'boolean' ? params.order_desc : undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'listTemplates', req);
+  const base = baseToObject(resp);
+  const data = {
+    templates: (resp.templates || []).map(mapTemplate),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+// 获取模板详情
+export const getTemplate = async (templateId) => {
+  const req = new GetTemplateRequest({
+    templateId: Number(templateId) || 0
+  });
+
+  const resp = await unaryCall(documentClient, 'getTemplate', req);
+  const base = baseToObject(resp);
+  const data = {
+    template: resp.template ? mapTemplate(resp.template) : null
+  };
+  return handleResponse(base, data);
 };
 
 // 获取文档内容
@@ -305,5 +367,7 @@ export default {
   createTemplate,
   getDocumentContent,
   getMyDocuments,
-  listDocuments
+  listDocuments,
+  listTemplates,
+  getTemplate
 };

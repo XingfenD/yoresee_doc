@@ -261,6 +261,7 @@ export default {
     noMy: 'No templates yet',
     noRecent: 'No recent templates',
     noPublic: 'No public templates',
+    noKb: 'No knowledge base templates',
     saveAs: 'Save as Template',
     saveToOwn: 'Save to My Templates',
     saveToKb: 'Save to Knowledge Base Templates',
@@ -269,6 +270,8 @@ export default {
     saveFailed: 'Failed to save template',
     emptyContent: 'Template content cannot be empty',
     untitled: 'Untitled Template',
+    createNew: 'Create Template',
+    createNewTitle: 'Create Template',
     createDialogTitle: 'Save as Template',
     nameLabel: 'Template Name',
     descLabel: 'Template Description',
@@ -278,7 +281,12 @@ export default {
     scopePublic: 'Public Templates',
     tagsLabel: 'Tags',
     tagsPlaceholder: 'Comma-separated tags',
-    nameRequired: 'Template name is required'
+    nameRequired: 'Template name is required',
+    contentLabel: 'Template Content',
+    contentPlaceholder: 'Enter template content',
+    knowledgeBaseTab: 'Knowledge Base Templates',
+    previewTitle: 'Template Preview',
+    contentEmpty: 'Template content is empty'
   },
   theme: {
     light: 'Light Mode',
@@ -287,6 +295,7 @@ export default {
   common: {
     yes: 'Yes',
     no: 'No',
+    selected: 'Selected',
     requestFailed: 'Request failed, please try again later',
     search: 'Search',
     view: 'View',

@@ -318,6 +318,20 @@ func (s *DocumentServiceServer) CreateTemplate(ctx context.Context, req *pb.Crea
 	}, nil
 }
 
+func (s *DocumentServiceServer) GetTemplate(ctx context.Context, req *pb.GetTemplateRequest) (*pb.GetTemplateResponse, error) {
+	if req == nil || req.TemplateId <= 0 {
+		return &pb.GetTemplateResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	resp, err := document_service.DocumentSvc.GetTemplateByID(req.TemplateId)
+	if err != nil {
+		return &pb.GetTemplateResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	return &pb.GetTemplateResponse{
+		Base:     baseResponseFromErr(nil),
+		Template: toTemplateResponse(resp),
+	}, nil
+}
+
 func (s *DocumentServiceServer) ListTemplates(ctx context.Context, req *pb.ListTemplatesRequest) (*pb.ListTemplatesResponse, error) {
 	userExternalID, ok := ctx.Value("user_external_id").(string)
 	if !ok || userExternalID == "" {

@@ -142,6 +142,7 @@
           </div>
 
             <div class="kb-templates-section">
+            <div v-loading="kbTemplatesLoading">
             <TemplateListSection
               :title="t('knowledgeBase.templates')"
               :items="kbTemplates"
@@ -153,13 +154,15 @@
               @open="openTemplate"
             />
             </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading" @submit="createDocument"
+  <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
+    :knowledge-base-id="route.params.id || ''" @submit="createDocument"
     @cancel="cancelCreateDocument" />
 </template>
 
@@ -174,7 +177,7 @@ import TopNav from "@/components/TopNav.vue";
 import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import TemplateListSection from "@/components/TemplateListSection.vue";
-import { getKnowledgeBaseDetail, createDocument as createDocumentApi } from "@/services/api.js";
+import { getKnowledgeBaseDetail, createDocument as createDocumentApi, listTemplates } from "@/services/api.js";
 import {
   ArrowLeft,
   Document,
@@ -219,10 +222,8 @@ const lastUpdated = ref("");
 const ownerName = ref("");
 const knowledgeBaseData = ref(null);
 const loading = ref(false);
-const kbTemplates = ref([
-  { id: 'kb-tpl-1', name: '知识库概览模板', description: '用于快速建立知识库首页', updatedAt: '2026-03-10', isPublic: false },
-  { id: 'kb-tpl-2', name: '规范文档模板', description: '统一规范文档结构', updatedAt: '2026-03-08', isPublic: false }
-]);
+const kbTemplates = ref([]);
+const kbTemplatesLoading = ref(false);
 
 // 文档树相关
 const searchKeyword = ref("");
@@ -323,7 +324,9 @@ const createDocument = async (payload) => {
       title: payload.title,
       type: payload.type || 'markdown',
       container_type: "knowledge_base",
-      knowledge_base_external_id: knowledgeBaseExternalID
+      knowledge_base_external_id: knowledgeBaseExternalID,
+      parent_external_id: payload.parent_external_id || undefined,
+      template_id: payload.template || undefined
     });
 
     // 关闭对话框
@@ -448,11 +451,35 @@ const goBackToKnowledgeBase = () => {
 
 const templateTagMapper = () => ({ type: "info", label: t("templates.private") });
 const templateMetaMapper = (tpl) => [
-  { label: t("templates.updatedAt"), value: tpl.updatedAt }
+  { label: t("templates.updatedAt"), value: formatDate(tpl.updated_at || tpl.updatedAt) }
 ];
 
 const openTemplate = (tpl) => {
-  console.log("open kb template", tpl);
+  if (!tpl?.id) return;
+  router.push(`/template/${tpl.id}`);
+};
+
+const fetchKnowledgeBaseTemplates = async () => {
+  const knowledgeBaseExternalID = route.params.id;
+  if (!knowledgeBaseExternalID || kbTemplatesLoading.value) {
+    return;
+  }
+  kbTemplatesLoading.value = true;
+  try {
+    const data = await listTemplates({
+      target_container: "knowledge_base",
+      knowledge_base_id: knowledgeBaseExternalID,
+      order_by: "updated_at",
+      order_desc: true,
+      page: 1,
+      page_size: 50
+    });
+    kbTemplates.value = data.templates || [];
+  } catch (error) {
+    console.error("获取知识库模板失败:", error);
+  } finally {
+    kbTemplatesLoading.value = false;
+  }
 };
 
 onMounted(async () => {
@@ -464,6 +491,7 @@ onMounted(async () => {
 
   // 加载知识库详情数据
   await loadKnowledgeBaseDetail();
+  await fetchKnowledgeBaseTemplates();
 });
 </script>
 

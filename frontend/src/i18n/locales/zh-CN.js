@@ -259,6 +259,7 @@ export default {
     noMy: '暂无我的模板',
     noRecent: '暂无最近模板',
     noPublic: '暂无公开模板',
+    noKb: '暂无知识库模板',
     saveAs: '保存为模板',
     saveToOwn: '保存到我的模板',
     saveToKb: '保存到知识库模板',
@@ -267,6 +268,8 @@ export default {
     saveFailed: '模板保存失败',
     emptyContent: '模板内容不能为空',
     untitled: '未命名模板',
+    createNew: '创建模板',
+    createNewTitle: '创建模板',
     createDialogTitle: '保存为模板',
     nameLabel: '模板名称',
     descLabel: '模板描述',
@@ -276,7 +279,12 @@ export default {
     scopePublic: '公开模板',
     tagsLabel: '标签',
     tagsPlaceholder: '多个标签用英文逗号分隔',
-    nameRequired: '模板名称不能为空'
+    nameRequired: '模板名称不能为空',
+    contentLabel: '模板内容',
+    contentPlaceholder: '请输入模板内容',
+    knowledgeBaseTab: '知识库模板',
+    previewTitle: '模板预览',
+    contentEmpty: '模板内容为空'
   },
   theme: {
     light: '浅色模式',
@@ -285,6 +293,7 @@ export default {
   common: {
     yes: '是',
     no: '否',
+    selected: '已选择',
     requestFailed: '请求失败，请稍后重试',
     search: '搜索',
     view: '查看',

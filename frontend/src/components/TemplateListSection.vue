@@ -115,17 +115,15 @@ const showEmpty = computed(() => props.items.length === 0 && props.emptyText);
 }
 
 .template-meta {
-  border-top: 1px solid var(--border-color);
-  padding-top: var(--spacing-sm);
-  margin-top: var(--spacing-sm);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
 }
 
 .meta-item {
   display: flex;
-  justify-content: space-between;
+  gap: var(--spacing-xs);
   font-size: 12px;
   color: var(--text-light);
 }

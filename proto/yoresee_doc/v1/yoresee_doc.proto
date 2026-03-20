@@ -322,6 +322,15 @@ message ListTemplatesResponse {
   int64 total = 3;
 }
 
+message GetTemplateRequest {
+  int64 template_id = 1;
+}
+
+message GetTemplateResponse {
+  BaseResponse base = 1;
+  TemplateResponse template = 2;
+}
+
 // authService provides authentication APIs.
 service AuthService {
   // login authenticates a user and returns a token.
@@ -352,6 +361,8 @@ service DocumentService {
   rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
   // list templates with filters and pagination.
   rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  // get template by id.
+  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
 }
 
 // knowledgeBaseService provides knowledge base management and discovery APIs.

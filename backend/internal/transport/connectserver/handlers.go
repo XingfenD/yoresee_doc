@@ -219,6 +219,18 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.DocumentService_GetTemplate_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_GetTemplate_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.GetTemplateRequest]) (*connect.Response[pb.GetTemplateResponse], error) {
+			resp, err := docSvc.GetTemplate(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.DocumentService_ListTemplates_FullMethodName, connect.NewUnaryHandler(
 		pb.DocumentService_ListTemplates_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.ListTemplatesRequest]) (*connect.Response[pb.ListTemplatesResponse], error) {

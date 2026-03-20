@@ -46,6 +46,7 @@
   <DocumentCreateDialog
     v-model="showCreateDialog"
     :loading="creatingLoading"
+    :knowledge-base-id="''"
     @submit="createDocument"
     @cancel="cancelCreateDocument"
   />
@@ -144,6 +145,9 @@ const createDocument = async (payload) => {
     };
     if (payload?.parent_external_id) {
       requestBody.parent_external_id = payload.parent_external_id;
+    }
+    if (payload?.template) {
+      requestBody.template_id = payload.template;
     }
     const response = await createDocumentApi(requestBody);
     showCreateDialog.value = false;
