@@ -79,6 +79,13 @@ const emit = defineEmits(['back']);
   color: inherit !important;
 }
 
+.dark-mode .title-bar__back:hover,
+.dark-mode .title-bar__back:focus {
+  background: rgba(59, 130, 246, 0.24) !important;
+  border-color: rgba(59, 130, 246, 0.24) !important;
+  color: #e5e7eb !important;
+}
+
 .title-bar__back :deep(.el-icon) {
   font-size: 16px;
 }
