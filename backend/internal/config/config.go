@@ -13,6 +13,7 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Minio    MinioConfig    `mapstructure:"minio"`
 	MQConfig MQConfig       `mapstructure:"mq_config"`
+	Consul   ConsulConfig   `mapstructure:"consul"`
 	Backend  BackendConfig  `mapstructure:"backend"`
 }
 
@@ -37,6 +38,15 @@ type RedisConfig struct {
 	Port     int    `mapstructure:"port"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+}
+
+type ConsulConfig struct {
+	Enabled    bool   `mapstructure:"enabled"`
+	Address    string `mapstructure:"address"`
+	Scheme     string `mapstructure:"scheme"`
+	Token      string `mapstructure:"token"`
+	Datacenter string `mapstructure:"datacenter"`
+	Prefix     string `mapstructure:"prefix"`
 }
 
 type MinioConfig struct {

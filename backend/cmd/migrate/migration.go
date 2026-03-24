@@ -25,7 +25,6 @@ func runMigration() error {
 		&model.RecentTemplate{},
 		&model.MembershipRelation{},
 		&model.OrgNodeMeta{},
-		&model.SystemConfig{},
 		&model.Template{},
 		&model.UserGroupMeta{},
 		&model.User{},

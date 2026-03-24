@@ -26,6 +26,14 @@ func main() {
 		panic("init redis failed")
 	}
 
+	if err := storage.InitConsul(&config.GlobalConfig.Consul); err != nil {
+		logrus.Fatalf("Init consul failed: %v", err)
+		panic("init consul failed")
+	}
+	if !storage.ConsulEnabled() {
+		logrus.Fatal("Consul is required for config, but it is not enabled")
+	}
+
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
 		logrus.Fatalf("Init message queue failed: %v", err)
 	}

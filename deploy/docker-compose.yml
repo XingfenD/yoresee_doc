@@ -57,6 +57,21 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
+  consul:
+    image: hashicorp/consul:1.16
+    container_name: yoresee_doc_consul
+    command: "agent -dev -client=0.0.0.0 -ui"
+    environment:
+      CONSUL_LOCAL_CONFIG: >-
+        {"acl":{"enabled":true,"default_policy":"deny","down_policy":"extend-cache","enable_token_persistence":true}}
+    ports:
+      - "8500:8500"
+    volumes:
+      - yoresee_doc_consul_data:/consul/data
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: yoresee_doc_rabbitmq
@@ -87,6 +102,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - consul
       - rabbitmq
     networks:
       - yoresee_doc_network
@@ -154,6 +170,7 @@ services:
 volumes:
   yoresee_doc_postgres_data:
   yoresee_doc_redis_data:
+  yoresee_doc_consul_data:
   yoresee_doc_rabbitmq_data:
 
 networks:

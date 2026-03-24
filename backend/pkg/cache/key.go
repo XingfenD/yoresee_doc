@@ -38,10 +38,6 @@ func KeyModelByExternalID(obj KeyObjectTypeEnum, externalID string) string {
 	return fmt.Sprintf("dms:unknownobj_%d:model:%s", int(obj), externalID)
 }
 
-func KeySystemConfig(configKey string) string {
-	return fmt.Sprintf("dms:config:%s", configKey)
-}
-
 func KeyDocSubtreeVersion(path string) string {
 	return fmt.Sprintf("dms:doc:version:%s", path)
 }

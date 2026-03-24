@@ -23,6 +23,14 @@ password = "your_redis_password"
 db = 0
 timeout = 5
 
+[consul]
+enabled = true
+address = "consul:8500"
+scheme = "http"
+token = "your_consul_token"
+datacenter = ""
+prefix = "yoresee_doc/config"
+
 [minio]
 endpoint = "yoresee_doc_minio:9000"
 access_key = "minioadmin"

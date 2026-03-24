@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
-	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
@@ -21,6 +21,13 @@ func main() {
 		logrus.Fatalf("Init Postgres failed: %v", err)
 	}
 
+	if err := storage.InitConsul(&config.GlobalConfig.Consul); err != nil {
+		logrus.Fatalf("Init Consul failed: %v", err)
+	}
+	if !storage.ConsulEnabled() {
+		logrus.Fatal("Consul is required for config, but it is not enabled")
+	}
+
 	// 检查数据库是否已初始化
 	if isDatabaseInitialized() {
 		logrus.Println("Database already initialized, skipping initialization steps")
@@ -29,6 +36,12 @@ func main() {
 		if err := initializeDatabaseInTransaction(); err != nil {
 			logrus.Fatalf("Database initialization failed: %v", err)
 		}
+		if err := initializeConfigInConsul(context.Background()); err != nil {
+			logrus.Fatalf("Consul config initialization failed: %v", err)
+		}
+		if err := markDatabaseInitializedInConsul(context.Background()); err != nil {
+			logrus.Fatalf("Mark database initialized failed: %v", err)
+		}
 		logrus.Println("Database initialized successfully")
 	}
 
@@ -36,26 +49,20 @@ func main() {
 }
 
 func isDatabaseInitialized() bool {
-	// 直接查询数据库，避免 Redis 依赖
-	var config model.SystemConfig
-	err := storage.DB.Where("key = ?", utils.GenConfigKey(
+	value, ok, err := storage.Consul.Get(context.Background(), utils.GenConfigKey(
 		constant.ConfigKey_First_System,
 		constant.ConfigKey_Second_Database,
 		constant.ConfigKey_Third_Initialized,
-	)).First(&config).Error
-	if err != nil {
+	))
+	if err != nil || !ok {
 		return false
 	}
-	return config.Value == constant.Database_Initialized_True
+	return value == constant.Database_Initialized_True
 }
 
 func initializeDatabaseInTransaction() error {
 	return utils.WithTransaction(func(tx *gorm.DB) error {
 		// 执行各个初始化函数
-		if err := initializeConfigInTx(tx); err != nil {
-			return err
-		}
-
 		if err := initializePermissionsInTx(tx); err != nil {
 			return err
 		}
@@ -77,21 +84,6 @@ func initializeDatabaseInTransaction() error {
 		}
 
 		if err := initializeUserGroupsInTx(tx); err != nil {
-			return err
-		}
-
-		// 标记数据库已初始化
-		initializedConfig := &model.SystemConfig{
-			Key: utils.GenConfigKey(
-				constant.ConfigKey_First_System,
-				constant.ConfigKey_Second_Database,
-				constant.ConfigKey_Third_Initialized,
-			),
-			Value: constant.Database_Initialized_True,
-		}
-		if err := tx.FirstOrCreate(initializedConfig, model.SystemConfig{
-			Key: initializedConfig.Key,
-		}).Error; err != nil {
 			return err
 		}
 

@@ -1,31 +1,34 @@
 package main
 
 import (
+	"context"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
-	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
+	"github.com/XingfenD/yoresee_doc/pkg/storage"
 )
 
-func initializeConfigInTx(tx *gorm.DB) error {
-	logrus.Println("Initializing system config in transaction...")
+func initializeConfigInConsul(ctx context.Context) error {
+	registerModeKey := utils.GenConfigKey(
+		constant.ConfigKey_First_System,
+		constant.ConfigKey_Second_Security,
+		constant.ConfigKey_Third_RegisterMode,
+	)
 
-	registerModeConfigModel := &model.SystemConfig{
-		Key: utils.GenConfigKey(
-			constant.ConfigKey_First_System,
-			constant.ConfigKey_Second_Security,
-			constant.ConfigKey_Third_RegisterMode,
-		),
-		Value: constant.RegisterMode_Invite,
-	}
-
-	if err := tx.FirstOrCreate(registerModeConfigModel, model.SystemConfig{
-		Key: registerModeConfigModel.Key,
-	}).Error; err != nil {
+	if _, ok, err := storage.Consul.Get(ctx, registerModeKey); err != nil {
 		return err
+	} else if !ok {
+		if err := storage.Consul.Set(ctx, registerModeKey, constant.RegisterMode_Invite); err != nil {
+			return err
+		}
 	}
-
-	logrus.Println("System config initialized successfully in transaction")
 	return nil
+}
+
+func markDatabaseInitializedInConsul(ctx context.Context) error {
+	initializedKey := utils.GenConfigKey(
+		constant.ConfigKey_First_System,
+		constant.ConfigKey_Second_Database,
+		constant.ConfigKey_Third_Initialized,
+	)
+	return storage.Consul.Set(ctx, initializedKey, constant.Database_Initialized_True)
 }
