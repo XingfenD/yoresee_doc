@@ -80,18 +80,13 @@ services:
     command: "agent -dev -client=0.0.0.0 -ui"
     environment:
       CONSUL_LOCAL_CONFIG: >-
-        {"acl":{"enabled":true,"default_policy":"deny","down_policy":"extend-cache","enable_token_persistence":true}}
+        {"acl":{"enabled":true,"default_policy":"deny","down_policy":"extend-cache","enable_token_persistence":true,"tokens":{"initial_management":"${CONSUL_ROOT_TOKEN:-yoresee_doc_root_token}"}}}
     ports:
       - "8500:8500"
     volumes:
       - yoresee_doc_consul_data:/consul/data
     networks:
       - yoresee_doc_network
-    healthcheck:
-      test: ["CMD", "consul", "info"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
     restart: unless-stopped
 
   rabbitmq:
@@ -133,8 +128,6 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      consul:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
