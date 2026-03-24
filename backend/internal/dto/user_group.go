@@ -36,3 +36,16 @@ type UpdateUserGroupRequest struct {
 type DeleteUserGroupRequest struct {
 	ExternalID string `json:"external_id"`
 }
+
+type ListUsersRequest struct {
+	Keyword    *string    `json:"keyword"`
+	Pagination Pagination `json:"pagination"`
+}
+
+type UpdateUserRequest struct {
+	ExternalID string  `json:"external_id"`
+	Username   *string `json:"username"`
+	Email      *string `json:"email"`
+	Nickname   *string `json:"nickname"`
+	Status     *int32  `json:"status"`
+}

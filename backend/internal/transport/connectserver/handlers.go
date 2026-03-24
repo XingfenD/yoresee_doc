@@ -268,6 +268,30 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.MembershipService_ListUsers_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_ListUsers_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListUsersRequest]) (*connect.Response[pb.ListUsersResponse], error) {
+			resp, err := memberSvc.ListUsers(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_UpdateUser_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_UpdateUser_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateUserRequest]) (*connect.Response[pb.UpdateUserResponse], error) {
+			resp, err := memberSvc.UpdateUser(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.DocumentService_UpdateDocument_FullMethodName, connect.NewUnaryHandler(
 		pb.DocumentService_UpdateDocument_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.UpdateDocumentRequest]) (*connect.Response[pb.UpdateDocumentResponse], error) {

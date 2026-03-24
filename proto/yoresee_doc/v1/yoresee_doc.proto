@@ -87,6 +87,30 @@ message DeleteUserGroupResponse {
   BaseResponse base = 1;
 }
 
+message ListUsersRequest {
+  optional string keyword = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListUsersResponse {
+  BaseResponse base = 1;
+  repeated UserResponse users = 2;
+  int64 total = 3;
+}
+
+message UpdateUserRequest {
+  string external_id = 1;
+  optional string username = 2;
+  optional string email = 3;
+  optional string nickname = 4;
+  optional int32 status = 5;
+}
+
+message UpdateUserResponse {
+  BaseResponse base = 1;
+}
+
 message AuthLoginRequest {
   string email = 1;
   string password = 2;
@@ -487,4 +511,8 @@ service MembershipService {
   rpc UpdateUserGroup(UpdateUserGroupRequest) returns (UpdateUserGroupResponse);
   // delete a user group and its memberships.
   rpc DeleteUserGroup(DeleteUserGroupRequest) returns (DeleteUserGroupResponse);
+  // list users for member management.
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  // update user info or status.
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
 }

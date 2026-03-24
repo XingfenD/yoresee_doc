@@ -156,3 +156,59 @@ func (s *MembershipServiceServer) DeleteUserGroup(ctx context.Context, req *pb.D
 		Base: baseResponseFromErr(nil),
 	}, nil
 }
+
+func (s *MembershipServiceServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
+	if req == nil {
+		return &pb.ListUsersResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if err := s.requireAdmin(ctx); err != nil {
+		return &pb.ListUsersResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	serviceReq := &dto.ListUsersRequest{
+		Keyword: req.Keyword,
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+	}
+	users, total, err := membership_service.MembershipSvc.ListUsers(serviceReq)
+	if err != nil {
+		return &pb.ListUsersResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	respUsers := make([]*pb.UserResponse, 0, len(users))
+	for _, user := range users {
+		respUsers = append(respUsers, toUserResponse(user))
+	}
+
+	return &pb.ListUsersResponse{
+		Base:  baseResponseFromErr(nil),
+		Users: respUsers,
+		Total: total,
+	}, nil
+}
+
+func (s *MembershipServiceServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	if req == nil || strings.TrimSpace(req.ExternalId) == "" {
+		return &pb.UpdateUserResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if err := s.requireAdmin(ctx); err != nil {
+		return &pb.UpdateUserResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	serviceReq := &dto.UpdateUserRequest{
+		ExternalID: req.ExternalId,
+		Username:   req.Username,
+		Email:      req.Email,
+		Nickname:   req.Nickname,
+		Status:     req.Status,
+	}
+	if err := membership_service.MembershipSvc.UpdateUser(serviceReq); err != nil {
+		return &pb.UpdateUserResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.UpdateUserResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}

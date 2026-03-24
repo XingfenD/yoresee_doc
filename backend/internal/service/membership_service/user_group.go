@@ -30,6 +30,68 @@ func normalizePagination(p dto.Pagination) dto.Pagination {
 	return p
 }
 
+func (s *MembershipService) ListUsers(req *dto.ListUsersRequest) ([]*dto.UserResponse, int64, error) {
+	if req == nil {
+		return nil, 0, status.StatusParamError
+	}
+	req.Pagination = normalizePagination(req.Pagination)
+
+	users, total, err := s.useRepo.QueryUsers().
+		WithKeyword(req.Keyword).
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
+		ExecWithTotal()
+	if err != nil {
+		return nil, 0, status.StatusReadDBError
+	}
+
+	resp := make([]*dto.UserResponse, 0, len(users))
+	for i := range users {
+		user := users[i]
+		resp = append(resp, dto.NewUserResponseFromModel(&user))
+	}
+	return resp, total, nil
+}
+
+func (s *MembershipService) UpdateUser(req *dto.UpdateUserRequest) error {
+	if req == nil || strings.TrimSpace(req.ExternalID) == "" {
+		return status.StatusParamError
+	}
+	if req.Username == nil && req.Email == nil && req.Nickname == nil && req.Status == nil {
+		return status.StatusParamError
+	}
+
+	user, err := s.useRepo.GetByExternalID(req.ExternalID).Exec()
+	if err != nil {
+		return status.StatusUserNotFound
+	}
+
+	if req.Username != nil {
+		username := strings.TrimSpace(*req.Username)
+		if username == "" {
+			return status.StatusParamError
+		}
+		user.Username = username
+	}
+	if req.Email != nil {
+		email := strings.TrimSpace(*req.Email)
+		if email == "" {
+			return status.StatusParamError
+		}
+		user.Email = email
+	}
+	if req.Nickname != nil {
+		user.Nickname = strings.TrimSpace(*req.Nickname)
+	}
+	if req.Status != nil {
+		user.Status = int(*req.Status)
+	}
+
+	if err := s.useRepo.Update(user).Exec(); err != nil {
+		return status.StatusWriteDBError
+	}
+	return nil
+}
+
 func (s *MembershipService) ListUserGroups(req *dto.ListUserGroupsRequest) ([]*dto.UserGroupResponse, int64, error) {
 	if req == nil {
 		return nil, 0, status.StatusParamError
