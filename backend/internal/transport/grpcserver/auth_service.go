@@ -55,3 +55,22 @@ func (s *AuthServiceServer) Register(ctx context.Context, req *pb.AuthRegisterRe
 
 	return &pb.AuthRegisterResponse{Base: baseResponseFromErr(nil)}, nil
 }
+
+func (s *AuthServiceServer) QuerySideBarDisplay(ctx context.Context, req *pb.QuerySideBarDisplayRequest) (*pb.QuerySideBarDisplayResponse, error) {
+	if req == nil || req.Scene == "" {
+		return &pb.QuerySideBarDisplayResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.QuerySideBarDisplayResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+	}
+
+	displayTabs, err := auth_service.AuthSvc.QuerySideBarDisplay(userExternalID, req.Scene)
+	if err != nil {
+		return &pb.QuerySideBarDisplayResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	return &pb.QuerySideBarDisplayResponse{
+		Base:        baseResponseFromErr(nil),
+		DisplayTabs: displayTabs,
+	}, nil
+}
