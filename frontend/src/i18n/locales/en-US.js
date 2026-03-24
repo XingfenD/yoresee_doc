@@ -209,6 +209,7 @@ export default {
       usage: 'Usage',
       actions: 'Actions',
       pause: 'Pause',
+      resume: 'Resume',
       delete: 'Delete',
       limitUsage: 'Limit Usage Count',
       maxUsage: 'Max Usage',
@@ -346,6 +347,8 @@ export default {
     collapse: 'Collapse',
     collapseAll: 'Collapse All',
     expand: 'Expand',
-    expandAll: 'Expand All'
+    expandAll: 'Expand All',
+    copySuccess: 'Copied',
+    copyFailed: 'Copy failed, please retry'
   }
 };

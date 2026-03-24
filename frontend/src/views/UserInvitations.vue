@@ -33,11 +33,16 @@
         </el-tag>
       </template>
       <template #cell-usage="{ row }">
-        {{ row.used }}/{{ row.max }}
+        {{ row.used }}/{{ row.max === null ? '-' : row.max }}
+      </template>
+      <template #cell-code="{ row }">
+        <el-tooltip :content="row.note || t('user.invite.notePlaceholder')" placement="top">
+          <span class="invite-code" @click="copyInviteCode(row.code)">{{ row.code }}</span>
+        </el-tooltip>
       </template>
       <template #cell-actions="{ row }">
         <el-button size="small" text type="primary" @click="handlePauseInvite(row)">
-          {{ t('user.invite.pause') }}
+          {{ row.disabled ? t('user.invite.resume') : t('user.invite.pause') }}
         </el-button>
         <el-button size="small" text type="danger" @click="handleDeleteInvite(row)">
           {{ t('user.invite.delete') }}
@@ -58,6 +63,8 @@ import PageLayout from '@/components/PageLayout.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
 import CommonList from '@/components/CommonList.vue';
 import { House, User, Ticket, Setting } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { listInvitations, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -130,35 +137,8 @@ const inviteStatusLabel = (status) => {
   return t('user.invite.disabled');
 };
 
-const inviteList = ref([
-  {
-    code: 'YORE-8K2P-9Q1M',
-    created_at: '2026-03-18 10:12',
-    created_by: 'admin',
-    expires_at: '2026-04-18 23:59',
-    status: 'active',
-    max: 20,
-    used: 6
-  },
-  {
-    code: 'YORE-7D4X-1ZA3',
-    created_at: '2026-03-10 09:30',
-    created_by: 'admin',
-    expires_at: '2026-03-31 23:59',
-    status: 'active',
-    max: 5,
-    used: 5
-  },
-  {
-    code: 'YORE-2M9K-4L8N',
-    created_at: '2026-02-20 15:40',
-    created_by: 'admin',
-    expires_at: '2026-03-05 23:59',
-    status: 'expired',
-    max: 10,
-    used: 7
-  }
-]);
+const inviteList = ref([]);
+const inviteLoading = ref(false);
 
 
 const showCreateDialog = ref(false);
@@ -167,23 +147,148 @@ const openCreateDialog = () => {
   showCreateDialog.value = true;
 };
 
-const handleCreateInvite = (payload) => {
-  // TODO: hook to backend
-  console.log('create invite payload', payload);
+const formatDateYYYYMMDD = (date) => {
+  const pad = (num) => `${num}`.padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
-const handlePauseInvite = (row) => {
-  console.log('pause invite', row);
+const toRfc3339EndOfDay = (dateStr) => {
+  if (!dateStr) return '';
+  if (dateStr.includes('T')) {
+    return dateStr;
+  }
+  const [year, month, day] = dateStr.split('-').map((value) => Number(value));
+  if (!year || !month || !day) return '';
+  const local = new Date(year, month - 1, day, 23, 59, 59);
+  return local.toISOString();
 };
 
-const handleDeleteInvite = (row) => {
-  console.log('delete invite', row);
+const resolveInviteStatus = (invite) => {
+  if (invite.disabled) return 'disabled';
+  if (invite.expires_at) {
+    const expireTs = Date.parse(invite.expires_at);
+    if (!Number.isNaN(expireTs) && expireTs < Date.now()) return 'expired';
+  }
+  if (typeof invite.max_used_cnt === 'number' && typeof invite.used_cnt === 'number') {
+    if (invite.used_cnt >= invite.max_used_cnt) return 'expired';
+  }
+  return 'active';
 };
 
-onMounted(() => {
+const toNumber = (value, fallback = null) => {
+  if (value === null || value === undefined) return fallback;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+const mapInviteRow = (invite) => ({
+  code: invite.code,
+  created_at: invite.created_at || '-',
+  expires_at: invite.expires_at || '-',
+  status: resolveInviteStatus(invite),
+  max: toNumber(invite.max_used_cnt, null),
+  used: toNumber(invite.used_cnt, 0),
+  disabled: invite.disabled,
+  note: invite.note || ''
+});
+
+const fetchInvitations = async () => {
+  if (inviteLoading.value) return;
+  const creatorExternalId = userInfo.value?.external_id;
+  if (!creatorExternalId) {
+    inviteList.value = [];
+    return;
+  }
+  inviteLoading.value = true;
+  try {
+    const resp = await listInvitations({
+      creator_external_id: creatorExternalId,
+      page: 1,
+      page_size: 50
+    });
+    inviteList.value = (resp.invitations || []).map(mapInviteRow);
+  } catch (err) {
+    console.error('listInvitations failed', err);
+    inviteList.value = [];
+  } finally {
+    inviteLoading.value = false;
+  }
+};
+
+const handleCreateInvite = async (payload) => {
+  try {
+    let expiresAt = payload.expires_at;
+    if (payload.expire_type === 'days' && payload.expire_days) {
+      const target = new Date();
+      target.setDate(target.getDate() + Number(payload.expire_days));
+      expiresAt = formatDateYYYYMMDD(target);
+    }
+    await createInvitation({
+      expires_at: expiresAt ? toRfc3339EndOfDay(expiresAt) : undefined,
+      max_used_cnt: payload.limit_enabled ? payload.max_usage : undefined,
+      note: payload.note
+    });
+    ElMessage.success(t('message.success'));
+    await fetchInvitations();
+  } catch (err) {
+    console.error('createInvitation failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  }
+};
+
+const handlePauseInvite = async (row) => {
+  if (!row?.code) return;
+  try {
+    await updateInvitation({
+      code: row.code,
+      disabled: !row.disabled
+    });
+    ElMessage.success(t('message.success'));
+    await fetchInvitations();
+  } catch (err) {
+    console.error('updateInvitation failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  }
+};
+
+const handleDeleteInvite = async (row) => {
+  if (!row?.code) return;
+  try {
+    await ElMessageBox.confirm(t('message.confirmDelete'), t('user.invite.delete'), {
+      confirmButtonText: t('button.confirm'),
+      cancelButtonText: t('button.cancel'),
+      type: 'warning'
+    });
+    await deleteInvitation(row.code);
+    ElMessage.success(t('message.deleteSuccess'));
+    await fetchInvitations();
+  } catch (err) {
+    if (err) {
+      console.error('deleteInvitation failed', err);
+    }
+  }
+};
+
+const copyInviteCode = async (code) => {
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    ElMessage.success(t('common.copySuccess'));
+  } catch (err) {
+    console.error('copy invite code failed', err);
+    ElMessage.error(t('common.copyFailed'));
+  }
+};
+
+onMounted(async () => {
   initLanguage();
+  await fetchInvitations();
 });
 </script>
 
 <style scoped>
+.invite-code {
+  cursor: pointer;
+  color: var(--primary-color);
+}
 </style>

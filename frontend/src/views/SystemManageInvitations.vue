@@ -35,14 +35,19 @@
               {{ inviteStatusLabel(value) }}
             </el-tag>
           </template>
-          <template #cell-usage="{ row }">
-            {{ row.used }}/{{ row.max }}
-          </template>
-          <template #cell-actions="{ row }">
-            <el-button size="small" text type="primary" @click="handlePauseInvite(row)">
-              {{ t('user.invite.pause') }}
-            </el-button>
-            <el-button size="small" text type="danger" @click="handleDeleteInvite(row)">
+      <template #cell-usage="{ row }">
+        {{ row.used }}/{{ row.max === null ? '-' : row.max }}
+      </template>
+      <template #cell-code="{ row }">
+        <el-tooltip :content="row.note || t('user.invite.notePlaceholder')" placement="top">
+          <span class="invite-code" @click="copyInviteCode(row.code)">{{ row.code }}</span>
+        </el-tooltip>
+      </template>
+      <template #cell-actions="{ row }">
+        <el-button size="small" text type="primary" @click="handlePauseInvite(row)">
+          {{ row.disabled ? t('user.invite.resume') : t('user.invite.pause') }}
+        </el-button>
+        <el-button size="small" text type="danger" @click="handleDeleteInvite(row)">
               {{ t('user.invite.delete') }}
             </el-button>
           </template>
@@ -70,7 +75,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -78,6 +83,8 @@ import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
 import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { listInvitations, listInvitationRecords, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -154,43 +161,12 @@ const inviteStatusLabel = (status) => {
   return t('user.invite.disabled');
 };
 
-const inviteList = ref([
-  {
-    code: 'SYS-9KD2-8LMQ',
-    created_at: '2026-03-19 09:12',
-    created_by: 'admin',
-    expires_at: '2026-05-01 23:59',
-    status: 'active',
-    max: 50,
-    used: 12
-  },
-  {
-    code: 'SYS-3PA9-2XKD',
-    created_at: '2026-03-01 11:20',
-    created_by: 'admin',
-    expires_at: '2026-03-25 23:59',
-    status: 'expired',
-    max: 5,
-    used: 3
-  }
-]);
-
-const inviteRecords = ref([
-  {
-    id: 1,
-    code: 'SYS-9KD2-8LMQ',
-    used_by: 'user_lee',
-    used_at: '2026-03-19 10:01',
-    status: 'success'
-  },
-  {
-    id: 2,
-    code: 'SYS-9KD2-8LMQ',
-    used_by: 'user_wang',
-    used_at: '2026-03-19 10:05',
-    status: 'failed'
-  }
-]);
+const inviteList = ref([]);
+const inviteRecords = ref([]);
+const inviteLoaded = ref(false);
+const recordsLoaded = ref(false);
+const inviteLoading = ref(false);
+const recordsLoading = ref(false);
 
 const showCreateDialog = ref(false);
 
@@ -198,17 +174,153 @@ const openCreateDialog = () => {
   showCreateDialog.value = true;
 };
 
-const handleCreateInvite = (payload) => {
-  // TODO: hook to backend
-  console.log('create system invite payload', payload);
+const formatDateYYYYMMDD = (date) => {
+  const pad = (num) => `${num}`.padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
-const handlePauseInvite = (row) => {
-  console.log('pause invite', row);
+const toRfc3339EndOfDay = (dateStr) => {
+  if (!dateStr) return '';
+  if (dateStr.includes('T')) {
+    return dateStr;
+  }
+  const [year, month, day] = dateStr.split('-').map((value) => Number(value));
+  if (!year || !month || !day) return '';
+  const local = new Date(year, month - 1, day, 23, 59, 59);
+  return local.toISOString();
 };
 
-const handleDeleteInvite = (row) => {
-  console.log('delete invite', row);
+const resolveInviteStatus = (invite) => {
+  if (invite.disabled) return 'disabled';
+  if (invite.expires_at) {
+    const expireTs = Date.parse(invite.expires_at);
+    if (!Number.isNaN(expireTs) && expireTs < Date.now()) return 'expired';
+  }
+  if (typeof invite.max_used_cnt === 'number' && typeof invite.used_cnt === 'number') {
+    if (invite.used_cnt >= invite.max_used_cnt) return 'expired';
+  }
+  return 'active';
+};
+
+const toNumber = (value, fallback = null) => {
+  if (value === null || value === undefined) return fallback;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+const mapInviteRow = (invite) => ({
+  code: invite.code,
+  created_at: invite.created_at || '-',
+  created_by: invite.created_by_name || invite.created_by_external_id || t('common.unknown'),
+  expires_at: invite.expires_at || '-',
+  status: resolveInviteStatus(invite),
+  max: toNumber(invite.max_used_cnt, null),
+  used: toNumber(invite.used_cnt, 0),
+  disabled: invite.disabled,
+  note: invite.note || ''
+});
+
+const mapRecordRow = (record) => ({
+  id: record.id,
+  code: record.code,
+  used_by: record.used_by || '-',
+  used_at: record.used_at || '-',
+  status: record.status
+});
+
+const fetchInvitations = async () => {
+  if (inviteLoading.value) return;
+  inviteLoading.value = true;
+  try {
+    const resp = await listInvitations({ page: 1, page_size: 50 });
+    inviteList.value = (resp.invitations || []).map(mapInviteRow);
+    inviteLoaded.value = true;
+  } catch (err) {
+    console.error('listInvitations failed', err);
+    inviteList.value = [];
+  } finally {
+    inviteLoading.value = false;
+  }
+};
+
+const fetchInvitationRecords = async () => {
+  if (recordsLoading.value) return;
+  recordsLoading.value = true;
+  try {
+    const resp = await listInvitationRecords({ page: 1, page_size: 50 });
+    inviteRecords.value = (resp.records || []).map(mapRecordRow);
+    recordsLoaded.value = true;
+  } catch (err) {
+    console.error('listInvitationRecords failed', err);
+    inviteRecords.value = [];
+  } finally {
+    recordsLoading.value = false;
+  }
+};
+
+const handleCreateInvite = async (payload) => {
+  try {
+    let expiresAt = payload.expires_at;
+    if (payload.expire_type === 'days' && payload.expire_days) {
+      const target = new Date();
+      target.setDate(target.getDate() + Number(payload.expire_days));
+      expiresAt = formatDateYYYYMMDD(target);
+    }
+    await createInvitation({
+      expires_at: expiresAt ? toRfc3339EndOfDay(expiresAt) : undefined,
+      max_used_cnt: payload.limit_enabled ? payload.max_usage : undefined,
+      note: payload.note
+    });
+    ElMessage.success(t('message.success'));
+    await fetchInvitations();
+  } catch (err) {
+    console.error('createInvitation failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  }
+};
+
+const handlePauseInvite = async (row) => {
+  if (!row?.code) return;
+  try {
+    await updateInvitation({
+      code: row.code,
+      disabled: !row.disabled
+    });
+    ElMessage.success(t('message.success'));
+    await fetchInvitations();
+  } catch (err) {
+    console.error('updateInvitation failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  }
+};
+
+const handleDeleteInvite = async (row) => {
+  if (!row?.code) return;
+  try {
+    await ElMessageBox.confirm(t('message.confirmDelete'), t('user.invite.delete'), {
+      confirmButtonText: t('button.confirm'),
+      cancelButtonText: t('button.cancel'),
+      type: 'warning'
+    });
+    await deleteInvitation(row.code);
+    ElMessage.success(t('message.deleteSuccess'));
+    await fetchInvitations();
+  } catch (err) {
+    if (err) {
+      console.error('deleteInvitation failed', err);
+    }
+  }
+};
+
+const copyInviteCode = async (code) => {
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    ElMessage.success(t('common.copySuccess'));
+  } catch (err) {
+    console.error('copy invite code failed', err);
+    ElMessage.error(t('common.copyFailed'));
+  }
 };
 
 const initLanguage = () => {
@@ -218,10 +330,24 @@ const initLanguage = () => {
   }
 };
 
-onMounted(() => {
+watch(activeTab, async (tab) => {
+  if (tab === 'list' && !inviteLoaded.value) {
+    await fetchInvitations();
+  }
+  if (tab === 'records' && !recordsLoaded.value) {
+    await fetchInvitationRecords();
+  }
+});
+
+onMounted(async () => {
   initLanguage();
+  await fetchInvitations();
 });
 </script>
 
 <style scoped>
+.invite-code {
+  cursor: pointer;
+  color: var(--primary-color);
+}
 </style>

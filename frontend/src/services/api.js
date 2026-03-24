@@ -1,6 +1,6 @@
 import { clients, messages, unaryCall } from './grpc_client';
 
-const { documentClient, knowledgeBaseClient, membershipClient, systemClient } = clients;
+const { documentClient, knowledgeBaseClient, membershipClient, systemClient, invitationClient } = clients;
 const {
   ListKnowledgeBasesRequest,
   ListRecentKnowledgeBasesRequest,
@@ -27,7 +27,12 @@ const {
   TimeRange,
   CreateDocumentContainerType,
   CreateTemplateContainer,
-  DocumentType
+  DocumentType,
+  ListInvitationsRequest,
+  CreateInvitationRequest,
+  UpdateInvitationRequest,
+  DeleteInvitationRequest,
+  ListInvitationRecordsRequest
 } = messages;
 
 function baseToObject(resp) {
@@ -112,6 +117,34 @@ function mapUser(user) {
     created_at: user.createdAt,
     updated_at: user.updatedAt,
     invitation_code: user.invitationCode ?? null
+  };
+}
+
+function mapInvitation(inv) {
+  if (!inv) return null;
+  return {
+    id: inv.id,
+    code: inv.code,
+    created_by_external_id: inv.createdByExternalId,
+    created_by_name: inv.createdByName,
+    used_cnt: inv.usedCnt,
+    max_used_cnt: inv.maxUsedCnt ?? null,
+    expires_at: inv.expiresAt ?? null,
+    created_at: inv.createdAt,
+    disabled: inv.disabled,
+    note: inv.note ?? null
+  };
+}
+
+function mapInvitationRecord(rec) {
+  if (!rec) return null;
+  return {
+    id: rec.id,
+    code: rec.code,
+    used_by: rec.usedBy,
+    used_by_external_id: rec.usedByExternalId ?? null,
+    used_at: rec.usedAt,
+    status: rec.status
   };
 }
 
@@ -357,6 +390,86 @@ export const listUserGroups = async (params = {}) => {
   const base = baseToObject(resp);
   const data = {
     user_groups: (resp.userGroups || []).map(mapUserGroup),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+export const listInvitations = async (params = {}) => {
+  const req = new ListInvitationsRequest({
+    creatorExternalId: params.creator_external_id || undefined,
+    maxUsedCnt: typeof params.max_used_cnt === 'number' ? params.max_used_cnt : undefined,
+    expiresAtStart: params.expires_at_start || undefined,
+    expiresAtEnd: params.expires_at_end || undefined,
+    createdAtStart: params.created_at_start || undefined,
+    createdAtEnd: params.created_at_end || undefined,
+    disabled: typeof params.disabled === 'boolean' ? params.disabled : undefined,
+    orderBy: params.order_by || undefined,
+    orderDesc: typeof params.order_desc === 'boolean' ? params.order_desc : undefined,
+    page: params.page || 1,
+    pageSize: params.page_size || 20
+  });
+
+  const resp = await unaryCall(invitationClient, 'listInvitations', req);
+  const base = baseToObject(resp);
+  const data = {
+    invitations: (resp.invitations || []).map(mapInvitation).filter(Boolean),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+export const createInvitation = async (params = {}) => {
+  const req = new CreateInvitationRequest({
+    maxUsedCnt: typeof params.max_used_cnt === 'number' ? params.max_used_cnt : undefined,
+    expiresAt: params.expires_at || undefined,
+    note: params.note || undefined
+  });
+
+  const resp = await unaryCall(invitationClient, 'createInvitation', req);
+  const base = baseToObject(resp);
+  const data = {
+    invitation: resp.invitation ? mapInvitation(resp.invitation) : null
+  };
+  return handleResponse(base, data);
+};
+
+export const updateInvitation = async (params = {}) => {
+  const req = new UpdateInvitationRequest({
+    code: params.code || '',
+    maxUsedCnt: typeof params.max_used_cnt === 'number' ? params.max_used_cnt : undefined,
+    expiresAt: params.expires_at || undefined,
+    disabled: typeof params.disabled === 'boolean' ? params.disabled : undefined,
+    note: params.note || undefined
+  });
+
+  const resp = await unaryCall(invitationClient, 'updateInvitation', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+export const deleteInvitation = async (code) => {
+  const req = new DeleteInvitationRequest({ code: code || '' });
+
+  const resp = await unaryCall(invitationClient, 'deleteInvitation', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+export const listInvitationRecords = async (params = {}) => {
+  const req = new ListInvitationRecordsRequest({
+    code: params.code || undefined,
+    status: params.status || undefined,
+    usedAtStart: params.used_at_start || undefined,
+    usedAtEnd: params.used_at_end || undefined,
+    page: params.page || 1,
+    pageSize: params.page_size || 20
+  });
+
+  const resp = await unaryCall(invitationClient, 'listInvitationRecords', req);
+  const base = baseToObject(resp);
+  const data = {
+    records: (resp.records || []).map(mapInvitationRecord).filter(Boolean),
     total: resp.total ?? 0
   };
   return handleResponse(base, data);

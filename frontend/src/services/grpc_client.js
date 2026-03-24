@@ -5,7 +5,8 @@ import {
   DocumentService,
   KnowledgeBaseService,
   MembershipService,
-  SystemService
+  SystemService,
+  InvitationService
 } from '@/gen/yoresee_doc/v1/yoresee_doc_connect.js';
 import * as messages from '@/gen/yoresee_doc/v1/yoresee_doc_pb.js';
 
@@ -21,6 +22,7 @@ const documentClient = createPromiseClient(DocumentService, transport);
 const knowledgeBaseClient = createPromiseClient(KnowledgeBaseService, transport);
 const membershipClient = createPromiseClient(MembershipService, transport);
 const systemClient = createPromiseClient(SystemService, transport);
+const invitationClient = createPromiseClient(InvitationService, transport);
 
 export function buildHeaders() {
   const token = localStorage.getItem('token');
@@ -53,7 +55,8 @@ export const clients = {
   documentClient,
   knowledgeBaseClient,
   membershipClient,
-  systemClient
+  systemClient,
+  invitationClient
 };
 
 export { messages };

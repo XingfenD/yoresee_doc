@@ -207,6 +207,7 @@ export default {
       usage: '使用情况',
       actions: '操作',
       pause: '暂停',
+      resume: '恢复',
       delete: '删除',
       limitUsage: '限制使用次数',
       maxUsage: '次数上限',
@@ -344,6 +345,8 @@ export default {
     collapse: '收起',
     collapseAll: '收起全部',
     expand: '展开',
-    expandAll: '展开全部'
+    expandAll: '展开全部',
+    copySuccess: '复制成功',
+    copyFailed: '复制失败，请重试'
   }
 };
