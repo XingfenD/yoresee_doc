@@ -101,6 +101,13 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/manage/user_group/:externalID',
+      name: 'SystemManageUserGroupDetail',
+      component: () => import('../views/SystemManageUserGroupDetail.vue'),
+      meta: { requiresAuth: true },
+      props: true
+    },
+    {
       path: '/manage/organization',
       name: 'SystemManageOrganization',
       component: () => import('../views/SystemManageOrganization.vue'),

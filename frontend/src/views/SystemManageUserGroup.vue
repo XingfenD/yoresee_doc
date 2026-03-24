@@ -14,6 +14,12 @@
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
+    <template #actions>
+      <el-button class="page-action-btn" type="primary" size="small" @click="openCreateDialog">
+        {{ t('button.create') }}
+      </el-button>
+    </template>
+
     <div class="manage-layout">
       <section class="manage-section">
         <div class="section-header">
@@ -24,12 +30,72 @@
             :rows="groupRows"
             :columns="groupColumns"
             :is-dark="isDarkMode"
-            row-key="name"
+            row-key="external_id"
             :empty-text="t('message.empty')"
-          />
+          >
+            <template #cell-name="{ row }">
+              <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
+                {{ row?.name || '-' }}
+              </el-button>
+            </template>
+            <template #cell-actions="{ row }">
+              <el-button size="small" text type="primary" @click="openEditDialog(row)">
+                {{ t('document.edit') }}
+              </el-button>
+              <el-button size="small" text type="danger" @click="handleDeleteGroup(row)">
+                {{ t('document.delete') }}
+              </el-button>
+            </template>
+          </CommonList>
         </div>
       </section>
     </div>
+
+    <el-dialog v-model="showCreateDialog" :title="t('system.userGroup.title')" width="480px">
+      <el-form label-position="top" :model="createForm">
+        <el-form-item :label="t('common.name')">
+          <el-input v-model="createForm.name" maxlength="50" show-word-limit />
+        </el-form-item>
+        <el-form-item :label="t('common.description')">
+          <el-input
+            v-model="createForm.description"
+            type="textarea"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">{{ t('button.cancel') }}</el-button>
+        <el-button type="primary" :loading="creating" @click="submitCreateGroup">
+          {{ t('button.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showEditDialog" :title="t('document.edit')" width="480px">
+      <el-form label-position="top" :model="editForm">
+        <el-form-item :label="t('common.name')">
+          <el-input v-model="editForm.name" maxlength="50" show-word-limit />
+        </el-form-item>
+        <el-form-item :label="t('common.description')">
+          <el-input
+            v-model="editForm.description"
+            type="textarea"
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEditDialog = false">{{ t('button.cancel') }}</el-button>
+        <el-button type="primary" :loading="editing" @click="submitEditGroup">
+          {{ t('button.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </PageLayout>
 </template>
 
@@ -40,7 +106,9 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
+import { createUserGroup, deleteUserGroup, listUserGroups, updateUserGroup } from '@/services/api';
 import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -94,22 +162,139 @@ const handleMenuSelect = (key) => {
   activeMenu.value = key;
 };
 
-const groupRows = ref([
-  { name: '研发组', members: 12, description: '产品与工程协作小组', updated_at: '2026-03-18' },
-  { name: '设计组', members: 6, description: '品牌与体验设计', updated_at: '2026-03-16' },
-  { name: '运营组', members: 8, description: '内容与增长运营', updated_at: '2026-03-14' },
-  { name: '管理组', members: 4, description: '组织管理与流程', updated_at: '2026-03-12' }
-]);
+const groupRows = ref([]);
+const showCreateDialog = ref(false);
+const creating = ref(false);
+const createForm = ref({
+  name: '',
+  description: ''
+});
+const showEditDialog = ref(false);
+const editing = ref(false);
+const editForm = ref({
+  external_id: '',
+  name: '',
+  description: ''
+});
 
 const groupColumns = computed(() => [
-  { key: 'name', label: t('common.name'), minWidth: 160 },
-  { key: 'members', label: t('common.members'), minWidth: 120, align: 'center' },
-  { key: 'description', label: t('common.description'), minWidth: 240, flex: 1.6 },
-  { key: 'updated_at', label: t('common.updatedAt'), minWidth: 140 }
+  { key: 'name', label: t('common.name'), minWidth: 180 },
+  { key: 'member_count', label: t('common.members'), minWidth: 120, align: 'center' },
+  { key: 'description', label: t('common.description'), minWidth: 260, flex: 1.6 },
+  { key: 'actions', label: t('common.actions'), minWidth: 120, align: 'center' }
 ]);
+
+const loadUserGroups = async () => {
+  try {
+    const resp = await listUserGroups({ page: 1, page_size: 200 });
+    groupRows.value = resp.user_groups || [];
+  } catch (err) {
+    console.error('listUserGroups failed', err);
+    groupRows.value = [];
+  }
+};
+
+const goToDetail = (row) => {
+  if (!row?.external_id) {
+    return;
+  }
+  router.push(`/manage/user_group/${row.external_id}`);
+};
+
+const openCreateDialog = () => {
+  createForm.value = {
+    name: '',
+    description: ''
+  };
+  showCreateDialog.value = true;
+};
+
+const openEditDialog = (row) => {
+  if (!row?.external_id) {
+    return;
+  }
+  editForm.value = {
+    external_id: row.external_id,
+    name: row.name || '',
+    description: row.description || ''
+  };
+  showEditDialog.value = true;
+};
+
+const submitCreateGroup = async () => {
+  if (creating.value) {
+    return;
+  }
+  if (!createForm.value.name.trim()) {
+    ElMessage.warning(t('message.warning'));
+    return;
+  }
+  try {
+    creating.value = true;
+    await createUserGroup({
+      name: createForm.value.name.trim(),
+      description: createForm.value.description.trim()
+    });
+    showCreateDialog.value = false;
+    await loadUserGroups();
+    ElMessage.success(t('message.success'));
+  } catch (err) {
+    console.error('createUserGroup failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  } finally {
+    creating.value = false;
+  }
+};
+
+const submitEditGroup = async () => {
+  if (editing.value) {
+    return;
+  }
+  if (!editForm.value.name.trim()) {
+    ElMessage.warning(t('message.warning'));
+    return;
+  }
+  try {
+    editing.value = true;
+    await updateUserGroup({
+      external_id: editForm.value.external_id,
+      name: editForm.value.name.trim(),
+      description: editForm.value.description.trim()
+    });
+    showEditDialog.value = false;
+    await loadUserGroups();
+    ElMessage.success(t('message.success'));
+  } catch (err) {
+    console.error('updateUserGroup failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  } finally {
+    editing.value = false;
+  }
+};
+
+const handleDeleteGroup = async (row) => {
+  if (!row?.external_id) {
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(t('message.confirmDelete'), t('document.delete'), {
+      confirmButtonText: t('button.confirm'),
+      cancelButtonText: t('button.cancel'),
+      type: 'warning'
+    });
+    await deleteUserGroup(row.external_id);
+    await loadUserGroups();
+    ElMessage.success(t('message.deleteSuccess'));
+  } catch (err) {
+    if (err) {
+      console.error('deleteUserGroup failed', err);
+    }
+  }
+};
 
 onMounted(() => {
   initLanguage();
+  loadUserGroups();
 });
 </script>
 
@@ -143,6 +328,10 @@ onMounted(() => {
 
 .section-body {
   padding: var(--spacing-md);
+}
+
+.link-btn {
+  padding: 0;
 }
 
 .dark-mode .manage-section {

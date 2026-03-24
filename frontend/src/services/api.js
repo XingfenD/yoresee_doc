@@ -1,6 +1,6 @@
 import { clients, messages, unaryCall } from './grpc_client';
 
-const { documentClient, knowledgeBaseClient } = clients;
+const { documentClient, knowledgeBaseClient, membershipClient, systemClient } = clients;
 const {
   ListKnowledgeBasesRequest,
   ListRecentKnowledgeBasesRequest,
@@ -9,12 +9,19 @@ const {
   CreateKnowledgeBaseRequest,
   CreateDocumentRequest,
   CreateTemplateRequest,
+  CreateUserGroupRequest,
+  DeleteUserGroupRequest,
+  GetUserGroupRequest,
+  UpdateUserGroupRequest,
+  ListUsersRequest,
+  UpdateUserRequest,
   ListTemplatesRequest,
   GetTemplateRequest,
   ListRecentTemplatesRequest,
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
   ListDocumentsRequest,
+  ListUserGroupsRequest,
   RecursiveOptions,
   TimeRange,
   CreateDocumentContainerType,
@@ -77,6 +84,33 @@ function mapTemplate(tpl) {
     tags: tpl.tags,
     created_at: tpl.createdAt,
     updated_at: tpl.updatedAt
+  };
+}
+
+function mapUserGroup(group) {
+  if (!group) return null;
+  return {
+    external_id: group.externalId,
+    name: group.name,
+    description: group.description,
+    creator_user_external_id: group.creatorUserExternalId,
+    member_count: group.memberCount,
+    members: (group.members || []).map(mapUser)
+  };
+}
+
+function mapUser(user) {
+  if (!user) return null;
+  return {
+    external_id: user.externalId,
+    username: user.username,
+    email: user.email,
+    nickname: user.nickname,
+    avatar: user.avatar,
+    status: user.status,
+    created_at: user.createdAt,
+    updated_at: user.updatedAt,
+    invitation_code: user.invitationCode ?? null
   };
 }
 
@@ -308,6 +342,109 @@ export const listRecentTemplates = async (params = {}) => {
     total: resp.total ?? 0
   };
   return handleResponse(base, data);
+};
+
+// 获取用户组列表（系统管理）
+export const listUserGroups = async (params = {}) => {
+  const req = new ListUserGroupsRequest({
+    keyword: params.keyword || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(membershipClient, 'listUserGroups', req);
+  const base = baseToObject(resp);
+  const data = {
+    user_groups: (resp.userGroups || []).map(mapUserGroup),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+export const getUserGroup = async (externalId) => {
+  const req = new GetUserGroupRequest({
+    externalId: externalId || ''
+  });
+
+  const resp = await unaryCall(membershipClient, 'getUserGroup', req);
+  const base = baseToObject(resp);
+  const data = {
+    user_group: resp.userGroup ? mapUserGroup(resp.userGroup) : null
+  };
+  return handleResponse(base, data);
+};
+
+export const createUserGroup = async (data = {}) => {
+  const req = new CreateUserGroupRequest({
+    name: data.name || '',
+    description: data.description || '',
+    memberUserExternalIds: Array.isArray(data.member_user_external_ids)
+      ? data.member_user_external_ids
+      : []
+  });
+
+  const resp = await unaryCall(membershipClient, 'createUserGroup', req);
+  const base = baseToObject(resp);
+  const dataResp = {
+    external_id: resp.externalId
+  };
+  return handleResponse(base, dataResp);
+};
+
+export const deleteUserGroup = async (externalId) => {
+  const req = new DeleteUserGroupRequest({
+    externalId: externalId || ''
+  });
+
+  const resp = await unaryCall(membershipClient, 'deleteUserGroup', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+export const updateUserGroup = async (data = {}) => {
+  const req = new UpdateUserGroupRequest({
+    externalId: data.external_id || '',
+    name: data.name ?? undefined,
+    description: data.description ?? undefined,
+    syncMembers: Boolean(data.sync_members),
+    memberUserExternalIds: Array.isArray(data.member_user_external_ids)
+      ? data.member_user_external_ids
+      : []
+  });
+
+  const resp = await unaryCall(membershipClient, 'updateUserGroup', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+export const listUsers = async (params = {}) => {
+  const req = new ListUsersRequest({
+    keyword: params.keyword || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(membershipClient, 'listUsers', req);
+  const base = baseToObject(resp);
+  const data = {
+    users: (resp.users || []).map(mapUser),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+export const updateUser = async (data = {}) => {
+  const req = new UpdateUserRequest({
+    externalId: data.external_id || '',
+    username: data.username ?? undefined,
+    email: data.email ?? undefined,
+    nickname: data.nickname ?? undefined,
+    status: typeof data.status === 'number' ? data.status : undefined
+  });
+
+  const resp = await unaryCall(membershipClient, 'updateUser', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
 };
 
 // 获取文档内容

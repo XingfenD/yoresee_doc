@@ -24,12 +24,51 @@
             :rows="userRows"
             :columns="userColumns"
             :is-dark="isDarkMode"
-            row-key="email"
+            row-key="external_id"
             :empty-text="t('message.empty')"
-          />
+          >
+            <template #cell-status="{ row }">
+              <span :class="['status-pill', row.status === 1 ? 'is-active' : 'is-disabled']">
+                {{ row.status === 1 ? t('user.active') : t('user.disabled') }}
+              </span>
+            </template>
+            <template #cell-actions="{ row }">
+              <el-button size="small" text type="primary" @click="openEditDialog(row)">
+                {{ t('document.edit') }}
+              </el-button>
+              <el-button
+                size="small"
+                text
+                :type="row.status === 1 ? 'danger' : 'success'"
+                @click="toggleUserStatus(row)"
+              >
+                {{ row.status === 1 ? t('user.ban') : t('user.unban') }}
+              </el-button>
+            </template>
+          </CommonList>
         </div>
       </section>
     </div>
+
+    <el-dialog v-model="showEditDialog" :title="t('document.edit')" width="480px">
+      <el-form label-position="top" :model="editForm">
+        <el-form-item :label="t('user.name')">
+          <el-input v-model="editForm.username" maxlength="50" show-word-limit />
+        </el-form-item>
+        <el-form-item :label="t('user.email')">
+          <el-input v-model="editForm.email" maxlength="100" show-word-limit />
+        </el-form-item>
+        <el-form-item :label="t('common.name')">
+          <el-input v-model="editForm.nickname" maxlength="50" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEditDialog = false">{{ t('button.cancel') }}</el-button>
+        <el-button type="primary" :loading="editing" @click="submitEditUser">
+          {{ t('button.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </PageLayout>
 </template>
 
@@ -40,7 +79,9 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
+import { listUsers, updateUser } from '@/services/api';
 import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -94,24 +135,107 @@ const handleMenuSelect = (key) => {
   activeMenu.value = key;
 };
 
-const userRows = ref([
-  { name: 'Alex Chen', email: 'alex.chen@yoresee.com', role: 'Owner', status: 'Active', created_at: '2026-03-01' },
-  { name: 'Mia Liu', email: 'mia.liu@yoresee.com', role: 'Admin', status: 'Active', created_at: '2026-03-05' },
-  { name: 'Sam Zhao', email: 'sam.zhao@yoresee.com', role: 'Editor', status: 'Active', created_at: '2026-03-10' },
-  { name: 'Lina Wu', email: 'lina.wu@yoresee.com', role: 'Viewer', status: 'Invited', created_at: '2026-03-12' },
-  { name: 'Eric Sun', email: 'eric.sun@yoresee.com', role: 'Editor', status: 'Suspended', created_at: '2026-03-15' }
-]);
+const userRows = ref([]);
+const showEditDialog = ref(false);
+const editing = ref(false);
+const editForm = ref({
+  external_id: '',
+  username: '',
+  email: '',
+  nickname: ''
+});
 
 const userColumns = computed(() => [
-  { key: 'name', label: t('user.name'), minWidth: 140 },
+  { key: 'username', label: t('user.name'), minWidth: 140 },
   { key: 'email', label: t('user.email'), minWidth: 220, flex: 1.4 },
-  { key: 'role', label: t('user.role'), minWidth: 120 },
+  { key: 'nickname', label: t('common.name'), minWidth: 140 },
   { key: 'status', label: t('user.status'), minWidth: 120 },
-  { key: 'created_at', label: t('common.createdAt'), minWidth: 140 }
+  { key: 'created_at', label: t('common.createdAt'), minWidth: 140 },
+  { key: 'actions', label: t('common.actions'), minWidth: 140, align: 'center' }
 ]);
+
+const loadUsers = async () => {
+  try {
+    const resp = await listUsers({ page: 1, page_size: 200 });
+    userRows.value = resp.users || [];
+  } catch (err) {
+    console.error('listUsers failed', err);
+    userRows.value = [];
+  }
+};
+
+const openEditDialog = (row) => {
+  if (!row?.external_id) {
+    return;
+  }
+  editForm.value = {
+    external_id: row.external_id,
+    username: row.username || '',
+    email: row.email || '',
+    nickname: row.nickname || ''
+  };
+  showEditDialog.value = true;
+};
+
+const submitEditUser = async () => {
+  if (editing.value) {
+    return;
+  }
+  if (!editForm.value.username.trim()) {
+    ElMessage.warning(t('message.warning'));
+    return;
+  }
+  try {
+    editing.value = true;
+    await updateUser({
+      external_id: editForm.value.external_id,
+      username: editForm.value.username.trim(),
+      email: editForm.value.email.trim(),
+      nickname: editForm.value.nickname.trim()
+    });
+    showEditDialog.value = false;
+    await loadUsers();
+    ElMessage.success(t('message.success'));
+  } catch (err) {
+    console.error('updateUser failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  } finally {
+    editing.value = false;
+  }
+};
+
+const toggleUserStatus = async (row) => {
+  if (!row?.external_id) {
+    return;
+  }
+  try {
+    const isActive = row.status === 1;
+    await ElMessageBox.confirm(
+      isActive ? t('message.confirmBan') : t('message.confirmUnban'),
+      isActive ? t('user.ban') : t('user.unban'),
+      {
+      confirmButtonText: t('button.confirm'),
+      cancelButtonText: t('button.cancel'),
+      type: 'warning'
+      }
+    );
+    const nextStatus = isActive ? 0 : 1;
+    await updateUser({
+      external_id: row.external_id,
+      status: nextStatus
+    });
+    await loadUsers();
+    ElMessage.success(t('message.success'));
+  } catch (err) {
+    if (err) {
+      console.error('toggleUserStatus failed', err);
+    }
+  }
+};
 
 onMounted(() => {
   initLanguage();
+  loadUsers();
 });
 </script>
 
@@ -145,6 +269,25 @@ onMounted(() => {
 
 .section-body {
   padding: var(--spacing-md);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pill.is-active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.status-pill.is-disabled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
 }
 
 .dark-mode .manage-section {

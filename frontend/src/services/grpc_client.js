@@ -4,6 +4,7 @@ import {
   AuthService,
   DocumentService,
   KnowledgeBaseService,
+  MembershipService,
   SystemService
 } from '@/gen/yoresee_doc/v1/yoresee_doc_connect.js';
 import * as messages from '@/gen/yoresee_doc/v1/yoresee_doc_pb.js';
@@ -18,6 +19,7 @@ const transport = createConnectTransport({
 const authClient = createPromiseClient(AuthService, transport);
 const documentClient = createPromiseClient(DocumentService, transport);
 const knowledgeBaseClient = createPromiseClient(KnowledgeBaseService, transport);
+const membershipClient = createPromiseClient(MembershipService, transport);
 const systemClient = createPromiseClient(SystemService, transport);
 
 export function buildHeaders() {
@@ -50,6 +52,7 @@ export const clients = {
   authClient,
   documentClient,
   knowledgeBaseClient,
+  membershipClient,
   systemClient
 };
 
