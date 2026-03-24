@@ -1,5 +1,5 @@
 <template>
-  <div class="common-list" :class="{ 'is-dark': isDark }">
+  <div class="common-list" :class="{ 'is-dark': isDark, 'is-tree': mode === 'tree' }">
     <div v-if="showTitleBar || showSearch" class="list-titlebar">
       <div class="list-title">
         <slot name="title">
@@ -20,48 +20,133 @@
         <slot name="toolbar-right" />
       </div>
     </div>
-    <div class="list-head" :style="{ gridTemplateColumns }">
-      <div
-        v-for="column in columns"
-        :key="`head-${column.key}`"
-        class="list-cell list-cell--head"
-        :class="[column.className, alignClass(column.headerAlign || column.align)]"
-      >
-        <slot :name="`header-${column.key}`" :column="column">
-          {{ column.label }}
-        </slot>
+    <template v-if="rows.length === 0">
+      <div class="list-empty">
+        <el-empty :description="emptyText" />
       </div>
-    </div>
+    </template>
 
-    <div v-if="rows.length === 0" class="list-empty">
-      <el-empty :description="emptyText" />
-    </div>
-
-    <div v-else class="list-body">
-      <div
-        v-for="(row, rowIndex) in rows"
-        :key="resolveRowKey(row, rowIndex)"
-        class="list-row"
-        :style="{ gridTemplateColumns }"
-      >
+    <template v-else-if="mode !== 'tree'">
+      <div v-if="displayColumns.length > 0" class="list-head" :style="{ gridTemplateColumns }">
         <div
-          v-for="column in columns"
-          :key="`${resolveRowKey(row, rowIndex)}-${column.key}`"
-          class="list-cell"
-          :class="[column.className, alignClass(column.align)]"
+          v-for="column in displayColumns"
+          :key="`head-${column.key}`"
+          class="list-cell list-cell--head"
+          :class="[column.className, alignClass(column.headerAlign || column.align)]"
         >
-          <slot
-            :name="`cell-${column.key}`"
-            :row="row"
-            :row-index="rowIndex"
-            :column="column"
-            :value="row?.[column.key]"
-          >
-            {{ row?.[column.key] ?? '-' }}
+          <slot :name="`header-${column.key}`" :column="column">
+            {{ column.key === treeToggleColumnKey ? '' : column.label }}
           </slot>
         </div>
       </div>
-    </div>
+      <div class="list-body">
+        <div
+          v-for="(row, rowIndex) in rows"
+          :key="resolveRowKey(row, rowIndex)"
+          class="list-row"
+          :style="{ gridTemplateColumns }"
+        >
+          <div
+            v-for="column in columns"
+            :key="`${resolveRowKey(row, rowIndex)}-${column.key}`"
+            class="list-cell"
+            :class="[column.className, alignClass(column.align)]"
+          >
+            <slot
+              :name="`cell-${column.key}`"
+              :row="row"
+              :row-index="rowIndex"
+              :column="column"
+              :value="row?.[column.key]"
+            >
+              {{ row?.[column.key] ?? '-' }}
+            </slot>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else>
+      <div class="tree-table" :style="{ '--tree-toggle-width': `${treeToggleWidth}px` }">
+        <div class="tree-head">
+          <div class="tree-toggle-head list-cell list-cell--head"></div>
+          <div class="tree-data-head" :style="{ gridTemplateColumns: treeDataGridTemplate }">
+            <div
+              v-for="column in treeDataColumns"
+              :key="`tree-head-${column.key}`"
+              class="list-cell list-cell--head"
+              :class="[column.className, alignClass(column.headerAlign || column.align)]"
+            >
+              <slot :name="`header-${column.key}`" :column="column">
+                {{ column.label }}
+              </slot>
+            </div>
+          </div>
+        </div>
+        <div class="tree-body" v-loading="treeLoading">
+          <div
+            v-for="(row, rowIndex) in treeFlatRows"
+            :key="resolveRowKey(row.raw, rowIndex)"
+            class="tree-row"
+          >
+            <div class="tree-toggle-cell">
+              <div
+                class="tree-toggle-inner"
+                :style="{
+                  width: `${maxTreeIndentWidth}px`,
+                  transform: `translateX(${-toggleScrollLeft}px)`
+                }"
+              >
+                <div class="tree-toggle-inner-content" :style="{ paddingLeft: `${row.level * treeIndent + treeBaseIndent}px` }">
+                  <button
+                    v-if="row.hasChildren"
+                    class="tree-toggle"
+                    type="button"
+                    @click.stop="toggleTreeNode(row)"
+                  >
+                    <el-icon :size="14">
+                      <Minus v-if="row.expanded" />
+                      <Plus v-else />
+                    </el-icon>
+                  </button>
+                  <span v-else class="tree-leaf-indicator" />
+                </div>
+              </div>
+            </div>
+            <div class="tree-data-row" :style="{ gridTemplateColumns: treeDataGridTemplate }">
+              <div
+                v-for="(column, columnIndex) in treeDataColumns"
+                :key="`${resolveRowKey(row.raw, rowIndex)}-${column.key}`"
+                class="list-cell list-cell--tree"
+                :class="[column.className, alignClass(column.align)]"
+              >
+                <template v-if="isTreeColumn(column, columnIndex)">
+                  <div class="tree-cell">
+                    <slot name="tree-cell" :row="row.raw" :level="row.level">
+                      <span class="tree-node-label">{{ row.raw?.[treeColumnResolvedKey] ?? '-' }}</span>
+                    </slot>
+                  </div>
+                </template>
+                <template v-else>
+                  <slot
+                    :name="`cell-${column.key}`"
+                    :row="row.raw"
+                    :row-index="rowIndex"
+                    :column="column"
+                    :value="row.raw?.[column.key]"
+                  >
+                    {{ row.raw?.[column.key] ?? '-' }}
+                  </slot>
+                </template>
+              </div>
+            </div>
+          </div>
+          <div class="tree-toggle-scrollbar" ref="toggleScrollbarRef">
+            <div class="tree-toggle-scrollbar-inner" :style="{ width: `${maxTreeIndentWidth}px` }" />
+          </div>
+        </div>
+      </div>
+    </template>
 
     <div v-if="showPagination" class="pagination-container">
       <el-pagination
@@ -79,7 +164,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { Plus, Minus } from '@element-plus/icons-vue';
 
 const props = defineProps({
   rows: {
@@ -93,6 +179,10 @@ const props = defineProps({
   rowKey: {
     type: [String, Function],
     default: 'id'
+  },
+  mode: {
+    type: String,
+    default: 'table'
   },
   emptyText: {
     type: String,
@@ -145,6 +235,42 @@ const props = defineProps({
   searchPlaceholder: {
     type: String,
     default: ''
+  },
+  treeLoading: {
+    type: Boolean,
+    default: false
+  },
+  treeChildrenKey: {
+    type: String,
+    default: 'children'
+  },
+  treeColumnKey: {
+    type: String,
+    default: 'label'
+  },
+  treeColumnLabel: {
+    type: String,
+    default: ''
+  },
+  treeIndent: {
+    type: Number,
+    default: 16
+  },
+  treeBaseIndent: {
+    type: Number,
+    default: 6
+  },
+  treeDefaultExpandAll: {
+    type: Boolean,
+    default: false
+  },
+  treeExpandedKeys: {
+    type: Array,
+    default: null
+  },
+  treeKeyField: {
+    type: [String, Function],
+    default: 'id'
   }
 });
 
@@ -154,7 +280,10 @@ const emit = defineEmits([
   'page-change',
   'size-change',
   'update:searchQuery',
-  'search'
+  'search',
+  'tree-node-click',
+  'update:treeExpandedKeys',
+  'tree-toggle'
 ]);
 
 const normalizeWidth = (val) => {
@@ -164,11 +293,25 @@ const normalizeWidth = (val) => {
   return val;
 };
 
-const gridTemplateColumns = computed(() => {
-  if (!props.columns.length) {
+const treeToggleColumnKey = '__tree_toggle__';
+const treeToggleWidth = 81;
+const treeToggleButtonSize = 22;
+
+const displayColumns = computed(() => {
+  if (props.mode === 'tree') {
+    return [
+      { key: treeToggleColumnKey, width: treeToggleWidth, align: 'center', className: 'tree-toggle-column' },
+      ...props.columns
+    ];
+  }
+  return props.columns;
+});
+
+const buildGridTemplate = (columns) => {
+  if (!columns.length) {
     return '1fr';
   }
-  return props.columns
+  return columns
     .map((column) => {
       if (column.width) {
         return normalizeWidth(column.width);
@@ -179,7 +322,13 @@ const gridTemplateColumns = computed(() => {
       return `${column.flex || 1}fr`;
     })
     .join(' ');
-});
+};
+
+const gridTemplateColumns = computed(() => buildGridTemplate(displayColumns.value));
+
+const treeDataColumns = computed(() => props.columns || []);
+
+const treeDataGridTemplate = computed(() => buildGridTemplate(treeDataColumns.value));
 
 const resolveRowKey = (row, rowIndex) => {
   if (typeof props.rowKey === 'function') {
@@ -187,6 +336,16 @@ const resolveRowKey = (row, rowIndex) => {
   }
   return row?.[props.rowKey] ?? rowIndex;
 };
+
+const treeColumnResolvedKey = computed(() => {
+  if (props.treeColumnKey) {
+    return props.treeColumnKey;
+  }
+  if (props.columns.length > 0) {
+    return props.columns[0].key;
+  }
+  return 'label';
+});
 
 const paginationPage = computed({
   get: () => props.currentPage,
@@ -220,6 +379,141 @@ const emitSearch = () => {
   emit('search', searchValue.value);
 };
 
+const resolveTreeKey = (row, index) => {
+  if (typeof props.treeKeyField === 'function') {
+    return props.treeKeyField(row, index);
+  }
+  return row?.[props.treeKeyField] ?? resolveRowKey(row, index);
+};
+
+const internalExpanded = ref(new Set());
+const toggleScrollLeft = ref(0);
+const toggleScrollbarRef = ref(null);
+
+const initExpanded = () => {
+  const next = new Set();
+  if (Array.isArray(props.treeExpandedKeys)) {
+    props.treeExpandedKeys.forEach((key) => next.add(String(key)));
+  } else if (props.treeDefaultExpandAll) {
+    const collect = (nodes) => {
+      nodes.forEach((node, idx) => {
+        const key = resolveTreeKey(node, idx);
+        if (key !== undefined && key !== null) {
+          next.add(String(key));
+        }
+        const children = node?.[props.treeChildrenKey];
+        if (Array.isArray(children) && children.length) {
+          collect(children);
+        }
+      });
+    };
+    collect(props.rows || []);
+  }
+  internalExpanded.value = next;
+};
+
+initExpanded();
+
+watch(
+  () => props.treeExpandedKeys,
+  (value) => {
+    if (Array.isArray(value)) {
+      internalExpanded.value = new Set(value.map((key) => String(key)));
+    }
+  }
+);
+
+const handleToggleScroll = (event) => {
+  toggleScrollLeft.value = event.target.scrollLeft || 0;
+};
+
+onMounted(() => {
+  if (toggleScrollbarRef.value) {
+    toggleScrollbarRef.value.addEventListener('scroll', handleToggleScroll, { passive: true });
+  }
+});
+
+onBeforeUnmount(() => {
+  if (toggleScrollbarRef.value) {
+    toggleScrollbarRef.value.removeEventListener('scroll', handleToggleScroll);
+  }
+});
+
+const isExpanded = (row, index) => {
+  if (Array.isArray(props.treeExpandedKeys)) {
+    const key = resolveTreeKey(row, index);
+    return props.treeExpandedKeys.includes(key);
+  }
+  const key = resolveTreeKey(row, index);
+  return internalExpanded.value.has(String(key));
+};
+
+const toggleTreeNode = (row) => {
+  const key = resolveTreeKey(row.raw, row.index);
+  if (key === undefined || key === null) {
+    return;
+  }
+  const keyString = String(key);
+  const next = new Set(internalExpanded.value);
+  if (next.has(keyString)) {
+    next.delete(keyString);
+  } else {
+    next.add(keyString);
+  }
+  if (!Array.isArray(props.treeExpandedKeys)) {
+    internalExpanded.value = next;
+  }
+  emit('update:treeExpandedKeys', Array.from(next));
+  emit('tree-toggle', { key, expanded: next.has(keyString), row: row.raw });
+};
+
+const isTreeColumn = (column, index) => {
+  if (column.key === treeToggleColumnKey) {
+    return false;
+  }
+  if (props.treeColumnKey) {
+    return column.key === props.treeColumnKey;
+  }
+  return index === 0;
+};
+
+const treeFlatRows = computed(() => {
+  if (props.mode !== 'tree') {
+    return [];
+  }
+  const result = [];
+  const walk = (nodes, level) => {
+    nodes.forEach((node, index) => {
+      const children = node?.[props.treeChildrenKey];
+      const hasChildren = Array.isArray(children) && children.length > 0;
+      const expanded = hasChildren ? isExpanded(node, index) : false;
+      result.push({
+        raw: node,
+        level,
+        hasChildren,
+        expanded,
+        index
+      });
+      if (hasChildren && expanded) {
+        walk(children, level + 1);
+      }
+    });
+  };
+  walk(props.rows || [], 0);
+  return result;
+});
+
+const maxTreeLevel = computed(() => {
+  if (!treeFlatRows.value.length) {
+    return 0;
+  }
+  return treeFlatRows.value.reduce((max, row) => Math.max(max, row.level), 0);
+});
+
+const maxTreeIndentWidth = computed(() => {
+  return props.treeBaseIndent + maxTreeLevel.value * props.treeIndent + treeToggleButtonSize;
+});
+
 const handlePageChange = (page) => {
   emit('page-change', page);
 };
@@ -232,6 +526,10 @@ const alignClass = (align) => {
   if (align === 'center') return 'is-center';
   if (align === 'right') return 'is-right';
   return 'is-left';
+};
+
+const handleTreeNodeClick = (data, node) => {
+  emit('tree-node-click', data, node);
 };
 </script>
 
@@ -247,6 +545,30 @@ const alignClass = (align) => {
 .list-head,
 .list-row {
   display: grid;
+  width: 100%;
+}
+
+.common-list.is-tree {
+  overflow: hidden;
+}
+
+.common-list.is-tree .list-head,
+.common-list.is-tree .list-row {
+  width: 100%;
+}
+
+.common-list.is-tree .tree-toggle-column {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.common-list.is-tree .tree-toggle-column::-webkit-scrollbar {
+  height: 6px;
+}
+
+.common-list.is-tree .tree-toggle-column::-webkit-scrollbar-thumb {
+  background: rgba(120, 132, 158, 0.5);
+  border-radius: 999px;
 }
 
 .list-cell {
@@ -359,6 +681,128 @@ const alignClass = (align) => {
   border-color: var(--primary-color);
 }
 
+.tree-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-toggle-head {
+  justify-content: center;
+}
+
+.tree-data-head {
+  display: grid;
+}
+
+.tree-head {
+  display: grid;
+  grid-template-columns: var(--tree-toggle-width) 1fr;
+}
+
+.tree-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-row {
+  display: grid;
+  grid-template-columns: var(--tree-toggle-width) 1fr;
+}
+
+.tree-toggle-cell {
+  border-right: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.tree-toggle-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  will-change: transform;
+}
+
+.tree-toggle-inner-content {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.tree-data-row {
+  display: grid;
+}
+
+.list-cell--tree {
+  border-bottom: 1px solid #d6dbe3;
+}
+
+.tree-row .list-cell--tree {
+  border-bottom: 1px solid #d6dbe3;
+}
+
+.tree-toggle-scrollbar {
+  width: var(--tree-toggle-width);
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-right: 1px solid var(--border-color);
+}
+
+.tree-toggle-scrollbar-inner {
+  height: 1px;
+}
+
+.tree-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tree-toggle {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dark);
+  background: var(--bg-white);
+  cursor: pointer;
+}
+
+.tree-toggle-column {
+  justify-content: center;
+}
+
+.tree-toggle:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.tree-toggle-placeholder {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+}
+
+.tree-leaf-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #9aa4b2;
+  display: inline-block;
+}
+
+.tree-node-label {
+  font-size: 14px;
+  color: var(--text-medium);
+}
+
 .common-list.is-dark {
   background: #161b22;
   border-color: #161b22;
@@ -411,5 +855,36 @@ const alignClass = (align) => {
   background: var(--primary-color);
   color: #ffffff;
   border-color: var(--primary-color);
+}
+
+.common-list.is-dark .list-cell--tree {
+  border-bottom-color: #2a313a;
+}
+
+.common-list.is-dark .tree-toggle-cell {
+  border-right-color: #2a313a;
+}
+
+.common-list.is-dark .tree-toggle-scrollbar {
+  border-right-color: #2a313a;
+}
+
+.common-list.is-dark .tree-toggle {
+  background: #1b2230;
+  color: #e5e7eb;
+  border-color: #2a313a;
+}
+
+.common-list.is-dark .tree-toggle:hover {
+  color: #ffffff;
+  border-color: #4a90ff;
+}
+
+.common-list.is-dark .tree-node-label {
+  color: #e5e7eb;
+}
+
+.common-list.is-dark .tree-leaf-indicator {
+  background: #6b7280;
 }
 </style>
