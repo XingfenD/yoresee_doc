@@ -8,35 +8,36 @@
     :active-menu="activeMenu"
     :side-menu-items="manageMenuItems"
     sidebar-scene="manage"
-    :title="t('system.userGroup.title')"
+    :title="''"
+    content-padding="xl"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <template #actions>
-      <el-button class="page-action-btn" size="small" @click="openEditDialog">
-        {{ t('document.edit') }}
-      </el-button>
-      <el-button class="page-action-btn" size="small" @click="router.back()">
-        {{ t('common.back') }}
-      </el-button>
-    </template>
-
     <div class="manage-layout">
-      <section class="manage-section">
-        <div class="section-header">
-          <h3 class="section-title">{{ groupInfo?.name || t('common.unknown') }}</h3>
-        </div>
-        <div class="section-body">
-          <div class="group-meta">
-            <div class="group-meta__item">
-              <span class="group-meta__label">{{ t('common.description') }}</span>
-              <span class="group-meta__value">{{ groupInfo?.description || '-' }}</span>
-            </div>
-            <div class="group-meta__item">
-              <span class="group-meta__label">{{ t('common.members') }}</span>
-              <span class="group-meta__value">{{ groupInfo?.member_count ?? 0 }}</span>
+      <TitleBar :show-back="true" :back-text="t('common.back')" @back="router.back()">
+        <template #actions>
+          <el-button type="primary" @click="openEditDialog">
+            {{ t('document.edit') }}
+          </el-button>
+        </template>
+      </TitleBar>
+
+      <section class="manage-section manage-section--plain">
+        <div class="section-body section-body--card">
+          <div class="group-info-card">
+            <h2 class="group-title">{{ groupInfo?.name || t('common.unknown') }}</h2>
+            <p class="group-description">
+              {{ groupInfo?.description || t('common.unknown') }}
+            </p>
+            <div class="group-stats">
+              <div class="stat-item">
+                <el-icon>
+                  <User />
+                </el-icon>
+                <span>{{ t('common.members') }}: {{ groupInfo?.member_count ?? 0 }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -163,6 +164,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
+import TitleBar from '@/components/TitleBar.vue';
 import CommonList from '@/components/CommonList.vue';
 import { getUserGroup, listUserGroupMembers, listUsers, updateUserGroup } from '@/services/api';
 import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
@@ -453,6 +455,12 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.manage-section--plain {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
 .section-header {
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
@@ -477,26 +485,48 @@ onMounted(() => {
   padding: var(--spacing-md);
 }
 
-.group-meta {
-  display: grid;
-  gap: 12px;
+.section-body--card {
+  padding: 0;
 }
 
-.group-meta__item {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
+.group-info-card {
+  background-color: var(--bg-white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
 }
 
-.group-meta__label {
-  min-width: 80px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.group-meta__value {
+.group-title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 24px;
+  font-weight: 600;
   color: var(--text-dark);
+}
+
+.group-description {
+  margin: 0 0 var(--spacing-lg) 0;
+  font-size: 16px;
+  color: var(--text-medium);
+  line-height: 1.6;
+}
+
+.group-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--text-medium);
   font-size: 14px;
+}
+
+.stat-item .el-icon {
+  color: var(--primary-color);
 }
 
 .member-dialog {
@@ -529,16 +559,26 @@ onMounted(() => {
   border-color: #2b2f36;
 }
 
+.dark-mode .manage-section--plain {
+  background: transparent;
+  border-color: transparent;
+}
+
 .dark-mode .section-header {
   background: #161b22;
   border-bottom-color: #2b2f36;
 }
 
-.dark-mode .group-meta__label {
-  color: #9aa4b2;
+.dark-mode .group-info-card {
+  background: #161b22;
+  border-color: #2b2f36;
 }
 
-.dark-mode .group-meta__value {
+.dark-mode .group-title {
   color: #e5e7eb;
+}
+
+.dark-mode .group-description {
+  color: #9aa4b2;
 }
 </style>

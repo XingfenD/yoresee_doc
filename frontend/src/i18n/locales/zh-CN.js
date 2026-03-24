@@ -106,6 +106,7 @@ export default {
     userGroup: {
       title: '用户组管理',
       placeholderTitle: '用户组管理',
+      create: '创建用户组',
       memberList: '成员列表',
       manageMembers: '管理成员'
     },

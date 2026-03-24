@@ -7,6 +7,7 @@
     :username="userInfo?.username || t('common.unknown')"
     :active-menu="activeMenu"
     :title="t('home.myDocuments')"
+    layout="list"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"

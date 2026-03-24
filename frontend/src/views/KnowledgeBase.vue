@@ -7,6 +7,7 @@
     :username="userInfo?.username || t('common.unknown')"
     :active-menu="activeMenu"
     :title="t('knowledgeBase.title')"
+    layout="list"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"

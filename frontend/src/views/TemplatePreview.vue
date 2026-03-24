@@ -6,18 +6,20 @@
     :user-avatar="userAvatar"
     :username="userInfo?.username || t('common.unknown')"
     :active-menu="activeMenu"
-    :title="t('templates.previewTitle')"
+    :title="''"
+    content-padding="xl"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <template #actions>
-      <el-button size="small" @click="goBack">{{ t('common.back') }}</el-button>
-      <el-button type="primary" size="small" @click="openCreateDocumentDialog">
-        {{ t('document.createDocument') }}
-      </el-button>
-    </template>
+    <TitleBar :show-back="true" :back-text="t('common.back')" @back="goBack">
+      <template #actions>
+        <el-button type="primary" @click="openCreateDocumentDialog">
+          {{ t('document.createDocument') }}
+        </el-button>
+      </template>
+    </TitleBar>
 
     <div class="template-preview" v-loading="loading">
       <div class="template-preview-header">
@@ -68,6 +70,7 @@ import Vditor from 'vditor';
 import 'vditor/dist/index.css';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
+import TitleBar from '@/components/TitleBar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import { getTemplate, createDocument as createDocumentApi } from '@/services/api';
 
@@ -257,6 +260,7 @@ onMounted(async () => {
   background: var(--bg-white);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
   padding: var(--spacing-lg);
 }
 

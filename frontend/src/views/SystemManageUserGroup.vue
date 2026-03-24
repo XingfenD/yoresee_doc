@@ -9,6 +9,7 @@
     :side-menu-items="manageMenuItems"
     sidebar-scene="manage"
     :title="t('system.userGroup.title')"
+    layout="list"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"
@@ -16,7 +17,7 @@
   >
     <template #actions>
       <el-button class="page-action-btn" type="primary" size="small" @click="openCreateDialog">
-        {{ t('button.create') }}
+        {{ t('system.userGroup.create') }}
       </el-button>
     </template>
 

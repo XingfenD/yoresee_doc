@@ -108,6 +108,7 @@ export default {
     userGroup: {
       title: 'User Group Management',
       placeholderTitle: 'User Group Management',
+      create: 'Create User Group',
       memberList: 'Members',
       manageMembers: 'Manage Members'
     },

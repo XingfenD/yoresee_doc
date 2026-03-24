@@ -9,6 +9,7 @@
     :side-menu-items="manageMenuItems"
     sidebar-scene="manage"
     :title="t('system.user.title')"
+    layout="list"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"

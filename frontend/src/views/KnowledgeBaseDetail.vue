@@ -19,22 +19,13 @@
       <!-- 右侧内容 -->
       <div class="content-area">
         <!-- 操作栏 -->
-        <div class="action-bar">
-          <el-button text class="back-button" @click="goBackToKnowledgeBase">
-            <el-icon>
-              <ArrowLeft />
-            </el-icon>
-            {{ t("common.back") }}
-          </el-button>
-
-          <div class="actions">
+        <TitleBar :show-back="true" :back-text="t('common.back')" @back="goBackToKnowledgeBase">
+          <template #actions>
             <el-button type="primary" @click="openCreateDocumentDialog">
               {{ t("knowledgeBase.createDocument") }}
             </el-button>
-            <el-button @click="refreshTree" :icon="Refresh" />
-          </div>
-
-        </div>
+          </template>
+        </TitleBar>
 
         <!-- 知识库详情内容 -->
         <div class="detail-content" v-loading="loading">
@@ -140,20 +131,19 @@
                 @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
           </div>
-
             <div class="kb-templates-section">
-            <div v-loading="kbTemplatesLoading">
-            <TemplateListSection
-              :title="t('knowledgeBase.templates')"
-              :items="kbTemplates"
-              :empty-text="t('templates.noMy')"
-              :fallback-description="t('templates.noDescription')"
-              :tag-mapper="templateTagMapper"
-              :meta-mapper="templateMetaMapper"
-              :action-label="t('common.open')"
-              @open="openTemplate"
-            />
-            </div>
+              <div v-loading="kbTemplatesLoading">
+                <TemplateListSection
+                  :title="t('knowledgeBase.templates')"
+                  :items="kbTemplates"
+                  :empty-text="t('templates.noMy')"
+                  :fallback-description="t('templates.noDescription')"
+                  :tag-mapper="templateTagMapper"
+                  :meta-mapper="templateMetaMapper"
+                  :action-label="t('common.open')"
+                  @open="openTemplate"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -174,19 +164,18 @@ import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import SideNav from "@/components/SideNav.vue";
 import TopNav from "@/components/TopNav.vue";
+import TitleBar from "@/components/TitleBar.vue";
 import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import TemplateListSection from "@/components/TemplateListSection.vue";
 import { getKnowledgeBaseDetail, createDocument as createDocumentApi, listTemplates } from "@/services/api.js";
 import {
-  ArrowLeft,
   Document,
   Clock,
   User,
   Folder,
   FolderOpened,
   MoreFilled,
-  Refresh,
   Search,
 } from "@element-plus/icons-vue";
 
@@ -345,12 +334,6 @@ const createDocument = async (payload) => {
 // 取消创建文档
 const cancelCreateDocument = () => {
   showCreateDialog.value = false;
-};
-
-// 刷新树
-const refreshTree = () => {
-  loadKnowledgeBaseDetail();
-  ElMessage.success(t("knowledgeBase.treeRefreshed"));
 };
 
 // 格式化日期
@@ -519,27 +502,6 @@ onMounted(async () => {
   overflow-y: auto;
   padding: var(--spacing-xl);
   background-color: var(--bg-light);
-}
-
-.action-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.actions {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-dark);
 }
 
 /* 知识库详情内容 */
@@ -718,12 +680,6 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .content-area {
     padding: var(--spacing-md);
-  }
-
-  .action-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--spacing-md);
   }
 
   .tree-controls {

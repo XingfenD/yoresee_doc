@@ -19,8 +19,16 @@
         @menu-select="$emit('menu-select', $event)"
       />
 
-      <div class="page-content">
-        <div class="page-header">
+      <div class="page-content" :class="contentPaddingClass">
+        <TitleBar v-if="layout === 'list' && showHeader">
+          <template #title>
+            {{ title }}
+          </template>
+          <template v-if="$slots.actions" #actions>
+            <slot name="actions" />
+          </template>
+        </TitleBar>
+        <div class="page-header" v-else-if="showHeader">
           <h2 class="page-title">{{ title }}</h2>
           <div class="page-actions">
             <slot name="actions" />
@@ -35,10 +43,12 @@
 </template>
 
 <script setup>
+import { computed, useSlots } from 'vue';
 import SideNav from '@/components/SideNav.vue';
 import TopNav from '@/components/TopNav.vue';
+import TitleBar from '@/components/TitleBar.vue';
 
-defineProps({
+const props = defineProps({
   systemName: {
     type: String,
     default: ''
@@ -74,10 +84,22 @@ defineProps({
   title: {
     type: String,
     default: ''
+  },
+  layout: {
+    type: String,
+    default: 'default'
+  },
+  contentPadding: {
+    type: String,
+    default: 'lg'
   }
 });
 
 defineEmits(['change-language', 'toggle-theme', 'logout', 'menu-select']);
+
+const slots = useSlots();
+const showHeader = computed(() => Boolean(props.title || slots.actions));
+const contentPaddingClass = computed(() => `page-content--${props.contentPadding || 'lg'}`);
 </script>
 
 <style scoped>
@@ -97,8 +119,15 @@ defineEmits(['change-language', 'toggle-theme', 'logout', 'menu-select']);
 
 .page-content {
   flex: 1;
-  padding: var(--spacing-lg);
   overflow-y: auto;
+}
+
+.page-content--lg {
+  padding: var(--spacing-lg);
+}
+
+.page-content--xl {
+  padding: var(--spacing-xl);
 }
 
 .page-header {
