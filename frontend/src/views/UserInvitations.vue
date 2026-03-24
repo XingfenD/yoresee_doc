@@ -19,7 +19,30 @@
       </el-button>
     </template>
 
-    <InviteList :items="inviteList" :is-dark="isDarkMode" :show-creator="false" />
+    <CommonList
+      :rows="inviteList"
+      :columns="inviteColumns"
+      :is-dark="isDarkMode"
+      row-key="code"
+      :empty-text="t('message.empty')"
+    >
+      <template #cell-status="{ value }">
+        <el-tag :type="inviteStatusType(value)" size="small">
+          {{ inviteStatusLabel(value) }}
+        </el-tag>
+      </template>
+      <template #cell-usage="{ row }">
+        {{ row.used }}/{{ row.max }}
+      </template>
+      <template #cell-actions="{ row }">
+        <el-button size="small" text type="primary" @click="handlePauseInvite(row)">
+          {{ t('user.invite.pause') }}
+        </el-button>
+        <el-button size="small" text type="danger" @click="handleDeleteInvite(row)">
+          {{ t('user.invite.delete') }}
+        </el-button>
+      </template>
+    </CommonList>
 
     <InviteCreateDialog v-model="showCreateDialog" @submit="handleCreateInvite" />
   </PageLayout>
@@ -32,7 +55,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
-import InviteList from '@/components/InviteList.vue';
+import CommonList from '@/components/CommonList.vue';
 import { House, User, Ticket, Setting } from '@element-plus/icons-vue';
 
 const router = useRouter();
@@ -85,6 +108,27 @@ const handleMenuSelect = (key) => {
   activeMenu.value = key;
 };
 
+const inviteColumns = computed(() => [
+  { key: 'code', label: t('user.invite.code'), minWidth: 180 },
+  { key: 'status', label: t('user.invite.status'), minWidth: 120, align: 'center' },
+  { key: 'usage', label: t('user.invite.usage'), minWidth: 110, align: 'center' },
+  { key: 'created_at', label: t('user.invite.createdAt'), minWidth: 160 },
+  { key: 'expires_at', label: t('user.invite.expiresAt'), minWidth: 160 },
+  { key: 'actions', label: t('user.invite.actions'), minWidth: 160, align: 'right' }
+]);
+
+const inviteStatusType = (status) => {
+  if (status === 'active') return 'success';
+  if (status === 'expired') return 'info';
+  return 'warning';
+};
+
+const inviteStatusLabel = (status) => {
+  if (status === 'active') return t('user.invite.active');
+  if (status === 'expired') return t('user.invite.expired');
+  return t('user.invite.disabled');
+};
+
 const inviteList = ref([
   {
     code: 'YORE-8K2P-9Q1M',
@@ -127,7 +171,13 @@ const handleCreateInvite = (payload) => {
   console.log('create invite payload', payload);
 };
 
-const sectionStyle = computed(() => ({}));
+const handlePauseInvite = (row) => {
+  console.log('pause invite', row);
+};
+
+const handleDeleteInvite = (row) => {
+  console.log('delete invite', row);
+};
 
 onMounted(() => {
   initLanguage();

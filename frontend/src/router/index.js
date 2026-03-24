@@ -89,6 +89,24 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/manage/user',
+      name: 'SystemManageUser',
+      component: () => import('../views/SystemManageUser.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/manage/user_group',
+      name: 'SystemManageUserGroup',
+      component: () => import('../views/SystemManageUserGroup.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/manage/organization',
+      name: 'SystemManageOrganization',
+      component: () => import('../views/SystemManageOrganization.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/manage/invitations',
       name: 'SystemManageInvitations',
       component: () => import('../views/SystemManageInvitations.vue'),
@@ -97,7 +115,7 @@ const router = createRouter({
     {
       path: '/manage',
       name: 'SystemManage',
-      redirect: '/manage/security'
+      redirect: '/manage/user'
     }
   ]
 });

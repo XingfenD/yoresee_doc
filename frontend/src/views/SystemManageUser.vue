@@ -7,43 +7,24 @@
     :username="userInfo?.username || '用户'"
     :active-menu="activeMenu"
     :side-menu-items="manageMenuItems"
-    :title="t('system.security.title')"
+    :title="t('system.user.title')"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <template #actions>
-      <el-button class="page-action-btn" type="primary" size="small" :loading="isSaving" @click="handleSave">
-        {{ t('common.save') }}
-      </el-button>
-    </template>
     <div class="manage-layout">
       <section class="manage-section">
         <div class="section-header">
-          <h3 class="section-title">{{ t('system.security.registration') }}</h3>
+          <h3 class="section-title">{{ t('system.user.placeholderTitle') }}</h3>
         </div>
         <div class="section-body">
-          <div class="setting-row setting-row--stacked">
-            <div class="setting-label">{{ t('system.security.registrationMode') }}</div>
-            <el-radio-group v-model="registrationMode">
-              <el-radio value="open">{{ t('system.security.freeRegister') }}</el-radio>
-              <el-radio value="invite">{{ t('system.security.inviteOnly') }}</el-radio>
-            </el-radio-group>
-          </div>
-        </div>
-      </section>
-
-      <section class="manage-section">
-        <div class="section-header">
-          <h3 class="section-title">{{ t('system.security.placeholderTitle') }}</h3>
-        </div>
-        <div class="section-body">
-          <el-alert
-            type="info"
-            :closable="false"
-            :title="t('system.managementPlaceholder')"
-            show-icon
+          <CommonList
+            :rows="userRows"
+            :columns="userColumns"
+            :is-dark="isDarkMode"
+            row-key="email"
+            :empty-text="t('message.empty')"
           />
         </div>
       </section>
@@ -57,6 +38,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
+import CommonList from '@/components/CommonList.vue';
 import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
 
 const router = useRouter();
@@ -64,10 +46,8 @@ const userStore = useUserStore();
 const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
-const activeMenu = ref('manage-security');
+const activeMenu = ref('manage-user');
 const isDarkMode = computed(() => userStore.darkMode);
-const registrationMode = ref('open');
-const isSaving = ref(false);
 
 const userInfo = computed(() => userStore.userInfo);
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
@@ -113,15 +93,21 @@ const handleMenuSelect = (key) => {
   activeMenu.value = key;
 };
 
-const handleSave = () => {
-  if (isSaving.value) {
-    return;
-  }
-  isSaving.value = true;
-  setTimeout(() => {
-    isSaving.value = false;
-  }, 500);
-};
+const userRows = ref([
+  { name: 'Alex Chen', email: 'alex.chen@yoresee.com', role: 'Owner', status: 'Active', created_at: '2026-03-01' },
+  { name: 'Mia Liu', email: 'mia.liu@yoresee.com', role: 'Admin', status: 'Active', created_at: '2026-03-05' },
+  { name: 'Sam Zhao', email: 'sam.zhao@yoresee.com', role: 'Editor', status: 'Active', created_at: '2026-03-10' },
+  { name: 'Lina Wu', email: 'lina.wu@yoresee.com', role: 'Viewer', status: 'Invited', created_at: '2026-03-12' },
+  { name: 'Eric Sun', email: 'eric.sun@yoresee.com', role: 'Editor', status: 'Suspended', created_at: '2026-03-15' }
+]);
+
+const userColumns = computed(() => [
+  { key: 'name', label: t('user.name'), minWidth: 140 },
+  { key: 'email', label: t('user.email'), minWidth: 220, flex: 1.4 },
+  { key: 'role', label: t('user.role'), minWidth: 120 },
+  { key: 'status', label: t('user.status'), minWidth: 120 },
+  { key: 'created_at', label: t('common.createdAt'), minWidth: 140 }
+]);
 
 onMounted(() => {
   initLanguage();
@@ -160,24 +146,13 @@ onMounted(() => {
   padding: var(--spacing-md);
 }
 
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
+.dark-mode .manage-section {
+  background: #161b22;
+  border-color: #2b2f36;
 }
 
-.setting-row--stacked {
-  align-items: flex-start;
-  flex-direction: column;
-}
-
-.setting-label {
-  color: var(--text-medium);
-  font-size: 14px;
-}
-
-.setting-control {
-  min-width: 200px;
+.dark-mode .section-header {
+  background: #161b22;
+  border-bottom-color: #2b2f36;
 }
 </style>

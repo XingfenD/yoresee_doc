@@ -21,28 +21,45 @@
 
     <el-tabs v-model="activeTab" class="manage-tabs">
       <el-tab-pane :label="t('system.invite.tabs.list')" name="list">
-        <InviteList :items="inviteList" :is-dark="isDarkMode" />
+        <CommonList
+          :rows="inviteList"
+          :columns="inviteColumns"
+          :is-dark="isDarkMode"
+          row-key="code"
+          :empty-text="t('message.empty')"
+        >
+          <template #cell-status="{ value }">
+            <el-tag :type="inviteStatusType(value)" size="small">
+              {{ inviteStatusLabel(value) }}
+            </el-tag>
+          </template>
+          <template #cell-usage="{ row }">
+            {{ row.used }}/{{ row.max }}
+          </template>
+          <template #cell-actions="{ row }">
+            <el-button size="small" text type="primary" @click="handlePauseInvite(row)">
+              {{ t('user.invite.pause') }}
+            </el-button>
+            <el-button size="small" text type="danger" @click="handleDeleteInvite(row)">
+              {{ t('user.invite.delete') }}
+            </el-button>
+          </template>
+        </CommonList>
       </el-tab-pane>
       <el-tab-pane :label="t('system.invite.tabs.records')" name="records">
-        <div class="records-section" :class="{ 'is-dark': isDarkMode }">
-          <div class="records-row records-row--head">
-            <div class="cell">{{ t('system.invite.records.code') }}</div>
-            <div class="cell">{{ t('system.invite.records.usedBy') }}</div>
-            <div class="cell">{{ t('system.invite.records.usedAt') }}</div>
-            <div class="cell">{{ t('system.invite.records.result') }}</div>
-          </div>
-          <div v-for="record in inviteRecords" :key="record.id" class="records-row">
-            <div class="cell">{{ record.code }}</div>
-            <div class="cell">{{ record.used_by }}</div>
-            <div class="cell">{{ record.used_at }}</div>
-            <div class="cell">
-              <el-tag :type="record.status === 'success' ? 'success' : 'warning'" size="small">
-                {{ record.status === 'success' ? t('system.invite.records.success') : t('system.invite.records.failed') }}
-              </el-tag>
-            </div>
-          </div>
-          <el-empty v-if="inviteRecords.length === 0" :description="t('system.invite.records.empty')" />
-        </div>
+        <CommonList
+          :rows="inviteRecords"
+          :columns="recordColumns"
+          :is-dark="isDarkMode"
+          row-key="id"
+          :empty-text="t('system.invite.records.empty')"
+        >
+          <template #cell-status="{ value }">
+            <el-tag :type="value === 'success' ? 'success' : 'warning'" size="small">
+              {{ value === 'success' ? t('system.invite.records.success') : t('system.invite.records.failed') }}
+            </el-tag>
+          </template>
+        </CommonList>
       </el-tab-pane>
     </el-tabs>
 
@@ -56,9 +73,9 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import InviteList from '@/components/InviteList.vue';
+import CommonList from '@/components/CommonList.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
-import { House, Setting, Ticket } from '@element-plus/icons-vue';
+import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -74,8 +91,11 @@ const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemec
 
 const manageMenuItems = [
   { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
-  { key: 'manage-security', labelKey: 'system.menu.security', icon: Setting, route: '/manage/security' },
-  { key: 'manage-invite', labelKey: 'system.menu.invite', icon: Ticket, route: '/manage/invitations' }
+  { key: 'manage-user', labelKey: 'system.menu.user', icon: User, route: '/manage/user' },
+  { key: 'manage-user-group', labelKey: 'system.menu.userGroup', icon: UserFilled, route: '/manage/user_group' },
+  { key: 'manage-organization', labelKey: 'system.menu.organization', icon: OfficeBuilding, route: '/manage/organization' },
+  { key: 'manage-invite', labelKey: 'system.menu.invite', icon: Ticket, route: '/manage/invitations' },
+  { key: 'manage-security', labelKey: 'system.menu.security', icon: Setting, route: '/manage/security' }
 ];
 
 const currentLanguage = computed({
@@ -101,6 +121,35 @@ const handleLogout = () => {
 
 const handleMenuSelect = (key) => {
   activeMenu.value = key;
+};
+
+const inviteColumns = computed(() => [
+  { key: 'code', label: t('user.invite.code'), minWidth: 180 },
+  { key: 'status', label: t('user.invite.status'), minWidth: 120, align: 'center' },
+  { key: 'usage', label: t('user.invite.usage'), minWidth: 110, align: 'center' },
+  { key: 'created_at', label: t('user.invite.createdAt'), minWidth: 160 },
+  { key: 'created_by', label: t('user.invite.createdBy'), minWidth: 140 },
+  { key: 'expires_at', label: t('user.invite.expiresAt'), minWidth: 160 },
+  { key: 'actions', label: t('user.invite.actions'), minWidth: 160, align: 'right' }
+]);
+
+const recordColumns = computed(() => [
+  { key: 'code', label: t('system.invite.records.code'), minWidth: 180 },
+  { key: 'used_by', label: t('system.invite.records.usedBy'), minWidth: 160 },
+  { key: 'used_at', label: t('system.invite.records.usedAt'), minWidth: 180 },
+  { key: 'status', label: t('system.invite.records.result'), minWidth: 120, align: 'center' }
+]);
+
+const inviteStatusType = (status) => {
+  if (status === 'active') return 'success';
+  if (status === 'expired') return 'info';
+  return 'warning';
+};
+
+const inviteStatusLabel = (status) => {
+  if (status === 'active') return t('user.invite.active');
+  if (status === 'expired') return t('user.invite.expired');
+  return t('user.invite.disabled');
 };
 
 const inviteList = ref([
@@ -152,6 +201,14 @@ const handleCreateInvite = (payload) => {
   console.log('create system invite payload', payload);
 };
 
+const handlePauseInvite = (row) => {
+  console.log('pause invite', row);
+};
+
+const handleDeleteInvite = (row) => {
+  console.log('delete invite', row);
+};
+
 const initLanguage = () => {
   const savedLanguage = localStorage.getItem('language');
   if (savedLanguage) {
@@ -167,43 +224,5 @@ onMounted(() => {
 <style scoped>
 .manage-tabs :deep(.el-tabs__header) {
   margin-bottom: var(--spacing-lg);
-}
-
-.records-section {
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.records-section.is-dark {
-  background: #1e1e1e;
-  border-color: #2c2c2c;
-}
-
-.records-row {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr 1.2fr 0.8fr;
-  gap: var(--spacing-md);
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.records-row--head {
-  font-weight: 600;
-  background: var(--bg-light);
-}
-
-.records-section.is-dark .records-row {
-  border-bottom-color: #2c2c2c;
-  color: #f5f5f5;
-}
-
-.records-section.is-dark .records-row--head {
-  background: #2a2a2a;
-  color: #f5f5f5;
 }
 </style>

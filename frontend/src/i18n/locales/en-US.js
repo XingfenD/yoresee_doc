@@ -95,8 +95,23 @@ export default {
     management: 'System Management',
     managementPlaceholder: 'System management will be available soon.',
     menu: {
+      user: 'User Management',
+      userGroup: 'User Group Management',
+      organization: 'Organization Management',
       security: 'Security Settings',
       invite: 'Invite Management'
+    },
+    user: {
+      title: 'User Management',
+      placeholderTitle: 'User Management'
+    },
+    userGroup: {
+      title: 'User Group Management',
+      placeholderTitle: 'User Group Management'
+    },
+    organization: {
+      title: 'Organization Management',
+      placeholderTitle: 'Organization Management'
     },
     security: {
       title: 'Security Management',
@@ -160,6 +175,10 @@ export default {
     account: 'Account',
     security: 'Security',
     placeholder: 'This is a placeholder page. Backend integration will be added later.',
+    name: 'Name',
+    email: 'Email',
+    role: 'Role',
+    status: 'Status',
     menu: {
       center: 'User Center',
       invite: 'Invite Management',
@@ -308,6 +327,13 @@ export default {
     size: 'Size',
     back: 'Back',
     save: 'Save',
+    createdAt: 'Created At',
+    updatedAt: 'Updated At',
+    name: 'Name',
+    description: 'Description',
+    members: 'Members',
+    manager: 'Manager',
+    level: 'Level',
     collapse: 'Collapse',
     collapseAll: 'Collapse All',
     expand: 'Expand',

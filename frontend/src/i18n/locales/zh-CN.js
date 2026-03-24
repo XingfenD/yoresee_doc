@@ -93,8 +93,23 @@ export default {
     management: '系统管理',
     managementPlaceholder: '系统管理功能即将上线。',
     menu: {
+      user: '用户管理',
+      userGroup: '用户组管理',
+      organization: '组织架构管理',
       security: '安全设置',
       invite: '邀请管理'
+    },
+    user: {
+      title: '用户管理',
+      placeholderTitle: '用户管理'
+    },
+    userGroup: {
+      title: '用户组管理',
+      placeholderTitle: '用户组管理'
+    },
+    organization: {
+      title: '组织架构管理',
+      placeholderTitle: '组织架构管理'
     },
     security: {
       title: '安全管理',
@@ -158,6 +173,10 @@ export default {
     account: '账号信息',
     security: '安全设置',
     placeholder: '这是一个模板页面，后端接口完成后再接入。',
+    name: '姓名',
+    email: '邮箱',
+    role: '角色',
+    status: '状态',
     menu: {
       center: '个人中心',
       invite: '邀请管理',
@@ -306,6 +325,13 @@ export default {
     size: '大小',
     back: '返回',
     save: '保存',
+    createdAt: '创建时间',
+    updatedAt: '更新时间',
+    name: '名称',
+    description: '描述',
+    members: '成员数',
+    manager: '负责人',
+    level: '层级',
     collapse: '收起',
     collapseAll: '收起全部',
     expand: '展开',
