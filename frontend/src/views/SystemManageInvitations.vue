@@ -173,7 +173,7 @@ const inviteColumns = computed(() => [
   { key: 'created_at', label: t('user.invite.createdAt'), minWidth: 160 },
   { key: 'created_by', label: t('user.invite.createdBy'), minWidth: 140 },
   { key: 'expires_at', label: t('user.invite.expiresAt'), minWidth: 160 },
-  { key: 'actions', label: t('user.invite.actions'), minWidth: 160, align: 'right', headerAlign: 'center' }
+  { key: 'actions', label: t('user.invite.actions'), minWidth: 160, align: 'center', headerAlign: 'center' }
 ]);
 
 const recordColumns = computed(() => [
