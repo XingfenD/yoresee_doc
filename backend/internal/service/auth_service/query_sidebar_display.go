@@ -38,17 +38,10 @@ var (
 	}
 )
 
-func (s *AuthService) QuerySideBarDisplay(userExternalID, scene string) ([]string, error) {
-	if userExternalID == "" || scene == "" {
+func (s *AuthService) QuerySideBarDisplay(scene string, isAdmin bool) ([]string, error) {
+	if scene == "" {
 		return nil, status.StatusParamError
 	}
-
-	user, err := s.userRepo.GetByExternalID(userExternalID).Exec()
-	if err != nil || user == nil {
-		return nil, status.StatusUserNotFound
-	}
-
-	isAdmin := strings.EqualFold(user.Username, "admin")
 	switch scene {
 	case SideBarSceneHome:
 		return homeTabs, nil
@@ -62,4 +55,15 @@ func (s *AuthService) QuerySideBarDisplay(userExternalID, scene string) ([]strin
 	default:
 		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "invalid scene")
 	}
+}
+
+func (s *AuthService) IsAdmin(userExternalID string) (bool, error) {
+	if userExternalID == "" {
+		return false, status.StatusParamError
+	}
+	user, err := s.userRepo.GetByExternalID(userExternalID).Exec()
+	if err != nil || user == nil {
+		return false, status.StatusUserNotFound
+	}
+	return strings.EqualFold(user.Username, "admin"), nil
 }

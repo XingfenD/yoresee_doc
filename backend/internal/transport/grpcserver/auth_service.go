@@ -65,7 +65,12 @@ func (s *AuthServiceServer) QuerySideBarDisplay(ctx context.Context, req *pb.Que
 		return &pb.QuerySideBarDisplayResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
 	}
 
-	displayTabs, err := auth_service.AuthSvc.QuerySideBarDisplay(userExternalID, req.Scene)
+	isAdmin, err := auth_service.AuthSvc.IsAdmin(userExternalID)
+	if err != nil {
+		return &pb.QuerySideBarDisplayResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	displayTabs, err := auth_service.AuthSvc.QuerySideBarDisplay(req.Scene, isAdmin)
 	if err != nil {
 		return &pb.QuerySideBarDisplayResponse{Base: baseResponseFromErr(err)}, nil
 	}
