@@ -195,6 +195,10 @@ export default {
       title: '邀请管理',
       create: '创建邀请码',
       createTitle: '创建邀请码',
+      tabs: {
+        list: '邀请码列表',
+        records: '使用记录'
+      },
       code: '邀请码',
       createdAt: '创建时间',
       createdBy: '创建人',
@@ -216,7 +220,16 @@ export default {
       notePlaceholder: '可填写邀请用途说明',
       active: '有效',
       expired: '已过期',
-      disabled: '已禁用'
+      disabled: '已禁用',
+      records: {
+        code: '邀请码',
+        usedBy: '使用人',
+        usedAt: '使用时间',
+        result: '结果',
+        success: '成功',
+        failed: '失败',
+        empty: '暂无使用记录'
+      }
     }
   },
   editor: {

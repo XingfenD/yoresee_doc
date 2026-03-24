@@ -20,42 +20,61 @@
       </el-button>
     </template>
 
-    <CommonList
-      :rows="inviteList"
-      :columns="inviteColumns"
-      :is-dark="isDarkMode"
-      row-key="code"
-      :empty-text="t('message.empty')"
-    >
-      <template #cell-status="{ value }">
-        <el-tag :type="inviteStatusType(value)" size="small">
-          {{ inviteStatusLabel(value) }}
-        </el-tag>
-      </template>
-      <template #cell-usage="{ row }">
-        {{ row.used }}/{{ row.max === null ? '-' : row.max }}
-      </template>
-      <template #cell-code="{ row }">
-        <el-tooltip :content="row.note || t('user.invite.notePlaceholder')" placement="top">
-          <span class="invite-code" @click="copyInviteCode(row.code)">{{ row.code }}</span>
-        </el-tooltip>
-      </template>
-      <template #cell-actions="{ row }">
-        <el-button size="small" text type="primary" @click="handlePauseInvite(row)">
-          {{ row.disabled ? t('user.invite.resume') : t('user.invite.pause') }}
-        </el-button>
-        <el-button size="small" text type="danger" @click="handleDeleteInvite(row)">
-          {{ t('user.invite.delete') }}
-        </el-button>
-      </template>
-    </CommonList>
+    <el-tabs v-model="activeTab" class="common-tabs">
+      <el-tab-pane :label="t('user.invite.tabs.list')" name="list">
+        <CommonList
+          :rows="inviteList"
+          :columns="inviteColumns"
+          :is-dark="isDarkMode"
+          row-key="code"
+          :empty-text="t('message.empty')"
+        >
+          <template #cell-status="{ value }">
+            <el-tag :type="inviteStatusType(value)" size="small">
+              {{ inviteStatusLabel(value) }}
+            </el-tag>
+          </template>
+          <template #cell-usage="{ row }">
+            {{ row.used }}/{{ row.max === null ? '-' : row.max }}
+          </template>
+          <template #cell-code="{ row }">
+            <el-tooltip :content="row.note || t('user.invite.notePlaceholder')" placement="top">
+              <span class="invite-code" @click="copyInviteCode(row.code)">{{ row.code }}</span>
+            </el-tooltip>
+          </template>
+          <template #cell-actions="{ row }">
+            <el-button size="small" text type="primary" @click="handlePauseInvite(row)">
+              {{ row.disabled ? t('user.invite.resume') : t('user.invite.pause') }}
+            </el-button>
+            <el-button size="small" text type="danger" @click="handleDeleteInvite(row)">
+              {{ t('user.invite.delete') }}
+            </el-button>
+          </template>
+        </CommonList>
+      </el-tab-pane>
+      <el-tab-pane :label="t('user.invite.tabs.records')" name="records">
+        <CommonList
+          :rows="inviteRecords"
+          :columns="recordColumns"
+          :is-dark="isDarkMode"
+          row-key="id"
+          :empty-text="t('user.invite.records.empty')"
+        >
+          <template #cell-status="{ value }">
+            <el-tag :type="value === 'success' ? 'success' : 'warning'" size="small">
+              {{ value === 'success' ? t('user.invite.records.success') : t('user.invite.records.failed') }}
+            </el-tag>
+          </template>
+        </CommonList>
+      </el-tab-pane>
+    </el-tabs>
 
     <InviteCreateDialog v-model="showCreateDialog" @submit="handleCreateInvite" />
   </PageLayout>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -64,7 +83,7 @@ import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
 import CommonList from '@/components/CommonList.vue';
 import { House, User, Ticket, Setting } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { listInvitations, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
+import { listInvitations, listInvitationRecords, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -72,6 +91,7 @@ const { locale, t } = useI18n();
 
 const systemName = ref('Yoresee');
 const activeMenu = ref('user-invite');
+const activeTab = ref('list');
 const isDarkMode = computed(() => userStore.darkMode);
 
 const userInfo = computed(() => userStore.userInfo);
@@ -125,6 +145,13 @@ const inviteColumns = computed(() => [
   { key: 'actions', label: t('user.invite.actions'), minWidth: 160, align: 'right' }
 ]);
 
+const recordColumns = computed(() => [
+  { key: 'code', label: t('user.invite.records.code'), minWidth: 180 },
+  { key: 'used_by', label: t('user.invite.records.usedBy'), minWidth: 160 },
+  { key: 'used_at', label: t('user.invite.records.usedAt'), minWidth: 180 },
+  { key: 'status', label: t('user.invite.records.result'), minWidth: 120, align: 'center' }
+]);
+
 const inviteStatusType = (status) => {
   if (status === 'active') return 'success';
   if (status === 'expired') return 'info';
@@ -139,6 +166,8 @@ const inviteStatusLabel = (status) => {
 
 const inviteList = ref([]);
 const inviteLoading = ref(false);
+const inviteRecords = ref([]);
+const inviteRecordsLoading = ref(false);
 
 
 const showCreateDialog = ref(false);
@@ -194,24 +223,51 @@ const mapInviteRow = (invite) => ({
 
 const fetchInvitations = async () => {
   if (inviteLoading.value) return;
-  const creatorExternalId = userInfo.value?.external_id;
-  if (!creatorExternalId) {
-    inviteList.value = [];
-    return;
-  }
   inviteLoading.value = true;
   try {
     const resp = await listInvitations({
-      creator_external_id: creatorExternalId,
+      only_mine: true,
       page: 1,
       page_size: 50
     });
     inviteList.value = (resp.invitations || []).map(mapInviteRow);
+    if (activeTab.value === 'records') {
+      await fetchInviteRecords();
+    }
   } catch (err) {
     console.error('listInvitations failed', err);
     inviteList.value = [];
+    inviteRecords.value = [];
   } finally {
     inviteLoading.value = false;
+  }
+};
+
+const mapInviteRecordRow = (record) => ({
+  id: record.id,
+  code: record.code,
+  used_by: record.used_by || '-',
+  used_at: record.used_at || '-',
+  status: record.status || 'failed'
+});
+
+const fetchInviteRecords = async () => {
+  if (inviteRecordsLoading.value) return;
+  inviteRecordsLoading.value = true;
+  try {
+    const resp = await listInvitationRecords({
+      only_mine: true,
+      page: 1,
+      page_size: 100
+    });
+    const records = resp.records || [];
+    records.sort((a, b) => (b.used_at || '').localeCompare(a.used_at || ''));
+    inviteRecords.value = records.map(mapInviteRecordRow);
+  } catch (err) {
+    console.error('listInvitationRecords failed', err);
+    inviteRecords.value = [];
+  } finally {
+    inviteRecordsLoading.value = false;
   }
 };
 
@@ -283,6 +339,12 @@ const copyInviteCode = async (code) => {
 onMounted(async () => {
   initLanguage();
   await fetchInvitations();
+});
+
+watch(activeTab, async (tab) => {
+  if (tab === 'records') {
+    await fetchInviteRecords();
+  }
 });
 </script>
 
