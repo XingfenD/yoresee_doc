@@ -15,6 +15,7 @@ const {
   UpdateUserGroupRequest,
   ListUsersRequest,
   UpdateUserRequest,
+  ListUserGroupMembersRequest,
   ListTemplatesRequest,
   GetTemplateRequest,
   ListRecentTemplatesRequest,
@@ -445,6 +446,23 @@ export const updateUser = async (data = {}) => {
   const resp = await unaryCall(membershipClient, 'updateUser', req);
   const base = baseToObject(resp);
   return handleResponse(base, {});
+};
+
+export const listUserGroupMembers = async (params = {}) => {
+  const req = new ListUserGroupMembersRequest({
+    externalId: params.external_id || '',
+    keyword: params.keyword || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(membershipClient, 'listUserGroupMembers', req);
+  const base = baseToObject(resp);
+  const data = {
+    users: (resp.users || []).map(mapUser),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
 };
 
 // 获取文档内容

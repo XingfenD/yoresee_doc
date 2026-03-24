@@ -107,7 +107,9 @@ export default {
     },
     userGroup: {
       title: 'User Group Management',
-      placeholderTitle: 'User Group Management'
+      placeholderTitle: 'User Group Management',
+      memberList: 'Members',
+      manageMembers: 'Manage Members'
     },
     organization: {
       title: 'Organization Management',
