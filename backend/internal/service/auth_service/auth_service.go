@@ -2,6 +2,7 @@ package auth_service
 
 import (
 	"context"
+	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
@@ -33,6 +34,12 @@ func (s *AuthService) Register(ctx context.Context, userCreate *dto.UserCreate) 
 			}
 			err := invitation_service.InvitationSvc.ValidateAndUseWithTx(tx, *userCreate.InvitationCode)
 			if err != nil {
+				_ = invitation_service.InvitationSvc.CreateInvitationRecord(&model.InvitationRecord{
+					Code:   *userCreate.InvitationCode,
+					UsedBy: userCreate.Email,
+					Status: "failed",
+					UsedAt: time.Now(),
+				})
 				return err
 			}
 		}
@@ -58,6 +65,16 @@ func (s *AuthService) Register(ctx context.Context, userCreate *dto.UserCreate) 
 
 		if err := s.userRepo.Create(user).WithTx(tx).Exec(); err != nil {
 			return err
+		}
+
+		if mode == constant.RegisterMode_Invite && userCreate.InvitationCode != nil && *userCreate.InvitationCode != "" {
+			_ = invitation_service.InvitationSvc.CreateInvitationRecordWithTx(tx, &model.InvitationRecord{
+				Code:         *userCreate.InvitationCode,
+				UsedByUserID: utils.Of(user.ID),
+				UsedBy:       user.Email,
+				Status:       "success",
+				UsedAt:       time.Now(),
+			})
 		}
 
 		return nil

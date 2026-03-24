@@ -321,6 +321,91 @@ message UserResponse {
   optional string invitation_code = 9;
 }
 
+message InvitationResponse {
+  int64 id = 1;
+  string code = 2;
+  string created_by_external_id = 3;
+  string created_by_name = 4;
+  int64 used_cnt = 5;
+  optional int64 max_used_cnt = 6;
+  optional string expires_at = 7;
+  string created_at = 8;
+  bool disabled = 9;
+}
+
+message InvitationRecordResponse {
+  int64 id = 1;
+  string code = 2;
+  string used_by = 3;
+  optional string used_by_external_id = 4;
+  string used_at = 5;
+  string status = 6;
+}
+
+message ListInvitationsRequest {
+  optional string creator_external_id = 1;
+  optional int64 max_used_cnt = 2;
+  optional string expires_at_start = 3;
+  optional string expires_at_end = 4;
+  optional string created_at_start = 5;
+  optional string created_at_end = 6;
+  optional bool disabled = 7;
+  optional string order_by = 8;
+  optional bool order_desc = 9;
+  int32 page = 10;
+  int32 page_size = 11;
+}
+
+message ListInvitationsResponse {
+  BaseResponse base = 1;
+  repeated InvitationResponse invitations = 2;
+  int64 total = 3;
+}
+
+message CreateInvitationRequest {
+  optional int64 max_used_cnt = 1;
+  optional string expires_at = 2;
+}
+
+message CreateInvitationResponse {
+  BaseResponse base = 1;
+  InvitationResponse invitation = 2;
+}
+
+message UpdateInvitationRequest {
+  string code = 1;
+  optional int64 max_used_cnt = 2;
+  optional string expires_at = 3;
+  optional bool disabled = 4;
+}
+
+message UpdateInvitationResponse {
+  BaseResponse base = 1;
+}
+
+message DeleteInvitationRequest {
+  string code = 1;
+}
+
+message DeleteInvitationResponse {
+  BaseResponse base = 1;
+}
+
+message ListInvitationRecordsRequest {
+  optional string code = 1;
+  optional string status = 2;
+  optional string used_at_start = 3;
+  optional string used_at_end = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ListInvitationRecordsResponse {
+  BaseResponse base = 1;
+  repeated InvitationRecordResponse records = 2;
+  int64 total = 3;
+}
+
 message UpdateDocumentRequest {
   string external_id = 1;
   optional string title = 2;
@@ -529,4 +614,18 @@ service MembershipService {
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   // list user group members with pagination.
   rpc ListUserGroupMembers(ListUserGroupMembersRequest) returns (ListUserGroupMembersResponse);
+}
+
+// invitationService provides invitation management APIs.
+service InvitationService {
+  // create invitation code.
+  rpc CreateInvitation(CreateInvitationRequest) returns (CreateInvitationResponse);
+  // list invitations with filters and pagination.
+  rpc ListInvitations(ListInvitationsRequest) returns (ListInvitationsResponse);
+  // update invitation code.
+  rpc UpdateInvitation(UpdateInvitationRequest) returns (UpdateInvitationResponse);
+  // delete invitation code.
+  rpc DeleteInvitation(DeleteInvitationRequest) returns (DeleteInvitationResponse);
+  // list invitation usage records.
+  rpc ListInvitationRecords(ListInvitationRecordsRequest) returns (ListInvitationRecordsResponse);
 }

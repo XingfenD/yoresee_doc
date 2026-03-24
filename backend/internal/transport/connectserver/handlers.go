@@ -15,6 +15,7 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 	kbSvc := grpcserver.NewKnowledgeBaseServiceServer()
 	sysSvc := grpcserver.NewSystemServiceServer()
 	memberSvc := grpcserver.NewMembershipServiceServer()
+	inviteSvc := grpcserver.NewInvitationServiceServer()
 
 	mux.Handle(pb.AuthService_Login_FullMethodName, connect.NewUnaryHandler(
 		pb.AuthService_Login_FullMethodName,
@@ -296,6 +297,66 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		pb.MembershipService_ListUserGroupMembers_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.ListUserGroupMembersRequest]) (*connect.Response[pb.ListUserGroupMembersResponse], error) {
 			resp, err := memberSvc.ListUserGroupMembers(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.InvitationService_CreateInvitation_FullMethodName, connect.NewUnaryHandler(
+		pb.InvitationService_CreateInvitation_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.CreateInvitationRequest]) (*connect.Response[pb.CreateInvitationResponse], error) {
+			resp, err := inviteSvc.CreateInvitation(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.InvitationService_ListInvitations_FullMethodName, connect.NewUnaryHandler(
+		pb.InvitationService_ListInvitations_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListInvitationsRequest]) (*connect.Response[pb.ListInvitationsResponse], error) {
+			resp, err := inviteSvc.ListInvitations(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.InvitationService_UpdateInvitation_FullMethodName, connect.NewUnaryHandler(
+		pb.InvitationService_UpdateInvitation_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateInvitationRequest]) (*connect.Response[pb.UpdateInvitationResponse], error) {
+			resp, err := inviteSvc.UpdateInvitation(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.InvitationService_DeleteInvitation_FullMethodName, connect.NewUnaryHandler(
+		pb.InvitationService_DeleteInvitation_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.DeleteInvitationRequest]) (*connect.Response[pb.DeleteInvitationResponse], error) {
+			resp, err := inviteSvc.DeleteInvitation(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.InvitationService_ListInvitationRecords_FullMethodName, connect.NewUnaryHandler(
+		pb.InvitationService_ListInvitationRecords_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListInvitationRecordsRequest]) (*connect.Response[pb.ListInvitationRecordsResponse], error) {
+			resp, err := inviteSvc.ListInvitationRecords(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}

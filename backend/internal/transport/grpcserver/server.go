@@ -27,6 +27,7 @@ func Start(grpcPort, grpcWebPort int) (*grpc.Server, error) {
 	pb.RegisterKnowledgeBaseServiceServer(grpcServer, NewKnowledgeBaseServiceServer())
 	pb.RegisterSystemServiceServer(grpcServer, NewSystemServiceServer())
 	pb.RegisterMembershipServiceServer(grpcServer, NewMembershipServiceServer())
+	pb.RegisterInvitationServiceServer(grpcServer, NewInvitationServiceServer())
 
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {

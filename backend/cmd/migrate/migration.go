@@ -19,6 +19,7 @@ func runMigration() error {
 		&model.DocumentYjsSnapshot{},
 		&model.DocumentVersion{},
 		&model.Invitation{},
+		&model.InvitationRecord{},
 		&model.KnowledgeBase{},
 		&model.RecentKnowledgeBase{},
 		&model.RecentTemplate{},

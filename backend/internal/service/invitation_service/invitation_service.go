@@ -9,6 +9,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository/invitation_repo"
+	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
@@ -16,11 +17,13 @@ import (
 
 type InvitationService struct {
 	invitationRepo *invitation_repo.InvitationRepository
+	userRepo       *user_repo.UserRepository
 }
 
 func NewInvitationService() *InvitationService {
 	return &InvitationService{
 		invitationRepo: invitation_repo.InvitationRepo,
+		userRepo:       user_repo.UserRepo,
 	}
 }
 
@@ -57,6 +60,76 @@ func (s *InvitationService) ListInvitations(req *dto.ListInvitationsReq) ([]mode
 		WithCreatedAtRange(req.CreatedAtStart, req.CreatedAtEnd).
 		WithDisabled(req.Disabled).
 		WithSort(req.SortArgs.Field, req.SortArgs.Desc).
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
+		ExecWithTotal()
+}
+
+func (s *InvitationService) CreateInvitation(req *dto.CreateInvitationRequest) (*model.Invitation, error) {
+	if req == nil || req.CreatorExternalID == "" {
+		return nil, status.StatusParamError
+	}
+	userID, err := s.userRepo.GetIDByExternalID(req.CreatorExternalID).Exec()
+	if err != nil {
+		return nil, status.StatusUserNotFound
+	}
+	return s.Generate(userID, req.MaxUsedCnt, req.ExpiresAt)
+}
+
+func (s *InvitationService) UpdateInvitation(req *dto.UpdateInvitationRequest) error {
+	if req == nil || req.Code == "" {
+		return status.StatusParamError
+	}
+	return s.UpdateCode(req.Code, req.ExpiresAt, req.MaxUsedCnt, req.Disabled)
+}
+
+func (s *InvitationService) DeleteInvitation(req *dto.DeleteInvitationRequest) error {
+	if req == nil || req.Code == "" {
+		return status.StatusParamError
+	}
+	inv, err := s.invitationRepo.GetByCode(req.Code).Exec()
+	if err != nil {
+		return status.StatusInvitationInvalid
+	}
+	if err := s.invitationRepo.Delete(inv.ID).Exec(); err != nil {
+		return status.StatusWriteDBError
+	}
+	return nil
+}
+
+func (s *InvitationService) CreateInvitationRecord(record *model.InvitationRecord) error {
+	if record == nil || record.Code == "" || record.Status == "" {
+		return status.StatusParamError
+	}
+	if record.UsedAt.IsZero() {
+		record.UsedAt = time.Now()
+	}
+	if err := s.invitationRepo.CreateRecord(record).Exec(); err != nil {
+		return status.StatusWriteDBError
+	}
+	return nil
+}
+
+func (s *InvitationService) CreateInvitationRecordWithTx(tx *gorm.DB, record *model.InvitationRecord) error {
+	if record == nil || record.Code == "" || record.Status == "" {
+		return status.StatusParamError
+	}
+	if record.UsedAt.IsZero() {
+		record.UsedAt = time.Now()
+	}
+	if err := s.invitationRepo.CreateRecord(record).WithTx(tx).Exec(); err != nil {
+		return status.StatusWriteDBError
+	}
+	return nil
+}
+
+func (s *InvitationService) ListInvitationRecords(req *dto.ListInvitationRecordsRequest) ([]model.InvitationRecord, int64, error) {
+	if req == nil {
+		return nil, 0, status.StatusParamError
+	}
+	return s.invitationRepo.ListRecords().
+		WithCode(req.Code).
+		WithStatus(req.Status).
+		WithUsedAtRange(req.UsedAtStart, req.UsedAtEnd).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 		ExecWithTotal()
 }
@@ -141,4 +214,4 @@ func (s *InvitationService) UpdateCode(code string, newExpireTime *time.Time, ne
 	return nil
 }
 
-var InvitationSvc = &InvitationService{}
+var InvitationSvc = NewInvitationService()

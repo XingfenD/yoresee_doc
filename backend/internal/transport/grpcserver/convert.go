@@ -5,6 +5,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
 )
 
@@ -158,6 +159,45 @@ func toUserGroupResponse(group *dto.UserGroupResponse) *pb.UserGroupResponse {
 		Description:           group.Description,
 		CreatorUserExternalId: group.CreatorUserExternalID,
 		MemberCount:           int32(group.MemberCount),
+	}
+	return resp
+}
+
+func toInvitationResponse(inv *dto.InvitationResponse) *pb.InvitationResponse {
+	if inv == nil {
+		return nil
+	}
+	resp := &pb.InvitationResponse{
+		Id:                  inv.ID,
+		Code:                inv.Code,
+		CreatedByExternalId: inv.CreatedByExternalID,
+		CreatedByName:       inv.CreatedByName,
+		UsedCnt:             inv.UsedCnt,
+		Disabled:            inv.Disabled,
+		CreatedAt:           timeToString(inv.CreatedAt),
+	}
+	if inv.MaxUsedCnt != nil {
+		resp.MaxUsedCnt = inv.MaxUsedCnt
+	}
+	if inv.ExpiresAt != nil {
+		resp.ExpiresAt = utils.Of(timeToString(*inv.ExpiresAt))
+	}
+	return resp
+}
+
+func toInvitationRecordResponse(rec *dto.InvitationRecordResponse) *pb.InvitationRecordResponse {
+	if rec == nil {
+		return nil
+	}
+	resp := &pb.InvitationRecordResponse{
+		Id:     rec.ID,
+		Code:   rec.Code,
+		UsedBy: rec.UsedBy,
+		UsedAt: timeToString(rec.UsedAt),
+		Status: rec.Status,
+	}
+	if rec.UsedByExternalID != "" {
+		resp.UsedByExternalId = utils.Of(rec.UsedByExternalID)
 	}
 	return resp
 }
