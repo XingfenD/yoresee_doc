@@ -1,12 +1,11 @@
 package dto
 
 type UserGroupResponse struct {
-	ExternalID            string          `json:"external_id"`
-	Name                  string          `json:"name"`
-	Description           string          `json:"description"`
-	CreatorUserExternalID string          `json:"creator_user_external_id"`
-	MemberCount           int             `json:"member_count"`
-	Members               []*UserResponse `json:"members"`
+	ExternalID            string `json:"external_id"`
+	Name                  string `json:"name"`
+	Description           string `json:"description"`
+	CreatorUserExternalID string `json:"creator_user_external_id"`
+	MemberCount           int    `json:"member_count"`
 }
 
 type ListUserGroupsRequest struct {
@@ -48,4 +47,10 @@ type UpdateUserRequest struct {
 	Email      *string `json:"email"`
 	Nickname   *string `json:"nickname"`
 	Status     *int32  `json:"status"`
+}
+
+type ListUserGroupMembersRequest struct {
+	ExternalID string     `json:"external_id"`
+	Keyword    *string    `json:"keyword"`
+	Pagination Pagination `json:"pagination"`
 }

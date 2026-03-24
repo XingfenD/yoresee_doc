@@ -212,3 +212,36 @@ func (s *MembershipServiceServer) UpdateUser(ctx context.Context, req *pb.Update
 		Base: baseResponseFromErr(nil),
 	}, nil
 }
+
+func (s *MembershipServiceServer) ListUserGroupMembers(ctx context.Context, req *pb.ListUserGroupMembersRequest) (*pb.ListUserGroupMembersResponse, error) {
+	if req == nil || strings.TrimSpace(req.ExternalId) == "" {
+		return &pb.ListUserGroupMembersResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if err := s.requireAdmin(ctx); err != nil {
+		return &pb.ListUserGroupMembersResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	serviceReq := &dto.ListUserGroupMembersRequest{
+		ExternalID: req.ExternalId,
+		Keyword:    req.Keyword,
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+	}
+	users, total, err := membership_service.MembershipSvc.ListUserGroupMembers(serviceReq)
+	if err != nil {
+		return &pb.ListUserGroupMembersResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	respUsers := make([]*pb.UserResponse, 0, len(users))
+	for _, user := range users {
+		respUsers = append(respUsers, toUserResponse(user))
+	}
+
+	return &pb.ListUserGroupMembersResponse{
+		Base:  baseResponseFromErr(nil),
+		Users: respUsers,
+		Total: total,
+	}, nil
+}

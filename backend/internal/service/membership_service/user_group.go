@@ -92,6 +92,54 @@ func (s *MembershipService) UpdateUser(req *dto.UpdateUserRequest) error {
 	return nil
 }
 
+func (s *MembershipService) ListUserGroupMembers(req *dto.ListUserGroupMembersRequest) ([]*dto.UserResponse, int64, error) {
+	if req == nil || strings.TrimSpace(req.ExternalID) == "" {
+		return nil, 0, status.StatusParamError
+	}
+	req.Pagination = normalizePagination(req.Pagination)
+
+	group, err := s.repo.GetUserGroupByExternalID(req.ExternalID).Exec()
+	if err != nil {
+		return nil, 0, status.StatusMembershipMetaNotFound
+	}
+
+	relations, err := s.repo.ListMembership(&model.MembershipRelation{
+		Type:         model.MembershipType_UserGroup,
+		MembershipID: group.ID,
+	}).Exec()
+	if err != nil {
+		return nil, 0, status.StatusReadDBError
+	}
+	if len(relations) == 0 {
+		return []*dto.UserResponse{}, 0, nil
+	}
+
+	memberIDs := make([]int64, 0, len(relations))
+	for _, relation := range relations {
+		memberIDs = append(memberIDs, relation.UserID)
+	}
+
+	query := s.useRepo.QueryUsers().
+		WithPagination(req.Pagination.Page, req.Pagination.PageSize)
+	if req.Keyword != nil && strings.TrimSpace(*req.Keyword) != "" {
+		query = query.WithKeyword(req.Keyword)
+	}
+	query = query.WithUserIDs(memberIDs)
+
+	users, total, err := query.ExecWithTotal()
+	if err != nil {
+		return nil, 0, status.StatusReadDBError
+	}
+
+	resp := make([]*dto.UserResponse, 0, len(users))
+	for i := range users {
+		user := users[i]
+		resp = append(resp, dto.NewUserResponseFromModel(&user))
+	}
+
+	return resp, total, nil
+}
+
 func (s *MembershipService) ListUserGroups(req *dto.ListUserGroupsRequest) ([]*dto.UserGroupResponse, int64, error) {
 	if req == nil {
 		return nil, 0, status.StatusParamError
@@ -122,7 +170,7 @@ func (s *MembershipService) GetUserGroup(req *dto.GetUserGroupRequest) (*dto.Use
 		return nil, status.StatusMembershipMetaNotFound
 	}
 
-	responses, err := s.buildUserGroupResponses([]model.UserGroupMeta{*group}, true)
+	responses, err := s.buildUserGroupResponses([]model.UserGroupMeta{*group}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +312,6 @@ func (s *MembershipService) buildUserGroupResponses(groups []model.UserGroupMeta
 
 	groupMemberUserIDs := make(map[int64][]int64, len(groupIDs))
 	groupMemberSeen := make(map[int64]map[int64]struct{}, len(groupIDs))
-	memberUserIDSet := map[int64]struct{}{}
 	for _, relation := range relations {
 		if _, ok := groupMemberSeen[relation.MembershipID]; !ok {
 			groupMemberSeen[relation.MembershipID] = map[int64]struct{}{}
@@ -275,21 +322,6 @@ func (s *MembershipService) buildUserGroupResponses(groups []model.UserGroupMeta
 		groupMemberSeen[relation.MembershipID][relation.UserID] = struct{}{}
 
 		groupMemberUserIDs[relation.MembershipID] = append(groupMemberUserIDs[relation.MembershipID], relation.UserID)
-		if includeMembers {
-			memberUserIDSet[relation.UserID] = struct{}{}
-		}
-	}
-
-	memberMap := map[int64]*model.User{}
-	if includeMembers && len(memberUserIDSet) > 0 {
-		memberIDs := make([]int64, 0, len(memberUserIDSet))
-		for id := range memberUserIDSet {
-			memberIDs = append(memberIDs, id)
-		}
-		memberMap, err = s.useRepo.MGetUserByID(memberIDs).Exec()
-		if err != nil {
-			return nil, status.StatusReadDBError
-		}
 	}
 
 	responses := make([]*dto.UserGroupResponse, 0, len(groups))
@@ -299,21 +331,9 @@ func (s *MembershipService) buildUserGroupResponses(groups []model.UserGroupMeta
 			Name:        g.Name,
 			Description: g.Description,
 			MemberCount: len(groupMemberUserIDs[g.ID]),
-			Members:     []*dto.UserResponse{},
 		}
 		if creator := creatorMap[g.CreatorID]; creator != nil {
 			resp.CreatorUserExternalID = creator.ExternalID
-		}
-		if includeMembers {
-			memberIDs := groupMemberUserIDs[g.ID]
-			resp.Members = make([]*dto.UserResponse, 0, len(memberIDs))
-			for _, memberID := range memberIDs {
-				user := memberMap[memberID]
-				if user == nil {
-					continue
-				}
-				resp.Members = append(resp.Members, dto.NewUserResponseFromModel(user))
-			}
 		}
 		responses = append(responses, resp)
 	}

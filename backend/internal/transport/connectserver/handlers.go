@@ -292,6 +292,18 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.MembershipService_ListUserGroupMembers_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_ListUserGroupMembers_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListUserGroupMembersRequest]) (*connect.Response[pb.ListUserGroupMembersResponse], error) {
+			resp, err := memberSvc.ListUserGroupMembers(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.DocumentService_UpdateDocument_FullMethodName, connect.NewUnaryHandler(
 		pb.DocumentService_UpdateDocument_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.UpdateDocumentRequest]) (*connect.Response[pb.UpdateDocumentResponse], error) {

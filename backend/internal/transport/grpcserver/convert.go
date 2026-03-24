@@ -158,10 +158,6 @@ func toUserGroupResponse(group *dto.UserGroupResponse) *pb.UserGroupResponse {
 		Description:           group.Description,
 		CreatorUserExternalId: group.CreatorUserExternalID,
 		MemberCount:           int32(group.MemberCount),
-		Members:               make([]*pb.UserResponse, 0, len(group.Members)),
-	}
-	for _, member := range group.Members {
-		resp.Members = append(resp.Members, toUserResponse(member))
 	}
 	return resp
 }

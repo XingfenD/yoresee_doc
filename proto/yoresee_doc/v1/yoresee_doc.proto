@@ -32,7 +32,6 @@ message UserGroupResponse {
   string description = 3;
   string creator_user_external_id = 4;
   int32 member_count = 5;
-  repeated UserResponse members = 6;
 }
 
 message ListUserGroupsRequest {
@@ -94,6 +93,19 @@ message ListUsersRequest {
 }
 
 message ListUsersResponse {
+  BaseResponse base = 1;
+  repeated UserResponse users = 2;
+  int64 total = 3;
+}
+
+message ListUserGroupMembersRequest {
+  string external_id = 1;
+  optional string keyword = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListUserGroupMembersResponse {
   BaseResponse base = 1;
   repeated UserResponse users = 2;
   int64 total = 3;
@@ -515,4 +527,6 @@ service MembershipService {
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
   // update user info or status.
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  // list user group members with pagination.
+  rpc ListUserGroupMembers(ListUserGroupMembersRequest) returns (ListUserGroupMembersResponse);
 }

@@ -12,6 +12,7 @@ type QueryUsersOperation struct {
 	repo     *UserRepository
 	tx       *gorm.DB
 	keyword  *string
+	userIDs  []int64
 	page     int
 	pageSize int
 }
@@ -32,6 +33,11 @@ func (op *QueryUsersOperation) WithKeyword(keyword *string) *QueryUsersOperation
 	return op
 }
 
+func (op *QueryUsersOperation) WithUserIDs(userIDs []int64) *QueryUsersOperation {
+	op.userIDs = userIDs
+	return op
+}
+
 func (op *QueryUsersOperation) WithPagination(page, pageSize int) *QueryUsersOperation {
 	op.page = page
 	op.pageSize = pageSize
@@ -44,6 +50,9 @@ func (op *QueryUsersOperation) ExecWithTotal() ([]model.User, int64, error) {
 	}
 
 	query := op.tx.Model(&model.User{})
+	if len(op.userIDs) > 0 {
+		query = query.Where("id IN ?", op.userIDs)
+	}
 	if op.keyword != nil {
 		trimmed := strings.TrimSpace(*op.keyword)
 		if trimmed != "" {
