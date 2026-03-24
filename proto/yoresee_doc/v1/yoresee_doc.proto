@@ -344,7 +344,6 @@ message InvitationRecordResponse {
 }
 
 message ListInvitationsRequest {
-  optional string creator_external_id = 1;
   optional int64 max_used_cnt = 2;
   optional string expires_at_start = 3;
   optional string expires_at_end = 4;
@@ -355,6 +354,7 @@ message ListInvitationsRequest {
   optional bool order_desc = 9;
   int32 page = 10;
   int32 page_size = 11;
+  optional bool only_mine = 12;
 }
 
 message ListInvitationsResponse {
@@ -401,6 +401,7 @@ message ListInvitationRecordsRequest {
   optional string used_at_end = 4;
   int32 page = 5;
   int32 page_size = 6;
+  optional bool only_mine = 7;
 }
 
 message ListInvitationRecordsResponse {

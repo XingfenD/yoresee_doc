@@ -37,6 +37,7 @@ type InvitationRecordListOperation struct {
 	status      *string
 	usedAtStart *string
 	usedAtEnd   *string
+	creatorID   *int64
 	page        int
 	pageSize    int
 	tx          *gorm.DB
@@ -69,6 +70,11 @@ func (op *InvitationRecordListOperation) WithUsedAtRange(start, end *string) *In
 	return op
 }
 
+func (op *InvitationRecordListOperation) WithCreatorID(creatorID *int64) *InvitationRecordListOperation {
+	op.creatorID = creatorID
+	return op
+}
+
 func (op *InvitationRecordListOperation) WithPagination(page, pageSize int) *InvitationRecordListOperation {
 	op.page = page
 	op.pageSize = pageSize
@@ -82,6 +88,10 @@ func (op *InvitationRecordListOperation) ExecWithTotal() ([]model.InvitationReco
 	}
 
 	query := db.Model(&model.InvitationRecord{})
+	if op.creatorID != nil {
+		query = query.Joins("JOIN invitations ON invitations.code = invitation_records.code").
+			Where("invitations.created_by = ?", *op.creatorID)
+	}
 	if op.code != nil && *op.code != "" {
 		query = query.Where("code = ?", *op.code)
 	}

@@ -132,6 +132,7 @@ func (s *InvitationService) ListInvitationRecords(req *dto.ListInvitationRecords
 		WithCode(req.Code).
 		WithStatus(req.Status).
 		WithUsedAtRange(req.UsedAtStart, req.UsedAtEnd).
+		WithCreatorID(req.CreatorID).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 		ExecWithTotal()
 }

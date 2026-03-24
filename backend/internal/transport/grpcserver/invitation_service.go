@@ -73,7 +73,7 @@ func (s *InvitationServiceServer) CreateInvitation(ctx context.Context, req *pb.
 		CreatorExternalID: userExternalID,
 		MaxUsedCnt:        req.MaxUsedCnt,
 		ExpiresAt:         expiresAt,
-		Note:             req.Note,
+		Note:              req.Note,
 	})
 	if err != nil {
 		return &pb.CreateInvitationResponse{Base: baseResponseFromErr(err)}, nil
@@ -90,7 +90,7 @@ func (s *InvitationServiceServer) CreateInvitation(ctx context.Context, req *pb.
 		ExpiresAt:           inv.ExpiresAt,
 		CreatedAt:           inv.CreatedAt,
 		Disabled:            inv.Disabled,
-		Note:               inv.Note,
+		Note:                inv.Note,
 	}
 	if user != nil {
 		if user.Nickname != "" {
@@ -110,13 +110,21 @@ func (s *InvitationServiceServer) ListInvitations(ctx context.Context, req *pb.L
 	if req == nil {
 		return &pb.ListInvitationsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
-	if err := s.requireAdmin(ctx); err != nil {
-		return &pb.ListInvitationsResponse{Base: baseResponseFromErr(err)}, nil
+
+	onlyMine := req.OnlyMine != nil && req.GetOnlyMine()
+	if !onlyMine {
+		if err := s.requireAdmin(ctx); err != nil {
+			return &pb.ListInvitationsResponse{Base: baseResponseFromErr(err)}, nil
+		}
 	}
 
 	var creatorID *int64
-	if req.CreatorExternalId != nil && strings.TrimSpace(req.GetCreatorExternalId()) != "" {
-		id, err := s.userRepo.GetIDByExternalID(req.GetCreatorExternalId()).Exec()
+	if onlyMine {
+		userExternalID, ok := ctx.Value("user_external_id").(string)
+		if !ok || strings.TrimSpace(userExternalID) == "" {
+			return &pb.ListInvitationsResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+		}
+		id, err := s.userRepo.GetIDByExternalID(userExternalID).Exec()
 		if err != nil {
 			return &pb.ListInvitationsResponse{Base: baseResponseFromErr(status.StatusUserNotFound)}, nil
 		}
@@ -139,6 +147,7 @@ func (s *InvitationServiceServer) ListInvitations(ctx context.Context, req *pb.L
 		CreatedAtStart: req.CreatedAtStart,
 		CreatedAtEnd:   req.CreatedAtEnd,
 		Disabled:       req.Disabled,
+		OnlyMine:       req.OnlyMine,
 		SortArgs:       sortArgs,
 		Pagination: dto.Pagination{
 			Page:     int(req.Page),
@@ -179,7 +188,7 @@ func (s *InvitationServiceServer) ListInvitations(ctx context.Context, req *pb.L
 			ExpiresAt:           inv.ExpiresAt,
 			CreatedAt:           inv.CreatedAt,
 			Disabled:            inv.Disabled,
-			Note:               inv.Note,
+			Note:                inv.Note,
 		}
 		respInvites = append(respInvites, toInvitationResponse(resp))
 	}
@@ -236,8 +245,24 @@ func (s *InvitationServiceServer) ListInvitationRecords(ctx context.Context, req
 	if req == nil {
 		return &pb.ListInvitationRecordsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
-	if err := s.requireAdmin(ctx); err != nil {
-		return &pb.ListInvitationRecordsResponse{Base: baseResponseFromErr(err)}, nil
+	onlyMine := req.OnlyMine != nil && req.GetOnlyMine()
+	if !onlyMine {
+		if err := s.requireAdmin(ctx); err != nil {
+			return &pb.ListInvitationRecordsResponse{Base: baseResponseFromErr(err)}, nil
+		}
+	}
+
+	var creatorID *int64
+	if onlyMine {
+		userExternalID, ok := ctx.Value("user_external_id").(string)
+		if !ok || strings.TrimSpace(userExternalID) == "" {
+			return &pb.ListInvitationRecordsResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+		}
+		id, err := s.userRepo.GetIDByExternalID(userExternalID).Exec()
+		if err != nil {
+			return &pb.ListInvitationRecordsResponse{Base: baseResponseFromErr(status.StatusUserNotFound)}, nil
+		}
+		creatorID = utils.Of(id)
 	}
 
 	listReq := &dto.ListInvitationRecordsRequest{
@@ -245,6 +270,8 @@ func (s *InvitationServiceServer) ListInvitationRecords(ctx context.Context, req
 		Status:      req.Status,
 		UsedAtStart: req.UsedAtStart,
 		UsedAtEnd:   req.UsedAtEnd,
+		CreatorID:   creatorID,
+		OnlyMine:    req.OnlyMine,
 		Pagination: dto.Pagination{
 			Page:     int(req.Page),
 			PageSize: int(req.PageSize),
