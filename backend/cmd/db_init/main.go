@@ -76,6 +76,10 @@ func initializeDatabaseInTransaction() error {
 			return err
 		}
 
+		if err := initializeUserGroupsInTx(tx); err != nil {
+			return err
+		}
+
 		// 标记数据库已初始化
 		initializedConfig := &model.SystemConfig{
 			Key: utils.GenConfigKey(

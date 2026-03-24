@@ -12,8 +12,9 @@ var node *snowflake.Node
 type ExternalIDContext string
 
 const (
-	ExternalIDContextUser     ExternalIDContext = "user"
-	ExternalIDContextDocument ExternalIDContext = "document"
+	ExternalIDContextUser      ExternalIDContext = "user"
+	ExternalIDContextDocument  ExternalIDContext = "document"
+	ExternalIDContextUserGroup ExternalIDContext = "user_group"
 )
 
 func GenerateExternalID(context ExternalIDContext) string {

@@ -147,3 +147,21 @@ func toTemplateResponse(tpl *dto.TemplateResponse) *pb.TemplateResponse {
 		UpdatedAt:               timeToString(tpl.UpdatedAt),
 	}
 }
+
+func toUserGroupResponse(group *dto.UserGroupResponse) *pb.UserGroupResponse {
+	if group == nil {
+		return nil
+	}
+	resp := &pb.UserGroupResponse{
+		ExternalId:            group.ExternalID,
+		Name:                  group.Name,
+		Description:           group.Description,
+		CreatorUserExternalId: group.CreatorUserExternalID,
+		MemberCount:           int32(group.MemberCount),
+		Members:               make([]*pb.UserResponse, 0, len(group.Members)),
+	}
+	for _, member := range group.Members {
+		resp.Members = append(resp.Members, toUserResponse(member))
+	}
+	return resp
+}

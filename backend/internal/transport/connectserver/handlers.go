@@ -14,6 +14,7 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 	docSvc := grpcserver.NewDocumentServiceServer()
 	kbSvc := grpcserver.NewKnowledgeBaseServiceServer()
 	sysSvc := grpcserver.NewSystemServiceServer()
+	memberSvc := grpcserver.NewMembershipServiceServer()
 
 	mux.Handle(pb.AuthService_Login_FullMethodName, connect.NewUnaryHandler(
 		pb.AuthService_Login_FullMethodName,
@@ -199,6 +200,66 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		pb.SystemService_SystemInfo_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.SystemInfoRequest]) (*connect.Response[pb.SystemInfoResponse], error) {
 			resp, err := sysSvc.SystemInfo(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_ListUserGroups_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_ListUserGroups_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListUserGroupsRequest]) (*connect.Response[pb.ListUserGroupsResponse], error) {
+			resp, err := memberSvc.ListUserGroups(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_GetUserGroup_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_GetUserGroup_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.GetUserGroupRequest]) (*connect.Response[pb.GetUserGroupResponse], error) {
+			resp, err := memberSvc.GetUserGroup(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_CreateUserGroup_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_CreateUserGroup_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.CreateUserGroupRequest]) (*connect.Response[pb.CreateUserGroupResponse], error) {
+			resp, err := memberSvc.CreateUserGroup(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_UpdateUserGroup_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_UpdateUserGroup_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateUserGroupRequest]) (*connect.Response[pb.UpdateUserGroupResponse], error) {
+			resp, err := memberSvc.UpdateUserGroup(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_DeleteUserGroup_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_DeleteUserGroup_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.DeleteUserGroupRequest]) (*connect.Response[pb.DeleteUserGroupResponse], error) {
+			resp, err := memberSvc.DeleteUserGroup(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}

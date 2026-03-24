@@ -26,6 +26,67 @@ message SystemInfoResponse {
   string system_register_mode = 3;
 }
 
+message UserGroupResponse {
+  string external_id = 1;
+  string name = 2;
+  string description = 3;
+  string creator_user_external_id = 4;
+  int32 member_count = 5;
+  repeated UserResponse members = 6;
+}
+
+message ListUserGroupsRequest {
+  optional string keyword = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListUserGroupsResponse {
+  BaseResponse base = 1;
+  repeated UserGroupResponse user_groups = 2;
+  int64 total = 3;
+}
+
+message GetUserGroupRequest {
+  string external_id = 1;
+}
+
+message GetUserGroupResponse {
+  BaseResponse base = 1;
+  UserGroupResponse user_group = 2;
+}
+
+message CreateUserGroupRequest {
+  string name = 1;
+  string description = 2;
+  repeated string member_user_external_ids = 3;
+}
+
+message CreateUserGroupResponse {
+  BaseResponse base = 1;
+  string external_id = 2;
+}
+
+message UpdateUserGroupRequest {
+  string external_id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  bool sync_members = 4;
+  repeated string member_user_external_ids = 5;
+}
+
+message UpdateUserGroupResponse {
+  BaseResponse base = 1;
+}
+
+message DeleteUserGroupRequest {
+  string external_id = 1;
+}
+
+message DeleteUserGroupResponse {
+  BaseResponse base = 1;
+}
+
 message AuthLoginRequest {
   string email = 1;
   string password = 2;
@@ -412,4 +473,18 @@ service SystemService {
   rpc Health(HealthRequest) returns (HealthResponse);
   // systemInfo returns system info and config.
   rpc SystemInfo(SystemInfoRequest) returns (SystemInfoResponse);
+}
+
+// membershipService provides user group and org structure management APIs.
+service MembershipService {
+  // list user groups with pagination.
+  rpc ListUserGroups(ListUserGroupsRequest) returns (ListUserGroupsResponse);
+  // get a user group by external id.
+  rpc GetUserGroup(GetUserGroupRequest) returns (GetUserGroupResponse);
+  // create user group and optional members.
+  rpc CreateUserGroup(CreateUserGroupRequest) returns (CreateUserGroupResponse);
+  // update user group metadata and optional member set.
+  rpc UpdateUserGroup(UpdateUserGroupRequest) returns (UpdateUserGroupResponse);
+  // delete a user group and its memberships.
+  rpc DeleteUserGroup(DeleteUserGroupRequest) returns (DeleteUserGroupResponse);
 }

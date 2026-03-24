@@ -15,7 +15,8 @@ type MembershipService struct {
 
 func NewMembershipService() *MembershipService {
 	return &MembershipService{
-		repo: membership_repo.MembershipRepo,
+		repo:    membership_repo.MembershipRepo,
+		useRepo: user_repo.UserRepo,
 	}
 }
 
