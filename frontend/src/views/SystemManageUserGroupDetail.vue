@@ -44,21 +44,6 @@
       </section>
 
       <section class="manage-section">
-        <div class="section-header section-header--split">
-          <h3 class="section-title">{{ t('system.userGroup.memberList') }}</h3>
-          <div class="member-actions">
-            <el-input
-              v-model="memberSearch"
-              :placeholder="t('common.search')"
-              clearable
-              class="member-search"
-              @input="handleMemberSearch"
-            />
-            <el-button size="small" type="primary" @click="openMemberDialog">
-              {{ t('system.userGroup.manageMembers') }}
-            </el-button>
-          </div>
-        </div>
         <div class="section-body">
           <CommonList
             :rows="memberRows"
@@ -66,24 +51,30 @@
             :is-dark="isDarkMode"
             row-key="external_id"
             :empty-text="t('message.empty')"
+            :show-pagination="true"
+            :total="memberTotal"
+            v-model:current-page="memberPage"
+            v-model:page-size="memberPageSize"
+            :page-sizes="[6]"
+            @page-change="handleMemberPageChange"
+            :show-search="true"
+            v-model:search-query="memberSearch"
+            :search-placeholder="t('common.search')"
+            @search="handleMemberSearch"
+            :show-title-bar="true"
           >
+            <template #title>{{ t('system.userGroup.memberList') }}</template>
+            <template #toolbar-right>
+              <el-button size="small" type="primary" @click="openMemberDialog">
+                {{ t('system.userGroup.manageMembers') }}
+              </el-button>
+            </template>
             <template #cell-actions="{ row }">
               <el-button size="small" text type="danger" @click="removeMember(row)">
                 {{ t('document.delete') }}
               </el-button>
             </template>
           </CommonList>
-          <div class="pagination-container" v-if="memberTotal > memberPageSize">
-            <el-pagination
-              v-model:current-page="memberPage"
-              v-model:page-size="memberPageSize"
-              :page-sizes="[20, 50, 100]"
-              :total="memberTotal"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleMemberPageSize"
-              @current-change="handleMemberPageChange"
-            />
-          </div>
         </div>
       </section>
     </div>
@@ -111,14 +102,8 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showMemberDialog" :title="t('common.members')" width="680px">
+    <el-dialog v-model="showMemberDialog" :title="t('system.userGroup.memberList')" width="680px">
       <div class="member-dialog">
-        <el-input
-          v-model="candidateSearch"
-          :placeholder="t('common.search')"
-          clearable
-          @input="handleCandidateSearch"
-        />
         <div class="member-dialog__list">
           <CommonList
             :rows="memberCandidates"
@@ -126,6 +111,18 @@
             :is-dark="isDarkMode"
             row-key="external_id"
             :empty-text="t('message.empty')"
+            :show-pagination="true"
+            :total="candidateTotal"
+            v-model:current-page="candidatePage"
+            v-model:page-size="candidatePageSize"
+            :page-sizes="[3]"
+            @page-change="handleCandidatePageChange"
+            :show-search="true"
+            v-model:search-query="candidateSearch"
+            :search-placeholder="t('common.search')"
+            @search="handleCandidateSearch"
+            :show-title-bar="true"
+            :title="t('system.userGroup.memberList')"
           >
             <template #cell-actions="{ row }">
               <el-checkbox
@@ -135,17 +132,6 @@
               />
             </template>
           </CommonList>
-          <div class="pagination-container" v-if="candidateTotal > candidatePageSize">
-            <el-pagination
-              v-model:current-page="candidatePage"
-              v-model:page-size="candidatePageSize"
-              :page-sizes="[20, 50, 100]"
-              :total="candidateTotal"
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleCandidatePageSize"
-              @current-change="handleCandidatePageChange"
-            />
-          </div>
         </div>
       </div>
       <template #footer>
@@ -159,7 +145,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -226,10 +212,12 @@ const handleMenuSelect = (key) => {
 const groupInfo = ref(null);
 const memberRows = ref([]);
 const memberPage = ref(1);
-const memberPageSize = ref(20);
+const memberPageSize = ref(6);
 const memberTotal = ref(0);
 const memberSearch = ref('');
+const memberSearchTimer = ref(null);
 const candidateSearch = ref('');
+const candidateSearchTimer = ref(null);
 const showEditDialog = ref(false);
 const editing = ref(false);
 const editForm = ref({
@@ -242,7 +230,7 @@ const memberCandidates = ref([]);
 const selectedMemberIds = ref([]);
 const savingMembers = ref(false);
 const candidatePage = ref(1);
-const candidatePageSize = ref(20);
+const candidatePageSize = ref(3);
 const candidateTotal = ref(0);
 
 const memberColumns = computed(() => [
@@ -284,7 +272,8 @@ const loadGroupMembers = async () => {
       page_size: memberPageSize.value
     });
     memberRows.value = resp.users || [];
-    memberTotal.value = resp.total ?? 0;
+    const totalNumber = Number(resp.total);
+    memberTotal.value = Number.isFinite(totalNumber) ? totalNumber : 0;
   } catch (err) {
     console.error('listUserGroupMembers failed', err);
     memberRows.value = [];
@@ -301,21 +290,26 @@ const openMemberDialog = async () => {
 };
 
 const handleMemberSearch = async () => {
-  memberPage.value = 1;
-  await loadGroupMembers();
+  if (memberSearchTimer.value) {
+    clearTimeout(memberSearchTimer.value);
+  }
+  memberSearchTimer.value = setTimeout(async () => {
+    memberPage.value = 1;
+    await loadGroupMembers();
+  }, 300);
 };
 
 const handleCandidateSearch = async () => {
-  candidatePage.value = 1;
-  await loadMemberCandidates();
+  if (candidateSearchTimer.value) {
+    clearTimeout(candidateSearchTimer.value);
+  }
+  candidateSearchTimer.value = setTimeout(async () => {
+    candidatePage.value = 1;
+    await loadMemberCandidates();
+  }, 300);
 };
 
 const handleMemberPageChange = async () => {
-  await loadGroupMembers();
-};
-
-const handleMemberPageSize = async () => {
-  memberPage.value = 1;
   await loadGroupMembers();
 };
 
@@ -323,10 +317,6 @@ const handleCandidatePageChange = async () => {
   await loadMemberCandidates();
 };
 
-const handleCandidatePageSize = async () => {
-  candidatePage.value = 1;
-  await loadMemberCandidates();
-};
 
 const loadMemberCandidates = async () => {
   try {
@@ -336,7 +326,8 @@ const loadMemberCandidates = async () => {
       page_size: candidatePageSize.value
     });
     memberCandidates.value = resp.users || [];
-    candidateTotal.value = resp.total ?? 0;
+    const totalNumber = Number(resp.total);
+    candidateTotal.value = Number.isFinite(totalNumber) ? totalNumber : 0;
   } catch (err) {
     console.error('listUsers failed', err);
     memberCandidates.value = [];
@@ -444,7 +435,11 @@ onMounted(() => {
 .manage-layout {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: 0;
+}
+
+.manage-section + .manage-section {
+  margin-top: var(--spacing-lg);
 }
 
 .manage-section {
@@ -461,28 +456,8 @@ onMounted(() => {
   box-shadow: none;
 }
 
-.section-header {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-white);
-}
-
-.section-header--split {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-}
-
-.section-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
 .section-body {
-  padding: var(--spacing-md);
+  padding: 0;
 }
 
 .section-body--card {
@@ -544,16 +519,6 @@ onMounted(() => {
   display: none;
 }
 
-.member-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.member-search {
-  width: 220px;
-}
-
 .dark-mode .manage-section {
   background: #161b22;
   border-color: #2b2f36;
@@ -564,14 +529,9 @@ onMounted(() => {
   border-color: transparent;
 }
 
-.dark-mode .section-header {
-  background: #161b22;
-  border-bottom-color: #2b2f36;
-}
-
 .dark-mode .group-info-card {
-  background: #161b22;
-  border-color: #2b2f36;
+  background: var(--bg-medium);
+  border-color: var(--border-color);
 }
 
 .dark-mode .group-title {

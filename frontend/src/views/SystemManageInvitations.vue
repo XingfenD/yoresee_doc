@@ -29,6 +29,18 @@
           :is-dark="isDarkMode"
           row-key="code"
           :empty-text="t('message.empty')"
+          :show-pagination="true"
+          :total="inviteTotal"
+          v-model:current-page="invitePage"
+          v-model:page-size="invitePageSize"
+          :page-sizes="[10, 20, 50]"
+          @page-change="handleInvitePageChange"
+          :show-search="true"
+          v-model:search-query="inviteKeyword"
+          :search-placeholder="t('common.search')"
+          @search="handleInviteSearch"
+          :show-title-bar="true"
+          :title="t('system.invite.tabs.list')"
         >
           <template #cell-status="{ value }">
             <el-tag :type="inviteStatusType(value)" size="small">
@@ -60,6 +72,18 @@
           :is-dark="isDarkMode"
           row-key="id"
           :empty-text="t('system.invite.records.empty')"
+          :show-pagination="true"
+          :total="recordTotal"
+          v-model:current-page="recordPage"
+          v-model:page-size="recordPageSize"
+          :page-sizes="[10, 20, 50]"
+          @page-change="handleRecordPageChange"
+          :show-search="true"
+          v-model:search-query="recordKeyword"
+          :search-placeholder="t('common.search')"
+          @search="handleRecordSearch"
+          :show-title-bar="true"
+          :title="t('system.invite.tabs.records')"
         >
           <template #cell-status="{ value }">
             <el-tag :type="value === 'success' ? 'success' : 'warning'" size="small">
@@ -75,7 +99,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -93,6 +117,16 @@ const { locale, t } = useI18n();
 const systemName = ref('Yoresee');
 const activeMenu = ref('manage-invite');
 const activeTab = ref('list');
+const invitePage = ref(1);
+const invitePageSize = ref(10);
+const inviteTotal = ref(0);
+const inviteKeyword = ref('');
+const recordPage = ref(1);
+const recordPageSize = ref(10);
+const recordTotal = ref(0);
+const recordKeyword = ref('');
+const inviteSearchTimer = ref(null);
+const recordSearchTimer = ref(null);
 const isDarkMode = computed(() => userStore.darkMode);
 
 const userInfo = computed(() => userStore.userInfo);
@@ -232,12 +266,18 @@ const fetchInvitations = async () => {
   if (inviteLoading.value) return;
   inviteLoading.value = true;
   try {
-    const resp = await listInvitations({ page: 1, page_size: 50 });
+    const resp = await listInvitations({
+      page: invitePage.value,
+      page_size: invitePageSize.value,
+      keyword: inviteKeyword.value.trim() || undefined
+    });
     inviteList.value = (resp.invitations || []).map(mapInviteRow);
+    inviteTotal.value = Number(resp.total) || 0;
     inviteLoaded.value = true;
   } catch (err) {
     console.error('listInvitations failed', err);
     inviteList.value = [];
+    inviteTotal.value = 0;
   } finally {
     inviteLoading.value = false;
   }
@@ -247,12 +287,18 @@ const fetchInvitationRecords = async () => {
   if (recordsLoading.value) return;
   recordsLoading.value = true;
   try {
-    const resp = await listInvitationRecords({ page: 1, page_size: 50 });
+    const resp = await listInvitationRecords({
+      page: recordPage.value,
+      page_size: recordPageSize.value,
+      keyword: recordKeyword.value.trim() || undefined
+    });
     inviteRecords.value = (resp.records || []).map(mapRecordRow);
+    recordTotal.value = Number(resp.total) || 0;
     recordsLoaded.value = true;
   } catch (err) {
     console.error('listInvitationRecords failed', err);
     inviteRecords.value = [];
+    recordTotal.value = 0;
   } finally {
     recordsLoading.value = false;
   }
@@ -312,6 +358,36 @@ const handleDeleteInvite = async (row) => {
   }
 };
 
+const handleInvitePageChange = async (page) => {
+  invitePage.value = page;
+  await fetchInvitations();
+};
+
+const handleRecordPageChange = async (page) => {
+  recordPage.value = page;
+  await fetchInvitationRecords();
+};
+
+const handleInviteSearch = () => {
+  if (inviteSearchTimer.value) {
+    clearTimeout(inviteSearchTimer.value);
+  }
+  inviteSearchTimer.value = setTimeout(async () => {
+    invitePage.value = 1;
+    await fetchInvitations();
+  }, 300);
+};
+
+const handleRecordSearch = () => {
+  if (recordSearchTimer.value) {
+    clearTimeout(recordSearchTimer.value);
+  }
+  recordSearchTimer.value = setTimeout(async () => {
+    recordPage.value = 1;
+    await fetchInvitationRecords();
+  }, 300);
+};
+
 const copyInviteCode = async (code) => {
   if (!code) return;
   try {
@@ -342,6 +418,15 @@ watch(activeTab, async (tab) => {
 onMounted(async () => {
   initLanguage();
   await fetchInvitations();
+});
+
+onBeforeUnmount(() => {
+  if (inviteSearchTimer.value) {
+    clearTimeout(inviteSearchTimer.value);
+  }
+  if (recordSearchTimer.value) {
+    clearTimeout(recordSearchTimer.value);
+  }
 });
 </script>
 

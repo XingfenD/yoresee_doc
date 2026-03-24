@@ -256,6 +256,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+:deep(.page-body) {
+  gap: 0;
+}
+
 .template-preview {
   background: var(--bg-white);
   border-radius: var(--border-radius-md);

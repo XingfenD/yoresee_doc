@@ -17,17 +17,6 @@
   >
     <div class="manage-layout">
       <section class="manage-section">
-        <div class="section-header section-header--split">
-          <h3 class="section-title">{{ t('system.user.placeholderTitle') }}</h3>
-          <el-input
-            v-model="keyword"
-            :placeholder="t('common.search')"
-            clearable
-            class="section-search"
-            @input="handleSearch"
-            @clear="handleSearch"
-          />
-        </div>
         <div class="section-body">
           <CommonList
             :rows="userRows"
@@ -41,6 +30,12 @@
             v-model:page-size="pageSize"
             :page-sizes="[10]"
             @page-change="handlePageChange"
+            :show-search="true"
+            v-model:search-query="keyword"
+            :search-placeholder="t('common.search')"
+            @search="handleSearch"
+            :show-title-bar="true"
+            :title="t('system.user.placeholderTitle')"
           >
             <template #cell-status="{ row }">
               <span :class="['status-pill', row.status === 1 ? 'is-active' : 'is-disabled']">
@@ -302,32 +297,8 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.section-header {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-white);
-}
-
-.section-header--split {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.section-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.section-search {
-  max-width: 260px;
-}
-
 .section-body {
-  padding: var(--spacing-md);
+  padding: 0;
 }
 
 .status-pill {

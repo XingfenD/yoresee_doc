@@ -407,7 +407,8 @@ export const listInvitations = async (params = {}) => {
     orderDesc: typeof params.order_desc === 'boolean' ? params.order_desc : undefined,
     page: params.page || 1,
     pageSize: params.page_size || 20,
-    onlyMine: typeof params.only_mine === 'boolean' ? params.only_mine : undefined
+    onlyMine: typeof params.only_mine === 'boolean' ? params.only_mine : undefined,
+    keyword: params.keyword || undefined
   });
 
   const resp = await unaryCall(invitationClient, 'listInvitations', req);
@@ -464,7 +465,8 @@ export const listInvitationRecords = async (params = {}) => {
     usedAtEnd: params.used_at_end || undefined,
     page: params.page || 1,
     pageSize: params.page_size || 20,
-    onlyMine: typeof params.only_mine === 'boolean' ? params.only_mine : undefined
+    onlyMine: typeof params.only_mine === 'boolean' ? params.only_mine : undefined,
+    keyword: params.keyword || undefined
   });
 
   const resp = await unaryCall(invitationClient, 'listInvitationRecords', req);

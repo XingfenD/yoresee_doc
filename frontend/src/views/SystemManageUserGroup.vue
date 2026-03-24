@@ -23,9 +23,6 @@
 
     <div class="manage-layout">
       <section class="manage-section">
-        <div class="section-header">
-          <h3 class="section-title">{{ t('system.userGroup.placeholderTitle') }}</h3>
-        </div>
         <div class="section-body">
           <CommonList
             :rows="groupRows"
@@ -33,6 +30,18 @@
             :is-dark="isDarkMode"
             row-key="external_id"
             :empty-text="t('message.empty')"
+            :show-pagination="true"
+            :total="groupTotal"
+            v-model:current-page="groupPage"
+            v-model:page-size="groupPageSize"
+            :page-sizes="[10, 20, 50]"
+            @page-change="handleGroupPageChange"
+            :show-search="true"
+            v-model:search-query="groupKeyword"
+            :search-placeholder="t('common.search')"
+            @search="handleGroupSearch"
+            :show-title-bar="true"
+            :title="t('system.userGroup.placeholderTitle')"
           >
             <template #cell-name="{ row }">
               <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
@@ -89,7 +98,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -152,6 +161,11 @@ const handleMenuSelect = (key) => {
 };
 
 const groupRows = ref([]);
+const groupPage = ref(1);
+const groupPageSize = ref(10);
+const groupTotal = ref(0);
+const groupKeyword = ref('');
+const groupSearchTimer = ref(null);
 const showCreateDialog = ref(false);
 const creating = ref(false);
 const createForm = ref({
@@ -175,12 +189,33 @@ const groupColumns = computed(() => [
 
 const loadUserGroups = async () => {
   try {
-    const resp = await listUserGroups({ page: 1, page_size: 200 });
+    const resp = await listUserGroups({
+      page: groupPage.value,
+      page_size: groupPageSize.value,
+      keyword: groupKeyword.value.trim() || undefined
+    });
     groupRows.value = resp.user_groups || [];
+    groupTotal.value = Number(resp.total) || 0;
   } catch (err) {
     console.error('listUserGroups failed', err);
     groupRows.value = [];
+    groupTotal.value = 0;
   }
+};
+
+const handleGroupPageChange = async (page) => {
+  groupPage.value = page;
+  await loadUserGroups();
+};
+
+const handleGroupSearch = () => {
+  if (groupSearchTimer.value) {
+    clearTimeout(groupSearchTimer.value);
+  }
+  groupSearchTimer.value = setTimeout(async () => {
+    groupPage.value = 1;
+    await loadUserGroups();
+  }, 300);
 };
 
 const goToDetail = (row) => {
@@ -285,6 +320,12 @@ onMounted(() => {
   initLanguage();
   loadUserGroups();
 });
+
+onBeforeUnmount(() => {
+  if (groupSearchTimer.value) {
+    clearTimeout(groupSearchTimer.value);
+  }
+});
 </script>
 
 <style scoped>
@@ -302,21 +343,8 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.section-header {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-white);
-}
-
-.section-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
 .section-body {
-  padding: var(--spacing-md);
+  padding: 0;
 }
 
 .link-btn {
