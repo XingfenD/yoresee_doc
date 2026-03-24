@@ -18,6 +18,7 @@ type CreateInvitationRequest struct {
 	CreatorExternalID string     `json:"creator_external_id"`
 	MaxUsedCnt        *int64     `json:"max_used_cnt"`
 	ExpiresAt         *time.Time `json:"expires_at"`
+	Note              *string    `json:"note"`
 }
 
 type UpdateInvitationRequest struct {
@@ -25,6 +26,7 @@ type UpdateInvitationRequest struct {
 	MaxUsedCnt *int64     `json:"max_used_cnt"`
 	ExpiresAt  *time.Time `json:"expires_at"`
 	Disabled   *bool      `json:"disabled"`
+	Note       *string    `json:"note"`
 }
 
 type DeleteInvitationRequest struct {
@@ -41,6 +43,7 @@ type InvitationResponse struct {
 	ExpiresAt           *time.Time `json:"expires_at"`
 	CreatedAt           time.Time  `json:"created_at"`
 	Disabled            bool       `json:"disabled"`
+	Note                *string    `json:"note"`
 }
 
 type ListInvitationRecordsRequest struct {

@@ -17,7 +17,7 @@ func initializeConfigInTx(tx *gorm.DB) error {
 			constant.ConfigKey_Second_Security,
 			constant.ConfigKey_Third_RegisterMode,
 		),
-		Value: constant.RegisterMode_Open,
+		Value: constant.RegisterMode_Invite,
 	}
 
 	if err := tx.FirstOrCreate(registerModeConfigModel, model.SystemConfig{

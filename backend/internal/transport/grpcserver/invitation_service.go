@@ -73,6 +73,7 @@ func (s *InvitationServiceServer) CreateInvitation(ctx context.Context, req *pb.
 		CreatorExternalID: userExternalID,
 		MaxUsedCnt:        req.MaxUsedCnt,
 		ExpiresAt:         expiresAt,
+		Note:             req.Note,
 	})
 	if err != nil {
 		return &pb.CreateInvitationResponse{Base: baseResponseFromErr(err)}, nil
@@ -89,6 +90,7 @@ func (s *InvitationServiceServer) CreateInvitation(ctx context.Context, req *pb.
 		ExpiresAt:           inv.ExpiresAt,
 		CreatedAt:           inv.CreatedAt,
 		Disabled:            inv.Disabled,
+		Note:               inv.Note,
 	}
 	if user != nil {
 		if user.Nickname != "" {
@@ -177,6 +179,7 @@ func (s *InvitationServiceServer) ListInvitations(ctx context.Context, req *pb.L
 			ExpiresAt:           inv.ExpiresAt,
 			CreatedAt:           inv.CreatedAt,
 			Disabled:            inv.Disabled,
+			Note:               inv.Note,
 		}
 		respInvites = append(respInvites, toInvitationResponse(resp))
 	}
@@ -206,6 +209,7 @@ func (s *InvitationServiceServer) UpdateInvitation(ctx context.Context, req *pb.
 		MaxUsedCnt: req.MaxUsedCnt,
 		ExpiresAt:  expiresAt,
 		Disabled:   req.Disabled,
+		Note:       req.Note,
 	}); err != nil {
 		return &pb.UpdateInvitationResponse{Base: baseResponseFromErr(err)}, nil
 	}

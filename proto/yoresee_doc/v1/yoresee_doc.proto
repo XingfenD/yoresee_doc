@@ -331,6 +331,7 @@ message InvitationResponse {
   optional string expires_at = 7;
   string created_at = 8;
   bool disabled = 9;
+  optional string note = 10;
 }
 
 message InvitationRecordResponse {
@@ -365,6 +366,7 @@ message ListInvitationsResponse {
 message CreateInvitationRequest {
   optional int64 max_used_cnt = 1;
   optional string expires_at = 2;
+  optional string note = 3;
 }
 
 message CreateInvitationResponse {
@@ -377,6 +379,7 @@ message UpdateInvitationRequest {
   optional int64 max_used_cnt = 2;
   optional string expires_at = 3;
   optional bool disabled = 4;
+  optional string note = 5;
 }
 
 message UpdateInvitationResponse {

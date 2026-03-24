@@ -27,7 +27,7 @@ func NewInvitationService() *InvitationService {
 	}
 }
 
-func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt *time.Time) (*model.Invitation, error) {
+func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt *time.Time, note *string) (*model.Invitation, error) {
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
 		return nil, err
@@ -39,6 +39,7 @@ func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt 
 		CreatedBy:  userID,
 		ExpiresAt:  expiresAt,
 		MaxUsedCnt: maxUsedCnt,
+		Note:       note,
 	}
 
 	if err := storage.DB.Create(invitation).Error; err != nil {
@@ -68,18 +69,19 @@ func (s *InvitationService) CreateInvitation(req *dto.CreateInvitationRequest) (
 	if req == nil || req.CreatorExternalID == "" {
 		return nil, status.StatusParamError
 	}
+	// TODO: normal user can't create invitation codes
 	userID, err := s.userRepo.GetIDByExternalID(req.CreatorExternalID).Exec()
 	if err != nil {
 		return nil, status.StatusUserNotFound
 	}
-	return s.Generate(userID, req.MaxUsedCnt, req.ExpiresAt)
+	return s.Generate(userID, req.MaxUsedCnt, req.ExpiresAt, req.Note)
 }
 
 func (s *InvitationService) UpdateInvitation(req *dto.UpdateInvitationRequest) error {
 	if req == nil || req.Code == "" {
 		return status.StatusParamError
 	}
-	return s.UpdateCode(req.Code, req.ExpiresAt, req.MaxUsedCnt, req.Disabled)
+	return s.UpdateCode(req.Code, req.ExpiresAt, req.MaxUsedCnt, req.Disabled, req.Note)
 }
 
 func (s *InvitationService) DeleteInvitation(req *dto.DeleteInvitationRequest) error {
@@ -194,7 +196,7 @@ func (s *InvitationService) ValidateAndUseWithTx(tx *gorm.DB, code string) error
 	return status.StatusInvitationInvalid
 }
 
-func (s *InvitationService) UpdateCode(code string, newExpireTime *time.Time, newMaxUsedCnt *int64, isDisabled *bool) error {
+func (s *InvitationService) UpdateCode(code string, newExpireTime *time.Time, newMaxUsedCnt *int64, isDisabled *bool, note *string) error {
 	invitation, err := s.invitationRepo.GetByCode(code).Exec()
 	if err != nil {
 		return err
@@ -207,6 +209,9 @@ func (s *InvitationService) UpdateCode(code string, newExpireTime *time.Time, ne
 	}
 	if isDisabled != nil {
 		invitation.Disabled = *isDisabled
+	}
+	if note != nil {
+		invitation.Note = note
 	}
 	if err := s.invitationRepo.Update(invitation).Exec(); err != nil {
 		return status.StatusWriteDBError

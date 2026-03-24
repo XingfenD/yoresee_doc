@@ -11,6 +11,7 @@ type Invitation struct {
 	UsedCnt    int64      `gorm:"default:0" json:"used_cnt"`
 	MaxUsedCnt *int64     `gorm:"default:1" json:"max_used_cnt"`
 	ExpiresAt  *time.Time `json:"expires_at"`
+	Note       *string    `gorm:"type:text" json:"note"`
 	CreatedAt  time.Time  `json:"created_at"`
 	DeletedAt  *time.Time `gorm:"index" json:"deleted_at"`
 	Disabled   bool       `gorm:"index,default:false" json:"disabled_at"`

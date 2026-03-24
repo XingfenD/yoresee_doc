@@ -182,6 +182,9 @@ func toInvitationResponse(inv *dto.InvitationResponse) *pb.InvitationResponse {
 	if inv.ExpiresAt != nil {
 		resp.ExpiresAt = utils.Of(timeToString(*inv.ExpiresAt))
 	}
+	if inv.Note != nil {
+		resp.Note = inv.Note
+	}
 	return resp
 }
 
