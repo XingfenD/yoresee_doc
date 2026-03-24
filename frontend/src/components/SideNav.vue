@@ -1,7 +1,7 @@
 <template>
   <aside class="side-nav" :class="{ 'collapsed': isCollapsed }">
     <el-menu :default-active="currentActiveMenu" class="side-menu" @select="handleMenuSelect">
-      <el-menu-item v-for="item in resolvedMenuItems" :key="item.key" :index="item.key">
+      <el-menu-item v-for="item in filteredMenuItems" :key="item.key" :index="item.key">
         <el-icon v-if="item.icon">
           <component :is="item.icon" />
         </el-icon>
@@ -19,10 +19,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { House, Collection, Document, Tickets, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
+import { querySideBarDisplay } from '@/services/auth';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -50,6 +51,10 @@ const props = defineProps({
   menuItems: {
     type: Array,
     default: () => []
+  },
+  scene: {
+    type: String,
+    default: ''
   }
 });
 
@@ -61,6 +66,35 @@ const currentActiveMenu = computed(() => props.activeMenu);
 const resolvedMenuItems = computed(() => (
   Array.isArray(props.menuItems) && props.menuItems.length ? props.menuItems : defaultMenuItems
 ));
+const displayTabs = ref(null);
+const filterLoading = ref(false);
+
+const filteredMenuItems = computed(() => {
+  if (displayTabs.value === null) {
+    return resolvedMenuItems.value;
+  }
+  const tabsSet = new Set(displayTabs.value);
+  return resolvedMenuItems.value.filter((item) => tabsSet.has(item.key));
+});
+
+const loadDisplayTabs = async () => {
+  const scene = (props.scene || '').trim();
+  if (!scene) {
+    displayTabs.value = null;
+    return;
+  }
+  if (filterLoading.value) return;
+  filterLoading.value = true;
+  try {
+    const resp = await querySideBarDisplay(scene);
+    displayTabs.value = resp.display_tabs || [];
+  } catch (error) {
+    // fail closed so privileged menu is not exposed by client fallback.
+    displayTabs.value = [];
+  } finally {
+    filterLoading.value = false;
+  }
+};
 
 const getMenuLabel = (item) => {
   if (item.label) {
@@ -75,7 +109,7 @@ const getMenuLabel = (item) => {
 // 处理菜单选择
 const handleMenuSelect = (key) => {
   emit('menuSelect', key);
-  const selected = resolvedMenuItems.value.find((item) => item.key === key);
+  const selected = filteredMenuItems.value.find((item) => item.key === key);
   if (selected?.route) {
     router.push(selected.route);
     return;
@@ -90,6 +124,14 @@ const handleMenuSelect = (key) => {
     router.push('/templates');
   }
 };
+
+watch(
+  () => [props.scene, resolvedMenuItems.value.length],
+  () => {
+    loadDisplayTabs();
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>

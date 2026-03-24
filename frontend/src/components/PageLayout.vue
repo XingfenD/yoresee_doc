@@ -15,6 +15,7 @@
       <SideNav
         :active-menu="activeMenu"
         :menu-items="sideMenuItems"
+        :scene="sidebarScene"
         @menu-select="$emit('menu-select', $event)"
       />
 
@@ -65,6 +66,10 @@ defineProps({
   sideMenuItems: {
     type: Array,
     default: () => []
+  },
+  sidebarScene: {
+    type: String,
+    default: 'home'
   },
   title: {
     type: String,

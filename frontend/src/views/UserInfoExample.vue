@@ -7,6 +7,7 @@
     :username="userInfo?.username || '用户'"
     :active-menu="activeMenu"
     :side-menu-items="userMenuItems"
+    sidebar-scene="user_info"
     :title="t('user.center')"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"

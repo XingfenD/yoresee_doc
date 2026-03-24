@@ -48,6 +48,17 @@ message AuthRegisterResponse {
   BaseResponse base = 1;
 }
 
+message QuerySideBarDisplayRequest {
+  // scene enum string: home | user_info | manage
+  string scene = 1;
+}
+
+message QuerySideBarDisplayResponse {
+  BaseResponse base = 1;
+  // tab key enum strings defined by frontend and backend convention.
+  repeated string display_tabs = 2;
+}
+
 enum DocumentType {
   DOCUMENT_TYPE_UNSPECIFIED = 0;
   DOCUMENT_TYPE_MARKDOWN = 1;
@@ -351,6 +362,8 @@ service AuthService {
   rpc Login(AuthLoginRequest) returns (AuthLoginResponse);
   // register creates a new user account.
   rpc Register(AuthRegisterRequest) returns (AuthRegisterResponse);
+  // query side bar visible tabs for scene.
+  rpc QuerySideBarDisplay(QuerySideBarDisplayRequest) returns (QuerySideBarDisplayResponse);
 }
 
 // documentService provides document APIs.

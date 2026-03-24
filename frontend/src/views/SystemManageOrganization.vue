@@ -7,6 +7,7 @@
     :username="userInfo?.username || '用户'"
     :active-menu="activeMenu"
     :side-menu-items="manageMenuItems"
+    sidebar-scene="manage"
     :title="t('system.organization.title')"
     @change-language="handleLanguageChange"
     @toggle-theme="toggleTheme"

@@ -45,7 +45,7 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item @click="goToUserCenter">{{ t('user.center') }}</el-dropdown-item>
-            <el-dropdown-item v-if="isAdmin" @click="handleSystemManage">
+            <el-dropdown-item v-if="showSystemManage" @click="handleSystemManage">
               {{ t('system.management') }}
             </el-dropdown-item>
             <el-dropdown-item divided @click="emit('logout')">{{ t('button.logout') }}</el-dropdown-item>
@@ -57,10 +57,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ArrowDown, Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
+import { querySideBarDisplay } from '@/services/auth';
 
 const props = defineProps({
   systemName: {
@@ -88,7 +89,7 @@ const props = defineProps({
 const emit = defineEmits(['change-language', 'toggle-theme', 'logout']);
 const { t } = useI18n();
 const router = useRouter();
-const isAdmin = computed(() => (props.username || '').toLowerCase() === 'admin');
+const showSystemManage = ref(false);
 
 const goToUserCenter = () => {
   router.push('/user_info/example');
@@ -97,6 +98,20 @@ const goToUserCenter = () => {
 const handleSystemManage = () => {
   router.push('/manage');
 };
+
+const loadSystemManageDisplay = async () => {
+  try {
+    const resp = await querySideBarDisplay('manage');
+    const tabs = resp.display_tabs || [];
+    showSystemManage.value = tabs.some((tab) => tab.startsWith('manage-'));
+  } catch (error) {
+    showSystemManage.value = false;
+  }
+};
+
+onMounted(() => {
+  loadSystemManageDisplay();
+});
 </script>
 
 <style scoped>
