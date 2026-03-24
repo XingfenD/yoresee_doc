@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -79,7 +80,7 @@ func initializeDatabaseInTransaction() error {
 			return err
 		}
 
-		if err := createUser2InTx(tx); err != nil {
+		if err := createNormalUserInTx(tx); err != nil {
 			return err
 		}
 

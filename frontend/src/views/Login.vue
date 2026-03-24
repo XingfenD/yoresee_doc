@@ -160,10 +160,10 @@ const handleLogin = async () => {
         if (success) {
           router.push("/");
         } else {
-          error.value = t("common.requestFailed");
+          error.value = t("login.failed");
         }
       } catch (err) {
-        error.value = t("common.requestFailed");
+        error.value = t("login.failed");
       } finally {
         loading.value = false;
       }

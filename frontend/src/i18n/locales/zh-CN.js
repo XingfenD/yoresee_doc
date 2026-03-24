@@ -18,6 +18,7 @@ export default {
     signIn: '登录',
     noAccount: '还没有账号？',
     signUp: '注册',
+    failed: '登录失败',
     validation: {
       emailRequired: '请输入邮箱',
       emailFormat: '请输入正确的邮箱格式',
