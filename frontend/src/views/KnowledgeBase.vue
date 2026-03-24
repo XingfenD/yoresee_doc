@@ -20,7 +20,7 @@
     </template>
 
     <div class="knowledge-base-vertical-layout">
-      <el-tabs v-model="activeTab" class="knowledge-base-tabs">
+      <el-tabs v-model="activeTab" class="common-tabs">
         <el-tab-pane :label="t('knowledgeBase.my')" name="my">
           <KnowledgeBaseListSection
             :title="t('knowledgeBase.my')"
@@ -385,28 +385,6 @@ watch(activeTab, async (tab) => {
   flex-direction: column;
   gap: var(--spacing-lg);
   height: auto;
-}
-
-.knowledge-base-tabs :deep(.el-tabs__header) {
-  margin: 0 0 var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.knowledge-base-tabs :deep(.el-tabs__nav-wrap) {
-  padding: 0 var(--spacing-sm);
-}
-
-.knowledge-base-tabs :deep(.el-tabs__item) {
-  color: var(--text-medium);
-  font-weight: 500;
-}
-
-.knowledge-base-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--primary-color);
-}
-
-.knowledge-base-tabs :deep(.el-tabs__active-bar) {
-  background-color: var(--primary-color);
 }
 
 /* 深色模式支持 */

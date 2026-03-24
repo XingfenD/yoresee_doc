@@ -19,7 +19,7 @@
       </el-button>
     </template>
     <div class="templates-layout">
-      <el-tabs v-model="activeTab" class="templates-tabs">
+      <el-tabs v-model="activeTab" class="common-tabs">
         <el-tab-pane :label="t('templates.my')" name="my">
           <div v-loading="loadingMy">
             <TemplateListSection
@@ -308,25 +308,4 @@ watch(activeTab, (tab) => {
   height: auto;
 }
 
-.templates-tabs :deep(.el-tabs__header) {
-  margin: 0 0 var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.templates-tabs :deep(.el-tabs__nav-wrap) {
-  padding: 0 var(--spacing-sm);
-}
-
-.templates-tabs :deep(.el-tabs__item) {
-  color: var(--text-medium);
-  font-weight: 500;
-}
-
-.templates-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--primary-color);
-}
-
-.templates-tabs :deep(.el-tabs__active-bar) {
-  background-color: var(--primary-color);
-}
 </style>

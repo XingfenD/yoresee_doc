@@ -14,7 +14,7 @@
     <!-- 主内容区 -->
     <div class="main-content">
       <!-- 左侧导航 -->
-      <SideNav :active-menu="activeMenu" :menu-items="editorMenuItems" @menu-select="handleMenuSelect" />
+      <SideNav :active-menu="activeMenu" scene="home" @menu-select="handleMenuSelect" />
 
       <!-- 右侧内容 -->
       <div class="content-area">
@@ -147,7 +147,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, Check, Edit, Document, Collection, MoreFilled, HomeFilled } from '@element-plus/icons-vue';
+import { ArrowLeft, ArrowRight, Check, Edit, MoreFilled } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentTree from '@/components/DocumentTree.vue';
@@ -186,7 +186,13 @@ const systemName = ref(userStore.systemName || 'Yoresee');
 const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 const currentLanguage = computed(() => locale.value);
 const isDarkMode = computed(() => userStore.darkMode);
-const activeMenu = ref('editor-home');
+const resolveActiveMenu = (currentKbId) => {
+  if (currentKbId === 'personal') return 'documents';
+  if (currentKbId) return 'knowledge-base';
+  return 'home';
+};
+
+const activeMenu = ref(resolveActiveMenu(kbId.value));
 const userInfo = computed(() => userStore.userInfo);
 
 const knowledgeBaseName = ref('示例知识库');
@@ -671,12 +677,6 @@ const toggleTheme = () => {
   userStore.toggleDarkMode();
 };
 
-const editorMenuItems = [
-  { key: 'editor-home', labelKey: 'navigation.home', icon: HomeFilled, route: '/' },
-  { key: 'editor-documents', labelKey: 'editor.menu.documents', icon: Document, route: '/mydocuments' },
-  { key: 'editor-knowledge-base', labelKey: 'editor.menu.knowledgeBase', icon: Collection, route: '/knowledge-base' }
-];
-
 const handleMenuSelect = (menu) => {
   activeMenu.value = menu;
 };
@@ -705,11 +705,7 @@ const fetchSystemInfo = async () => {
 onMounted(async () => {
   initLanguage();
 
-  if (kbId.value === 'personal') {
-    activeMenu.value = 'editor-documents';
-  } else {
-    activeMenu.value = 'editor-knowledge-base';
-  }
+  activeMenu.value = resolveActiveMenu(kbId.value);
 
   if (kbId.value === 'example' && docId.value === 'example') {
     knowledgeBaseName.value = '示例知识库';

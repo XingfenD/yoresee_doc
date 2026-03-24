@@ -23,7 +23,7 @@
       <el-form-item :label="t('templates.tagsLabel')">
         <el-input v-model="formState.tags" :placeholder="t('templates.tagsPlaceholder')" />
       </el-form-item>
-      <el-form-item v-if="showContent" :label="t('templates.contentLabel')">
+      <el-form-item v-if="showContent" :label="t('templates.contentLabel')" required>
         <el-input
           v-model="formState.content"
           type="textarea"

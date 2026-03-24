@@ -55,16 +55,10 @@
     <el-dialog v-model="showCreateDialog" :title="t('system.userGroup.title')" width="480px">
       <el-form label-position="top" :model="createForm">
         <el-form-item :label="t('common.name')">
-          <el-input v-model="createForm.name" maxlength="50" show-word-limit />
+          <el-input v-model="createForm.name" />
         </el-form-item>
         <el-form-item :label="t('common.description')">
-          <el-input
-            v-model="createForm.description"
-            type="textarea"
-            :rows="3"
-            maxlength="200"
-            show-word-limit
-          />
+          <el-input v-model="createForm.description" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -78,16 +72,10 @@
     <el-dialog v-model="showEditDialog" :title="t('document.edit')" width="480px">
       <el-form label-position="top" :model="editForm">
         <el-form-item :label="t('common.name')">
-          <el-input v-model="editForm.name" maxlength="50" show-word-limit />
+          <el-input v-model="editForm.name" />
         </el-form-item>
         <el-form-item :label="t('common.description')">
-          <el-input
-            v-model="editForm.description"
-            type="textarea"
-            :rows="3"
-            maxlength="200"
-            show-word-limit
-          />
+          <el-input v-model="editForm.description" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>

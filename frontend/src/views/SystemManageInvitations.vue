@@ -21,7 +21,7 @@
       </el-button>
     </template>
 
-    <el-tabs v-model="activeTab" class="manage-tabs">
+    <el-tabs v-model="activeTab" class="common-tabs">
       <el-tab-pane :label="t('system.invite.tabs.list')" name="list">
         <CommonList
           :rows="inviteList"
@@ -224,7 +224,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.manage-tabs :deep(.el-tabs__header) {
-  margin-bottom: var(--spacing-lg);
-}
 </style>

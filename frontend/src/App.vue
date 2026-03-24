@@ -101,6 +101,29 @@ body {
   color: var(--primary-color);
 }
 
+/* 通用 Tabs 样式 */
+.common-tabs .el-tabs__header {
+  margin: 0 0 var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.common-tabs .el-tabs__nav-wrap {
+  padding: 0 var(--spacing-sm);
+}
+
+.common-tabs .el-tabs__item {
+  color: var(--text-medium);
+  font-weight: 500;
+}
+
+.common-tabs .el-tabs__item.is-active {
+  color: var(--primary-color);
+}
+
+.common-tabs .el-tabs__active-bar {
+  background-color: var(--primary-color);
+}
+
 /* 深色模式下的Element Plus组件样式 */
 .dark-mode {
 
