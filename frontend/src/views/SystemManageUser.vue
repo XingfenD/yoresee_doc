@@ -17,8 +17,16 @@
   >
     <div class="manage-layout">
       <section class="manage-section">
-        <div class="section-header">
+        <div class="section-header section-header--split">
           <h3 class="section-title">{{ t('system.user.placeholderTitle') }}</h3>
+          <el-input
+            v-model="keyword"
+            :placeholder="t('common.search')"
+            clearable
+            class="section-search"
+            @input="handleSearch"
+            @clear="handleSearch"
+          />
         </div>
         <div class="section-body">
           <CommonList
@@ -27,6 +35,12 @@
             :is-dark="isDarkMode"
             row-key="external_id"
             :empty-text="t('message.empty')"
+            :show-pagination="true"
+            :total="userTotal"
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10]"
+            @page-change="handlePageChange"
           >
             <template #cell-status="{ row }">
               <span :class="['status-pill', row.status === 1 ? 'is-active' : 'is-disabled']">
@@ -74,7 +88,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -137,6 +151,11 @@ const handleMenuSelect = (key) => {
 };
 
 const userRows = ref([]);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const userTotal = ref(0);
+const keyword = ref('');
+const searchTimer = ref(null);
 const showEditDialog = ref(false);
 const editing = ref(false);
 const editForm = ref({
@@ -157,12 +176,34 @@ const userColumns = computed(() => [
 
 const loadUsers = async () => {
   try {
-    const resp = await listUsers({ page: 1, page_size: 200 });
+    const resp = await listUsers({
+      page: currentPage.value,
+      page_size: pageSize.value,
+      keyword: keyword.value.trim() || undefined
+    });
     userRows.value = resp.users || [];
+    const totalNumber = Number(resp.total);
+    userTotal.value = Number.isFinite(totalNumber) ? totalNumber : 0;
   } catch (err) {
     console.error('listUsers failed', err);
     userRows.value = [];
+    userTotal.value = 0;
   }
+};
+
+const handlePageChange = async (page) => {
+  currentPage.value = page;
+  await loadUsers();
+};
+
+const handleSearch = async () => {
+  if (searchTimer.value) {
+    clearTimeout(searchTimer.value);
+  }
+  searchTimer.value = setTimeout(async () => {
+    currentPage.value = 1;
+    await loadUsers();
+  }, 300);
 };
 
 const openEditDialog = (row) => {
@@ -238,6 +279,12 @@ onMounted(() => {
   initLanguage();
   loadUsers();
 });
+
+onBeforeUnmount(() => {
+  if (searchTimer.value) {
+    clearTimeout(searchTimer.value);
+  }
+});
 </script>
 
 <style scoped>
@@ -261,11 +308,22 @@ onMounted(() => {
   background: var(--bg-white);
 }
 
+.section-header--split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .section-title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-dark);
+}
+
+.section-search {
+  max-width: 260px;
 }
 
 .section-body {

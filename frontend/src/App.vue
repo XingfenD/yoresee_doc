@@ -2,16 +2,23 @@
   <div class="app-container">
     <!-- 主内容区 -->
     <div class="main-container">
-      <router-view />
+      <el-config-provider :locale="elementLocale">
+        <router-view />
+      </el-config-provider>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useUserStore } from './store/user';
+import { ElConfigProvider } from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
+import en from 'element-plus/es/locale/lang/en';
+import { useI18n } from 'vue-i18n';
 
 const userStore = useUserStore();
+const { locale } = useI18n();
 
 // 初始化暗黑模式
 const initDarkMode = () => {
@@ -33,6 +40,8 @@ watch(
 onMounted(() => {
   initDarkMode();
 });
+
+const elementLocale = computed(() => (locale.value === 'zh' ? zhCn : en));
 </script>
 
 <style>
