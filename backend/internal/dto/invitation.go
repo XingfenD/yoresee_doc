@@ -11,6 +11,7 @@ type ListInvitationsReq struct {
 	CreatedAtEnd   *string    `json:"created_at_end"`
 	Disabled       *bool      `json:"disabled"`
 	OnlyMine       *bool      `json:"only_mine"`
+	Keyword        *string    `json:"keyword"`
 	SortArgs       SortArgs   `json:"sort_args"`
 	Pagination     Pagination `json:"pagination"`
 }
@@ -54,6 +55,7 @@ type ListInvitationRecordsRequest struct {
 	UsedAtEnd   *string    `json:"used_at_end"`
 	CreatorID   *int64     `json:"creator_id"`
 	OnlyMine    *bool      `json:"only_mine"`
+	Keyword     *string    `json:"keyword"`
 	Pagination  Pagination `json:"pagination"`
 }
 

@@ -355,6 +355,7 @@ message ListInvitationsRequest {
   int32 page = 10;
   int32 page_size = 11;
   optional bool only_mine = 12;
+  optional string keyword = 13;
 }
 
 message ListInvitationsResponse {
@@ -402,6 +403,7 @@ message ListInvitationRecordsRequest {
   int32 page = 5;
   int32 page_size = 6;
   optional bool only_mine = 7;
+  optional string keyword = 8;
 }
 
 message ListInvitationRecordsResponse {

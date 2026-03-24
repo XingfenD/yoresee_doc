@@ -148,6 +148,7 @@ func (s *InvitationServiceServer) ListInvitations(ctx context.Context, req *pb.L
 		CreatedAtEnd:   req.CreatedAtEnd,
 		Disabled:       req.Disabled,
 		OnlyMine:       req.OnlyMine,
+		Keyword:        req.Keyword,
 		SortArgs:       sortArgs,
 		Pagination: dto.Pagination{
 			Page:     int(req.Page),
@@ -272,6 +273,7 @@ func (s *InvitationServiceServer) ListInvitationRecords(ctx context.Context, req
 		UsedAtEnd:   req.UsedAtEnd,
 		CreatorID:   creatorID,
 		OnlyMine:    req.OnlyMine,
+		Keyword:     req.Keyword,
 		Pagination: dto.Pagination{
 			Page:     int(req.Page),
 			PageSize: int(req.PageSize),

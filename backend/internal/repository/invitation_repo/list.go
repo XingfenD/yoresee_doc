@@ -10,6 +10,7 @@ type InvitationListOperation struct {
 	repo           *InvitationRepository
 	m              *model.Invitation
 	creatorID      *int64
+	keyword        *string
 	maxUsedCnt     *int64
 	expiresAtStart *string
 	expiresAtEnd   *string
@@ -37,6 +38,11 @@ func (op *InvitationListOperation) WithTx(tx *gorm.DB) *InvitationListOperation 
 
 func (op *InvitationListOperation) WithCreatorID(creatorID *int64) *InvitationListOperation {
 	op.creatorID = creatorID
+	return op
+}
+
+func (op *InvitationListOperation) WithKeyword(keyword *string) *InvitationListOperation {
+	op.keyword = keyword
 	return op
 }
 
@@ -88,6 +94,10 @@ func (op *InvitationListOperation) Exec() ([]model.Invitation, error) {
 
 	if op.creatorID != nil {
 		dbQuery = dbQuery.Where("created_by = ?", *op.creatorID)
+	}
+
+	if op.keyword != nil && *op.keyword != "" {
+		dbQuery = dbQuery.Where("code ILIKE ?", "%"+*op.keyword+"%")
 	}
 
 	if op.maxUsedCnt != nil {
@@ -158,6 +168,10 @@ func (op *InvitationListOperation) ExecWithTotal() ([]model.Invitation, int64, e
 
 	if op.creatorID != nil {
 		dbQuery = dbQuery.Where("created_by = ?", *op.creatorID)
+	}
+
+	if op.keyword != nil && *op.keyword != "" {
+		dbQuery = dbQuery.Where("code ILIKE ?", "%"+*op.keyword+"%")
 	}
 
 	if op.maxUsedCnt != nil {

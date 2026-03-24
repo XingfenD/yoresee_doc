@@ -38,6 +38,7 @@ type InvitationRecordListOperation struct {
 	usedAtStart *string
 	usedAtEnd   *string
 	creatorID   *int64
+	keyword     *string
 	page        int
 	pageSize    int
 	tx          *gorm.DB
@@ -75,6 +76,11 @@ func (op *InvitationRecordListOperation) WithCreatorID(creatorID *int64) *Invita
 	return op
 }
 
+func (op *InvitationRecordListOperation) WithKeyword(keyword *string) *InvitationRecordListOperation {
+	op.keyword = keyword
+	return op
+}
+
 func (op *InvitationRecordListOperation) WithPagination(page, pageSize int) *InvitationRecordListOperation {
 	op.page = page
 	op.pageSize = pageSize
@@ -94,6 +100,10 @@ func (op *InvitationRecordListOperation) ExecWithTotal() ([]model.InvitationReco
 	}
 	if op.code != nil && *op.code != "" {
 		query = query.Where("code = ?", *op.code)
+	}
+	if op.keyword != nil && *op.keyword != "" {
+		keyword := "%" + *op.keyword + "%"
+		query = query.Where("invitation_records.code ILIKE ? OR invitation_records.used_by ILIKE ?", keyword, keyword)
 	}
 	if op.status != nil && *op.status != "" {
 		query = query.Where("status = ?", *op.status)

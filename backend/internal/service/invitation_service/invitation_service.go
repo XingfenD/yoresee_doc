@@ -56,6 +56,7 @@ func (s *InvitationService) ListInvitations(req *dto.ListInvitationsReq) ([]mode
 
 	return s.invitationRepo.List(&model.Invitation{}).
 		WithCreatorID(req.CreatorID).
+		WithKeyword(req.Keyword).
 		WithMaxUsedCnt(req.MaxUsedCnt).
 		WithExpiresAtRange(req.ExpiresAtStart, req.ExpiresAtEnd).
 		WithCreatedAtRange(req.CreatedAtStart, req.CreatedAtEnd).
@@ -133,6 +134,7 @@ func (s *InvitationService) ListInvitationRecords(req *dto.ListInvitationRecords
 		WithStatus(req.Status).
 		WithUsedAtRange(req.UsedAtStart, req.UsedAtEnd).
 		WithCreatorID(req.CreatorID).
+		WithKeyword(req.Keyword).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 		ExecWithTotal()
 }
