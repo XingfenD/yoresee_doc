@@ -95,6 +95,39 @@ func (c *ConsulKVClient) CacheTTL() time.Duration {
 	return c.cacheTTL
 }
 
+func (c *ConsulKVClient) ClearCache() {
+	if c == nil {
+		return
+	}
+	consulBindCache.Range(func(key, value any) bool {
+		entry, ok := value.(*cacheEntry)
+		if !ok {
+			return true
+		}
+		entry.mu.Lock()
+		entry.cache = cachedValue{}
+		entry.mu.Unlock()
+		return true
+	})
+}
+
+func (c *ConsulKVClient) ClearCacheKey(key string) {
+	if c == nil {
+		return
+	}
+	val, ok := consulBindCache.Load(key)
+	if !ok {
+		return
+	}
+	entry, ok := val.(*cacheEntry)
+	if !ok {
+		return
+	}
+	entry.mu.Lock()
+	entry.cache = cachedValue{}
+	entry.mu.Unlock()
+}
+
 func (c *ConsulKVClient) Get(ctx context.Context, key string) (string, bool, error) {
 	if c == nil {
 		return "", false, nil
@@ -157,6 +190,13 @@ type cachedValue struct {
 	fetchedAt time.Time
 }
 
+type cacheEntry struct {
+	mu    sync.Mutex
+	cache cachedValue
+}
+
+var consulBindCache sync.Map
+
 func BindConsulConfig(target interface{}, client *ConsulKVClient) error {
 	if target == nil {
 		return fmt.Errorf("consul config bind target is nil")
@@ -188,16 +228,17 @@ func BindConsulConfig(target interface{}, client *ConsulKVClient) error {
 
 		outType := field.Type.Out(0)
 		cache := &cachedValue{}
-		var mu sync.Mutex
+		entry := &cacheEntry{cache: *cache}
+		consulBindCache.Store(parsed.Key, entry)
 
 		fn := reflect.MakeFunc(field.Type, func(args []reflect.Value) []reflect.Value {
-			mu.Lock()
-			defer mu.Unlock()
+			entry.mu.Lock()
+			defer entry.mu.Unlock()
 
 			now := time.Now()
 			ttl := client.CacheTTL()
-			if ttl > 0 && cache.fetchedAt.Add(ttl).After(now) {
-				val, err := convertConsulValue(cache.value, cache.found, parsed, outType)
+			if ttl > 0 && entry.cache.fetchedAt.Add(ttl).After(now) {
+				val, err := convertConsulValue(entry.cache.value, entry.cache.found, parsed, outType)
 				if err == nil {
 					return []reflect.Value{val}
 				}
@@ -205,16 +246,16 @@ func BindConsulConfig(target interface{}, client *ConsulKVClient) error {
 
 			raw, found, err := client.Get(context.Background(), parsed.Key)
 			if err != nil {
-				val, _ := convertConsulValue(cache.value, cache.found, parsed, outType)
+				val, _ := convertConsulValue(entry.cache.value, entry.cache.found, parsed, outType)
 				return []reflect.Value{val}
 			}
-			cache.value = raw
-			cache.found = found
-			cache.fetchedAt = now
+			entry.cache.value = raw
+			entry.cache.found = found
+			entry.cache.fetchedAt = now
 
 			val, err := convertConsulValue(raw, found, parsed, outType)
 			if err != nil {
-				val, _ = convertConsulValue(cache.value, cache.found, parsed, outType)
+				val, _ = convertConsulValue(entry.cache.value, entry.cache.found, parsed, outType)
 			}
 			return []reflect.Value{val}
 		})

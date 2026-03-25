@@ -14,6 +14,7 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 	docSvc := grpcserver.NewDocumentServiceServer()
 	kbSvc := grpcserver.NewKnowledgeBaseServiceServer()
 	sysSvc := grpcserver.NewSystemServiceServer()
+	settingSvc := grpcserver.NewSettingServiceServer()
 	memberSvc := grpcserver.NewMembershipServiceServer()
 	inviteSvc := grpcserver.NewInvitationServiceServer()
 
@@ -201,6 +202,30 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		pb.SystemService_SystemInfo_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.SystemInfoRequest]) (*connect.Response[pb.SystemInfoResponse], error) {
 			resp, err := sysSvc.SystemInfo(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.SettingService_GetSettings_FullMethodName, connect.NewUnaryHandler(
+		pb.SettingService_GetSettings_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.GetSettingsRequest]) (*connect.Response[pb.GetSettingsResponse], error) {
+			resp, err := settingSvc.GetSettings(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.SettingService_UpdateSettings_FullMethodName, connect.NewUnaryHandler(
+		pb.SettingService_UpdateSettings_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateSettingsRequest]) (*connect.Response[pb.UpdateSettingsResponse], error) {
+			resp, err := settingSvc.UpdateSettings(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}
