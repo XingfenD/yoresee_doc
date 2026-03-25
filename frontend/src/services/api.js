@@ -1,6 +1,6 @@
 import { clients, messages, unaryCall } from './grpc_client';
 
-const { documentClient, knowledgeBaseClient, membershipClient, systemClient, invitationClient, settingClient } = clients;
+const { documentClient, knowledgeBaseClient, membershipClient, notificationClient, systemClient, invitationClient, settingClient } = clients;
 const {
   ListKnowledgeBasesRequest,
   ListRecentKnowledgeBasesRequest,
@@ -41,7 +41,11 @@ const {
   MoveOrgNodeRequest,
   ListOrgNodeMembersRequest,
   GetSettingsRequest,
-  UpdateSettingsRequest
+  UpdateSettingsRequest,
+  CreateNotificationRequest,
+  ListNotificationsRequest,
+  MarkNotificationsReadRequest,
+  MarkAllNotificationsReadRequest
 } = messages;
 
 function baseToObject(resp) {
@@ -168,6 +172,20 @@ function mapInvitationRecord(rec) {
     used_by_external_id: rec.usedByExternalId ?? null,
     used_at: rec.usedAt,
     status: rec.status
+  };
+}
+
+function mapNotification(item) {
+  if (!item) return null;
+  return {
+    id: item.id,
+    type: item.type,
+    status: item.status,
+    title: item.title,
+    content: item.content,
+    payload: item.payload,
+    created_at: item.createdAt,
+    read: item.status === 'read'
   };
 }
 
@@ -832,6 +850,50 @@ export const updateSettings = async (updates = []) => {
   return handleResponse(base, {});
 };
 
+// create notification (manual or system)
+export const createNotification = async (data = {}) => {
+  const req = new CreateNotificationRequest({
+    receiverExternalIds: data.receiver_external_ids || [],
+    type: data.type || '',
+    title: data.title || '',
+    content: data.content || '',
+    payloadJson: data.payload_json || ''
+  });
+  const resp = await unaryCall(notificationClient, 'createNotification', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+// list notifications for current user
+export const listNotifications = async (params = {}) => {
+  const req = new ListNotificationsRequest({
+    page: params.page || 1,
+    pageSize: params.page_size || 10,
+    status: params.status || undefined
+  });
+  const resp = await unaryCall(notificationClient, 'listNotifications', req);
+  const base = baseToObject(resp);
+  const data = {
+    notifications: (resp.notifications || []).map(mapNotification),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+export const markNotificationsRead = async (ids = []) => {
+  const req = new MarkNotificationsReadRequest({ ids });
+  const resp = await unaryCall(notificationClient, 'markNotificationsRead', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+export const markAllNotificationsRead = async () => {
+  const req = new MarkAllNotificationsReadRequest({});
+  const resp = await unaryCall(notificationClient, 'markAllNotificationsRead', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
 export default {
   getKnowledgeBases,
   createKnowledgeBase,
@@ -868,5 +930,9 @@ export default {
   moveOrgNode,
   listOrgNodeMembers,
   getSettings,
-  updateSettings
+  updateSettings,
+  createNotification,
+  listNotifications,
+  markNotificationsRead,
+  markAllNotificationsRead
 };

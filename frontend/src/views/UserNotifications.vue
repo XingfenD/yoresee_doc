@@ -21,7 +21,7 @@
     </el-tabs>
 
     <CommonList
-      :rows="pagedNotifications"
+      :rows="displayNotifications"
       :columns="columns"
       :is-dark="isDarkMode"
       row-key="id"
@@ -32,8 +32,9 @@
       :total="totalCount"
       v-model:current-page="currentPage"
       v-model:page-size="pageSize"
-      :page-sizes="[5, 10, 20]"
+      :page-sizes="[6, 10, 20]"
       @page-change="handlePageChange"
+      @size-change="handleSizeChange"
     >
       <template #toolbar-actions>
         <el-button size="small" type="primary" @click="handleMarkRead">
@@ -56,7 +57,7 @@
           <span v-if="!row.read" class="notice-dot" />
           <div class="notice-text">
             <div class="notice-main">{{ buildTitle(row) }}</div>
-            <div class="notice-sub">{{ row.snippet || '-' }}</div>
+            <div class="notice-sub">{{ row.content || '-' }}</div>
           </div>
         </div>
       </template>
@@ -65,7 +66,7 @@
           {{ tagLabel(value) }}
         </el-tag>
       </template>
-      <template #cell-time="{ value }">
+      <template #cell-created_at="{ value }">
         {{ formatDate(value) }}
       </template>
       <template #cell-actions="{ row }">
@@ -77,17 +78,20 @@
         </el-button>
       </template>
     </CommonList>
+
   </PageLayout>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
+import { ElMessage } from 'element-plus';
 import { House, User, Ticket, Setting, Bell } from '@element-plus/icons-vue';
+import { listNotifications, markNotificationsRead, markAllNotificationsRead } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -134,80 +138,42 @@ const handleMenuSelect = (key) => {
   activeMenu.value = key;
 };
 
-const notifications = ref([
-  {
-    id: 'n1',
-    type: 'mention',
-    actor: '张三',
-    docTitle: '产品需求文档',
-    snippet: '请看第 3 节的评审结论',
-    time: '2026-03-25T09:40:00Z',
-    read: false
-  },
-  {
-    id: 'n2',
-    type: 'comment',
-    actor: '李四',
-    docTitle: '技术架构设计',
-    snippet: '这部分是否可以拆分为两个服务？',
-    time: '2026-03-24T18:22:00Z',
-    read: false
-  },
-  {
-    id: 'n3',
-    type: 'reply',
-    actor: '王五',
-    docTitle: '会议纪要',
-    snippet: '已补充行动项。',
-    time: '2026-03-24T12:05:00Z',
-    read: true
-  }
-]);
+const notifications = ref([]);
+const totalCount = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(6);
+const loading = ref(false);
+const sending = ref(false);
 
 const columns = computed(() => [
   { key: 'select', label: '', width: 36, align: 'center', className: 'select-column' },
   { key: 'title', label: t('user.notifications.columns.title'), minWidth: 320, flex: 1.6 },
   { key: 'type', label: t('user.notifications.columns.type'), minWidth: 120, align: 'center' },
-  { key: 'time', label: t('user.notifications.columns.time'), minWidth: 180, align: 'center' },
+  { key: 'created_at', label: t('user.notifications.columns.time'), minWidth: 180, align: 'center' },
   { key: 'actions', label: t('common.actions'), minWidth: 160, align: 'center' }
 ]);
 
-const displayNotifications = computed(() => {
-  if (activeTab.value === 'unread') {
-    return notifications.value.filter((item) => !item.read);
-  }
-  return notifications.value;
-});
+
+const displayNotifications = computed(() => notifications.value);
 
 const selectedIds = ref([]);
-const currentPage = ref(1);
-const pageSize = ref(10);
-
-const totalCount = computed(() => displayNotifications.value.length);
-
-const pagedNotifications = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return displayNotifications.value.slice(start, start + pageSize.value);
-});
 
 const selectAll = computed(() => {
-  if (!pagedNotifications.value.length) return false;
-  return pagedNotifications.value.every((item) => selectedIds.value.includes(item.id));
+  if (!displayNotifications.value.length) return false;
+  return displayNotifications.value.every((item) => selectedIds.value.includes(item.id));
 });
 
 const selectIndeterminate = computed(() => {
-  const selectedCount = pagedNotifications.value.filter((item) => selectedIds.value.includes(item.id)).length;
-  return selectedCount > 0 && selectedCount < pagedNotifications.value.length;
+  const selectedCount = displayNotifications.value.filter((item) => selectedIds.value.includes(item.id)).length;
+  return selectedCount > 0 && selectedCount < displayNotifications.value.length;
 });
 
 const toggleSelectAll = (value) => {
   if (value) {
-    selectedIds.value = Array.from(
-      new Set([...selectedIds.value, ...pagedNotifications.value.map((item) => item.id)])
-    );
+    selectedIds.value = displayNotifications.value.map((item) => item.id);
   } else {
     selectedIds.value = selectedIds.value.filter(
-      (id) => !pagedNotifications.value.some((item) => item.id === id)
+      (id) => !displayNotifications.value.some((item) => item.id === id)
     );
   }
 };
@@ -221,10 +187,12 @@ const tagType = (value) => {
 const tagLabel = (value) => {
   if (value === 'mention') return t('user.notifications.types.mention');
   if (value === 'reply') return t('user.notifications.types.reply');
-  return t('user.notifications.types.comment');
+  if (value === 'comment') return t('user.notifications.types.comment');
+  if (value === 'system') return t('user.notifications.types.system');
+  return value || t('user.notifications.types.system');
 };
 
-const buildTitle = (row) => `${row.actor} ${t('user.notifications.inDoc')}「${row.docTitle}」`;
+const buildTitle = (row) => row.title || row.content || '-';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -233,40 +201,67 @@ const formatDate = (value) => {
   return date.toLocaleString();
 };
 
-const markRead = (row) => {
-  const target = notifications.value.find((item) => item.id === row.id);
-  if (target) {
-    target.read = true;
+const markRead = async (row) => {
+  if (!row?.id) return;
+  try {
+    await markNotificationsRead([row.id]);
+    await loadNotifications();
+  } catch (err) {
+    ElMessage.error(t('common.requestFailed'));
   }
 };
 
-const markSelectedRead = () => {
-  notifications.value = notifications.value.map((item) =>
-    selectedIds.value.includes(item.id) ? { ...item, read: true } : item
-  );
-  selectedIds.value = [];
-};
-
-const markAllRead = () => {
-  notifications.value = notifications.value.map((item) => ({ ...item, read: true }));
-  selectedIds.value = [];
-};
-
-const handleMarkRead = () => {
-  if (selectedIds.value.length) {
-    markSelectedRead();
-  } else {
-    markAllRead();
+const handleMarkRead = async () => {
+  try {
+    if (selectedIds.value.length) {
+      await markNotificationsRead(selectedIds.value);
+    } else {
+      await markAllNotificationsRead();
+    }
+    selectedIds.value = [];
+    await loadNotifications();
+  } catch (err) {
+    ElMessage.error(t('common.requestFailed'));
   }
 };
 
-const handlePageChange = () => {
-  // client-side pagination
+const handlePageChange = async () => {
+  await loadNotifications();
 };
 
-watch(activeTab, () => {
+const handleSizeChange = async () => {
   currentPage.value = 1;
-  selectedIds.value = [];
+  await loadNotifications();
+};
+
+const loadNotifications = async () => {
+  if (loading.value) return;
+  loading.value = true;
+  try {
+    const resp = await listNotifications({
+      page: currentPage.value,
+      page_size: pageSize.value,
+      status: activeTab.value === 'unread' ? 'unread' : undefined
+    });
+    notifications.value = resp.notifications || [];
+    totalCount.value = Number(resp.total) || 0;
+    selectedIds.value = [];
+  } catch (err) {
+    notifications.value = [];
+    totalCount.value = 0;
+  } finally {
+    loading.value = false;
+  }
+};
+
+
+watch(activeTab, async () => {
+  currentPage.value = 1;
+  await loadNotifications();
+});
+
+onMounted(() => {
+  loadNotifications();
 });
 const openDetail = () => {
   // Sample only; would route to doc + comment anchor in real integration.

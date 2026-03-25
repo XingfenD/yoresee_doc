@@ -5,6 +5,7 @@ import {
   DocumentService,
   KnowledgeBaseService,
   MembershipService,
+  NotificationService,
   SettingService,
   SystemService,
   InvitationService
@@ -22,6 +23,7 @@ const authClient = createPromiseClient(AuthService, transport);
 const documentClient = createPromiseClient(DocumentService, transport);
 const knowledgeBaseClient = createPromiseClient(KnowledgeBaseService, transport);
 const membershipClient = createPromiseClient(MembershipService, transport);
+const notificationClient = createPromiseClient(NotificationService, transport);
 const settingClient = createPromiseClient(SettingService, transport);
 const systemClient = createPromiseClient(SystemService, transport);
 const invitationClient = createPromiseClient(InvitationService, transport);
@@ -57,6 +59,7 @@ export const clients = {
   documentClient,
   knowledgeBaseClient,
   membershipClient,
+  notificationClient,
   settingClient,
   systemClient,
   invitationClient

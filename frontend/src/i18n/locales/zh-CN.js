@@ -211,6 +211,8 @@ export default {
       markAll: '已读全部',
       markSelected: '已读选中',
       markRead: '标为已读',
+      sendSuccess: '投递成功',
+      sendFailed: '投递失败',
       view: '查看',
       inDoc: '在文档',
       empty: '暂无通知',
@@ -226,7 +228,8 @@ export default {
       types: {
         comment: '评论',
         reply: '回复',
-        mention: '@我'
+        mention: '@我',
+        system: '系统'
       }
     },
     invite: {

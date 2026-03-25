@@ -212,6 +212,8 @@ export default {
       markAll: 'Mark all read',
       markSelected: 'Mark selected read',
       markRead: 'Mark as read',
+      sendSuccess: 'Sent successfully',
+      sendFailed: 'Send failed',
       view: 'View',
       inDoc: 'in document',
       empty: 'No notifications',
@@ -227,7 +229,8 @@ export default {
       types: {
         comment: 'Comment',
         reply: 'Reply',
-        mention: 'Mention'
+        mention: 'Mention',
+        system: 'System'
       }
     },
     invite: {
