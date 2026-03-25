@@ -125,6 +125,8 @@ export default {
       registrationMode: '注册模式',
       freeRegister: '自由注册',
       inviteOnly: '邀请码',
+      registerLimit: '注册限制',
+      registerLimitDesc: '开启后将限制注册频率',
       placeholderTitle: '更多设置'
     },
     invite: {

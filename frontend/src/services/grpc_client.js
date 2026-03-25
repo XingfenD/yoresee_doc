@@ -5,6 +5,7 @@ import {
   DocumentService,
   KnowledgeBaseService,
   MembershipService,
+  SettingService,
   SystemService,
   InvitationService
 } from '@/gen/yoresee_doc/v1/yoresee_doc_connect.js';
@@ -21,6 +22,7 @@ const authClient = createPromiseClient(AuthService, transport);
 const documentClient = createPromiseClient(DocumentService, transport);
 const knowledgeBaseClient = createPromiseClient(KnowledgeBaseService, transport);
 const membershipClient = createPromiseClient(MembershipService, transport);
+const settingClient = createPromiseClient(SettingService, transport);
 const systemClient = createPromiseClient(SystemService, transport);
 const invitationClient = createPromiseClient(InvitationService, transport);
 
@@ -55,6 +57,7 @@ export const clients = {
   documentClient,
   knowledgeBaseClient,
   membershipClient,
+  settingClient,
   systemClient,
   invitationClient
 };

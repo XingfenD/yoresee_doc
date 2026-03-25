@@ -126,6 +126,8 @@ export default {
       registrationMode: 'Registration Mode',
       freeRegister: 'Open Registration',
       inviteOnly: 'Invite Code Only',
+      registerLimit: 'Registration limit',
+      registerLimitDesc: 'Enable to limit registration frequency',
       placeholderTitle: 'More Settings'
     },
     invite: {

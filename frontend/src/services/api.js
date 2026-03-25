@@ -1,6 +1,6 @@
 import { clients, messages, unaryCall } from './grpc_client';
 
-const { documentClient, knowledgeBaseClient, membershipClient, systemClient, invitationClient } = clients;
+const { documentClient, knowledgeBaseClient, membershipClient, systemClient, invitationClient, settingClient } = clients;
 const {
   ListKnowledgeBasesRequest,
   ListRecentKnowledgeBasesRequest,
@@ -39,7 +39,9 @@ const {
   UpdateOrgNodeRequest,
   DeleteOrgNodeRequest,
   MoveOrgNodeRequest,
-  ListOrgNodeMembersRequest
+  ListOrgNodeMembersRequest,
+  GetSettingsRequest,
+  UpdateSettingsRequest
 } = messages;
 
 function baseToObject(resp) {
@@ -780,6 +782,56 @@ export const listOrgNodeMembers = async (params = {}) => {
   return handleResponse(base, data);
 };
 
+// 获取系统设置
+export const getSettings = async (scene = 'system') => {
+  const req = new GetSettingsRequest({ scene });
+  const resp = await unaryCall(settingClient, 'getSettings', req);
+  const base = baseToObject(resp);
+  const data = {
+    groups: (resp.groups || []).map((group) => ({
+      key: group.key,
+      title: group.title,
+      title_key: group.titleKey,
+      items: (group.items || []).map((item) => ({
+        key: item.key,
+        label: item.label,
+        label_key: item.labelKey,
+        description: item.description,
+        description_key: item.descriptionKey,
+        type: item.type,
+        ui: {
+          component: item.ui?.component || '',
+          options: (item.ui?.options || []).map((opt) => ({
+            label: opt.label,
+            label_key: opt.labelKey,
+            value: opt.value
+          })),
+          placeholder: item.ui?.placeholder || '',
+          placeholder_key: item.ui?.placeholderKey || ''
+        },
+        value: item.value,
+        default_value: item.defaultValue,
+        required: item.required,
+        readonly: item.readonly
+      }))
+    }))
+  };
+  return handleResponse(base, data);
+};
+
+// 更新系统设置
+export const updateSettings = async (updates = []) => {
+  const req = new UpdateSettingsRequest({
+    updates: updates.map((item) => ({
+      key: item.key,
+      value: item.value
+    }))
+  });
+  const resp = await unaryCall(settingClient, 'updateSettings', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
 export default {
   getKnowledgeBases,
   createKnowledgeBase,
@@ -814,5 +866,7 @@ export default {
   updateOrgNode,
   deleteOrgNode,
   moveOrgNode,
-  listOrgNodeMembers
+  listOrgNodeMembers,
+  getSettings,
+  updateSettings
 };
