@@ -40,8 +40,10 @@ var (
 	StatusInvalidPassword   = NewStatusErr(40102, "invalid password")
 	StatusDocumentNotFound  = NewStatusErr(40120, "document not found")
 
-	StatusMembershipMetaNotFound = NewStatusErr(40140, "membership meta not found")
-	StatusInvalidMembershipType  = NewStatusErr(40141, "invalid membership type")
+	StatusMembershipMetaNotFound        = NewStatusErr(40140, "membership meta not found")
+	StatusInvalidMembershipType         = NewStatusErr(40141, "invalid membership type")
+	StatusOrgNodeHasChildren            = NewStatusErr(40142, "org node has children")
+	StatusOrgNodeCannotMoveToDescendant = NewStatusErr(40143, "org node cannot move to descendant")
 
 	StatusKnowledgeBaseNotFound = NewStatusErr(40150, "knowledge base not found")
 

@@ -34,6 +34,17 @@ message UserGroupResponse {
   int32 member_count = 5;
 }
 
+message OrgNodeResponse {
+  string external_id = 1;
+  string parent_external_id = 2;
+  string name = 3;
+  string path = 4;
+  string description = 5;
+  string creator_user_external_id = 6;
+  int32 member_count = 7;
+  repeated OrgNodeResponse children = 8;
+}
+
 message ListUserGroupsRequest {
   optional string keyword = 1;
   int32 page = 2;
@@ -106,6 +117,84 @@ message ListUserGroupMembersRequest {
 }
 
 message ListUserGroupMembersResponse {
+  BaseResponse base = 1;
+  repeated UserResponse users = 2;
+  int64 total = 3;
+}
+
+message ListOrgNodesRequest {
+  string parent_external_id = 1;
+  optional string keyword = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  bool include_children = 5;
+}
+
+message ListOrgNodesResponse {
+  BaseResponse base = 1;
+  repeated OrgNodeResponse org_nodes = 2;
+  int64 total = 3;
+}
+
+message GetOrgNodeRequest {
+  string external_id = 1;
+  bool include_children = 2;
+}
+
+message GetOrgNodeResponse {
+  BaseResponse base = 1;
+  OrgNodeResponse org_node = 2;
+}
+
+message CreateOrgNodeRequest {
+  string name = 1;
+  string description = 2;
+  string parent_external_id = 3;
+  repeated string member_user_external_ids = 4;
+}
+
+message CreateOrgNodeResponse {
+  BaseResponse base = 1;
+  string external_id = 2;
+}
+
+message UpdateOrgNodeRequest {
+  string external_id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  bool sync_members = 4;
+  repeated string member_user_external_ids = 5;
+}
+
+message UpdateOrgNodeResponse {
+  BaseResponse base = 1;
+}
+
+message DeleteOrgNodeRequest {
+  string external_id = 1;
+}
+
+message DeleteOrgNodeResponse {
+  BaseResponse base = 1;
+}
+
+message MoveOrgNodeRequest {
+  string external_id = 1;
+  string new_parent_external_id = 2;
+}
+
+message MoveOrgNodeResponse {
+  BaseResponse base = 1;
+}
+
+message ListOrgNodeMembersRequest {
+  string external_id = 1;
+  optional string keyword = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListOrgNodeMembersResponse {
   BaseResponse base = 1;
   repeated UserResponse users = 2;
   int64 total = 3;
@@ -620,6 +709,20 @@ service MembershipService {
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   // list user group members with pagination.
   rpc ListUserGroupMembers(ListUserGroupMembersRequest) returns (ListUserGroupMembersResponse);
+  // list org nodes with pagination.
+  rpc ListOrgNodes(ListOrgNodesRequest) returns (ListOrgNodesResponse);
+  // get an org node by external id.
+  rpc GetOrgNode(GetOrgNodeRequest) returns (GetOrgNodeResponse);
+  // create org node and optional members.
+  rpc CreateOrgNode(CreateOrgNodeRequest) returns (CreateOrgNodeResponse);
+  // update org node metadata and optional member set.
+  rpc UpdateOrgNode(UpdateOrgNodeRequest) returns (UpdateOrgNodeResponse);
+  // delete an org node and its memberships.
+  rpc DeleteOrgNode(DeleteOrgNodeRequest) returns (DeleteOrgNodeResponse);
+  // move an org node to a new parent.
+  rpc MoveOrgNode(MoveOrgNodeRequest) returns (MoveOrgNodeResponse);
+  // list org node members with pagination.
+  rpc ListOrgNodeMembers(ListOrgNodeMembersRequest) returns (ListOrgNodeMembersResponse);
 }
 
 // invitationService provides invitation management APIs.

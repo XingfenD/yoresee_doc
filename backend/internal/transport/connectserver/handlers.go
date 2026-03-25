@@ -305,6 +305,90 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.MembershipService_ListOrgNodes_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_ListOrgNodes_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListOrgNodesRequest]) (*connect.Response[pb.ListOrgNodesResponse], error) {
+			resp, err := memberSvc.ListOrgNodes(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_GetOrgNode_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_GetOrgNode_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.GetOrgNodeRequest]) (*connect.Response[pb.GetOrgNodeResponse], error) {
+			resp, err := memberSvc.GetOrgNode(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_CreateOrgNode_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_CreateOrgNode_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.CreateOrgNodeRequest]) (*connect.Response[pb.CreateOrgNodeResponse], error) {
+			resp, err := memberSvc.CreateOrgNode(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_UpdateOrgNode_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_UpdateOrgNode_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateOrgNodeRequest]) (*connect.Response[pb.UpdateOrgNodeResponse], error) {
+			resp, err := memberSvc.UpdateOrgNode(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_DeleteOrgNode_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_DeleteOrgNode_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.DeleteOrgNodeRequest]) (*connect.Response[pb.DeleteOrgNodeResponse], error) {
+			resp, err := memberSvc.DeleteOrgNode(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_MoveOrgNode_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_MoveOrgNode_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.MoveOrgNodeRequest]) (*connect.Response[pb.MoveOrgNodeResponse], error) {
+			resp, err := memberSvc.MoveOrgNode(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.MembershipService_ListOrgNodeMembers_FullMethodName, connect.NewUnaryHandler(
+		pb.MembershipService_ListOrgNodeMembers_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListOrgNodeMembersRequest]) (*connect.Response[pb.ListOrgNodeMembersResponse], error) {
+			resp, err := memberSvc.ListOrgNodeMembers(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.InvitationService_CreateInvitation_FullMethodName, connect.NewUnaryHandler(
 		pb.InvitationService_CreateInvitation_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.CreateInvitationRequest]) (*connect.Response[pb.CreateInvitationResponse], error) {
