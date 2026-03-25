@@ -557,6 +557,54 @@ message ListInvitationRecordsResponse {
   int64 total = 3;
 }
 
+message Notification {
+  int64 id = 1;
+  string type = 2;
+  string status = 3;
+  string title = 4;
+  string content = 5;
+  string payload = 6;
+  string created_at = 7;
+}
+
+message CreateNotificationRequest {
+  repeated string receiver_external_ids = 1;
+  string type = 2;
+  string title = 3;
+  string content = 4;
+  string payload_json = 5;
+}
+
+message CreateNotificationResponse {
+  BaseResponse base = 1;
+}
+
+message ListNotificationsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  optional string status = 3;
+}
+
+message ListNotificationsResponse {
+  BaseResponse base = 1;
+  repeated Notification notifications = 2;
+  int64 total = 3;
+}
+
+message MarkNotificationsReadRequest {
+  repeated int64 ids = 1;
+}
+
+message MarkNotificationsReadResponse {
+  BaseResponse base = 1;
+}
+
+message MarkAllNotificationsReadRequest {}
+
+message MarkAllNotificationsReadResponse {
+  BaseResponse base = 1;
+}
+
 message UpdateDocumentRequest {
   string external_id = 1;
   optional string title = 2;
@@ -801,4 +849,16 @@ service InvitationService {
   rpc DeleteInvitation(DeleteInvitationRequest) returns (DeleteInvitationResponse);
   // list invitation usage records.
   rpc ListInvitationRecords(ListInvitationRecordsRequest) returns (ListInvitationRecordsResponse);
+}
+
+// notificationService provides notification APIs.
+service NotificationService {
+  // create notifications (single or batch).
+  rpc CreateNotification(CreateNotificationRequest) returns (CreateNotificationResponse);
+  // list notifications for current user.
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  // mark notifications as read.
+  rpc MarkNotificationsRead(MarkNotificationsReadRequest) returns (MarkNotificationsReadResponse);
+  // mark all notifications as read.
+  rpc MarkAllNotificationsRead(MarkAllNotificationsReadRequest) returns (MarkAllNotificationsReadResponse);
 }

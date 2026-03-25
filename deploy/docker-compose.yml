@@ -158,11 +158,28 @@ services:
       - ../backend/config.toml:/app/config.toml
     environment:
       - DIRTY_DOC_MQ=rabbitmq
-      - DIRTY_DOC_TOPIC=collab.dirty_docs
       - COLLAB_CORE_HTTP=http://collab-core:1234
     depends_on:
       - rabbitmq
       - redis
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+  notification-worker:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.notification.prod
+    image: yoresee_doc_notification_worker:latest
+    container_name: yoresee_doc_notification_worker
+    volumes:
+      - ../backend/config.toml:/app/config.toml
+    environment:
+      - NOTIFICATION_MQ=rabbitmq
+    depends_on:
+      - rabbitmq
+      - redis
+      - postgres
     networks:
       - yoresee_doc_network
     restart: unless-stopped

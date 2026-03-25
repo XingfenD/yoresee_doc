@@ -17,15 +17,11 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
+	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/bytedance/sonic"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	defaultDirtyDocTopic = "collab.dirty_docs"
-	defaultDirtyDocSet   = "collab:yjs:dirty:doc"
 )
 
 type dirtyDocMessage struct {
@@ -52,10 +48,7 @@ func main() {
 
 	repository.MustInit()
 
-	topic := os.Getenv("DIRTY_DOC_TOPIC")
-	if topic == "" {
-		topic = defaultDirtyDocTopic
-	}
+	topic := constant.DirtyDocTopicDefault
 
 	mqBackend := strings.ToLower(os.Getenv("DIRTY_DOC_MQ"))
 	var backend mq.Backend
@@ -72,10 +65,7 @@ func main() {
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	dirtySetKey := os.Getenv("DIRTY_DOC_SET_KEY")
-	if dirtySetKey == "" {
-		dirtySetKey = defaultDirtyDocSet
-	}
+	dirtySetKey := constant.DirtyDocSetDefault
 	inFlight := &sync.Map{}
 
 	logrus.Infof("Snapshot worker started: topic=%s collabCore=%s", topic, collabCoreHTTP)

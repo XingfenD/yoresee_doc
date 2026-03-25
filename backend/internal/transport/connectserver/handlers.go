@@ -17,6 +17,7 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 	settingSvc := grpcserver.NewSettingServiceServer()
 	memberSvc := grpcserver.NewMembershipServiceServer()
 	inviteSvc := grpcserver.NewInvitationServiceServer()
+	notifySvc := grpcserver.NewNotificationServiceServer()
 
 	mux.Handle(pb.AuthService_Login_FullMethodName, connect.NewUnaryHandler(
 		pb.AuthService_Login_FullMethodName,
@@ -466,6 +467,54 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		pb.InvitationService_ListInvitationRecords_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.ListInvitationRecordsRequest]) (*connect.Response[pb.ListInvitationRecordsResponse], error) {
 			resp, err := inviteSvc.ListInvitationRecords(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.NotificationService_CreateNotification_FullMethodName, connect.NewUnaryHandler(
+		pb.NotificationService_CreateNotification_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.CreateNotificationRequest]) (*connect.Response[pb.CreateNotificationResponse], error) {
+			resp, err := notifySvc.CreateNotification(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.NotificationService_ListNotifications_FullMethodName, connect.NewUnaryHandler(
+		pb.NotificationService_ListNotifications_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListNotificationsRequest]) (*connect.Response[pb.ListNotificationsResponse], error) {
+			resp, err := notifySvc.ListNotifications(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.NotificationService_MarkNotificationsRead_FullMethodName, connect.NewUnaryHandler(
+		pb.NotificationService_MarkNotificationsRead_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.MarkNotificationsReadRequest]) (*connect.Response[pb.MarkNotificationsReadResponse], error) {
+			resp, err := notifySvc.MarkNotificationsRead(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.NotificationService_MarkAllNotificationsRead_FullMethodName, connect.NewUnaryHandler(
+		pb.NotificationService_MarkAllNotificationsRead_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.MarkAllNotificationsReadRequest]) (*connect.Response[pb.MarkAllNotificationsReadResponse], error) {
+			resp, err := notifySvc.MarkAllNotificationsRead(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}

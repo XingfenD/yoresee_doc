@@ -200,13 +200,35 @@ services:
       - ../backend:/app
     environment:
       - DIRTY_DOC_MQ=rabbitmq
-      - DIRTY_DOC_TOPIC=collab.dirty_docs
       - COLLAB_CORE_HTTP=http://collab-core:1234
     command: sh -c "go mod download && go run ./cmd/snapshot-worker"
     depends_on:
       rabbitmq:
         condition: service_healthy
       redis:
+        condition: service_healthy
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
+  notification-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: dev
+    image: yoresee_doc_notification_worker_dev:latest
+    container_name: yoresee_doc_notification_worker
+    volumes:
+      - ../backend:/app
+    environment:
+      - NOTIFICATION_MQ=rabbitmq
+    command: sh -c "go mod download && go run ./cmd/notification-worker"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - yoresee_doc_network
