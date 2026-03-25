@@ -3,12 +3,16 @@ package storage
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
+	"reflect"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
@@ -20,6 +24,7 @@ type ConsulKVClient struct {
 	datacenter string
 	prefix     string
 	httpClient *http.Client
+	cacheTTL   time.Duration
 }
 
 var Consul *ConsulKVClient
@@ -45,6 +50,7 @@ func InitConsul(cfg *config.ConsulConfig) error {
 		datacenter: cfg.Datacenter,
 		prefix:     strings.Trim(cfg.Prefix, "/"),
 		httpClient: &http.Client{Timeout: 5 * time.Second},
+		cacheTTL:   5 * time.Second,
 	}
 	return nil
 }
@@ -80,6 +86,13 @@ func (c *ConsulKVClient) setHeaders(req *http.Request) {
 	if c.token != "" {
 		req.Header.Set("X-Consul-Token", c.token)
 	}
+}
+
+func (c *ConsulKVClient) CacheTTL() time.Duration {
+	if c == nil || c.cacheTTL <= 0 {
+		return 0
+	}
+	return c.cacheTTL
 }
 
 func (c *ConsulKVClient) Get(ctx context.Context, key string) (string, bool, error) {
@@ -130,4 +143,156 @@ func (c *ConsulKVClient) Set(ctx context.Context, key, value string) error {
 		return fmt.Errorf("consul kv set failed: %s", string(body))
 	}
 	return nil
+}
+
+type consulTag struct {
+	Key     string
+	Default string
+	IsJSON  bool
+}
+
+type cachedValue struct {
+	value     string
+	found     bool
+	fetchedAt time.Time
+}
+
+func BindConsulConfig(target interface{}, client *ConsulKVClient) error {
+	if target == nil {
+		return fmt.Errorf("consul config bind target is nil")
+	}
+	if client == nil {
+		return fmt.Errorf("consul client is nil")
+	}
+
+	val := reflect.ValueOf(target)
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("consul config bind target must be pointer to struct")
+	}
+	val = val.Elem()
+	typ := val.Type()
+
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		tag := field.Tag.Get("consul")
+		if tag == "" {
+			continue
+		}
+		if field.Type.Kind() != reflect.Func || field.Type.NumIn() != 0 || field.Type.NumOut() != 1 {
+			return fmt.Errorf("field %s must be func()T", field.Name)
+		}
+		parsed, err := parseConsulTag(tag)
+		if err != nil {
+			return fmt.Errorf("field %s tag invalid: %w", field.Name, err)
+		}
+
+		outType := field.Type.Out(0)
+		cache := &cachedValue{}
+		var mu sync.Mutex
+
+		fn := reflect.MakeFunc(field.Type, func(args []reflect.Value) []reflect.Value {
+			mu.Lock()
+			defer mu.Unlock()
+
+			now := time.Now()
+			ttl := client.CacheTTL()
+			if ttl > 0 && cache.fetchedAt.Add(ttl).After(now) {
+				val, err := convertConsulValue(cache.value, cache.found, parsed, outType)
+				if err == nil {
+					return []reflect.Value{val}
+				}
+			}
+
+			raw, found, err := client.Get(context.Background(), parsed.Key)
+			if err != nil {
+				val, _ := convertConsulValue(cache.value, cache.found, parsed, outType)
+				return []reflect.Value{val}
+			}
+			cache.value = raw
+			cache.found = found
+			cache.fetchedAt = now
+
+			val, err := convertConsulValue(raw, found, parsed, outType)
+			if err != nil {
+				val, _ = convertConsulValue(cache.value, cache.found, parsed, outType)
+			}
+			return []reflect.Value{val}
+		})
+
+		val.Field(i).Set(fn)
+	}
+
+	return nil
+}
+
+func parseConsulTag(tag string) (consulTag, error) {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return consulTag{}, fmt.Errorf("empty tag")
+	}
+	parts := strings.Split(tag, ",")
+	result := consulTag{
+		Key: strings.TrimSpace(parts[0]),
+	}
+	if result.Key == "" {
+		return consulTag{}, fmt.Errorf("missing key")
+	}
+	for _, part := range parts[1:] {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if part == "json" {
+			result.IsJSON = true
+			continue
+		}
+		if strings.HasPrefix(part, "default=") {
+			result.Default = strings.TrimPrefix(part, "default=")
+		}
+	}
+	return result, nil
+}
+
+func convertConsulValue(raw string, found bool, tag consulTag, outType reflect.Type) (reflect.Value, error) {
+	if !found || strings.TrimSpace(raw) == "" {
+		raw = tag.Default
+	}
+	if tag.IsJSON || outType.Kind() == reflect.Struct || outType.Kind() == reflect.Map || outType.Kind() == reflect.Slice {
+		target := reflect.New(outType).Interface()
+		if err := json.Unmarshal([]byte(raw), target); err != nil {
+			return reflect.Zero(outType), err
+		}
+		return reflect.ValueOf(target).Elem(), nil
+	}
+
+	switch outType.Kind() {
+	case reflect.String:
+		return reflect.ValueOf(raw).Convert(outType), nil
+	case reflect.Bool:
+		val, err := strconv.ParseBool(strings.TrimSpace(raw))
+		if err != nil {
+			return reflect.Zero(outType), err
+		}
+		return reflect.ValueOf(val).Convert(outType), nil
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		val, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
+		if err != nil {
+			return reflect.Zero(outType), err
+		}
+		return reflect.ValueOf(val).Convert(outType), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		val, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 64)
+		if err != nil {
+			return reflect.Zero(outType), err
+		}
+		return reflect.ValueOf(val).Convert(outType), nil
+	case reflect.Float32, reflect.Float64:
+		val, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+		if err != nil {
+			return reflect.Zero(outType), err
+		}
+		return reflect.ValueOf(val).Convert(outType), nil
+	default:
+		return reflect.Zero(outType), fmt.Errorf("unsupported type: %s", outType.Kind())
+	}
 }
