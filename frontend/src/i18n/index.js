@@ -5,7 +5,8 @@ import enUS from './locales/en-US';
 import zhCN from './locales/zh-CN';
 
 // 从localStorage获取语言设置
-const lang = localStorage.getItem('language') || 'en';
+const storedLang = localStorage.getItem('language') || 'en';
+const lang = storedLang.startsWith('zh') ? 'zh' : 'en';
 
 const i18n = createI18n({
   legacy: false, // 使用组合式 API
@@ -13,7 +14,8 @@ const i18n = createI18n({
   fallbackLocale: 'en',
   messages: {
     en: enUS,
-    zh: zhCN
+    zh: zhCN,
+    'zh-CN': zhCN
   }
 });
 

@@ -113,7 +113,11 @@ export default {
     },
     organization: {
       title: '组织架构管理',
-      placeholderTitle: '组织架构管理'
+      placeholderTitle: '组织架构管理',
+      create: '创建组织',
+      createChild: '创建子节点',
+      createChildWith: '创建「{name}」子节点',
+      edit: '编辑组织'
     },
     security: {
       title: '安全管理',
@@ -166,7 +170,12 @@ export default {
     loadKnowledgeBaseError: '加载知识库详情失败，请稍后重试',
     openDocument: '打开文档',
     renameDocument: '重命名文档',
-    shareDocument: '分享文档'
+    shareDocument: '分享文档',
+    nameRequiredGeneric: '名称不能为空',
+    createSuccessGeneric: '创建成功',
+    createFailedGeneric: '创建失败',
+    saveSuccessGeneric: '保存成功',
+    saveFailedGeneric: '保存失败'
   },
   language: {
     english: 'English',
@@ -349,6 +358,7 @@ export default {
     size: '大小',
     back: '返回',
     save: '保存',
+    edit: '编辑',
     createdAt: '创建时间',
     updatedAt: '更新时间',
     name: '名称',
@@ -360,6 +370,9 @@ export default {
     collapseAll: '收起全部',
     expand: '展开',
     expandAll: '展开全部',
+    create: '创建',
+    cancel: '取消',
+    confirm: '确认',
     copySuccess: '复制成功',
     copyFailed: '复制失败，请重试'
   }

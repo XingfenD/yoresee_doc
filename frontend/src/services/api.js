@@ -32,7 +32,14 @@ const {
   CreateInvitationRequest,
   UpdateInvitationRequest,
   DeleteInvitationRequest,
-  ListInvitationRecordsRequest
+  ListInvitationRecordsRequest,
+  ListOrgNodesRequest,
+  GetOrgNodeRequest,
+  CreateOrgNodeRequest,
+  UpdateOrgNodeRequest,
+  DeleteOrgNodeRequest,
+  MoveOrgNodeRequest,
+  ListOrgNodeMembersRequest
 } = messages;
 
 function baseToObject(resp) {
@@ -117,6 +124,20 @@ function mapUser(user) {
     created_at: user.createdAt,
     updated_at: user.updatedAt,
     invitation_code: user.invitationCode ?? null
+  };
+}
+
+function mapOrgNode(node) {
+  if (!node) return null;
+  return {
+    external_id: node.externalId,
+    parent_external_id: node.parentExternalId,
+    name: node.name,
+    path: node.path,
+    description: node.description,
+    creator_user_external_id: node.creatorUserExternalId,
+    member_count: node.memberCount,
+    children: (node.children || []).map(mapOrgNode)
   };
 }
 
@@ -647,6 +668,118 @@ export const listDocuments = async (params = {}) => {
   return handleResponse(base, data);
 };
 
+// 获取组织节点列表
+export const listOrgNodes = async (params = {}) => {
+  const req = new ListOrgNodesRequest({
+    parentExternalId: params.parent_external_id || '',
+    keyword: params.keyword || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined,
+    includeChildren: Boolean(params.include_children)
+  });
+
+  const resp = await unaryCall(membershipClient, 'listOrgNodes', req);
+  const base = baseToObject(resp);
+  const data = {
+    org_nodes: (resp.orgNodes || []).map(mapOrgNode),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+// 获取组织节点详情
+export const getOrgNode = async (externalId, params = {}) => {
+  const req = new GetOrgNodeRequest({
+    externalId: externalId || '',
+    includeChildren: Boolean(params.include_children)
+  });
+
+  const resp = await unaryCall(membershipClient, 'getOrgNode', req);
+  const base = baseToObject(resp);
+  const data = {
+    org_node: resp.orgNode ? mapOrgNode(resp.orgNode) : null
+  };
+  return handleResponse(base, data);
+};
+
+// 创建组织节点
+export const createOrgNode = async (data = {}) => {
+  const req = new CreateOrgNodeRequest({
+    creatorUserExternalId: data.creator_user_external_id || '',
+    name: data.name || '',
+    description: data.description || '',
+    parentExternalId: data.parent_external_id || '',
+    memberUserExternalIds: Array.isArray(data.member_user_external_ids)
+      ? data.member_user_external_ids
+      : []
+  });
+
+  const resp = await unaryCall(membershipClient, 'createOrgNode', req);
+  const base = baseToObject(resp);
+  const dataResp = {
+    external_id: resp.externalId
+  };
+  return handleResponse(base, dataResp);
+};
+
+// 更新组织节点
+export const updateOrgNode = async (data = {}) => {
+  const req = new UpdateOrgNodeRequest({
+    externalId: data.external_id || '',
+    name: data.name ?? undefined,
+    description: data.description ?? undefined,
+    syncMembers: Boolean(data.sync_members),
+    memberUserExternalIds: Array.isArray(data.member_user_external_ids)
+      ? data.member_user_external_ids
+      : []
+  });
+
+  const resp = await unaryCall(membershipClient, 'updateOrgNode', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+// 删除组织节点
+export const deleteOrgNode = async (externalId) => {
+  const req = new DeleteOrgNodeRequest({
+    externalId: externalId || ''
+  });
+
+  const resp = await unaryCall(membershipClient, 'deleteOrgNode', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+// 移动组织节点
+export const moveOrgNode = async (data = {}) => {
+  const req = new MoveOrgNodeRequest({
+    externalId: data.external_id || '',
+    newParentExternalId: data.new_parent_external_id || ''
+  });
+
+  const resp = await unaryCall(membershipClient, 'moveOrgNode', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
+// 获取组织节点成员列表
+export const listOrgNodeMembers = async (params = {}) => {
+  const req = new ListOrgNodeMembersRequest({
+    externalId: params.external_id || '',
+    keyword: params.keyword || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(membershipClient, 'listOrgNodeMembers', req);
+  const base = baseToObject(resp);
+  const data = {
+    users: (resp.users || []).map(mapUser),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
 export default {
   getKnowledgeBases,
   createKnowledgeBase,
@@ -661,5 +794,25 @@ export default {
   listDocuments,
   listTemplates,
   getTemplate,
-  listRecentTemplates
+  listRecentTemplates,
+  listUserGroups,
+  getUserGroup,
+  createUserGroup,
+  updateUserGroup,
+  deleteUserGroup,
+  listUsers,
+  updateUser,
+  listUserGroupMembers,
+  listInvitations,
+  createInvitation,
+  updateInvitation,
+  deleteInvitation,
+  listInvitationRecords,
+  listOrgNodes,
+  getOrgNode,
+  createOrgNode,
+  updateOrgNode,
+  deleteOrgNode,
+  moveOrgNode,
+  listOrgNodeMembers
 };

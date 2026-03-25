@@ -114,7 +114,11 @@ export default {
     },
     organization: {
       title: 'Organization Management',
-      placeholderTitle: 'Organization Management'
+      placeholderTitle: 'Organization Management',
+      create: 'Create organization',
+      createChild: 'Create child',
+      createChildWith: 'Create child of {name}',
+      edit: 'Edit organization'
     },
     security: {
       title: 'Security Management',
@@ -167,7 +171,12 @@ export default {
     loadKnowledgeBaseError: 'Failed to load knowledge base details, please try again later',
     openDocument: 'Open document',
     renameDocument: 'Rename document',
-    shareDocument: 'Share document'
+    shareDocument: 'Share document',
+    nameRequiredGeneric: 'Name is required',
+    createSuccessGeneric: 'Created successfully',
+    createFailedGeneric: 'Creation failed',
+    saveSuccessGeneric: 'Saved successfully',
+    saveFailedGeneric: 'Save failed'
   },
   language: {
     english: 'English',
@@ -337,6 +346,7 @@ export default {
     size: 'Size',
     back: 'Back',
     save: 'Save',
+    edit: 'Edit',
     createdAt: 'Created At',
     updatedAt: 'Updated At',
     name: 'Name',
@@ -348,6 +358,9 @@ export default {
     collapseAll: 'Collapse All',
     expand: 'Expand',
     expandAll: 'Expand All',
+    create: 'Create',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
     copySuccess: 'Copied',
     copyFailed: 'Copy failed, please retry'
   }
