@@ -82,6 +82,14 @@
                 />
               </div>
               <div class="editor-actions">
+                <el-button
+                  class="editor-action-button"
+                  text
+                  @click="toggleCommentSidebar"
+                  :title="t('document.comments')"
+                >
+                  <el-icon><ChatLineRound /></el-icon>
+                </el-button>
                 <el-dropdown trigger="click" @command="handleHeaderCommand">
                   <el-button class="editor-action-button" text>
                     <el-icon><MoreFilled /></el-icon>
@@ -114,6 +122,97 @@
             </div>
 
           </main>
+          <div class="comment-container" :class="{ 'collapsed': isCommentCollapsed }">
+            <el-button
+              v-if="isCommentCollapsed"
+              text
+              class="comment-expand-button"
+              @click="toggleCommentSidebar"
+              :title="t('document.comments')"
+            >
+              <el-icon>
+                <ArrowLeft />
+              </el-icon>
+            </el-button>
+            <aside class="comment-sidebar">
+              <div class="comment-header">
+                <div class="comment-title">{{ t('document.comments') }}</div>
+                <el-button text class="collapse-button" @click="toggleCommentSidebar" :title="t('common.collapse')">
+                  <el-icon>
+                    <ArrowRight />
+                  </el-icon>
+                </el-button>
+              </div>
+              <div class="comment-body">
+                <div v-if="commentList.length === 0" class="comment-empty">
+                  {{ t('document.commentEmpty') }}
+                </div>
+                <div v-else class="comment-list">
+                  <div
+                    v-for="item in displayComments"
+                    :key="item.external_id"
+                    class="comment-item"
+                    :class="{ 'comment-item--reply': item.level > 0 }"
+                    :style="{ paddingLeft: `${Math.min(item.level, 3) * 16}px` }"
+                  >
+                    <el-avatar :size="28" :src="item.creator_avatar" />
+                    <div class="comment-content">
+                      <div class="comment-meta">
+                        <span class="comment-author">{{ item.creator_name }}</span>
+                        <div class="comment-meta-actions">
+                          <span class="comment-time">{{ formatCommentTime(item.created_at) }}</span>
+                          <el-dropdown trigger="click">
+                            <el-button text class="comment-more">
+                              <el-icon><MoreFilled /></el-icon>
+                            </el-button>
+                            <template #dropdown>
+                              <el-dropdown-menu>
+                                <el-dropdown-item @click="copyComment(item)">
+                                  {{ t('common.copy') }}
+                                </el-dropdown-item>
+                                <el-dropdown-item @click="deleteComment(item)">
+                                  {{ t('document.commentDelete') }}
+                                </el-dropdown-item>
+                              </el-dropdown-menu>
+                            </template>
+                          </el-dropdown>
+                        </div>
+                      </div>
+                      <div v-if="item.parent_external_id" class="comment-reply">
+                        {{ t('document.commentReplyTo', { name: getParentName(item) }) }}
+                      </div>
+                      <div class="comment-text" @click="startReply(item)">{{ item.content }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="commentTotal > commentPageSize" class="comment-pagination">
+                <el-pagination
+                  background
+                  layout="prev, pager, next"
+                  :page-size="commentPageSize"
+                  :total="commentTotal"
+                  v-model:current-page="commentPage"
+                  @current-change="handleCommentPageChange"
+                />
+              </div>
+              <div class="comment-footer">
+                <div v-if="replyTarget" class="reply-hint">
+                  <span>{{ t('document.commentReplyingTo', { name: replyTarget.name }) }}</span>
+                  <el-button text size="small" @click="cancelReply">{{ t('document.commentCancelReply') }}</el-button>
+                </div>
+                <el-input
+                  v-model="commentInput"
+                  type="textarea"
+                  :rows="3"
+                  :placeholder="replyTarget ? t('document.commentReplyPlaceholder') : t('document.commentPlaceholder')"
+                />
+                <el-button type="primary" size="small" :loading="commentSending" @click="submitComment">
+                  {{ t('document.commentSend') }}
+                </el-button>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
     </div>
@@ -147,7 +246,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, ArrowRight, Check, Edit, MoreFilled } from '@element-plus/icons-vue';
+import { ArrowLeft, ArrowRight, Check, Edit, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentTree from '@/components/DocumentTree.vue';
@@ -160,7 +259,10 @@ import {
   createDocument as createDocumentApi,
   createTemplate as createTemplateApi,
   getMyDocuments,
-  updateDocumentMeta
+  updateDocumentMeta,
+  listDocumentComments,
+  createDocumentComment,
+  deleteDocumentComment
 } from '@/services/api';
 
 const props = defineProps({
@@ -221,6 +323,16 @@ const treeRef = computed(() => treeComponentRef.value?.treeRef);
 const isAllExpanded = ref(true);
 const savedState = localStorage.getItem('sidebarCollapsed');
 const isSidebarCollapsed = ref(savedState ? JSON.parse(savedState) : false);
+const isCommentCollapsed = ref(false);
+const commentInput = ref('');
+const commentList = ref([]);
+const commentPage = ref(1);
+const commentPageSize = ref(6);
+const commentTotal = ref(0);
+const commentLoading = ref(false);
+const commentSending = ref(false);
+const replyTarget = ref(null);
+const displayComments = computed(() => flattenComments(commentList.value));
 const savingTemplate = ref(false);
 const showTemplateDialog = ref(false);
 const templateDialogInit = ref({
@@ -654,6 +766,159 @@ const toggleSidebar = () => {
   localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed.value));
 };
 
+const toggleCommentSidebar = () => {
+  isCommentCollapsed.value = !isCommentCollapsed.value;
+};
+
+const startReply = (item) => {
+  replyTarget.value = {
+    external_id: item.external_id,
+    name: item.creator_name || t('document.commentUnknown')
+  };
+};
+
+const cancelReply = () => {
+  replyTarget.value = null;
+};
+
+const loadComments = async () => {
+  if (!docId.value || docId.value === 'example') {
+    commentList.value = [];
+    commentTotal.value = 0;
+    return;
+  }
+  if (commentLoading.value) {
+    return;
+  }
+  commentLoading.value = true;
+  try {
+    const resp = await listDocumentComments({
+      document_external_id: docId.value,
+      page: commentPage.value,
+      page_size: commentPageSize.value
+    });
+    commentList.value = resp.comments || [];
+    commentTotal.value = Number(resp.total) || 0;
+  } catch (error) {
+    commentList.value = [];
+    commentTotal.value = 0;
+  } finally {
+    commentLoading.value = false;
+  }
+};
+
+const flattenComments = (items) => {
+  if (!Array.isArray(items) || items.length === 0) return [];
+  const childrenMap = new Map();
+  const itemMap = new Map();
+  items.forEach((item) => {
+    itemMap.set(item.external_id, item);
+    const parentId = item.parent_external_id || '';
+    if (!childrenMap.has(parentId)) {
+      childrenMap.set(parentId, []);
+    }
+    childrenMap.get(parentId).push(item);
+  });
+
+  const result = [];
+  const walk = (node, level) => {
+    result.push({ ...node, level });
+    const children = childrenMap.get(node.external_id) || [];
+    children.forEach((child) => walk(child, level + 1));
+  };
+
+  const roots = childrenMap.get('') || [];
+  roots.forEach((root) => walk(root, 0));
+  return result;
+};
+
+const handleCommentPageChange = async () => {
+  await loadComments();
+};
+
+const submitComment = async () => {
+  const content = commentInput.value.trim();
+  if (!content) {
+    return;
+  }
+  if (!docId.value || docId.value === 'example') {
+    return;
+  }
+  if (commentSending.value) {
+    return;
+  }
+  try {
+    commentSending.value = true;
+    await createDocumentComment({
+      document_external_id: docId.value,
+      content,
+      parent_external_id: replyTarget.value?.external_id
+    });
+    commentInput.value = '';
+    replyTarget.value = null;
+    commentPage.value = 1;
+    await loadComments();
+  } catch (error) {
+    ElMessage.error(t('common.requestFailed'));
+  } finally {
+    commentSending.value = false;
+  }
+};
+
+const formatCommentTime = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+};
+
+const canDeleteComment = (item) => {
+  if (!item) return false;
+  const currentExternalId = userInfo.value?.external_id;
+  if (!currentExternalId) return false;
+  if (item.creator_user_external_id === currentExternalId) {
+    return true;
+  }
+  return userInfo.value?.username === 'admin';
+};
+
+const deleteComment = async (item) => {
+  if (!item?.external_id) return;
+  if (!canDeleteComment(item)) return;
+  try {
+    await ElMessageBox.confirm(
+      t('document.commentDeleteConfirm'),
+      t('document.commentDelete'),
+      {
+        confirmButtonText: t('button.confirm'),
+        cancelButtonText: t('button.cancel'),
+        type: 'warning'
+      }
+    );
+    await deleteDocumentComment(item.external_id);
+    await loadComments();
+    ElMessage.success(t('message.deleteSuccess'));
+  } catch (error) {
+    // cancel or error
+  }
+};
+
+const copyComment = async (item) => {
+  const text = item?.content || '';
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    ElMessage.success(t('common.copySuccess'));
+  } catch (error) {
+    ElMessage.error(t('common.copyFailed'));
+  }
+};
+
+const getParentName = (item) => {
+  if (!item?.parent_external_id) return t('document.commentUnknown');
+  const parent = commentList.value.find((c) => c.external_id === item.parent_external_id);
+  return parent?.creator_name || t('document.commentUnknown');
+};
 
 
 const handleCollabSync = (isSynced) => {
@@ -718,6 +983,7 @@ onMounted(async () => {
   }
 
   await fetchSystemInfo();
+  await loadComments();
 });
 
 onBeforeUnmount(() => {
@@ -738,6 +1004,9 @@ watch(
     editorContent.value = '';
     currentDocTitle.value = '';
     cancelEditTitle();
+    commentPage.value = 1;
+    replyTarget.value = null;
+    await loadComments();
     if (lastSyncedDocId.value !== docId.value) {
       collabReady.value = !collabEnabled.value;
     }
@@ -1013,6 +1282,221 @@ watch(
   flex-direction: column;
   min-height: 500px;
   position: relative;
+}
+
+.comment-container {
+  position: relative;
+  width: 320px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-color);
+  background-color: var(--bg-white);
+  transition: all 0.3s ease-in-out;
+  display: flex;
+}
+
+.comment-container.collapsed {
+  width: 32px;
+}
+
+.comment-container.collapsed .comment-sidebar {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.comment-expand-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
+  width: 32px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.comment-expand-button:hover {
+  color: var(--primary-color);
+}
+
+.comment-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  max-width: 360px;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  background-color: var(--bg-white);
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.comment-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.comment-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+}
+
+.comment-empty {
+  font-size: 13px;
+  color: var(--text-light);
+  text-align: center;
+  padding: var(--spacing-lg) 0;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+}
+
+.comment-item--reply {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  background: var(--bg-light);
+  border-radius: var(--border-radius-sm);
+}
+
+.comment-item--reply::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: var(--border-color);
+  opacity: 0.6;
+  border-radius: 2px;
+}
+
+.comment-item--reply .comment-content {
+  padding-left: 6px;
+}
+
+.comment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.comment-meta-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comment-more {
+  padding: 2px 4px;
+  color: var(--text-light);
+}
+
+.comment-more:hover {
+  color: var(--primary-color);
+}
+
+.comment-author {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.comment-text {
+  font-size: 13px;
+  color: var(--text-medium);
+  line-height: 1.5;
+  word-break: break-word;
+  cursor: pointer;
+}
+
+.comment-reply {
+  font-size: 12px;
+  color: var(--text-light);
+  background: rgba(59, 130, 246, 0.08);
+  padding: 2px 6px;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.reply-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.comment-footer {
+  border-top: 1px solid var(--border-color);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.comment-pagination {
+  padding: 0 var(--spacing-md) var(--spacing-md);
+}
+
+.comment-footer :deep(.el-textarea__inner) {
+  resize: none;
+}
+
+.dark-mode .comment-container,
+.dark-mode .comment-sidebar {
+  background-color: var(--bg-white);
+  border-color: var(--border-color);
+}
+
+.dark-mode .comment-title,
+.dark-mode .comment-author {
+  color: var(--text-dark);
+}
+
+.dark-mode .comment-text {
+  color: var(--text-medium);
+}
+
+.dark-mode .comment-empty,
+.dark-mode .comment-meta {
+  color: var(--text-light);
 }
 
 .editor-loading {

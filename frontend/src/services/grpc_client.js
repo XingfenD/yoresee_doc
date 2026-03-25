@@ -5,6 +5,7 @@ import {
   DocumentService,
   KnowledgeBaseService,
   MembershipService,
+  CommentService,
   NotificationService,
   SettingService,
   SystemService,
@@ -21,6 +22,7 @@ const transport = createConnectTransport({
 
 const authClient = createPromiseClient(AuthService, transport);
 const documentClient = createPromiseClient(DocumentService, transport);
+const commentClient = createPromiseClient(CommentService, transport);
 const knowledgeBaseClient = createPromiseClient(KnowledgeBaseService, transport);
 const membershipClient = createPromiseClient(MembershipService, transport);
 const notificationClient = createPromiseClient(NotificationService, transport);
@@ -57,6 +59,7 @@ export async function unaryCall(client, method, request) {
 export const clients = {
   authClient,
   documentClient,
+  commentClient,
   knowledgeBaseClient,
   membershipClient,
   notificationClient,

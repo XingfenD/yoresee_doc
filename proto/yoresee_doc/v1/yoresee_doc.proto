@@ -614,6 +614,48 @@ message UpdateDocumentRequest {
   optional CreateDocumentContainerType move_to_container = 6;
 }
 
+message DocumentComment {
+  string external_id = 1;
+  string document_external_id = 2;
+  string parent_external_id = 3;
+  string content = 4;
+  string creator_user_external_id = 5;
+  string creator_name = 6;
+  string creator_avatar = 7;
+  string created_at = 8;
+}
+
+message CreateDocumentCommentRequest {
+  string document_external_id = 1;
+  string content = 2;
+  optional string parent_external_id = 3;
+}
+
+message CreateDocumentCommentResponse {
+  BaseResponse base = 1;
+  DocumentComment comment = 2;
+}
+
+message ListDocumentCommentsRequest {
+  string document_external_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListDocumentCommentsResponse {
+  BaseResponse base = 1;
+  repeated DocumentComment comments = 2;
+  int64 total = 3;
+}
+
+message DeleteDocumentCommentRequest {
+  string external_id = 1;
+}
+
+message DeleteDocumentCommentResponse {
+  BaseResponse base = 1;
+}
+
 message UpdateDocumentResponse {
   BaseResponse base = 1;
 }
@@ -773,6 +815,16 @@ service DocumentService {
   rpc ListRecentTemplates(ListRecentTemplatesRequest) returns (ListRecentTemplatesResponse);
   // get template by id.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
+}
+
+// commentService provides document comment APIs.
+service CommentService {
+  // create a comment for document.
+  rpc CreateDocumentComment(CreateDocumentCommentRequest) returns (CreateDocumentCommentResponse);
+  // list comments for document.
+  rpc ListDocumentComments(ListDocumentCommentsRequest) returns (ListDocumentCommentsResponse);
+  // delete a comment.
+  rpc DeleteDocumentComment(DeleteDocumentCommentRequest) returns (DeleteDocumentCommentResponse);
 }
 
 // knowledgeBaseService provides knowledge base management and discovery APIs.

@@ -1,6 +1,6 @@
 import { clients, messages, unaryCall } from './grpc_client';
 
-const { documentClient, knowledgeBaseClient, membershipClient, notificationClient, systemClient, invitationClient, settingClient } = clients;
+const { documentClient, commentClient, knowledgeBaseClient, membershipClient, notificationClient, systemClient, invitationClient, settingClient } = clients;
 const {
   ListKnowledgeBasesRequest,
   ListRecentKnowledgeBasesRequest,
@@ -45,7 +45,10 @@ const {
   CreateNotificationRequest,
   ListNotificationsRequest,
   MarkNotificationsReadRequest,
-  MarkAllNotificationsReadRequest
+  MarkAllNotificationsReadRequest,
+  CreateDocumentCommentRequest,
+  ListDocumentCommentsRequest,
+  DeleteDocumentCommentRequest
 } = messages;
 
 function baseToObject(resp) {
@@ -189,6 +192,19 @@ function mapNotification(item) {
   };
 }
 
+function mapComment(item) {
+  if (!item) return null;
+  return {
+    external_id: item.externalId,
+    document_external_id: item.documentExternalId,
+    parent_external_id: item.parentExternalId || null,
+    content: item.content,
+    creator_user_external_id: item.creatorUserExternalId,
+    creator_name: item.creatorName,
+    creator_avatar: item.creatorAvatar,
+    created_at: item.createdAt
+  };
+}
 function handleResponse(base, data) {
   if (base.code === 0) {
     return { ...base, ...data };
@@ -894,6 +910,44 @@ export const markAllNotificationsRead = async () => {
   return handleResponse(base, {});
 };
 
+export const createDocumentComment = async (data = {}) => {
+  const req = new CreateDocumentCommentRequest({
+    documentExternalId: data.document_external_id || '',
+    content: data.content || '',
+    parentExternalId: data.parent_external_id || undefined
+  });
+  const resp = await unaryCall(commentClient, 'createDocumentComment', req);
+  const base = baseToObject(resp);
+  const dataResp = {
+    comment: resp.comment ? mapComment(resp.comment) : null
+  };
+  return handleResponse(base, dataResp);
+};
+
+export const listDocumentComments = async (params = {}) => {
+  const req = new ListDocumentCommentsRequest({
+    documentExternalId: params.document_external_id || '',
+    page: params.page || 1,
+    pageSize: params.page_size || 10
+  });
+  const resp = await unaryCall(commentClient, 'listDocumentComments', req);
+  const base = baseToObject(resp);
+  const dataResp = {
+    comments: (resp.comments || []).map(mapComment),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, dataResp);
+};
+
+export const deleteDocumentComment = async (externalId) => {
+  const req = new DeleteDocumentCommentRequest({
+    externalId: externalId || ''
+  });
+  const resp = await unaryCall(commentClient, 'deleteDocumentComment', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
 export default {
   getKnowledgeBases,
   createKnowledgeBase,
@@ -934,5 +988,8 @@ export default {
   createNotification,
   listNotifications,
   markNotificationsRead,
-  markAllNotificationsRead
+  markAllNotificationsRead,
+  createDocumentComment,
+  listDocumentComments,
+  deleteDocumentComment
 };

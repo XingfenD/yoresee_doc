@@ -206,6 +206,7 @@ const markRead = async (row) => {
   try {
     await markNotificationsRead([row.id]);
     await loadNotifications();
+    await refreshUnreadStatus();
   } catch (err) {
     ElMessage.error(t('common.requestFailed'));
   }
@@ -220,6 +221,7 @@ const handleMarkRead = async () => {
     }
     selectedIds.value = [];
     await loadNotifications();
+    await refreshUnreadStatus();
   } catch (err) {
     ElMessage.error(t('common.requestFailed'));
   }
@@ -246,11 +248,26 @@ const loadNotifications = async () => {
     notifications.value = resp.notifications || [];
     totalCount.value = Number(resp.total) || 0;
     selectedIds.value = [];
+    if (activeTab.value === 'unread') {
+      window.dispatchEvent(
+        new CustomEvent('notifications:unread', { detail: { hasUnread: totalCount.value > 0 } })
+      );
+    }
   } catch (err) {
     notifications.value = [];
     totalCount.value = 0;
   } finally {
     loading.value = false;
+  }
+};
+
+const refreshUnreadStatus = async () => {
+  try {
+    const resp = await listNotifications({ page: 1, page_size: 1, status: 'unread' });
+    const hasUnread = Number(resp.total) > 0;
+    window.dispatchEvent(new CustomEvent('notifications:unread', { detail: { hasUnread } }));
+  } catch (err) {
+    window.dispatchEvent(new CustomEvent('notifications:unread', { detail: { hasUnread: false } }));
   }
 };
 

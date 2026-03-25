@@ -85,7 +85,17 @@ export default {
     deleteNotSupported: '当前版本暂不支持删除文档',
     renameDocument: '重命名文档',
     renameNotSupported: '当前版本暂不支持重命名文档',
-    enterDocumentTitle: '请输入文档标题'
+    enterDocumentTitle: '请输入文档标题',
+    commentPlaceholder: '写下你的评论...',
+    commentSend: '发送',
+    commentEmpty: '暂无评论',
+    commentDelete: '删除',
+    commentDeleteConfirm: '确定删除这条评论吗？',
+    commentReplyTo: '回复 {name}',
+    commentReplyingTo: '正在回复 {name}',
+    commentCancelReply: '取消回复',
+    commentReplyPlaceholder: '回复该评论...',
+    commentUnknown: '未知用户'
   },
   system: {
     name: 'Yoresee',
@@ -404,6 +414,7 @@ export default {
     create: '创建',
     cancel: '取消',
     confirm: '确认',
+    copy: '复制',
     copySuccess: '复制成功',
     copyFailed: '复制失败，请重试'
   }

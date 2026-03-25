@@ -35,7 +35,8 @@
       </div>
 
       <div class="nav-item">
-        <span class="nav-link" @click="goToNotifications">
+        <span class="nav-link notification-link" @click="goToNotifications">
+          <span v-if="hasUnread" class="notification-dot" />
           <el-icon :size="18">
             <Bell />
           </el-icon>
@@ -65,11 +66,12 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell } from '@element-plus/icons-vue';
 import { querySideBarDisplay } from '@/services/auth';
+import { listNotifications } from '@/services/api';
 
 const props = defineProps({
   systemName: {
@@ -98,6 +100,7 @@ const emit = defineEmits(['change-language', 'toggle-theme', 'logout']);
 const { t } = useI18n();
 const router = useRouter();
 const showSystemManage = ref(false);
+const hasUnread = ref(false);
 
 const goToUserCenter = () => {
   router.push('/user_info/example');
@@ -121,8 +124,30 @@ const loadSystemManageDisplay = async () => {
   }
 };
 
+const loadUnreadNotifications = async () => {
+  try {
+    const resp = await listNotifications({ page: 1, page_size: 1, status: 'unread' });
+    hasUnread.value = Number(resp.total) > 0;
+  } catch (error) {
+    hasUnread.value = false;
+  }
+};
+
+const handleUnreadEvent = (event) => {
+  if (!event?.detail) {
+    return;
+  }
+  hasUnread.value = Boolean(event.detail.hasUnread);
+};
+
 onMounted(() => {
   loadSystemManageDisplay();
+  loadUnreadNotifications();
+  window.addEventListener('notifications:unread', handleUnreadEvent);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('notifications:unread', handleUnreadEvent);
 });
 </script>
 
@@ -182,6 +207,25 @@ onMounted(() => {
 .nav-link:hover {
   background-color: var(--bg-medium);
   color: var(--primary-color);
+}
+
+.notification-link {
+  position: relative;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--bg-white);
+}
+
+.dark-mode .notification-dot {
+  box-shadow: 0 0 0 2px var(--bg-white);
 }
 
 .theme-switch {

@@ -86,7 +86,17 @@ export default {
     deleteNotSupported: 'Document deletion is not available yet',
     renameDocument: 'Rename Document',
     renameNotSupported: 'Document rename is not available yet',
-    enterDocumentTitle: 'Please enter document title'
+    enterDocumentTitle: 'Please enter document title',
+    commentPlaceholder: 'Write a comment...',
+    commentSend: 'Send',
+    commentEmpty: 'No comments yet',
+    commentDelete: 'Delete',
+    commentDeleteConfirm: 'Delete this comment?',
+    commentReplyTo: 'Reply to {name}',
+    commentReplyingTo: 'Replying to {name}',
+    commentCancelReply: 'Cancel reply',
+    commentReplyPlaceholder: 'Reply to this comment...',
+    commentUnknown: 'Unknown user'
   },
   system: {
     name: 'Yoresee',
@@ -392,6 +402,7 @@ export default {
     create: 'Create',
     cancel: 'Cancel',
     confirm: 'Confirm',
+    copy: 'Copy',
     copySuccess: 'Copied',
     copyFailed: 'Copy failed, please retry'
   }
