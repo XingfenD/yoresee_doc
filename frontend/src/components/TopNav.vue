@@ -34,6 +34,14 @@
         </span>
       </div>
 
+      <div class="nav-item">
+        <span class="nav-link" @click="goToNotifications">
+          <el-icon :size="18">
+            <Bell />
+          </el-icon>
+        </span>
+      </div>
+
       <el-dropdown trigger="click" class="nav-item">
         <span class="user-info">
           <el-avatar v-if="userAvatar" size="small" :src="userAvatar"></el-avatar>
@@ -60,7 +68,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ArrowDown, Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
+import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell } from '@element-plus/icons-vue';
 import { querySideBarDisplay } from '@/services/auth';
 
 const props = defineProps({
@@ -97,6 +105,10 @@ const goToUserCenter = () => {
 
 const handleSystemManage = () => {
   router.push('/manage');
+};
+
+const goToNotifications = () => {
+  router.push('/user_info/notifications');
 };
 
 const loadSystemManageDisplay = async () => {

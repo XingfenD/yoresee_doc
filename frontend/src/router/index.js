@@ -83,6 +83,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/user_info/notifications',
+      name: 'UserNotifications',
+      component: () => import('../views/UserNotifications.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/manage/security',
       name: 'SystemManageSecurity',
       component: () => import('../views/SystemManageSecurity.vue'),

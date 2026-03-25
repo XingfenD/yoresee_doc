@@ -202,8 +202,32 @@ export default {
     unban: '解封',
     menu: {
       center: '个人中心',
+      notifications: '通知中心',
       invite: '邀请管理',
       security: '账号安全'
+    },
+    notifications: {
+      title: '通知中心',
+      markAll: '已读全部',
+      markSelected: '已读选中',
+      markRead: '标为已读',
+      view: '查看',
+      inDoc: '在文档',
+      empty: '暂无通知',
+      tabs: {
+        all: '全部',
+        unread: '未读'
+      },
+      columns: {
+        title: '内容',
+        type: '类型',
+        time: '时间'
+      },
+      types: {
+        comment: '评论',
+        reply: '回复',
+        mention: '@我'
+      }
     },
     invite: {
       title: '邀请管理',

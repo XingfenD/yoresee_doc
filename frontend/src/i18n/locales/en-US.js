@@ -203,8 +203,32 @@ export default {
     unban: 'Enable',
     menu: {
       center: 'User Center',
+      notifications: 'Notifications',
       invite: 'Invite Management',
       security: 'Account Security'
+    },
+    notifications: {
+      title: 'Notifications',
+      markAll: 'Mark all read',
+      markSelected: 'Mark selected read',
+      markRead: 'Mark as read',
+      view: 'View',
+      inDoc: 'in document',
+      empty: 'No notifications',
+      tabs: {
+        all: 'All',
+        unread: 'Unread'
+      },
+      columns: {
+        title: 'Content',
+        type: 'Type',
+        time: 'Time'
+      },
+      types: {
+        comment: 'Comment',
+        reply: 'Reply',
+        mention: 'Mention'
+      }
     },
     invite: {
       title: 'Invite Management',
