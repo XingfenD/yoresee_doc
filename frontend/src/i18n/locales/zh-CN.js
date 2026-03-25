@@ -117,7 +117,9 @@ export default {
       create: '创建组织',
       createChild: '创建子节点',
       createChildWith: '创建「{name}」子节点',
-      edit: '编辑组织'
+      edit: '编辑组织',
+      memberList: '成员列表',
+      manageMembers: '管理成员'
     },
     security: {
       title: '安全管理',

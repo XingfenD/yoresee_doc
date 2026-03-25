@@ -46,6 +46,11 @@
             @page-change="handlePageChange"
             @size-change="handleSizeChange"
           >
+            <template #tree-cell="{ row }">
+              <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
+                {{ row?.name || '-' }}
+              </el-button>
+            </template>
             <template #cell-actions="{ row }">
               <el-button size="small" text type="primary" @click="openEditDialog(row)">
                 {{ t('common.edit') }}
@@ -253,6 +258,13 @@ const openEditDialog = (row) => {
   showEditDialog.value = true;
 };
 
+const goToDetail = (row) => {
+  if (!row?.external_id) {
+    return;
+  }
+  router.push(`/manage/organization/${row.external_id}`);
+};
+
 const submitCreate = async () => {
   if (!createForm.value.name.trim()) {
     ElMessage.warning(t('message.nameRequiredGeneric'));
@@ -348,6 +360,10 @@ onMounted(() => {
 
 .section-body {
   padding: var(--spacing-md);
+}
+
+.link-btn {
+  padding: 0;
 }
 
 .dark-mode .manage-section {

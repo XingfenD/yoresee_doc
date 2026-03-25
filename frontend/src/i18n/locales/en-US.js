@@ -118,7 +118,9 @@ export default {
       create: 'Create organization',
       createChild: 'Create child',
       createChildWith: 'Create child of {name}',
-      edit: 'Edit organization'
+      edit: 'Edit organization',
+      memberList: 'Members',
+      manageMembers: 'Manage Members'
     },
     security: {
       title: 'Security Management',
