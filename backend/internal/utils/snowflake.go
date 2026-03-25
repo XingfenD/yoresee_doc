@@ -16,6 +16,7 @@ const (
 	ExternalIDContextDocument  ExternalIDContext = "document"
 	ExternalIDContextUserGroup ExternalIDContext = "user_group"
 	ExternalIDContextOrgNode   ExternalIDContext = "org_node"
+	ExternalIDContextComment   ExternalIDContext = "comment"
 )
 
 func GenerateExternalID(context ExternalIDContext) string {

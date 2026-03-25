@@ -18,6 +18,7 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 	memberSvc := grpcserver.NewMembershipServiceServer()
 	inviteSvc := grpcserver.NewInvitationServiceServer()
 	notifySvc := grpcserver.NewNotificationServiceServer()
+	commentSvc := grpcserver.NewCommentServiceServer()
 
 	mux.Handle(pb.AuthService_Login_FullMethodName, connect.NewUnaryHandler(
 		pb.AuthService_Login_FullMethodName,
@@ -515,6 +516,42 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		pb.NotificationService_MarkAllNotificationsRead_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.MarkAllNotificationsReadRequest]) (*connect.Response[pb.MarkAllNotificationsReadResponse], error) {
 			resp, err := notifySvc.MarkAllNotificationsRead(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.CommentService_CreateDocumentComment_FullMethodName, connect.NewUnaryHandler(
+		pb.CommentService_CreateDocumentComment_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.CreateDocumentCommentRequest]) (*connect.Response[pb.CreateDocumentCommentResponse], error) {
+			resp, err := commentSvc.CreateDocumentComment(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.CommentService_ListDocumentComments_FullMethodName, connect.NewUnaryHandler(
+		pb.CommentService_ListDocumentComments_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListDocumentCommentsRequest]) (*connect.Response[pb.ListDocumentCommentsResponse], error) {
+			resp, err := commentSvc.ListDocumentComments(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
+	mux.Handle(pb.CommentService_DeleteDocumentComment_FullMethodName, connect.NewUnaryHandler(
+		pb.CommentService_DeleteDocumentComment_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.DeleteDocumentCommentRequest]) (*connect.Response[pb.DeleteDocumentCommentResponse], error) {
+			resp, err := commentSvc.DeleteDocumentComment(ctx, req.Msg)
 			if err != nil {
 				return nil, err
 			}

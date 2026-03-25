@@ -17,7 +17,6 @@ func RegisterTopicConsumer(h svc_iface.TopicConsumer) error {
 func Init(cfg *config.Config) error {
 	config_service.InitConfigService()
 	setting_service.InitSettingService()
-	// by cluster init the consumer (only init on consumer cluster)
 	if err := InitMQTopicConsumer(); err != nil {
 		return err
 	}
