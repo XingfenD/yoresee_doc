@@ -1,1 +1,154 @@
 # Yoresee Doc
+
+Yoresee Doc is a collaborative document system with a Go backend, a Vue 3 frontend, and a real‑time collaboration stack based on Yjs.
+
+## Project Highlights
+- **Real‑time collaboration** with Yjs (WebSocket + Redis/MQ)
+- **Connect RPC/gRPC** API layer with typed protobuf contracts
+- **Modular services**: backend + collab gateway + snapshot worker
+- **Config‑driven settings** via Consul KV
+- **Docker‑first** dev/prod setup with Nginx reverse proxy
+
+## Overview
+- **Frontend**: Vue 3 + Vite (Connect‑ES gRPC‑web client)
+- **Backend**: Go (Connect RPC/gRPC, Postgres, Redis, RabbitMQ)
+- **Collaboration**: Yjs via a Node “collab‑core” and a Go gateway (`collab-go`)
+- **Config**: Consul KV for runtime settings
+
+## Architecture & Request Flow
+**Core services**
+- `frontend` (Vue) served behind Nginx
+- `backend` (Connect RPC/gRPC)
+- `collab-core` (Node/Yjs) + `collab-go` gateway (WebSocket)
+- `snapshot-worker` (consumer/worker for background tasks)
+- infra: Postgres, Redis, RabbitMQ, Consul
+
+**Typical request flow**
+1. Browser -> Nginx (`/` for UI, `/grpc/` for gRPC‑web)
+2. Nginx -> Backend (Connect gRPC‑web)
+3. Backend -> Postgres/Redis/Consul/MQ
+4. Realtime collaboration: Browser -> Nginx `/ws/doc/` -> `collab-go` -> `collab-core` (Yjs) -> Redis/MQ/Backend as needed
+5. Background jobs/consumers: `snapshot-worker` consumes MQ messages (e.g. document snapshots)
+
+## Repository Structure
+- `backend`: Go services, DB migrations, Connect/gRPC server, worker.
+- `frontend`: Vue 3 UI (Vite, Element Plus).
+- `proto`: Protobuf definitions (Connect/gRPC stubs generated from here).
+- `collab`: Node.js Yjs collaboration core.
+- `collab-go`: Go websocket gateway for collaboration.
+- `deploy`: Docker Compose, Nginx, scripts, and infra configs.
+- `docs`: Project documentation.
+
+## Quick Start (Docker Compose)
+Use the helper script under `deploy/script/start.sh`.
+
+### Development
+```bash
+bash deploy/script/start.sh dev up
+```
+
+### Release
+```bash
+bash deploy/script/start.sh release up
+```
+
+### Other actions
+```bash
+bash deploy/script/start.sh dev rebuild
+bash deploy/script/start.sh dev restart
+bash deploy/script/start.sh dev clear
+```
+
+## Prepare Script
+You can generate missing config files from the examples:
+```bash
+bash deploy/script/prepare.sh
+```
+This copies example configs into:
+- `backend/config.toml`
+- `frontend/nginx.conf`
+- `deploy/nginx/nginx.conf`
+- `deploy/nginx/conf.d/default.conf`
+- `deploy/redis/redis.conf`
+- `deploy/rabbitmq/rabbitmq.conf`
+
+## Services & Ports
+Default dev stack (see `deploy/docker-compose.dev.yml`):
+- **Nginx**: `http://localhost:8080`
+- **Backend gRPC**: `:9090` (inside network)
+- **Backend gRPC‑web**: proxied at `http://localhost:8080/grpc/`
+- **Collab WS**: `http://localhost:8080/ws/doc/`
+- **Consul UI**: `http://localhost:8500`
+- **Postgres**: `localhost:5432`
+- **Redis**: `localhost:6379`
+- **RabbitMQ**: `localhost:5672` (AMQP), management UI via Nginx `/rabbitmq/`
+
+Other services (no direct ports in dev):
+- **snapshot-worker**: consumes MQ tasks (e.g. document snapshots)
+
+Nginx routes are defined in `deploy/nginx/conf.d/default.conf`.
+
+## Configuration
+Backend config example: `backend/config.example.toml`
+Release compose mounts `backend/config.toml` into the container.
+
+Consul is required for runtime settings. In compose, it is started with ACL enabled and a root token:
+- `CONSUL_ROOT_TOKEN` (default: `yoresee_doc_root_token`)
+- Backend reads Consul from `consul:8500`
+
+## Start Parameters & Tokens
+These values are used across compose files and `backend/config.toml`.
+**Production deployment must change them.**
+
+### Docker Compose env
+- `CONSUL_ROOT_TOKEN`
+  Used by Consul ACL bootstrap and backend access. Change from default.
+- `BACKEND_INTERNAL_RPC_KEY`
+  Shared secret used by internal services (backend/collab/worker).
+- `VITE_GRPC_WEB_ENDPOINT` (frontend)
+  gRPC‑web endpoint prefix (default `/grpc`).
+
+### Backend config (`backend/config.toml`)
+Update at least:
+- **Database**: `database.user`, `database.password`, `database.name`
+- **Redis**: `redis.password`
+- **Consul**: `consul.token`, `consul.address`, `consul.prefix`
+- **MQ**: `mq_config.type` + `mq_config.rabbitmq.url`
+- **JWT**: `backend.jwt.secret`
+- **Security**: `backend.security` (hash cost, lock duration)
+
+### Other service creds
+- **Postgres**: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+- **Redis**: `REDIS_PASSWORD`
+- **RabbitMQ**: `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`
+
+## Production Checklist
+Before deploying, make sure you:
+1. Replace all default tokens/secrets above.
+2. Mount a real `backend/config.toml` into the backend and snapshot worker.
+3. Configure Nginx TLS if exposing public endpoints (`deploy/nginx/conf.d/default.conf`).
+4. Persist volumes for Postgres/Redis/Consul/RabbitMQ.
+
+## Protobuf Generation
+The dev compose script calls:
+```bash
+bash deploy/script/gen_proto.sh
+```
+This generates:
+- Go stubs for backend and collab‑go
+- Connect‑ES JS stubs for the frontend
+- Node gRPC stubs for `collab`
+
+## Key Runtime Components
+- **backend/cmd/main.go**: service entry; initializes config, DB, Redis, Consul, MQ, and Connect servers.
+- **backend/cmd/migrate**: DB migrations.
+- **backend/cmd/db_init**: seed/init data.
+- **backend/cmd/snapshot-worker**: snapshot worker (consumes MQ).
+
+## Development Notes
+- Frontend dev server runs inside the container on port 80 and is proxied by Nginx.
+- Backend dev container runs migrations and db init on startup.
+- Collaboration stack requires Redis + RabbitMQ.
+
+---
+If you want a deeper architecture diagram or module‑level readme, tell me which part you want to expand.
