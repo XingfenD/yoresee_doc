@@ -50,19 +50,8 @@ func main() {
 
 	topic := constant.NotificationTopicDefault
 
-	mqBackend := strings.ToLower(os.Getenv("NOTIFICATION_MQ"))
-	var backend mq.Backend
-	switch mqBackend {
-	case "rabbit", "rabbitmq":
-		backend = mq.BackendRabbitMQ
-	default:
-		backend = mq.BackendRedis
-	}
-
-	logrus.Infof("Notification worker started: topic=%s backend=%s", topic, backend)
-
 	go func() {
-		if err := mq.SubscribeTo(backend, topic, handleNotificationEvent); err != nil {
+		if err := mq.SubscribeTo(mq.BackendRabbitMQ, topic, handleNotificationEvent); err != nil {
 			logrus.Fatalf("Subscribe failed: %v", err)
 		}
 	}()

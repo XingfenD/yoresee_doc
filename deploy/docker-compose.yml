@@ -157,7 +157,6 @@ services:
     volumes:
       - ../backend/config.toml:/app/config.toml
     environment:
-      - DIRTY_DOC_MQ=rabbitmq
       - COLLAB_CORE_HTTP=http://collab-core:1234
     depends_on:
       - rabbitmq

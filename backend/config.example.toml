@@ -40,7 +40,6 @@ use_ssl = false
 timeout = 30
 
 [mq_config]
-type = "redis"  # available values: "redis", "rabbitmq"
 
 # [backend.mq_config.redis]
 
@@ -49,7 +48,6 @@ url = "amqp://guest:guest@yoresee_doc_rabbitmq:5672/"
 
 [backend]
 system_name = "Yoresee"
-cluster_role = "hybrid"  # available values: "producer", "consumer", "hybrid"
 internal_rpc_key = "yoresee_doc_internal_key"
 
 [backend.jwt]

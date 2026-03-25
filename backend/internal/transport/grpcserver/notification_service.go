@@ -3,10 +3,8 @@ package grpcserver
 import (
 	"context"
 	"encoding/json"
-	"os"
 	"strings"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/service/auth_service"
@@ -61,12 +59,9 @@ func (s *NotificationServiceServer) CreateNotification(ctx context.Context, req 
 	if err != nil {
 		return &pb.CreateNotificationResponse{Base: baseResponseFromErr(status.StatusInternalParamsError)}, nil
 	}
-	topic := os.Getenv("NOTIFICATION_TOPIC")
-	if strings.TrimSpace(topic) == "" {
-		topic = constant.NotificationTopicDefault
-	}
-	backend := backendFromConfig()
-	if err := mq.PublishTo(ctx, backend, topic, data); err != nil {
+	topic := constant.NotificationTopicDefault
+
+	if err := mq.PublishTo(ctx, mq.BackendRabbitMQ, topic, data); err != nil {
 		return &pb.CreateNotificationResponse{Base: baseResponseFromErr(status.StatusMQNotInitialized)}, nil
 	}
 
@@ -177,16 +172,4 @@ type notificationEvent struct {
 	Title               string   `json:"title"`
 	Content             string   `json:"content"`
 	PayloadJSON         string   `json:"payload_json"`
-}
-
-func backendFromConfig() mq.Backend {
-	if config.GlobalConfig == nil {
-		return mq.BackendRedis
-	}
-	switch strings.ToLower(config.GlobalConfig.MQConfig.Type) {
-	case "rabbit", "rabbitmq":
-		return mq.BackendRabbitMQ
-	default:
-		return mq.BackendRedis
-	}
 }

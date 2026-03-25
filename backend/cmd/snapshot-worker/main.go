@@ -50,14 +50,7 @@ func main() {
 
 	topic := constant.DirtyDocTopicDefault
 
-	mqBackend := strings.ToLower(os.Getenv("DIRTY_DOC_MQ"))
-	var backend mq.Backend
-	switch mqBackend {
-	case "rabbit", "rabbitmq":
-		backend = mq.BackendRabbitMQ
-	default:
-		backend = mq.BackendRedis
-	}
+	backend := mq.BackendRabbitMQ
 
 	collabCoreHTTP := os.Getenv("COLLAB_CORE_HTTP")
 	if collabCoreHTTP == "" {

@@ -199,7 +199,6 @@ services:
     volumes:
       - ../backend:/app
     environment:
-      - DIRTY_DOC_MQ=rabbitmq
       - COLLAB_CORE_HTTP=http://collab-core:1234
     command: sh -c "go mod download && go run ./cmd/snapshot-worker"
     depends_on:

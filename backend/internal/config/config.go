@@ -66,16 +66,14 @@ const (
 )
 
 type BackendConfig struct {
-	Jwt            JWTConfig   `mapstructure:"jwt"`
-	SystemName     string      `mapstructure:"system_name"`
-	ClusterRole    ClusterRole `mapstructure:"cluster_role"`
-	InternalRPCKey string      `mapstructure:"internal_rpc_key"`
+	Jwt            JWTConfig `mapstructure:"jwt"`
+	SystemName     string    `mapstructure:"system_name"`
+	InternalRPCKey string    `mapstructure:"internal_rpc_key"`
 	// Log           LogConfig      `mapstructure:"log"`
 	// document      DocumentConfig `mapstructure:"document"`
 }
 
 type MQConfig struct {
-	Type     string              `mapstructure:"type"`
 	Redis    RedisQueueConfig    `mapstructure:"redis"`
 	RabbitMQ RabbitMQQueueConfig `mapstructure:"rabbitmq"`
 }
