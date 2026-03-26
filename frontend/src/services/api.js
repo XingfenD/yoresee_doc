@@ -155,7 +155,6 @@ function mapOrgNode(node) {
 function mapInvitation(inv) {
   if (!inv) return null;
   return {
-    id: inv.id,
     code: inv.code,
     created_by_external_id: inv.createdByExternalId,
     created_by_name: inv.createdByName,
