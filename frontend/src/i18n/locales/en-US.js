@@ -180,7 +180,7 @@ export default {
     saveSuccess: 'Saved successfully',
     deleteSuccess: 'Deleted successfully',
     networkError: 'Network error, please try again later',
-    empty: 'No documents found',
+    empty: 'No data',
     knowledgeBaseNotFound: 'Knowledge base ID not found',
     loadKnowledgeBaseError: 'Failed to load knowledge base details, please try again later',
     openDocument: 'Open document',

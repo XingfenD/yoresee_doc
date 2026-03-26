@@ -179,7 +179,7 @@ export default {
     saveSuccess: '保存成功',
     deleteSuccess: '删除成功',
     networkError: '网络错误，请稍后再试',
-    empty: '暂无文档',
+    empty: '暂无数据',
     knowledgeBaseNotFound: '知识库ID不存在',
     loadKnowledgeBaseError: '加载知识库详情失败，请稍后重试',
     openDocument: '打开文档',
