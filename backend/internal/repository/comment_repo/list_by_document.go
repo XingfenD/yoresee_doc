@@ -11,6 +11,8 @@ type CommentListByDocumentOperation struct {
 	documentID int64
 	page       int
 	pageSize   int
+	inlineOnly bool
+	normalOnly bool
 	tx         *gorm.DB
 }
 
@@ -32,6 +34,18 @@ func (op *CommentListByDocumentOperation) WithPagination(page, pageSize int) *Co
 	return op
 }
 
+func (op *CommentListByDocumentOperation) WithInlineOnly() *CommentListByDocumentOperation {
+	op.inlineOnly = true
+	op.normalOnly = false
+	return op
+}
+
+func (op *CommentListByDocumentOperation) WithNormalOnly() *CommentListByDocumentOperation {
+	op.normalOnly = true
+	op.inlineOnly = false
+	return op
+}
+
 func (op *CommentListByDocumentOperation) ExecWithTotal() ([]model.DocumentComment, int64, error) {
 	db := storage.DB
 	if op.tx != nil {
@@ -39,6 +53,11 @@ func (op *CommentListByDocumentOperation) ExecWithTotal() ([]model.DocumentComme
 	}
 
 	query := db.Model(&model.DocumentComment{}).Where("document_id = ?", op.documentID)
+	if op.inlineOnly {
+		query = query.Where("anchor_id IS NOT NULL AND anchor_id <> ''")
+	} else if op.normalOnly {
+		query = query.Where("(anchor_id IS NULL OR anchor_id = '')")
+	}
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err

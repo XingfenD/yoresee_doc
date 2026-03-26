@@ -45,6 +45,9 @@ func runMigration() error {
 	if err := migrateRecentTemplateIndex(storage.DB); err != nil {
 		return err
 	}
+	if err := dropDocumentCommentQuote(storage.DB); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -59,4 +62,8 @@ func migrateRecentTemplateIndex(db *gorm.DB) error {
 
 func migrateRecentDocumentIndex(db *gorm.DB) error {
 	return db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_doc_user_doc ON recent_documents (user_id, document_id)").Error
+}
+
+func dropDocumentCommentQuote(db *gorm.DB) error {
+	return db.Exec("ALTER TABLE document_comments DROP COLUMN IF EXISTS quote").Error
 }

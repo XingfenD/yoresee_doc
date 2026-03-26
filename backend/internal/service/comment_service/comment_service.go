@@ -66,11 +66,18 @@ func (s *CommentService) CreateComment(req *dto.CreateCommentRequest) (*model.Do
 		CreatorID:  creatorID,
 		Content:    req.Content,
 	}
+	if req.AnchorID != nil && strings.TrimSpace(*req.AnchorID) != "" {
+		item.AnchorID = strings.TrimSpace(*req.AnchorID)
+	}
 	if err := s.commentRepo.Create(item).Exec(); err != nil {
 		return nil, status.StatusWriteDBError
 	}
 
-	s.notifyCommentTargets(doc, item, parentComment)
+	notifyQuote := ""
+	if req.Quote != nil {
+		notifyQuote = strings.TrimSpace(*req.Quote)
+	}
+	s.notifyCommentTargets(doc, item, parentComment, notifyQuote)
 	return item, nil
 }
 
@@ -82,9 +89,15 @@ func (s *CommentService) ListComments(req *dto.ListCommentsRequest) ([]model.Doc
 	if err != nil || doc == nil {
 		return nil, 0, status.StatusDocumentNotFound
 	}
-	return s.commentRepo.ListByDocument(doc.ID).
-		WithPagination(req.Page, req.PageSize).
-		ExecWithTotal()
+	op := s.commentRepo.ListByDocument(doc.ID).
+		WithPagination(req.Page, req.PageSize)
+	switch req.Scope {
+	case dto.CommentScopeNormal:
+		op = op.WithNormalOnly()
+	case dto.CommentScopeInline:
+		op = op.WithInlineOnly()
+	}
+	return op.ExecWithTotal()
 }
 
 func (s *CommentService) DeleteComment(req *dto.DeleteCommentRequest, isAdmin bool) error {
@@ -110,9 +123,33 @@ func (s *CommentService) DeleteComment(req *dto.DeleteCommentRequest, isAdmin bo
 	return nil
 }
 
+func (s *CommentService) UpdateComment(req *dto.UpdateCommentRequest, isAdmin bool) (*model.DocumentComment, error) {
+	if req == nil || strings.TrimSpace(req.ExternalID) == "" || strings.TrimSpace(req.Content) == "" {
+		return nil, status.StatusParamError
+	}
+	comment, err := s.commentRepo.GetByExternalID(req.ExternalID).Exec()
+	if err != nil || comment == nil {
+		return nil, status.StatusReadDBError
+	}
+	if !isAdmin {
+		operatorID, err := s.userRepo.GetIDByExternalID(req.OperatorExternalID).Exec()
+		if err != nil {
+			return nil, status.StatusUserNotFound
+		}
+		if operatorID != comment.CreatorID {
+			return nil, status.StatusPermissionDenied
+		}
+	}
+	if err := s.commentRepo.UpdateContentByID(comment.ID, req.Content).Exec(); err != nil {
+		return nil, status.StatusWriteDBError
+	}
+	comment.Content = req.Content
+	return comment, nil
+}
+
 var CommentSvc = NewCommentService()
 
-func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *model.DocumentComment, parent *model.DocumentComment) {
+func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *model.DocumentComment, parent *model.DocumentComment, quote string) {
 	if doc == nil || comment == nil {
 		return
 	}
@@ -158,6 +195,8 @@ func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *mode
 		"type":                  "comment",
 		"title":                 "新评论",
 		"content":               comment.Content,
+		"anchor_id":             comment.AnchorID,
+		"quote":                 quote,
 		"payload_json":          string(payloadJSON),
 	}
 	data, err := json.Marshal(evt)

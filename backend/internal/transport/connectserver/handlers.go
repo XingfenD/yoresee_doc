@@ -593,6 +593,18 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.CommentService_UpdateDocumentComment_FullMethodName, connect.NewUnaryHandler(
+		pb.CommentService_UpdateDocumentComment_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateDocumentCommentRequest]) (*connect.Response[pb.UpdateDocumentCommentResponse], error) {
+			resp, err := commentSvc.UpdateDocumentComment(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.DocumentService_UpdateDocument_FullMethodName, connect.NewUnaryHandler(
 		pb.DocumentService_UpdateDocument_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.UpdateDocumentRequest]) (*connect.Response[pb.UpdateDocumentResponse], error) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/auth_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/comment_service"
@@ -16,11 +17,13 @@ import (
 type CommentServiceServer struct {
 	pb.UnimplementedCommentServiceServer
 	userRepo *user_repo.UserRepository
+	docRepo  *document_repo.DocumentRepository
 }
 
 func NewCommentServiceServer() *CommentServiceServer {
 	return &CommentServiceServer{
 		userRepo: user_repo.UserRepo,
+		docRepo:  &document_repo.DocumentRepo,
 	}
 }
 
@@ -37,11 +40,21 @@ func (s *CommentServiceServer) CreateDocumentComment(ctx context.Context, req *p
 	if req.ParentExternalId != nil && strings.TrimSpace(req.GetParentExternalId()) != "" {
 		parentExternalID = req.ParentExternalId
 	}
+	var anchorID *string
+	if req.AnchorId != nil && strings.TrimSpace(req.GetAnchorId()) != "" {
+		anchorID = req.AnchorId
+	}
+	var quote *string
+	if req.Quote != nil && strings.TrimSpace(req.GetQuote()) != "" {
+		quote = req.Quote
+	}
 
 	comment, err := comment_service.CommentSvc.CreateComment(&dto.CreateCommentRequest{
 		DocumentExternalID: req.DocumentExternalId,
 		Content:            req.Content,
 		ParentExternalID:   parentExternalID,
+		AnchorID:           anchorID,
+		Quote:              quote,
 		CreatorExternalID:  userExternalID,
 	})
 	if err != nil {
@@ -62,6 +75,7 @@ func (s *CommentServiceServer) ListDocumentComments(ctx context.Context, req *pb
 		DocumentExternalID: req.DocumentExternalId,
 		Page:               int(req.Page),
 		PageSize:           int(req.PageSize),
+		Scope:              int32(req.Scope),
 	})
 	if err != nil {
 		return &pb.ListDocumentCommentsResponse{Base: baseResponseFromErr(err)}, nil
@@ -112,6 +126,34 @@ func (s *CommentServiceServer) DeleteDocumentComment(ctx context.Context, req *p
 	return &pb.DeleteDocumentCommentResponse{Base: baseResponseFromErr(nil)}, nil
 }
 
+func (s *CommentServiceServer) UpdateDocumentComment(ctx context.Context, req *pb.UpdateDocumentCommentRequest) (*pb.UpdateDocumentCommentResponse, error) {
+	if req == nil || strings.TrimSpace(req.ExternalId) == "" || strings.TrimSpace(req.Content) == "" {
+		return &pb.UpdateDocumentCommentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || strings.TrimSpace(userExternalID) == "" {
+		return &pb.UpdateDocumentCommentResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+	}
+	isAdmin, _ := auth_service.AuthSvc.IsAdmin(userExternalID)
+	comment, err := comment_service.CommentSvc.UpdateComment(&dto.UpdateCommentRequest{
+		ExternalID:         req.ExternalId,
+		Content:            req.Content,
+		OperatorExternalID: userExternalID,
+	}, isAdmin)
+	if err != nil {
+		return &pb.UpdateDocumentCommentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	docExternalID := ""
+	if comment != nil && comment.DocumentID != 0 {
+		if docs, err := s.docRepo.MGetByIDs([]int64{comment.DocumentID}); err == nil && len(docs) > 0 {
+			docExternalID = docs[0].ExternalID
+		}
+	}
+	creator, _ := s.userRepo.GetByExternalID(userExternalID).Exec()
+	resp := toCommentResponse(comment, docExternalID, "", creator)
+	return &pb.UpdateDocumentCommentResponse{Base: baseResponseFromErr(nil), Comment: resp}, nil
+}
+
 func toCommentResponse(comment *model.DocumentComment, docExternalID, parentExternalID string, creator *model.User) *pb.DocumentComment {
 	if comment == nil {
 		return nil
@@ -121,6 +163,8 @@ func toCommentResponse(comment *model.DocumentComment, docExternalID, parentExte
 		DocumentExternalId:    docExternalID,
 		ParentExternalId:      parentExternalID,
 		Content:               comment.Content,
+		AnchorId:              comment.AnchorID,
+		Quote:                 "",
 		CreatorUserExternalId: "",
 		CreatorName:           "",
 		CreatorAvatar:         "",

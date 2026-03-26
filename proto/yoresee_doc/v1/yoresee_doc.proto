@@ -650,12 +650,16 @@ message DocumentComment {
   string creator_name = 6;
   string creator_avatar = 7;
   string created_at = 8;
+  string anchor_id = 9;
+  string quote = 10;
 }
 
 message CreateDocumentCommentRequest {
   string document_external_id = 1;
   string content = 2;
   optional string parent_external_id = 3;
+  optional string anchor_id = 4;
+  optional string quote = 5;
 }
 
 message CreateDocumentCommentResponse {
@@ -667,6 +671,7 @@ message ListDocumentCommentsRequest {
   string document_external_id = 1;
   int32 page = 2;
   int32 page_size = 3;
+  CommentScope scope = 4;
 }
 
 message ListDocumentCommentsResponse {
@@ -681,6 +686,23 @@ message DeleteDocumentCommentRequest {
 
 message DeleteDocumentCommentResponse {
   BaseResponse base = 1;
+}
+
+message UpdateDocumentCommentRequest {
+  string external_id = 1;
+  string content = 2;
+}
+
+message UpdateDocumentCommentResponse {
+  BaseResponse base = 1;
+  DocumentComment comment = 2;
+}
+
+enum CommentScope {
+  COMMENT_SCOPE_UNSPECIFIED = 0;
+  COMMENT_SCOPE_ALL = 1;
+  COMMENT_SCOPE_NORMAL = 2;
+  COMMENT_SCOPE_INLINE = 3;
 }
 
 message UpdateDocumentResponse {
@@ -858,6 +880,8 @@ service CommentService {
   rpc ListDocumentComments(ListDocumentCommentsRequest) returns (ListDocumentCommentsResponse);
   // delete a comment.
   rpc DeleteDocumentComment(DeleteDocumentCommentRequest) returns (DeleteDocumentCommentResponse);
+  // update a comment.
+  rpc UpdateDocumentComment(UpdateDocumentCommentRequest) returns (UpdateDocumentCommentResponse);
 }
 
 // knowledgeBaseService provides knowledge base management and discovery APIs.

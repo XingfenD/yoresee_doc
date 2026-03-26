@@ -13,6 +13,7 @@ type DocumentComment struct {
 	ParentID   int64          `gorm:"default:0;index" json:"parent_id"`
 	CreatorID  int64          `gorm:"index;not null" json:"creator_id"`
 	Content    string         `gorm:"type:text;not null" json:"content"`
+	AnchorID   string         `gorm:"size:128;index" json:"anchor_id"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
