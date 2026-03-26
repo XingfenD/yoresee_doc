@@ -39,10 +39,22 @@ const props = defineProps({
   collabToken: {
     type: String,
     default: ''
+  },
+  commentEnabled: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['update:modelValue', 'collab-sync']);
+const emit = defineEmits([
+  'update:modelValue',
+  'collab-sync',
+  'ready',
+  'comment-add',
+  'comment-remove',
+  'comment-scroll',
+  'comment-adjust'
+]);
 
 const editorRef = ref(null);
 let vditor = null;
@@ -55,6 +67,9 @@ let isVditorReady = false;
 let suppressInput = false;
 let collabSynced = false;
 let pendingSeed = '';
+
+const getVditorInstance = () => vditor;
+defineExpose({ getVditor: getVditorInstance });
 
 const getEditableElement = () => {
   if (!vditor) {
@@ -301,6 +316,31 @@ onMounted(() => {
     cache: {
       enable: false
     },
+    comment: props.commentEnabled
+      ? {
+          enable: true,
+          add: (id, text, commentsData) => {
+            emit('comment-add', { id, text, commentsData });
+            queueMicrotask(() => {
+              syncEditorToYjs();
+            });
+          },
+          remove: (ids) => {
+            emit('comment-remove', ids);
+            queueMicrotask(() => {
+              syncEditorToYjs();
+            });
+          },
+          scroll: (top) => {
+            emit('comment-scroll', top);
+          },
+          adjustTop: (commentsData) => {
+            emit('comment-adjust', commentsData);
+          }
+        }
+      : {
+          enable: false
+        },
     upload: {
       handler: (files) => {
         return Promise.reject('上传功能暂未实现');
@@ -312,6 +352,7 @@ onMounted(() => {
       suppressInput = false;
       isVditorReady = true;
       applyVditorTheme();
+      emit('ready', vditor);
     },
     input: (value) => {
       if (suppressInput) {

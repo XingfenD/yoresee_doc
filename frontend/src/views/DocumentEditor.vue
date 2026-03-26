@@ -110,30 +110,24 @@
                   {{ t('document.loading') }}
                 </div>
                 <MarkdownEditor
+                  ref="markdownEditorRef"
                   v-model="editorContent"
                   :placeholder="t('document.editorPlaceholder')"
                   :collab-enabled="collabEnabled"
                   :collab-room="collabRoom"
                   :collab-url="collabUrl"
                   :collab-token="collabToken"
+                  :comment-enabled="inlineCommentEnabled"
                   @collab-sync="handleCollabSync"
+                  @ready="handleEditorReady"
+                  @comment-add="handleInlineCommentAdd"
+                  @comment-remove="handleInlineCommentRemove"
                 />
               </div>
             </div>
 
           </main>
           <div class="comment-container" :class="{ 'collapsed': isCommentCollapsed }">
-            <el-button
-              v-if="isCommentCollapsed"
-              text
-              class="comment-expand-button"
-              @click="toggleCommentSidebar"
-              :title="t('document.comments')"
-            >
-              <el-icon>
-                <ArrowLeft />
-              </el-icon>
-            </el-button>
             <aside class="comment-sidebar">
               <div class="comment-header">
                 <div class="comment-title">{{ t('document.comments') }}</div>
@@ -144,47 +138,87 @@
                 </el-button>
               </div>
               <div class="comment-body">
-                <div v-if="commentList.length === 0" class="comment-empty">
-                  {{ t('document.commentEmpty') }}
-                </div>
-                <div v-else class="comment-list">
-                  <div
-                    v-for="item in displayComments"
-                    :key="item.external_id"
-                    class="comment-item"
-                    :class="{ 'comment-item--reply': item.level > 0 }"
-                    :style="{ paddingLeft: `${Math.min(item.level, 3) * 16}px` }"
-                  >
-                    <el-avatar :size="28" :src="item.creator_avatar" />
-                    <div class="comment-content">
-                      <div class="comment-meta">
-                        <span class="comment-author">{{ item.creator_name }}</span>
-                        <div class="comment-meta-actions">
-                          <span class="comment-time">{{ formatCommentTime(item.created_at) }}</span>
-                          <el-dropdown trigger="click">
-                            <el-button text class="comment-more">
-                              <el-icon><MoreFilled /></el-icon>
-                            </el-button>
-                            <template #dropdown>
-                              <el-dropdown-menu>
-                                <el-dropdown-item @click="copyComment(item)">
-                                  {{ t('common.copy') }}
-                                </el-dropdown-item>
-                                <el-dropdown-item @click="deleteComment(item)">
-                                  {{ t('document.commentDelete') }}
-                                </el-dropdown-item>
-                              </el-dropdown-menu>
-                            </template>
-                          </el-dropdown>
+                <CommentList
+                  v-if="inlineCommentEnabled"
+                  title="行内评论"
+                  :items="inlineComments"
+                  empty-text="暂无行内评论"
+                  key-field="anchor_id"
+                >
+                  <template #item="{ item }">
+                    <CommentItem
+                      :avatar="item.creator_avatar"
+                      :author="item.creator_name"
+                      :time="formatCommentTime(item.created_at)"
+                      :content="item.content"
+                      :editing="item.editing"
+                      :actions="getInlineActions(item)"
+                      :content-clickable="true"
+                      :replyable="true"
+                      reply-label="回复"
+                      @action="(action) => handleInlineAction(item, action)"
+                      @content-click="scrollToInlineAnchor(item.anchor_id)"
+                      @reply="startInlineReply(item)"
+                      @mouseenter="highlightInlineComment(item.anchor_id)"
+                      @mouseleave="unhighlightInlineComment(item.anchor_id)"
+                    >
+                      <template #editor>
+                        <div class="inline-comment-editor">
+                          <el-input
+                            v-model="item.draft"
+                            type="textarea"
+                            :autosize="{ minRows: 2, maxRows: 4 }"
+                            placeholder="输入评论内容..."
+                          />
+                          <div class="inline-comment-editor-actions">
+                            <el-button size="small" type="primary" :loading="item.saving" @click="saveInlineComment(item)">保存</el-button>
+                            <el-button size="small" text @click="cancelInlineComment(item)">取消</el-button>
+                          </div>
                         </div>
-                      </div>
-                      <div v-if="item.parent_external_id" class="comment-reply">
-                        {{ t('document.commentReplyTo', { name: getParentName(item) }) }}
-                      </div>
-                      <div class="comment-text" @click="startReply(item)">{{ item.content }}</div>
-                    </div>
-                  </div>
-                </div>
+                      </template>
+                    </CommentItem>
+                  </template>
+                </CommentList>
+
+                <CommentList
+                  :show-title="false"
+                  :items="displayComments"
+                  :empty-text="t('document.commentEmpty')"
+                  key-field="external_id"
+                >
+                  <template #item="{ item }">
+                    <CommentItem
+                      :class="{ 'comment-item--reply': item.level > 0 }"
+                      :style="{ paddingLeft: `${Math.min(item.level, 3) * 16}px` }"
+                      :avatar="item.creator_avatar"
+                      :author="item.creator_name"
+                      :time="formatCommentTime(item.created_at)"
+                      :content="item.content"
+                      :reply-text="item.parent_external_id ? t('document.commentReplyTo', { name: getParentName(item) }) : ''"
+                      :actions="getCommentActions(item)"
+                      :editing="item.editing"
+                      :replyable="true"
+                      reply-label="回复"
+                      @action="(action) => handleCommentAction(item, action)"
+                      @reply="startReply(item)"
+                    >
+                      <template #editor>
+                        <div class="inline-comment-editor">
+                          <el-input
+                            v-model="item.draft"
+                            type="textarea"
+                            :autosize="{ minRows: 2, maxRows: 4 }"
+                            placeholder="输入评论内容..."
+                          />
+                          <div class="inline-comment-editor-actions">
+                            <el-button size="small" type="primary" :loading="item.saving" @click="saveCommentEdit(item)">保存</el-button>
+                            <el-button size="small" text @click="cancelCommentEdit(item)">取消</el-button>
+                          </div>
+                        </div>
+                      </template>
+                    </CommentItem>
+                  </template>
+                </CommentList>
               </div>
               <div v-if="commentTotal > commentPageSize" class="comment-pagination">
                 <el-pagination
@@ -198,7 +232,12 @@
               </div>
               <div class="comment-footer">
                 <div v-if="replyTarget" class="reply-hint">
-                  <span>{{ t('document.commentReplyingTo', { name: replyTarget.name }) }}</span>
+                  <span>
+                    {{ t('document.commentReplyingTo', { name: replyTarget.name }) }}
+                    <span v-if="replyTarget.content" class="reply-hint-snippet">
+                      {{ formatReplySnippet(replyTarget.content) }}
+                    </span>
+                  </span>
                   <el-button text size="small" @click="cancelReply">{{ t('document.commentCancelReply') }}</el-button>
                 </div>
                 <el-input
@@ -248,6 +287,8 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft, ArrowRight, Check, Edit, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
+import CommentList from '@/components/CommentList.vue';
+import CommentItem from '@/components/CommentItem.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
@@ -263,7 +304,9 @@ import {
   listDocumentComments,
   createDocumentComment,
   deleteDocumentComment,
-  recordRecentDocument
+  recordRecentDocument,
+  CommentScope,
+  updateDocumentComment
 } from '@/services/api';
 
 const props = defineProps({
@@ -334,6 +377,25 @@ const commentLoading = ref(false);
 const commentSending = ref(false);
 const replyTarget = ref(null);
 const displayComments = computed(() => flattenComments(commentList.value));
+const inlineComments = ref([]);
+const markdownEditorRef = ref(null);
+const inlineCommentEnabled = computed(() => !!docId.value && docId.value !== 'example');
+const getInlineActions = (item) => {
+  const canModify = canModifyInlineComment(item);
+  return [
+    { key: 'copy', label: t('common.copy') },
+    { key: 'edit', label: t('common.edit'), disabled: !canModify },
+    { key: 'delete', label: t('document.commentDelete'), danger: true, disabled: !canModify }
+  ];
+};
+const getCommentActions = (item) => {
+  const canModify = canDeleteComment(item);
+  return [
+    { key: 'copy', label: t('common.copy') },
+    { key: 'edit', label: t('common.edit'), disabled: !canModify },
+    { key: 'delete', label: t('document.commentDelete'), danger: true, disabled: !canModify }
+  ];
+};
 const savingTemplate = ref(false);
 const showTemplateDialog = ref(false);
 const templateDialogInit = ref({
@@ -343,6 +405,315 @@ const templateDialogInit = ref({
   tags: '',
   content: ''
 });
+
+const loadInlineComments = async () => {
+  if (!docId.value || docId.value === 'example') {
+    inlineComments.value = [];
+    return;
+  }
+  try {
+    const resp = await listDocumentComments({
+      document_external_id: docId.value,
+      page: 1,
+      page_size: 100,
+      scope: CommentScope.COMMENT_SCOPE_INLINE
+    });
+    inlineComments.value = (resp.comments || []).map((item) => ({
+      anchor_id: item.anchor_id,
+      external_id: item.external_id,
+      content: item.content,
+      created_at: item.created_at,
+      creator_name: item.creator_name,
+      creator_user_external_id: item.creator_user_external_id,
+      creator_avatar: item.creator_avatar,
+      editing: false,
+      draft: '',
+      saving: false
+    }));
+  } catch (error) {
+    inlineComments.value = [];
+  }
+};
+
+const getVditorInstance = () => markdownEditorRef.value?.getVditor?.();
+
+const handleEditorReady = () => {
+  loadInlineComments();
+};
+
+const handleInlineCommentAdd = ({ id, text }) => {
+  if (!id) {
+    return;
+  }
+  if (inlineComments.value.some((item) => item.anchor_id === id)) {
+    return;
+  }
+  inlineComments.value.unshift({
+    anchor_id: id,
+    external_id: '',
+    quote: text || '',
+    content: '',
+    created_at: '',
+    creator_name: userInfo.value?.nickname || userInfo.value?.username || '我',
+    creator_user_external_id: userInfo.value?.external_id || '',
+    creator_avatar: userInfo.value?.avatar || '',
+    editing: true,
+    draft: '',
+    saving: false
+  });
+};
+
+const handleInlineCommentRemove = async (ids) => {
+  if (!Array.isArray(ids)) {
+    return;
+  }
+  const idSet = new Set(ids);
+  const targets = inlineComments.value.filter((item) => idSet.has(item.anchor_id));
+  inlineComments.value = inlineComments.value.filter((item) => !idSet.has(item.anchor_id));
+  await Promise.all(
+    targets
+      .filter((item) => item.external_id)
+      .map((item) => deleteDocumentComment(item.external_id).catch(() => {}))
+  );
+};
+
+const highlightInlineComment = (id) => {
+  const editor = getVditorInstance();
+  if (editor && typeof editor.hlCommentIds === 'function') {
+    editor.hlCommentIds([id]);
+  }
+};
+
+const unhighlightInlineComment = (id) => {
+  const editor = getVditorInstance();
+  if (editor && typeof editor.unHlCommentIds === 'function') {
+    editor.unHlCommentIds([id]);
+  }
+};
+
+const scrollToInlineAnchor = (id) => {
+  const editor = getVditorInstance();
+  if (!editor || typeof editor.getCommentIds !== 'function') {
+    return;
+  }
+  const commentEntries = editor.getCommentIds();
+  const target = Array.isArray(commentEntries)
+    ? commentEntries.find((entry) => entry.id === id)
+    : null;
+  const container = editor?.vditor?.wysiwyg?.element || editor?.vditor?.ir?.element;
+  if (!target || !container) {
+    return;
+  }
+  const top = Math.max(target.top - 24, 0);
+  if (typeof container.scrollTo === 'function') {
+    container.scrollTo({ top, behavior: 'smooth' });
+  } else {
+    container.scrollTop = top;
+  }
+  if (typeof editor.hlCommentIds === 'function') {
+    editor.hlCommentIds([id]);
+  }
+};
+
+const deleteInlineComment = async (item) => {
+  if (!item) {
+    return;
+  }
+  if (item.external_id) {
+    try {
+      await deleteDocumentComment(item.external_id);
+    } catch (error) {
+      ElMessage.error(t('common.requestFailed'));
+      return;
+    }
+  }
+  const editor = getVditorInstance();
+  if (editor && typeof editor.removeCommentIds === 'function') {
+    editor.removeCommentIds([item.anchor_id]);
+  }
+  inlineComments.value = inlineComments.value.filter((entry) => entry.anchor_id !== item.anchor_id);
+};
+
+const saveInlineComment = async (item) => {
+  if (!item) {
+    return;
+  }
+  const content = (item.draft || '').trim();
+  if (!content) {
+    ElMessage.error('请输入评论内容');
+    return;
+  }
+  if (!docId.value || docId.value === 'example') {
+    return;
+  }
+  if (item.saving) {
+    return;
+  }
+  item.saving = true;
+  try {
+    if (item.external_id) {
+      const resp = await updateDocumentComment({
+        external_id: item.external_id,
+        content
+      });
+      const saved = resp.comment;
+      item.content = saved?.content || content;
+      item.created_at = saved?.created_at || item.created_at;
+      item.creator_name = saved?.creator_name || item.creator_name;
+      item.creator_avatar = saved?.creator_avatar || item.creator_avatar;
+      item.creator_user_external_id = saved?.creator_user_external_id || item.creator_user_external_id;
+    } else {
+      const resp = await createDocumentComment({
+        document_external_id: docId.value,
+        content,
+        anchor_id: item.anchor_id,
+        quote: item.quote
+      });
+      const saved = resp.comment;
+      item.content = saved?.content || content;
+      item.external_id = saved?.external_id || item.external_id;
+      item.created_at = saved?.created_at || new Date().toISOString();
+      item.creator_name = saved?.creator_name || item.creator_name;
+      item.creator_avatar = saved?.creator_avatar || item.creator_avatar;
+      item.creator_user_external_id = saved?.creator_user_external_id || item.creator_user_external_id;
+    }
+    item.draft = '';
+    item.editing = false;
+  } catch (error) {
+    ElMessage.error(t('common.requestFailed'));
+  } finally {
+    item.saving = false;
+  }
+};
+
+const cancelInlineComment = (item) => {
+  if (!item?.anchor_id) {
+    return;
+  }
+  if (item.external_id) {
+    item.editing = false;
+    item.draft = '';
+    return;
+  }
+  const editor = getVditorInstance();
+  if (editor && typeof editor.removeCommentIds === 'function') {
+    editor.removeCommentIds([item.anchor_id]);
+  }
+  inlineComments.value = inlineComments.value.filter((entry) => entry.anchor_id !== item.anchor_id);
+};
+
+const canModifyInlineComment = (item) => {
+  if (!item) return false;
+  if (!item.external_id) return true;
+  const currentExternalId = userInfo.value?.external_id;
+  if (!currentExternalId) return false;
+  if (item.creator_user_external_id === currentExternalId) {
+    return true;
+  }
+  return userInfo.value?.username === 'admin';
+};
+
+const startInlineCommentEdit = (item) => {
+  if (!item || item.editing) {
+    return;
+  }
+  item.draft = item.content || '';
+  item.editing = true;
+};
+
+const startCommentEdit = (item) => {
+  if (!item || item.editing) {
+    return;
+  }
+  item.draft = item.content || '';
+  item.editing = true;
+};
+
+const handleInlineAction = (item, action) => {
+  if (!item || item.editing) {
+    return;
+  }
+  if (action === 'edit') {
+    if (!canModifyInlineComment(item)) {
+      return;
+    }
+    startInlineCommentEdit(item);
+    return;
+  }
+  if (action === 'delete') {
+    if (!canModifyInlineComment(item)) {
+      return;
+    }
+    deleteInlineComment(item);
+    return;
+  }
+  if (action === 'copy') {
+    copyComment(item);
+  }
+};
+
+const handleCommentAction = (item, action) => {
+  if (!item) {
+    return;
+  }
+  if (action === 'copy') {
+    copyComment(item);
+    return;
+  }
+  if (action === 'delete') {
+    if (!canDeleteComment(item)) {
+      return;
+    }
+    deleteComment(item);
+    return;
+  }
+  if (action === 'edit') {
+    if (!canDeleteComment(item)) {
+      return;
+    }
+    startCommentEdit(item);
+  }
+};
+
+const saveCommentEdit = async (item) => {
+  if (!item?.external_id) {
+    return;
+  }
+  const content = (item.draft || '').trim();
+  if (!content) {
+    ElMessage.error('请输入评论内容');
+    return;
+  }
+  if (item.saving) {
+    return;
+  }
+  item.saving = true;
+  try {
+    const resp = await updateDocumentComment({
+      external_id: item.external_id,
+      content
+    });
+    const saved = resp.comment;
+    item.content = saved?.content || content;
+    item.created_at = saved?.created_at || item.created_at;
+    item.creator_name = saved?.creator_name || item.creator_name;
+    item.creator_avatar = saved?.creator_avatar || item.creator_avatar;
+    item.draft = '';
+    item.editing = false;
+  } catch (error) {
+    ElMessage.error(t('common.requestFailed'));
+  } finally {
+    item.saving = false;
+  }
+};
+
+const cancelCommentEdit = (item) => {
+  if (!item) {
+    return;
+  }
+  item.editing = false;
+  item.draft = '';
+};
 
 // 更新CSS变量以支持宽度调节
 const updateSidebarWidth = () => {
@@ -774,12 +1145,32 @@ const toggleCommentSidebar = () => {
 const startReply = (item) => {
   replyTarget.value = {
     external_id: item.external_id,
-    name: item.creator_name || t('document.commentUnknown')
+    name: item.creator_name || t('document.commentUnknown'),
+    content: item.content || '',
+    anchor_id: '',
+    is_inline: false
+  };
+};
+
+const startInlineReply = (item) => {
+  replyTarget.value = {
+    external_id: item.external_id,
+    name: item.creator_name || t('document.commentUnknown'),
+    content: item.content || '',
+    anchor_id: item.anchor_id || '',
+    is_inline: true
   };
 };
 
 const cancelReply = () => {
   replyTarget.value = null;
+};
+
+const formatReplySnippet = (text, maxLen = 24) => {
+  if (!text) return '';
+  const trimmed = text.trim();
+  if (trimmed.length <= maxLen) return trimmed;
+  return `${trimmed.slice(0, maxLen)}...`;
 };
 
 const loadComments = async () => {
@@ -796,9 +1187,15 @@ const loadComments = async () => {
     const resp = await listDocumentComments({
       document_external_id: docId.value,
       page: commentPage.value,
-      page_size: commentPageSize.value
+      page_size: commentPageSize.value,
+      scope: CommentScope.COMMENT_SCOPE_NORMAL
     });
-    commentList.value = resp.comments || [];
+    commentList.value = (resp.comments || []).map((item) => ({
+      ...item,
+      editing: false,
+      draft: '',
+      saving: false
+    }));
     commentTotal.value = Number(resp.total) || 0;
   } catch (error) {
     commentList.value = [];
@@ -823,7 +1220,8 @@ const flattenComments = (items) => {
 
   const result = [];
   const walk = (node, level) => {
-    result.push({ ...node, level });
+    node.level = level;
+    result.push(node);
     const children = childrenMap.get(node.external_id) || [];
     children.forEach((child) => walk(child, level + 1));
   };
@@ -853,7 +1251,8 @@ const submitComment = async () => {
     await createDocumentComment({
       document_external_id: docId.value,
       content,
-      parent_external_id: replyTarget.value?.external_id
+      parent_external_id: replyTarget.value?.external_id,
+      anchor_id: replyTarget.value?.is_inline ? replyTarget.value?.anchor_id : undefined
     });
     commentInput.value = '';
     replyTarget.value = null;
@@ -988,6 +1387,7 @@ onMounted(async () => {
 
   await fetchSystemInfo();
   await loadComments();
+  await loadInlineComments();
 });
 
 onBeforeUnmount(() => {
@@ -1011,6 +1411,7 @@ watch(
     commentPage.value = 1;
     replyTarget.value = null;
     await loadComments();
+    await loadInlineComments();
     if (docId.value && docId.value !== 'example') {
       recordRecentDocument(docId.value).catch(() => {});
     }
@@ -1294,6 +1695,7 @@ watch(
 .comment-container {
   position: relative;
   width: 320px;
+  overflow: hidden;
   flex-shrink: 0;
   border-left: 1px solid var(--border-color);
   background-color: var(--bg-white);
@@ -1302,34 +1704,11 @@ watch(
 }
 
 .comment-container.collapsed {
-  width: 32px;
-}
-
-.comment-container.collapsed .comment-sidebar {
-  transform: translateX(100%);
+  width: 0;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-}
-
-.comment-expand-button {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
-  width: 32px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm);
-  z-index: 10;
-}
-
-.comment-expand-button:hover {
-  color: var(--primary-color);
+  border-left: none;
 }
 
 .comment-sidebar {
@@ -1359,6 +1738,23 @@ watch(
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+
+
+.inline-comment-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inline-comment-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .comment-empty {
@@ -1366,95 +1762,6 @@ watch(
   color: var(--text-light);
   text-align: center;
   padding: var(--spacing-lg) 0;
-}
-
-.comment-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.comment-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  position: relative;
-}
-
-.comment-item--reply {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  background: var(--bg-light);
-  border-radius: var(--border-radius-sm);
-}
-
-.comment-item--reply::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 12px;
-  bottom: 12px;
-  width: 2px;
-  background: var(--border-color);
-  opacity: 0.6;
-  border-radius: 2px;
-}
-
-.comment-item--reply .comment-content {
-  padding-left: 6px;
-}
-
-.comment-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-}
-
-.comment-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--text-light);
-}
-
-.comment-meta-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.comment-more {
-  padding: 2px 4px;
-  color: var(--text-light);
-}
-
-.comment-more:hover {
-  color: var(--primary-color);
-}
-
-.comment-author {
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.comment-text {
-  font-size: 13px;
-  color: var(--text-medium);
-  line-height: 1.5;
-  word-break: break-word;
-  cursor: pointer;
-}
-
-.comment-reply {
-  font-size: 12px;
-  color: var(--text-light);
-  background: rgba(59, 130, 246, 0.08);
-  padding: 2px 6px;
-  border-radius: 10px;
-  width: fit-content;
 }
 
 .comment-actions {
@@ -1468,6 +1775,11 @@ watch(
   align-items: center;
   font-size: 12px;
   color: var(--text-light);
+}
+
+.reply-hint-snippet {
+  margin-left: 6px;
+  color: var(--text-medium);
 }
 
 .comment-footer {
@@ -1492,17 +1804,11 @@ watch(
   border-color: var(--border-color);
 }
 
-.dark-mode .comment-title,
-.dark-mode .comment-author {
+.dark-mode .comment-title {
   color: var(--text-dark);
 }
 
-.dark-mode .comment-text {
-  color: var(--text-medium);
-}
-
-.dark-mode .comment-empty,
-.dark-mode .comment-meta {
+.dark-mode .comment-empty {
   color: var(--text-light);
 }
 

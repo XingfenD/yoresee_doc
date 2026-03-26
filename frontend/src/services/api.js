@@ -50,7 +50,9 @@ const {
   MarkAllNotificationsReadRequest,
   CreateDocumentCommentRequest,
   ListDocumentCommentsRequest,
-  DeleteDocumentCommentRequest
+  DeleteDocumentCommentRequest,
+  UpdateDocumentCommentRequest,
+  CommentScope
 } = messages;
 
 function baseToObject(resp) {
@@ -200,6 +202,8 @@ function mapComment(item) {
     document_external_id: item.documentExternalId,
     parent_external_id: item.parentExternalId || null,
     content: item.content,
+    anchor_id: item.anchorId || '',
+    quote: item.quote || '',
     creator_user_external_id: item.creatorUserExternalId,
     creator_name: item.creatorName,
     creator_avatar: item.creatorAvatar,
@@ -943,7 +947,9 @@ export const createDocumentComment = async (data = {}) => {
   const req = new CreateDocumentCommentRequest({
     documentExternalId: data.document_external_id || '',
     content: data.content || '',
-    parentExternalId: data.parent_external_id || undefined
+    parentExternalId: data.parent_external_id || undefined,
+    anchorId: data.anchor_id || undefined,
+    quote: data.quote || undefined
   });
   const resp = await unaryCall(commentClient, 'createDocumentComment', req);
   const base = baseToObject(resp);
@@ -957,7 +963,8 @@ export const listDocumentComments = async (params = {}) => {
   const req = new ListDocumentCommentsRequest({
     documentExternalId: params.document_external_id || '',
     page: params.page || 1,
-    pageSize: params.page_size || 10
+    pageSize: params.page_size || 10,
+    scope: params.scope ?? CommentScope.COMMENT_SCOPE_ALL
   });
   const resp = await unaryCall(commentClient, 'listDocumentComments', req);
   const base = baseToObject(resp);
@@ -975,6 +982,19 @@ export const deleteDocumentComment = async (externalId) => {
   const resp = await unaryCall(commentClient, 'deleteDocumentComment', req);
   const base = baseToObject(resp);
   return handleResponse(base, {});
+};
+
+export const updateDocumentComment = async (data = {}) => {
+  const req = new UpdateDocumentCommentRequest({
+    externalId: data.external_id || '',
+    content: data.content || ''
+  });
+  const resp = await unaryCall(commentClient, 'updateDocumentComment', req);
+  const base = baseToObject(resp);
+  const dataResp = {
+    comment: resp.comment ? mapComment(resp.comment) : null
+  };
+  return handleResponse(base, dataResp);
 };
 
 export default {
@@ -1022,5 +1042,9 @@ export default {
   markAllNotificationsRead,
   createDocumentComment,
   listDocumentComments,
-  deleteDocumentComment
+  deleteDocumentComment,
+  updateDocumentComment,
+  CommentScope
 };
+
+export { CommentScope };
