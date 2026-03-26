@@ -67,6 +67,10 @@ func initializeDatabaseInTransaction() error {
 			return err
 		}
 
+		if err := createTestUserIntx(tx); err != nil {
+			return err
+		}
+
 		if err := initializeDocumentsInTx(tx); err != nil {
 			return err
 		}
