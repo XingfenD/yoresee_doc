@@ -51,7 +51,9 @@ func main() {
 
 	defer storage.CloseRedis()
 
-	service.Init(config.GlobalConfig)
+	if err := service.Init(config.GlobalConfig); err != nil {
+		logrus.Fatalf("Init services failed: %v", err)
+	}
 
 	if _, _, err := connectserver.Start(config.GlobalConfig.Server.GrpcPort, config.GlobalConfig.Server.GrpcWebPort); err != nil {
 		logrus.Fatalf("Start connect servers failed: %v", err)

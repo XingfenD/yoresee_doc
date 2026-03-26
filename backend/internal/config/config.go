@@ -66,10 +66,11 @@ const (
 )
 
 type BackendConfig struct {
-	Jwt            JWTConfig `mapstructure:"jwt"`
-	Log            LogConfig `mapstructure:"log"`
-	SystemName     string    `mapstructure:"system_name"`
-	InternalRPCKey string    `mapstructure:"internal_rpc_key"`
+	Jwt            JWTConfig      `mapstructure:"jwt"`
+	Log            LogConfig      `mapstructure:"log"`
+	Security       SecurityConfig `mapstructure:"security"`
+	SystemName     string         `mapstructure:"system_name"`
+	InternalRPCKey string         `mapstructure:"internal_rpc_key"`
 }
 
 type LogConfig struct {
@@ -92,6 +93,19 @@ type RabbitMQQueueConfig struct {
 type JWTConfig struct {
 	Secret string `mapstructure:"secret"`
 	Expire int64  `mapstructure:"expire"`
+}
+
+type SecurityConfig struct {
+	PasswordHashCost int        `mapstructure:"password_hash_cost"`
+	CORS             CORSConfig `mapstructure:"cors"`
+}
+
+type CORSConfig struct {
+	AllowedOrigins   []string `mapstructure:"allowed_origins"`
+	AllowedMethods   []string `mapstructure:"allowed_methods"`
+	AllowedHeaders   []string `mapstructure:"allowed_headers"`
+	AllowCredentials bool     `mapstructure:"allow_credentials"`
+	MaxAge           int      `mapstructure:"max_age"`
 }
 
 var GlobalConfig *Config

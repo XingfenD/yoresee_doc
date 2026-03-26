@@ -1,9 +1,19 @@
 package utils
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"github.com/XingfenD/yoresee_doc/internal/config"
+	"golang.org/x/crypto/bcrypt"
+)
 
 func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	cost := bcrypt.DefaultCost
+	if config.GlobalConfig != nil {
+		c := config.GlobalConfig.Backend.Security.PasswordHashCost
+		if c >= bcrypt.MinCost && c <= bcrypt.MaxCost {
+			cost = c
+		}
+	}
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), cost)
 	return string(bytes), err
 }
 
