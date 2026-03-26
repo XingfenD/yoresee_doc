@@ -77,7 +77,7 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/user_info/invatations',
+      path: '/user_info/invitations',
       name: 'UserInvitations',
       component: () => import('../views/UserInvitations.vue'),
       meta: { requiresAuth: true }

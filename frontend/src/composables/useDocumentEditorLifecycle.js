@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, watch } from 'vue';
+import { onMounted, watch } from 'vue';
 
 export function useDocumentEditorLifecycle({
   props,
@@ -21,7 +21,6 @@ export function useDocumentEditorLifecycle({
   commentSidebarRef,
   isCommentCollapsed,
   cancelEditTitle,
-  closeContextMenu,
   recordRecentDocument
 }) {
   const toggleCommentSidebar = () => {
@@ -57,16 +56,6 @@ export function useDocumentEditorLifecycle({
     }
 
     await fetchSystemInfo();
-  });
-
-  onMounted(() => {
-    window.addEventListener('click', closeContextMenu);
-    window.addEventListener('scroll', closeContextMenu, true);
-  });
-
-  onBeforeUnmount(() => {
-    window.removeEventListener('click', closeContextMenu);
-    window.removeEventListener('scroll', closeContextMenu, true);
   });
 
   watch(

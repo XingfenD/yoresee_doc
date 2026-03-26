@@ -203,8 +203,7 @@ const {
   expandToCurrentDoc,
   goBack,
   handleTreeNodeClick,
-  toggleExpandAll,
-  closeContextMenu
+  toggleExpandAll
 } = useDirectoryTreeState({
   t,
   router,
@@ -308,7 +307,6 @@ const {
   commentSidebarRef,
   isCommentCollapsed,
   cancelEditTitle,
-  closeContextMenu,
   recordRecentDocument
 });
 </script>

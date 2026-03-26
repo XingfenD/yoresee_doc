@@ -50,7 +50,7 @@
                   v-model="item.draft"
                   type="textarea"
                   :autosize="{ minRows: 2, maxRows: 4 }"
-                  placeholder="输入评论内容..."
+                  :placeholder="t('document.inlineCommentInputPlaceholder')"
                 />
                 <div class="inline-comment-editor-actions">
                   <el-button size="small" type="primary" :loading="item.saving" @click="saveEdit(item)">保存</el-button>

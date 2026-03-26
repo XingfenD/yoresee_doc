@@ -202,7 +202,6 @@ function mapComment(item) {
     parent_external_id: item.parentExternalId || null,
     content: item.content,
     anchor_id: item.anchorId || '',
-    quote: item.quote || '',
     creator_user_external_id: item.creatorUserExternalId,
     creator_name: item.creatorName,
     creator_avatar: item.creatorAvatar,
@@ -947,8 +946,7 @@ export const createDocumentComment = async (data = {}) => {
     documentExternalId: data.document_external_id || '',
     content: data.content || '',
     parentExternalId: data.parent_external_id || undefined,
-    anchorId: data.anchor_id || undefined,
-    quote: data.quote || undefined
+    anchorId: data.anchor_id || undefined
   });
   const resp = await unaryCall(commentClient, 'createDocumentComment', req);
   const base = baseToObject(resp);

@@ -22,7 +22,7 @@ export function useInlineComments(options = {}) {
   const commentList = ref([]);
   const loading = ref(false);
   const loadVersion = ref(0);
-  const inlineEmptyText = '暂无行内评论';
+  const inlineEmptyText = computed(() => t('document.inlineCommentEmpty'));
 
   const userDisplayName = computed(() => {
     const userInfo = getUserInfo?.();
@@ -188,11 +188,11 @@ export function useInlineComments(options = {}) {
     if (!item) return;
     const content = (item.draft || '').trim();
     if (!content) {
-      ElMessage.error('请输入评论内容');
+      ElMessage.error(t('document.inlineCommentContentRequired'));
       return;
     }
     if (!item.anchor_id) {
-      ElMessage.error('未找到行内锚点');
+      ElMessage.error(t('document.inlineCommentAnchorMissing'));
       return;
     }
     if (item.saving) return;

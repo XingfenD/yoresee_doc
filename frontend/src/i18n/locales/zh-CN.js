@@ -95,7 +95,11 @@ export default {
     commentReplyingTo: '正在回复 {name}',
     commentCancelReply: '取消回复',
     commentReplyPlaceholder: '回复该评论...',
-    commentUnknown: '未知用户'
+    commentUnknown: '未知用户',
+    inlineCommentEmpty: '暂无行内评论',
+    inlineCommentContentRequired: '请输入评论内容',
+    inlineCommentAnchorMissing: '未找到行内锚点',
+    inlineCommentInputPlaceholder: '输入评论内容...'
   },
   system: {
     name: 'Yoresee',

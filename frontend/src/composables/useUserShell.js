@@ -6,7 +6,7 @@ export function useUserShell({ locale, router, userStore, defaultActiveMenu = 'u
     { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
     { key: 'user-center', labelKey: 'user.menu.center', icon: User, route: '/user_info/example' },
     { key: 'user-notifications', labelKey: 'user.menu.notifications', icon: Bell, route: '/user_info/notifications' },
-    { key: 'user-invite', labelKey: 'user.menu.invite', icon: Ticket, route: '/user_info/invatations' },
+    { key: 'user-invite', labelKey: 'user.menu.invite', icon: Ticket, route: '/user_info/invitations' },
     { key: 'user-security', labelKey: 'user.menu.security', icon: Setting, route: '/user_info/example' }
   ];
 

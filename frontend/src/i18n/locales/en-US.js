@@ -96,7 +96,11 @@ export default {
     commentReplyingTo: 'Replying to {name}',
     commentCancelReply: 'Cancel reply',
     commentReplyPlaceholder: 'Reply to this comment...',
-    commentUnknown: 'Unknown user'
+    commentUnknown: 'Unknown user',
+    inlineCommentEmpty: 'No inline comments yet',
+    inlineCommentContentRequired: 'Please enter comment content',
+    inlineCommentAnchorMissing: 'Inline anchor was not found',
+    inlineCommentInputPlaceholder: 'Enter comment content...'
   },
   system: {
     name: 'Yoresee',
