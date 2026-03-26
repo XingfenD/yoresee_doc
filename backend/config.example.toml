@@ -32,10 +32,10 @@ datacenter = ""
 prefix = "yoresee_doc/config"
 
 [minio]
-endpoint = "yoresee_doc_minio:9000"
+endpoint = "minio:9000"
 access_key = "minioadmin"
 secret_key = "minioadmin"
-bucket = "documents"
+bucket = "yoresee-doc"
 use_ssl = false
 timeout = 30
 

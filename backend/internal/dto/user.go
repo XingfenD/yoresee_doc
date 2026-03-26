@@ -34,6 +34,17 @@ type UserUpdate struct {
 	InvitationCode *string `json:"invitation_code"`
 }
 
+type UpdateProfileRequest struct {
+	Username          *string `json:"username"`
+	Email             *string `json:"email"`
+	Nickname          *string `json:"nickname"`
+	Password          *string `json:"password"`
+	Avatar            *string `json:"avatar"`
+	AvatarFile        []byte  `json:"avatar_file"`
+	AvatarFilename    *string `json:"avatar_filename"`
+	AvatarContentType *string `json:"avatar_content_type"`
+}
+
 type UserResponse struct {
 	UserBase
 	InvitationCode *string `json:"invitation_code"`

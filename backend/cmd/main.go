@@ -34,6 +34,11 @@ func main() {
 		logrus.Fatal("Consul is required for config, but it is not enabled")
 	}
 
+	if err := storage.InitMinio(&config.GlobalConfig.Minio); err != nil {
+		logrus.Fatalf("Init minio failed: %v", err)
+		panic("init minio failed")
+	}
+
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
 		logrus.Fatalf("Init message queue failed: %v", err)
 	}

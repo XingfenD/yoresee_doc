@@ -56,6 +56,37 @@ func (s *AuthServiceServer) Register(ctx context.Context, req *pb.AuthRegisterRe
 	return &pb.AuthRegisterResponse{Base: baseResponseFromErr(nil)}, nil
 }
 
+func (s *AuthServiceServer) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
+	if req == nil {
+		return &pb.UpdateProfileResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.UpdateProfileResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+	}
+
+	serviceReq := &dto.UpdateProfileRequest{
+		Username:          req.Username,
+		Email:             req.Email,
+		Nickname:          req.Nickname,
+		Password:          req.Password,
+		Avatar:            req.Avatar,
+		AvatarFile:        req.AvatarFile,
+		AvatarFilename:    req.AvatarFilename,
+		AvatarContentType: req.AvatarContentType,
+	}
+
+	user, err := auth_service.AuthSvc.UpdateProfile(userExternalID, serviceReq)
+	if err != nil {
+		return &pb.UpdateProfileResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.UpdateProfileResponse{
+		Base: baseResponseFromErr(nil),
+		User: toUserResponse(user),
+	}, nil
+}
+
 func (s *AuthServiceServer) QuerySideBarDisplay(ctx context.Context, req *pb.QuerySideBarDisplayRequest) (*pb.QuerySideBarDisplayResponse, error) {
 	if req == nil || req.Scene == "" {
 		return &pb.QuerySideBarDisplayResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil

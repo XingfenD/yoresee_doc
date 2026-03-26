@@ -44,6 +44,18 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		opts...,
 	))
 
+	mux.Handle(pb.AuthService_UpdateProfile_FullMethodName, connect.NewUnaryHandler(
+		pb.AuthService_UpdateProfile_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateProfileRequest]) (*connect.Response[pb.UpdateProfileResponse], error) {
+			resp, err := authSvc.UpdateProfile(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+
 	mux.Handle(pb.AuthService_QuerySideBarDisplay_FullMethodName, connect.NewUnaryHandler(
 		pb.AuthService_QuerySideBarDisplay_FullMethodName,
 		func(ctx context.Context, req *connect.Request[pb.QuerySideBarDisplayRequest]) (*connect.Response[pb.QuerySideBarDisplayResponse], error) {

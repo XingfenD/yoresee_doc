@@ -290,6 +290,22 @@ message AuthRegisterResponse {
   BaseResponse base = 1;
 }
 
+message UpdateProfileRequest {
+  optional string username = 1;
+  optional string email = 2;
+  optional string nickname = 3;
+  optional string password = 4;
+  optional string avatar = 5;
+  optional bytes avatar_file = 6;
+  optional string avatar_filename = 7;
+  optional string avatar_content_type = 8;
+}
+
+message UpdateProfileResponse {
+  BaseResponse base = 1;
+  UserResponse user = 2;
+}
+
 message QuerySideBarDisplayRequest {
   // scene enum string: home | user_info | manage
   string scene = 1;
@@ -826,6 +842,8 @@ service AuthService {
   rpc Login(AuthLoginRequest) returns (AuthLoginResponse);
   // register creates a new user account.
   rpc Register(AuthRegisterRequest) returns (AuthRegisterResponse);
+  // update current user profile.
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
   // query side bar visible tabs for scene.
   rpc QuerySideBarDisplay(QuerySideBarDisplayRequest) returns (QuerySideBarDisplayResponse);
   // query top nav visible menus.
