@@ -93,7 +93,7 @@ func findOrCreateGroup(tx *gorm.DB, name, description string, creatorID int64) (
 	var group model.UserGroupMeta
 	if err := tx.Where("name = ?", name).First(&group).Error; err == nil {
 		return &group, nil
-	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
