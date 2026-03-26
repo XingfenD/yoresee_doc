@@ -17,7 +17,7 @@ func createTestUserIntx(tx *gorm.DB) error {
 func createNormalUserInTx(tx *gorm.DB) error {
 	logrus.Println("Creating 100 users in transaction...")
 
-	for i := 1; i <= 100; i++ {
+	for i := 1; i <= 20; i++ {
 		username := "user" + strconv.Itoa(i)
 		if err := createUserWithUsername(tx, username); err != nil {
 			return err
