@@ -65,7 +65,7 @@ export default {
     delete: 'Delete',
     edit: 'Edit',
     view: 'View',
-    views: 'views',
+    views: 'View Count',
     comments: 'Comments',
     collaborators: 'Collaborators',
     status: 'Status',

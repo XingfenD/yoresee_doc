@@ -177,6 +177,7 @@ onMounted(async () => {
 
 .template-preview-content {
   padding: 8px 0;
+  color: var(--text-primary);
 }
 
 .template-preview-empty {
@@ -185,5 +186,19 @@ onMounted(async () => {
 
 .dark-mode .template-preview {
   background: var(--bg-white);
+}
+
+.dark-mode .template-preview-title {
+  color: #f3f4f6;
+}
+
+.dark-mode .template-preview-meta,
+.dark-mode .template-preview-desc,
+.dark-mode .template-preview-date {
+  color: #cbd5e1;
+}
+
+.dark-mode .template-preview-content.vditor-reset {
+  color: #e5e7eb;
 }
 </style>

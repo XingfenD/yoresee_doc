@@ -1,5 +1,6 @@
 <template>
   <CardListSection
+    class="vertical-section"
     :title="title"
     :items="items"
     :empty-text="emptyText"

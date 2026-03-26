@@ -57,7 +57,10 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
       return;
     }
     await Vditor.preview(previewRef.value, content, {
-      theme: isDarkMode.value ? 'dark' : 'classic',
+      mode: isDarkMode.value ? 'dark' : 'light',
+      theme: {
+        current: isDarkMode.value ? 'dark' : 'light'
+      },
       hljs: { style: isDarkMode.value ? 'monokai' : 'github' }
     });
   };

@@ -1,5 +1,5 @@
 <template>
-  <div class="title-bar">
+  <div class="title-bar" :class="{ 'title-bar--compact': compact }">
     <div class="title-bar__left">
       <el-button v-if="showBack" text class="title-bar__back" @click="emit('back')">
         <el-icon><ArrowLeft /></el-icon>
@@ -26,6 +26,10 @@ defineProps({
   backText: {
     type: String,
     default: ''
+  },
+  compact: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -40,6 +44,11 @@ const emit = defineEmits(['back']);
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
+}
+
+.title-bar--compact {
+  margin-bottom: 0;
+  padding-bottom: var(--spacing-sm);
 }
 
 .title-bar__left {

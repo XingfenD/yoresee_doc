@@ -119,6 +119,9 @@ const contentPaddingClass = computed(() => `page-content--${props.contentPadding
 
 .page-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -176,6 +179,8 @@ const contentPaddingClass = computed(() => `page-content--${props.contentPadding
 .page-body {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: var(--spacing-lg);
 }
 

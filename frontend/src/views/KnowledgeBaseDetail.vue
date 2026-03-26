@@ -13,7 +13,7 @@
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <TitleBar :show-back="true" :back-text="t('common.back')" @back="goBackToKnowledgeBase">
+    <TitleBar :show-back="true" :compact="true" :back-text="t('common.back')" @back="goBackToKnowledgeBase">
       <template #actions>
         <el-button type="primary" @click="openCreateDocumentDialog">
           {{ t("knowledgeBase.createDocument") }}
@@ -105,7 +105,7 @@
             </div>
         </div>
         <div class="kb-templates-section">
-          <div v-loading="kbTemplatesLoading">
+          <div class="kb-templates-inner" v-loading="kbTemplatesLoading">
             <TemplateListSection
               :title="t('knowledgeBase.templates')"
               :items="kbTemplates"
@@ -205,22 +205,48 @@ onMounted(async () => {
 .detail-content {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: var(--spacing-lg);
 }
 
 .detail-columns {
   display: flex;
+  flex: 1;
+  min-height: 0;
   gap: var(--spacing-lg);
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .kb-templates-section {
+  display: flex;
+  min-height: 0;
   width: 320px;
   flex-shrink: 0;
 }
 
+.kb-templates-inner {
+  flex: 1;
+  min-height: 0;
+}
+
+.kb-templates-section :deep(.card-list-section) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-templates-section :deep(.section-content) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 /* 文档树形结构区域 */
 .document-tree-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   background-color: var(--bg-white);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
@@ -269,9 +295,9 @@ onMounted(async () => {
 }
 
 .tree-content {
+  flex: 1;
+  min-height: 0;
   padding: var(--spacing-md);
-  min-height: 400px;
-  max-height: 60vh;
   overflow-y: auto;
 }
 
@@ -374,9 +400,9 @@ onMounted(async () => {
 
 .empty-tree-state {
   display: flex;
+  height: 100%;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
   background-color: var(--bg-white);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);

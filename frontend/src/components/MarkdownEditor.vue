@@ -315,12 +315,13 @@ const teardownCollaboration = () => {
 };
 
 onMounted(() => {
+  const initIsDarkMode = document.documentElement.classList.contains('dark-mode');
   vditor = new Vditor(editorRef.value, {
     height: props.height,
     value: props.modelValue,
     placeholder: props.placeholder,
     mode: 'wysiwyg',
-    theme: 'classic',
+    theme: initIsDarkMode ? 'dark' : 'classic',
     icon: 'ant',
     toolbar: [
       'headings',

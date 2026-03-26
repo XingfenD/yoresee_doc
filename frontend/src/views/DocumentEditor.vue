@@ -315,6 +315,7 @@ const {
 .editor-layout {
   display: flex;
   height: 100%;
+  min-height: 0;
   background-color: var(--bg-white);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
@@ -326,7 +327,7 @@ const {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 600px;
+  min-height: 0;
   background-color: var(--bg-white);
   transition: all 0.3s ease-in-out;
 }
@@ -347,7 +348,7 @@ const {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+  min-height: 0;
   position: relative;
 }
 .editor-loading {
@@ -363,7 +364,8 @@ const {
 }
 
 .dark-mode .editor-loading {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(11, 17, 26, 0.72);
+  color: var(--text-dark);
 }
 
 .editor-footer {

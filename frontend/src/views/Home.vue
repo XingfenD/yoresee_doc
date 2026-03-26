@@ -144,7 +144,8 @@ onMounted(() => {
 .home-horizontal-layout {
   display: flex;
   gap: var(--spacing-lg);
-  height: calc(100vh - 60px - 120px);
+  flex: 1;
+  min-height: 0;
   align-items: stretch;
 }
 
@@ -155,13 +156,16 @@ onMounted(() => {
 }
 
 .home-column :deep(.section-content) {
-  max-height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
+.home-column :deep(.card-list-section),
 .home-column :deep(.vertical-section),
 .home-column :deep(.document-list-section) {
   width: 100%;
+  height: 100%;
 }
 
 @media (max-width: 1024px) {

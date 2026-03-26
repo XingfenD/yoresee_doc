@@ -64,7 +64,7 @@ export default {
     delete: '删除',
     edit: '编辑',
     view: '查看',
-    views: '次查看',
+    views: '查看次数',
     comments: '评论',
     collaborators: '协作者',
     status: '状态',

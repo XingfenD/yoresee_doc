@@ -16,7 +16,7 @@
     @menu-select="handleMenuSelect"
   >
     <ManageLayout>
-      <TitleBar :show-back="true" :back-text="t('common.back')" @back="router.back()">
+      <TitleBar :show-back="true" :compact="true" :back-text="t('common.back')" @back="router.back()">
         <template #actions>
           <el-button type="primary" @click="openEditDialog">
             {{ t('document.edit') }}
