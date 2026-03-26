@@ -34,18 +34,22 @@
 - `docs`: 文档。
 
 ## 启动方式（Docker Compose）
+先初始化配置，再启动服务。
+
 开发环境：
 ```bash
+bash deploy/script/init_config.sh
 bash deploy/script/start.sh dev up
 ```
 
 生产环境：
 ```bash
+bash deploy/script/init_config.sh
 bash deploy/script/start.sh release up
 ```
 
 ## Prepare 脚本
-用于从 example 生成配置文件：
+`prepare.sh` 现在会基于 `deploy/.env` 渲染配置文件：
 ```bash
 bash deploy/script/prepare.sh
 ```
@@ -57,8 +61,29 @@ bash deploy/script/prepare.sh
 - `deploy/redis/redis.conf`
 - `deploy/rabbitmq/rabbitmq.conf`
 
+模板文件保留在：
+- `backend/config.toml.tmpl`
+- `frontend/nginx.conf.tmpl`
+- `deploy/nginx/nginx.conf.tmpl`
+- `deploy/nginx/conf.d/default.conf.tmpl`
+- `deploy/redis/redis.conf.tmpl`
+- `deploy/rabbitmq/rabbitmq.conf.tmpl`
+
+## 交互式初始化脚本
+通过交互问答一次性初始化 `deploy/.env` 并渲染全部部署配置：
+```bash
+bash deploy/script/init_config.sh
+```
+如果希望使用默认值非交互初始化：
+```bash
+cp deploy/.env.example deploy/.env
+bash deploy/script/prepare.sh
+```
+
 ## 启动参数与 Token
 这些值在 compose 和 `backend/config.toml` 中使用，**生产环境必须替换**。
+
+统一配置源：`deploy/.env`（模板：`deploy/.env.example`）。
 
 ### Docker Compose 环境变量
 - `CONSUL_ROOT_TOKEN`
@@ -69,11 +94,11 @@ bash deploy/script/prepare.sh
   gRPC‑web 访问前缀（默认 `/grpc`）。
 
 ### 后端配置文件（`backend/config.toml`）
-至少需要更新：
+通常由 `prepare.sh` 自动生成，重点字段包括：
 - **数据库**：`database.user` / `database.password` / `database.name`
 - **Redis**：`redis.password`
 - **Consul**：`consul.token` / `consul.address` / `consul.prefix`
-- **消息队列**：`mq_config.type` / `mq_config.rabbitmq.url`
+- **消息队列**：`mq_config.rabbitmq.url`
 - **JWT**：`backend.jwt.secret`
 - **安全配置**：`backend.security`
 

@@ -1,40 +1,40 @@
 [server]
-grpc_port = 9090
-grpc_web_port = 8080
+grpc_port = ${BACKEND_GRPC_PORT}
+grpc_web_port = ${BACKEND_GRPC_WEB_PORT}
 read_timeout = 10
 write_timeout = 10
 
 [database]
-host = "yoresee_doc_postgres"
-port = 5432
-user = "root"
-password = "your_password"
-name = "yoresee_doc_db"
+host = "${POSTGRES_HOST}"
+port = ${POSTGRES_PORT}
+user = "${POSTGRES_USER}"
+password = "${POSTGRES_PASSWORD}"
+name = "${POSTGRES_DB}"
 # max_idle_conns = 10
 # max_open_conns = 100
 # conn_max_lifetime = 3600
 # charset = "utf8mb4"
 
 [redis]
-host = "yoresee_doc_redis"
-port = 6379
-password = "your_redis_password"
-db = 0
+host = "${REDIS_HOST}"
+port = ${REDIS_PORT}
+password = "${REDIS_PASSWORD}"
+db = ${REDIS_DB}
 timeout = 5
 
 [consul]
 enabled = true
-address = "consul:8500"
+address = "${CONSUL_HOST}:${CONSUL_PORT}"
 scheme = "http"
-token = "yoresee_doc_root_token"
+token = "${CONSUL_ROOT_TOKEN}"
 datacenter = ""
-prefix = "yoresee_doc/config"
+prefix = "${CONSUL_PREFIX}"
 
 [minio]
-endpoint = "minio:9000"
-access_key = "minioadmin"
-secret_key = "minioadmin"
-bucket = "yoresee-doc"
+endpoint = "${MINIO_HOST}:${MINIO_API_PORT}"
+access_key = "${MINIO_ROOT_USER}"
+secret_key = "${MINIO_ROOT_PASSWORD}"
+bucket = "${MINIO_BUCKET}"
 use_ssl = false
 timeout = 30
 
@@ -43,14 +43,14 @@ timeout = 30
 # [backend.mq_config.redis]
 
 [mq_config.rabbitmq]
-url = "amqp://guest:guest@yoresee_doc_rabbitmq:5672/"
+url = "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_AMQP_PORT}/"
 
 [backend]
-system_name = "Yoresee"
-internal_rpc_key = "yoresee_doc_internal_key"
+system_name = "${SYSTEM_NAME}"
+internal_rpc_key = "${BACKEND_INTERNAL_RPC_KEY}"
 
 [backend.jwt]
-secret = "yoresee_doc_jwt_secret_key"
+secret = "${JWT_SECRET}"
 expire = 86400                 # 24 hours
 refresh_expire = 604800        # 7 days
 

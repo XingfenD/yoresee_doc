@@ -3,8 +3,8 @@ services:
     image: nginx:alpine
     container_name: yoresee_doc_nginx
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "${NGINX_HTTP_PORT:-8080}:80"
+      - "${NGINX_HTTPS_PORT:-8443}:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
@@ -27,7 +27,7 @@ services:
     container_name: yoresee_doc_frontend
     environment:
       - NODE_ENV=production
-      - VITE_GRPC_WEB_ENDPOINT=/grpc
+      - VITE_GRPC_WEB_ENDPOINT=${VITE_GRPC_WEB_ENDPOINT:-/grpc}
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -36,9 +36,9 @@ services:
     image: postgres:15-alpine
     container_name: yoresee_doc_postgres
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: your_password
-      POSTGRES_DB: yoresee_doc_db
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_password}
+      POSTGRES_DB: ${POSTGRES_DB:-yoresee_doc_db}
     volumes:
       - yoresee_doc_postgres_data:/var/lib/postgresql/data
     networks:
@@ -49,7 +49,7 @@ services:
     image: redis:7-alpine
     container_name: yoresee_doc_redis
     environment:
-      REDIS_PASSWORD: your_redis_password
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-your_redis_password}
     volumes:
       - yoresee_doc_redis_data:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
@@ -66,7 +66,7 @@ services:
       CONSUL_LOCAL_CONFIG: >-
         {"acl":{"enabled":true,"default_policy":"deny","down_policy":"extend-cache","enable_token_persistence":true,"tokens":{"initial_management":"${CONSUL_ROOT_TOKEN:-yoresee_doc_root_token}"}}}
     ports:
-      - "8500:8500"
+      - "${CONSUL_HOST_PORT:-8500}:${CONSUL_PORT:-8500}"
     volumes:
       - yoresee_doc_consul_data:/consul/data
     networks:
@@ -77,8 +77,8 @@ services:
     image: rabbitmq:3-management
     container_name: yoresee_doc_rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     volumes:
       - yoresee_doc_rabbitmq_data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
@@ -90,7 +90,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: yoresee_doc_minio
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
@@ -111,9 +111,9 @@ services:
     volumes:
       - ../backend/config.toml:/app/config.toml
     environment:
-      - BACKEND_INTERNAL_RPC_KEY=yoresee_doc_internal_key
+      - BACKEND_INTERNAL_RPC_KEY=${BACKEND_INTERNAL_RPC_KEY:-yoresee_doc_internal_key}
     ports:
-      - "9090:9090"
+      - "${BACKEND_GRPC_HOST_PORT:-9090}:${BACKEND_GRPC_PORT:-9090}"
     depends_on:
       - postgres
       - redis
@@ -131,15 +131,16 @@ services:
     image: yoresee_doc_collab_core:latest
     container_name: yoresee_doc_collab_core
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=your_redis_password
-      - REDIS_DB=0
-      - BACKEND_ADDR=backend:9090
-      - DIRTY_DOC_MQ=rabbitmq
-      - DIRTY_DOC_TOPIC=collab.dirty_docs
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - INTERNAL_RPC_KEY=yoresee_doc_internal_key
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-your_redis_password}
+      - REDIS_DB=${REDIS_DB:-0}
+      - BACKEND_ADDR=${BACKEND_HOST:-backend}:${BACKEND_GRPC_PORT:-9090}
+      - DIRTY_DOC_MQ=${DIRTY_DOC_MQ:-rabbitmq}
+      - DIRTY_DOC_TOPIC=${DIRTY_DOC_TOPIC:-collab.dirty_docs}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@${RABBITMQ_HOST:-rabbitmq}:${RABBITMQ_AMQP_PORT:-5672}/
+      - INTERNAL_RPC_KEY=${BACKEND_INTERNAL_RPC_KEY:-yoresee_doc_internal_key}
+      - DIRTY_DOC_NOTIFY_THRESHOLD=${DIRTY_DOC_NOTIFY_THRESHOLD:-200}
     depends_on:
       - redis
       - backend
@@ -155,9 +156,10 @@ services:
     image: yoresee_doc_collab_gateway:latest
     container_name: yoresee_doc_collab
     environment:
-      - ADDR=:1234
-      - JWT_SECRET=yoresee_doc_jwt_secret_key
-      - COLLAB_CORE_URL=ws://collab-core:1234
+      - ADDR=:${COLLAB_GATEWAY_PORT:-1234}
+      - JWT_SECRET=${JWT_SECRET:-yoresee_doc_jwt_secret_key}
+      - COLLAB_CORE_URL=ws://${COLLAB_CORE_HOST:-collab-core}:${COLLAB_CORE_PORT:-1234}
+      - BACKEND_GRPC_ADDR=${BACKEND_HOST:-backend}:${BACKEND_GRPC_PORT:-9090}
     depends_on:
       - collab-core
     networks:
@@ -173,7 +175,7 @@ services:
     volumes:
       - ../backend/config.toml:/app/config.toml
     environment:
-      - COLLAB_CORE_HTTP=http://collab-core:1234
+      - COLLAB_CORE_HTTP=http://${COLLAB_CORE_HOST:-collab-core}:${COLLAB_CORE_PORT:-1234}
     depends_on:
       - rabbitmq
       - redis
@@ -190,7 +192,7 @@ services:
     volumes:
       - ../backend/config.toml:/app/config.toml
     environment:
-      - NOTIFICATION_MQ=rabbitmq
+      - NOTIFICATION_MQ=${NOTIFICATION_MQ:-rabbitmq}
     depends_on:
       - rabbitmq
       - redis

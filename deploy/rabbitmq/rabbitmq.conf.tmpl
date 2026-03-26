@@ -1,0 +1,19 @@
+# RabbitMQ Configuration File - Template
+
+# Default user and password
+default_user = ${RABBITMQ_DEFAULT_USER}
+default_pass = ${RABBITMQ_DEFAULT_PASS}
+
+# Management plugin
+management.tcp.port = ${RABBITMQ_MANAGEMENT_PORT}
+
+# Networking
+listeners.tcp.default = ${RABBITMQ_AMQP_PORT}
+
+# Memory-based DB configuration
+vm_memory_high_watermark.relative = 0.6
+
+# Logging
+log.file.level = info
+
+# Keep RabbitMQ default auth mechanisms (PLAIN/AMQPLAIN) for broad client compatibility.
