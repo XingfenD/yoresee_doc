@@ -20,11 +20,6 @@
       <div class="content-area">
         <div class="editor-layout">
           <div class="sidebar-container" :class="{ 'collapsed': isSidebarCollapsed }">
-            <el-button v-if="isSidebarCollapsed" text class="expand-button" @click="toggleSidebar" :title="t('common.expand')">
-              <el-icon>
-                <ArrowRight />
-              </el-icon>
-            </el-button>
             <aside class="sidebar">
               <div class="sidebar-header">
                 <el-button text class="back-button" @click="goBack">
@@ -36,11 +31,6 @@
               </div>
               <div class="sidebar-title">
                 {{ knowledgeBaseName }}
-                <el-button text class="collapse-button" @click="toggleSidebar" :title="t('common.collapse')">
-                  <el-icon>
-                    <ArrowLeft />
-                  </el-icon>
-                </el-button>
               </div>
               <DocumentTree
                 ref="treeComponentRef"
@@ -82,6 +72,16 @@
                 />
               </div>
               <div class="editor-actions">
+                <el-button
+                  class="editor-action-button"
+                  text
+                  @click="toggleSidebar"
+                  :title="isSidebarCollapsed ? t('common.expand') : t('common.collapse')"
+                >
+                  <el-icon>
+                    <component :is="isSidebarCollapsed ? Expand : Fold" />
+                  </el-icon>
+                </el-button>
                 <el-button
                   class="editor-action-button"
                   text
@@ -172,7 +172,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, ArrowRight, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
+import { ArrowLeft, Expand, Fold, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import CommentSidebar from '@/components/CommentSidebar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
@@ -917,12 +917,13 @@ watch(
   align-items: stretch;
   position: relative;
   width: calc(var(--sidebar-width) + 6px);
+  overflow: hidden;
   flex-shrink: 0;
   transition: all 0.3s ease-in-out;
 }
 
 .sidebar-container.collapsed {
-  width: 32px;
+  width: 0;
 }
 
 .sidebar-container.collapsed .sidebar {
@@ -952,32 +953,6 @@ watch(
   border-color: var(--border-color);
 }
 
-.expand-button {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
-  width: 32px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm);
-  z-index: 10;
-}
-
-.dark-mode .expand-button {
-  background-color: var(--bg-white);
-  border-color: var(--border-color);
-}
-
-.expand-button:hover {
-  color: var(--primary-color);
-}
-
 .sidebar-header {
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
@@ -1001,15 +976,6 @@ watch(
 .dark-mode .sidebar-title {
   color: var(--text-dark);
   border-color: var(--border-color);
-}
-
-.collapse-button {
-  padding: 4px;
-  color: var(--text-light);
-}
-
-.collapse-button:hover {
-  color: var(--primary-color);
 }
 
 .sidebar-resizer {

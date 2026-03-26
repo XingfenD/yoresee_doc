@@ -1,6 +1,12 @@
 <template>
-  <div class="comment-container" :class="{ collapsed: collapsed }">
-    <aside class="comment-sidebar">
+  <div class="comment-container" :class="{ collapsed: collapsed, resizing: resizing }" :style="containerStyle">
+    <div
+      class="comment-resizer"
+      role="separator"
+      aria-orientation="vertical"
+      @mousedown="startResize"
+    ></div>
+    <aside class="comment-sidebar" :style="sidebarStyle">
       <div class="comment-header">
         <div class="comment-title">{{ titleWithCount }}</div>
         <el-button text class="collapse-button" @click="$emit('toggle')" :title="collapseTitle">
@@ -59,7 +65,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { ArrowRight } from '@element-plus/icons-vue';
@@ -91,8 +97,23 @@ const { t } = useI18n();
 const commentList = ref([]);
 const loading = ref(false);
 const inlineEmptyText = '暂无行内评论';
+const COMMENT_WIDTH_KEY = 'commentSidebarWidth';
+const MIN_COMMENT_WIDTH = 280;
+const DEFAULT_COMMENT_WIDTH = 320;
+const MAX_COMMENT_WIDTH = 560;
+const commentWidth = ref(DEFAULT_COMMENT_WIDTH);
+const resizing = ref(false);
+const resizeStartX = ref(0);
+const resizeStartWidth = ref(DEFAULT_COMMENT_WIDTH);
 
 const userDisplayName = computed(() => props.userInfo?.nickname || props.userInfo?.username || '我');
+const containerStyle = computed(() => {
+  if (props.collapsed) {
+    return {};
+  }
+  return { width: `${commentWidth.value}px` };
+});
+const sidebarStyle = computed(() => ({ width: `${commentWidth.value}px` }));
 
 const titleWithCount = computed(() => {
   const count = commentList.value.length;
@@ -331,6 +352,42 @@ const maybeRemoveAnchor = (anchorId, list = commentList.value) => {
   }
 };
 
+const getMaxAllowedWidth = () => {
+  const viewportMax = Math.max(MIN_COMMENT_WIDTH, window.innerWidth - 360);
+  return Math.min(MAX_COMMENT_WIDTH, viewportMax);
+};
+
+const clampCommentWidth = (width) => {
+  return Math.min(Math.max(width, MIN_COMMENT_WIDTH), getMaxAllowedWidth());
+};
+
+const onResizeMove = (event) => {
+  if (!resizing.value) return;
+  const delta = resizeStartX.value - event.clientX;
+  commentWidth.value = clampCommentWidth(resizeStartWidth.value + delta);
+};
+
+const stopResize = () => {
+  if (!resizing.value) return;
+  resizing.value = false;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  window.removeEventListener('mousemove', onResizeMove);
+  window.removeEventListener('mouseup', stopResize);
+};
+
+const startResize = (event) => {
+  if (props.collapsed) return;
+  event.preventDefault();
+  resizing.value = true;
+  resizeStartX.value = event.clientX;
+  resizeStartWidth.value = commentWidth.value;
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  window.addEventListener('mousemove', onResizeMove);
+  window.addEventListener('mouseup', stopResize);
+};
+
 const copyComment = async (item) => {
   const text = item?.content || '';
   if (!text) return;
@@ -425,6 +482,26 @@ watch(
   }
 );
 
+watch(commentWidth, (value) => {
+  localStorage.setItem(COMMENT_WIDTH_KEY, `${value}`);
+});
+
+watch(
+  () => props.collapsed,
+  () => {
+    stopResize();
+  }
+);
+
+onBeforeUnmount(() => {
+  stopResize();
+});
+
+const savedCommentWidth = Number(localStorage.getItem(COMMENT_WIDTH_KEY) || DEFAULT_COMMENT_WIDTH);
+if (Number.isFinite(savedCommentWidth)) {
+  commentWidth.value = clampCommentWidth(savedCommentWidth);
+}
+
 defineExpose({
   handleInlineAnchorAdd,
   handleInlineAnchorRemove,
@@ -446,6 +523,12 @@ defineExpose({
   display: flex;
 }
 
+.comment-container.resizing,
+.comment-container.resizing .comment-sidebar,
+.comment-container.resizing .comment-resizer {
+  transition: none !important;
+}
+
 .comment-container.collapsed {
   width: 0;
   opacity: 0;
@@ -458,9 +541,25 @@ defineExpose({
   display: flex;
   flex-direction: column;
   width: 320px;
-  max-width: 360px;
   transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
   background-color: var(--bg-white);
+}
+
+.comment-resizer {
+  width: 6px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background-color: var(--bg-light);
+  border-right: 1px solid var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+.comment-resizer:hover {
+  background-color: var(--bg-medium);
+}
+
+.comment-container.collapsed .comment-resizer {
+  display: none;
 }
 
 .comment-header {
@@ -499,6 +598,15 @@ defineExpose({
 :global(.dark-mode) .comment-sidebar {
   background-color: var(--bg-white);
   border-color: var(--border-color);
+}
+
+:global(.dark-mode) .comment-resizer {
+  background-color: var(--bg-medium);
+  border-color: var(--border-color);
+}
+
+:global(.dark-mode) .comment-resizer:hover {
+  background-color: var(--bg-white);
 }
 
 :global(.dark-mode) .comment-title {
