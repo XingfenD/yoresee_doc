@@ -128,10 +128,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/store/user";
-import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import PageLayout from "@/components/PageLayout.vue";
 import TitleBar from "@/components/TitleBar.vue";
@@ -139,315 +138,64 @@ import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import TemplateListSection from "@/components/TemplateListSection.vue";
 import InfoStatsCard from "@/components/InfoStatsCard.vue";
-import { getKnowledgeBaseDetail, createDocument as createDocumentApi, listTemplates } from "@/services/api.js";
-import {
-  Document,
-  Clock,
-  User,
-  MoreFilled
-} from "@element-plus/icons-vue";
+import { MoreFilled } from "@element-plus/icons-vue";
+import { useKnowledgeBaseDetailPage } from "@/composables/useKnowledgeBaseDetailPage";
 
-// 国际化
 const { locale, t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 
-// 系统信息
-const systemName = ref("Yoresee");
-
-// 导航相关
-const activeMenu = ref("knowledge-base");
-const isDarkMode = computed(() => userStore.darkMode);
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (value) => {
-    locale.value = value;
-    localStorage.setItem("language", value);
-  },
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  currentLanguage,
+  userInfo,
+  userAvatar,
+  knowledgeBaseName,
+  knowledgeBaseDescription,
+  knowledgeBaseData,
+  loading,
+  kbTemplates,
+  kbTemplatesLoading,
+  knowledgeBaseStats,
+  searchKeyword,
+  sortBy,
+  sortOptions,
+  currentPage,
+  pageSize,
+  totalDocumentsCount,
+  showCreateDialog,
+  creatingLoading,
+  createDocument,
+  cancelCreateDocument,
+  openCreateDocumentDialog,
+  handleTreeNodeClick,
+  openDocument,
+  handleNodeAction,
+  handleSizeChange,
+  handleCurrentChange,
+  handleMenuSelect,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  goBackToKnowledgeBase,
+  templateTagMapper,
+  templateMetaMapper,
+  openTemplate,
+  directoryTreeData,
+  init
+} = useKnowledgeBaseDetailPage({
+  t,
+  router,
+  route,
+  userStore,
+  locale
 });
-
-// 用户信息
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
-
-// 知识库信息
-const knowledgeBaseName = ref("");
-const knowledgeBaseDescription = ref("");
-const totalDocuments = ref(0);
-const lastUpdated = ref("");
-const ownerName = ref("");
-const knowledgeBaseData = ref(null);
-const loading = ref(false);
-const kbTemplates = ref([]);
-const kbTemplatesLoading = ref(false);
-const knowledgeBaseStats = computed(() => [
-  { key: 'documents', icon: Document, label: t("knowledgeBase.documentsCount"), value: totalDocuments.value },
-  { key: 'updated', icon: Clock, label: t("knowledgeBase.lastUpdated"), value: formatDate(lastUpdated.value) },
-  { key: 'owner', icon: User, label: t("knowledgeBase.owner"), value: ownerName.value }
-]);
-
-// 文档树相关
-const searchKeyword = ref("");
-const sortBy = ref("name");
-const currentPage = ref(1);
-const pageSize = ref(50);
-const totalDocumentsCount = ref(0);
-
-// 创建文档对话框相关
-const showCreateDialog = ref(false);
-const creatingLoading = ref(false);
-const sortOptions = ref([
-  { value: "name", label: t("knowledgeBase.sortByName") },
-  { value: "date", label: t("knowledgeBase.sortByDate") },
-  { value: "type", label: t("knowledgeBase.sortByType") },
-]);
-
-// 文档树数据 - 从API获取
-const directoryTreeData = computed(() => {
-  if (!knowledgeBaseData.value || !knowledgeBaseData.value.documents) {
-    return [];
-  }
-
-  const mapDoc = (doc, parentId = null) => ({
-    id: doc.external_id,
-    label: doc.title,
-    type: doc.type,
-    isFolder: doc.hasChildren || (doc.children && doc.children.length > 0),
-    isLeaf: !(doc.hasChildren || (doc.children && doc.children.length > 0)),
-    tags: doc.tags || [],
-    parentId,
-    children: doc.children ? doc.children.map((child) => mapDoc(child, doc.external_id)) : []
-  });
-
-  return knowledgeBaseData.value.documents.map((doc) => mapDoc(doc));
-});
-
-
-// 加载知识库详情数据
-const loadKnowledgeBaseDetail = async () => {
-  const knowledgeBaseExternalID = route.params.id;
-  if (!knowledgeBaseExternalID) {
-    ElMessage.error(t("message.knowledgeBaseNotFound"));
-    return;
-  }
-
-  loading.value = true;
-  try {
-    // 调用API获取知识库详情，同时记录最近访问
-    const data = await getKnowledgeBaseDetail(knowledgeBaseExternalID, {
-      record_recent_log: true,
-      page: currentPage.value,
-      page_size: pageSize.value
-    });
-
-    knowledgeBaseData.value = data;
-
-    // 更新知识库信息
-    if (data.knowledge_base) {
-      knowledgeBaseName.value = data.knowledge_base.name;
-      knowledgeBaseDescription.value = data.knowledge_base.description;
-      lastUpdated.value = data.knowledge_base.updated_at;
-      totalDocuments.value = data.knowledge_base.documents_count || 0;
-      totalDocumentsCount.value = data.total_count || 0;
-      ownerName.value = data.knowledge_base.creator_name || "未知用户";
-    }
-  } catch (error) {
-    console.error("加载知识库详情失败:", error);
-    ElMessage.error(t("message.loadKnowledgeBaseError"));
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 打开创建文档对话框
-const openCreateDocumentDialog = () => {
-  showCreateDialog.value = true;
-};
-
-// 创建文档
-const createDocument = async (payload) => {
-  if (!payload?.title?.trim()) {
-    ElMessage.error(t("knowledgeBase.titleRequired"));
-    return;
-  }
-
-  try {
-    const knowledgeBaseExternalID = route.params.id;
-    if (!knowledgeBaseExternalID) {
-      ElMessage.error(t("message.knowledgeBaseNotFound"));
-      return;
-    }
-
-    creatingLoading.value = true;
-
-    // 调用API创建文档
-    const response = await createDocumentApi({
-      title: payload.title,
-      type: payload.type || 'markdown',
-      container_type: "knowledge_base",
-      knowledge_base_external_id: knowledgeBaseExternalID,
-      parent_external_id: payload.parent_external_id || undefined,
-      template_id: payload.template || undefined
-    });
-
-    // 关闭对话框
-    showCreateDialog.value = false;
-
-    // 重新加载知识库详情以显示新创建的文档
-    await loadKnowledgeBaseDetail();
-  } catch (error) {
-    console.error("创建文档失败:", error);
-    ElMessage.error(t("knowledgeBase.createDocumentError"));
-  } finally {
-    creatingLoading.value = false;
-  }
-};
-
-// 取消创建文档
-const cancelCreateDocument = () => {
-  showCreateDialog.value = false;
-};
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return t("common.unknown");
-
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-};
-
-// 处理树节点点击
-const handleTreeNodeClick = (data) => {
-  console.log("Node clicked:", data);
-  openDocument(data);
-};
-
-// 打开文档
-const openDocument = (data) => {
-  router.push(`/knowledge-base/${route.params.id}/document/${data.id}`);
-};
-
-// 处理节点操作
-const handleNodeAction = (command, data) => {
-  switch (command) {
-    case "rename":
-      ElMessage.info(`${t("message.renameDocument")}: ${data.name}`);
-      break;
-    case "share":
-      ElMessage.info(`${t("message.shareDocument")}: ${data.name}`);
-      break;
-    case "delete":
-      ElMessage.confirm(t("message.confirmDelete"), t("common.warning"), {
-        confirmButtonText: t("button.confirm"),
-        cancelButtonText: t("button.cancel"),
-        type: "warning",
-      }).then(() => {
-        ElMessage.success(t("message.deleteSuccess"));
-      });
-      break;
-  }
-};
-
-// 处理菜单选择
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
-
-// 处理语言切换
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-};
-
-// 处理主题切换
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-// 初始化语言
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem("language");
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
-  }
-};
-
-// 获取系统信息
-const fetchSystemInfo = async () => {
-  try {
-    const info = await userStore.fetchSystemInfo();
-    systemName.value = info.system_name;
-  } catch (err) {
-    console.error("获取系统信息失败:", err);
-  }
-};
-
-// 分页大小改变
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1; // 重置到第一页
-  loadKnowledgeBaseDetail();
-};
-
-// 当前页改变
-const handleCurrentChange = (val) => {
-  currentPage.value = val;
-  loadKnowledgeBaseDetail();
-};
-
-// 登出处理
-const handleLogout = () => {
-  userStore.logout();
-  router.push("/login");
-};
-
-const goBackToKnowledgeBase = () => {
-  router.push("/knowledge-base");
-};
-
-const templateTagMapper = () => ({ type: "info", label: t("templates.private") });
-const templateMetaMapper = (tpl) => [
-  { label: t("templates.updatedAt"), value: formatDate(tpl.updated_at || tpl.updatedAt) }
-];
-
-const openTemplate = (tpl) => {
-  if (!tpl?.id) return;
-  router.push(`/template/${tpl.id}`);
-};
-
-const fetchKnowledgeBaseTemplates = async () => {
-  const knowledgeBaseExternalID = route.params.id;
-  if (!knowledgeBaseExternalID || kbTemplatesLoading.value) {
-    return;
-  }
-  kbTemplatesLoading.value = true;
-  try {
-    const data = await listTemplates({
-      target_container: "knowledge_base",
-      knowledge_base_id: knowledgeBaseExternalID,
-      order_by: "updated_at",
-      order_desc: true,
-      page: 1,
-      page_size: 50
-    });
-    kbTemplates.value = data.templates || [];
-  } catch (error) {
-    console.error("获取知识库模板失败:", error);
-  } finally {
-    kbTemplatesLoading.value = false;
-  }
-};
 
 onMounted(async () => {
-  // 获取系统信息
-  await fetchSystemInfo();
-
-  // 初始化主题和语言
-  initLanguage();
-
-  // 加载知识库详情数据
-  await loadKnowledgeBaseDetail();
-  await fetchKnowledgeBaseTemplates();
+  await init();
 });
 </script>
 
