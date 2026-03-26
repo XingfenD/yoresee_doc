@@ -8,6 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository/notification_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 )
 
 type NotificationService struct {
@@ -50,6 +51,7 @@ func (s *NotificationService) CreateNotifications(req *dto.CreateNotificationReq
 			return status.StatusUserNotFound
 		}
 		items = append(items, model.Notification{
+			ExternalID: utils.GenerateExternalID(utils.ExternalIDContextNotification),
 			ReceiverID: id,
 			Type:       req.Type,
 			Status:     "unread",
@@ -73,10 +75,22 @@ func (s *NotificationService) ListNotifications(req *dto.ListNotificationsReques
 	if err != nil {
 		return nil, 0, status.StatusUserNotFound
 	}
-	return s.notificationRepo.List(userID).
+	list, total, err := s.notificationRepo.List(userID).
 		WithStatus(req.Status).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 		ExecWithTotal()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for i := range list {
+		if strings.TrimSpace(list[i].ExternalID) == "" {
+			externalID := utils.GenerateExternalID(utils.ExternalIDContextNotification)
+			list[i].ExternalID = externalID
+			_ = s.notificationRepo.UpdateExternalID(list[i].ID, externalID).Exec()
+		}
+	}
+	return list, total, nil
 }
 
 func (s *NotificationService) MarkRead(req *dto.MarkNotificationsReadRequest) error {
@@ -87,7 +101,7 @@ func (s *NotificationService) MarkRead(req *dto.MarkNotificationsReadRequest) er
 	if err != nil {
 		return status.StatusUserNotFound
 	}
-	if err := s.notificationRepo.MarkRead(userID, req.IDs).Exec(); err != nil {
+	if err := s.notificationRepo.MarkRead(userID, req.ExternalIDs).Exec(); err != nil {
 		return status.StatusWriteDBError
 	}
 	return nil

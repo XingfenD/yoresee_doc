@@ -168,7 +168,6 @@ func toInvitationResponse(inv *dto.InvitationResponse) *pb.InvitationResponse {
 		return nil
 	}
 	resp := &pb.InvitationResponse{
-		Id:                  inv.ID,
 		Code:                inv.Code,
 		CreatedByExternalId: inv.CreatedByExternalID,
 		CreatedByName:       inv.CreatedByName,
@@ -193,7 +192,6 @@ func toInvitationRecordResponse(rec *dto.InvitationRecordResponse) *pb.Invitatio
 		return nil
 	}
 	resp := &pb.InvitationRecordResponse{
-		Id:     rec.ID,
 		Code:   rec.Code,
 		UsedBy: rec.UsedBy,
 		UsedAt: timeToString(rec.UsedAt),

@@ -7,17 +7,17 @@ import (
 )
 
 type NotificationMarkReadOperation struct {
-	repo       *NotificationRepository
-	receiverID int64
-	ids        []int64
-	tx         *gorm.DB
+	repo        *NotificationRepository
+	receiverID  int64
+	externalIDs []string
+	tx          *gorm.DB
 }
 
-func (r *NotificationRepository) MarkRead(receiverID int64, ids []int64) *NotificationMarkReadOperation {
+func (r *NotificationRepository) MarkRead(receiverID int64, externalIDs []string) *NotificationMarkReadOperation {
 	return &NotificationMarkReadOperation{
-		repo:       r,
-		receiverID: receiverID,
-		ids:        ids,
+		repo:        r,
+		receiverID:  receiverID,
+		externalIDs: externalIDs,
 	}
 }
 
@@ -27,7 +27,7 @@ func (op *NotificationMarkReadOperation) WithTx(tx *gorm.DB) *NotificationMarkRe
 }
 
 func (op *NotificationMarkReadOperation) Exec() error {
-	if len(op.ids) == 0 {
+	if len(op.externalIDs) == 0 {
 		return nil
 	}
 	db := storage.DB
@@ -35,7 +35,7 @@ func (op *NotificationMarkReadOperation) Exec() error {
 		db = op.tx
 	}
 	return db.Model(&model.Notification{}).
-		Where("receiver_id = ? AND id IN ?", op.receiverID, op.ids).
+		Where("receiver_id = ? AND external_id IN ?", op.receiverID, op.externalIDs).
 		Updates(map[string]any{"status": "read"}).
 		Error
 }

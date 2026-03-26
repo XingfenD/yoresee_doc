@@ -70,7 +70,7 @@
           :rows="inviteRecords"
           :columns="recordColumns"
           :is-dark="isDarkMode"
-          row-key="id"
+          row-key="row_key"
           :empty-text="t('system.invite.records.empty')"
           :show-pagination="true"
           :total="recordTotal"
@@ -255,7 +255,7 @@ const mapInviteRow = (invite) => ({
 });
 
 const mapRecordRow = (record) => ({
-  id: record.id,
+  row_key: record.row_key || `${record.code || ''}_${record.used_at || ''}_${record.status || ''}`,
   code: record.code,
   used_by: record.used_by || '-',
   used_at: record.used_at || '-',

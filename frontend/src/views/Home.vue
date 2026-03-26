@@ -48,7 +48,7 @@ import { useI18n } from 'vue-i18n';
 import PageLayout from '@/components/PageLayout.vue';
 import RecentDocumentsSection from '@/components/RecentDocumentsSection.vue';
 import KnowledgeBaseListSection from '@/components/KnowledgeBaseListSection.vue';
-import { getRecentKnowledgeBases } from '@/services/api';
+import { getRecentKnowledgeBases, getRecentDocuments } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -89,40 +89,7 @@ const initLanguage = () => {
 };
 
 // 最近文档数据
-const recentDocuments = ref([
-  {
-    id: 1,
-    title: '产品需求文档',
-    author: '张三',
-    updatedAt: '2024-01-15T10:30:00Z',
-    views: 120,
-    status: 'published'
-  },
-  {
-    id: 2,
-    title: '技术架构设计',
-    author: '李四',
-    updatedAt: '2024-01-14T16:45:00Z',
-    views: 85,
-    status: 'published'
-  },
-  {
-    id: 3,
-    title: '会议纪要',
-    author: '王五',
-    updatedAt: '2024-01-13T09:15:00Z',
-    views: 45,
-    status: 'draft'
-  },
-  {
-    id: 4,
-    title: '用户手册',
-    author: '赵六',
-    updatedAt: '2024-01-12T14:20:00Z',
-    views: 200,
-    status: 'published'
-  }
-]);
+const recentDocuments = ref([]);
 
 // 最近知识库数据
 const recentKnowledgeBases = ref([]);
@@ -196,9 +163,31 @@ const fetchRecentKnowledgeBases = async () => {
   }
 };
 
+const mapRecentDocuments = (docs) => {
+  return (docs || []).map((doc) => ({
+    id: doc.external_id || doc.id,
+    title: doc.title || t('document.title'),
+    author: doc.creator_name || doc.creatorName || t('common.unknown'),
+    updatedAt: doc.updated_at || doc.updatedAt,
+    views: doc.view_count || doc.views || 0,
+    status: doc.status === 0 ? 'draft' : 'published'
+  }));
+};
+
+const fetchRecentDocuments = async () => {
+  try {
+    const data = await getRecentDocuments({ page: 1, page_size: 6 });
+    recentDocuments.value = mapRecentDocuments(data.documents);
+  } catch (err) {
+    console.error('获取最近文档失败:', err);
+    recentDocuments.value = [];
+  }
+};
+
 onMounted(() => {
   fetchSystemInfo();
   fetchRecentKnowledgeBases();
+  fetchRecentDocuments();
   initLanguage();
 });
 </script>

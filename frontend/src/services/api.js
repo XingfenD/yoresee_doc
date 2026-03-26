@@ -19,6 +19,8 @@ const {
   ListTemplatesRequest,
   GetTemplateRequest,
   ListRecentTemplatesRequest,
+  ListRecentDocumentsRequest,
+  RecordRecentDocumentRequest,
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
   ListDocumentsRequest,
@@ -169,19 +171,19 @@ function mapInvitation(inv) {
 function mapInvitationRecord(rec) {
   if (!rec) return null;
   return {
-    id: rec.id,
     code: rec.code,
     used_by: rec.usedBy,
     used_by_external_id: rec.usedByExternalId ?? null,
     used_at: rec.usedAt,
-    status: rec.status
+    status: rec.status,
+    row_key: `${rec.code || ''}_${rec.usedAt || ''}_${rec.status || ''}`
   };
 }
 
 function mapNotification(item) {
   if (!item) return null;
   return {
-    id: item.id,
+    external_id: item.externalId,
     type: item.type,
     status: item.status,
     title: item.title,
@@ -653,6 +655,34 @@ export const getDocumentContent = async (documentExternalID, params = {}) => {
   return handleResponse(base, data);
 };
 
+// 获取最近文档
+export const getRecentDocuments = async (params = {}) => {
+  const req = new ListRecentDocumentsRequest({
+    startTime: params.start_time || undefined,
+    endTime: params.end_time || undefined,
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'listRecentDocuments', req);
+  const base = baseToObject(resp);
+  const data = {
+    documents: (resp.documents || []).map(mapDocument),
+    total: resp.total ?? 0
+  };
+  return handleResponse(base, data);
+};
+
+export const recordRecentDocument = async (documentExternalID) => {
+  const req = new RecordRecentDocumentRequest({
+    documentExternalId: documentExternalID
+  });
+
+  const resp = await unaryCall(documentClient, 'recordRecentDocument', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
+
 // 获取我的文档列表
 export const getMyDocuments = async (params = {}) => {
   const req = new GetOwnDocumentsRequest({
@@ -896,8 +926,8 @@ export const listNotifications = async (params = {}) => {
   return handleResponse(base, data);
 };
 
-export const markNotificationsRead = async (ids = []) => {
-  const req = new MarkNotificationsReadRequest({ ids });
+export const markNotificationsRead = async (externalIds = []) => {
+  const req = new MarkNotificationsReadRequest({ externalIds });
   const resp = await unaryCall(notificationClient, 'markNotificationsRead', req);
   const base = baseToObject(resp);
   return handleResponse(base, {});
@@ -958,6 +988,8 @@ export default {
   createDocument,
   createTemplate,
   getDocumentContent,
+  getRecentDocuments,
+  recordRecentDocument,
   getMyDocuments,
   listDocuments,
   listTemplates,

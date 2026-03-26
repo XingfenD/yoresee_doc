@@ -262,7 +262,8 @@ import {
   updateDocumentMeta,
   listDocumentComments,
   createDocumentComment,
-  deleteDocumentComment
+  deleteDocumentComment,
+  recordRecentDocument
 } from '@/services/api';
 
 const props = defineProps({
@@ -977,6 +978,9 @@ onMounted(async () => {
     currentDocTitle.value = '示例文档';
   } else {
     await fetchDocuments();
+    if (docId.value) {
+      recordRecentDocument(docId.value).catch(() => {});
+    }
     if (lastSyncedDocId.value !== docId.value) {
       collabReady.value = !collabEnabled.value;
     }
@@ -1007,6 +1011,9 @@ watch(
     commentPage.value = 1;
     replyTarget.value = null;
     await loadComments();
+    if (docId.value && docId.value !== 'example') {
+      recordRecentDocument(docId.value).catch(() => {});
+    }
     if (lastSyncedDocId.value !== docId.value) {
       collabReady.value = !collabEnabled.value;
     }

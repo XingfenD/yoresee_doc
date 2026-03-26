@@ -36,7 +36,6 @@ type DeleteInvitationRequest struct {
 }
 
 type InvitationResponse struct {
-	ID                  int64      `json:"id"`
 	Code                string     `json:"code"`
 	CreatedByExternalID string     `json:"created_by_external_id"`
 	CreatedByName       string     `json:"created_by_name"`
@@ -60,7 +59,6 @@ type ListInvitationRecordsRequest struct {
 }
 
 type InvitationRecordResponse struct {
-	ID               int64     `json:"id"`
 	Code             string    `json:"code"`
 	UsedBy           string    `json:"used_by"`
 	UsedByExternalID string    `json:"used_by_external_id"`

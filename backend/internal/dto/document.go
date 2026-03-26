@@ -107,6 +107,18 @@ type ListDocumentsBaseArgs struct {
 	DirectoryOnly bool `json:"directory_only"`
 }
 
+type ListRecentDocumentsRequest struct {
+	UserExternalID string     `json:"user_external_id"`
+	StartTime      *time.Time `json:"start_time"`
+	EndTime        *time.Time `json:"end_time"`
+	Pagination     Pagination `json:"pagination"`
+}
+
+type RecordRecentDocumentRequest struct {
+	UserExternalID     string `json:"user_external_id"`
+	DocumentExternalID string `json:"document_external_id"`
+}
+
 type ListDocumentsByExternalReq struct {
 	ExternalArgs *DocumentsListExternalArgs `json:"external_args"`
 	ListDocumentsBaseArgs

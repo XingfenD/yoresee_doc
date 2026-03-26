@@ -22,6 +22,7 @@ func runMigration() error {
 		&model.Invitation{},
 		&model.InvitationRecord{},
 		&model.KnowledgeBase{},
+		&model.RecentDocument{},
 		&model.RecentKnowledgeBase{},
 		&model.RecentTemplate{},
 		&model.MembershipRelation{},
@@ -38,6 +39,9 @@ func runMigration() error {
 	if err := migrateRecentKnowledgeBaseIndex(storage.DB); err != nil {
 		return err
 	}
+	if err := migrateRecentDocumentIndex(storage.DB); err != nil {
+		return err
+	}
 	if err := migrateRecentTemplateIndex(storage.DB); err != nil {
 		return err
 	}
@@ -51,4 +55,8 @@ func migrateRecentKnowledgeBaseIndex(db *gorm.DB) error {
 
 func migrateRecentTemplateIndex(db *gorm.DB) error {
 	return db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_tpl_user_tpl ON recent_templates (user_id, template_id)").Error
+}
+
+func migrateRecentDocumentIndex(db *gorm.DB) error {
+	return db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_doc_user_doc ON recent_documents (user_id, document_id)").Error
 }

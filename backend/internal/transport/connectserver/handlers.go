@@ -90,6 +90,28 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		},
 		opts...,
 	))
+	mux.Handle(pb.DocumentService_RecordRecentDocument_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_RecordRecentDocument_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.RecordRecentDocumentRequest]) (*connect.Response[pb.RecordRecentDocumentResponse], error) {
+			resp, err := docSvc.RecordRecentDocument(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+	mux.Handle(pb.DocumentService_ListRecentDocuments_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_ListRecentDocuments_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListRecentDocumentsRequest]) (*connect.Response[pb.ListRecentDocumentsResponse], error) {
+			resp, err := docSvc.ListRecentDocuments(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
 
 	mux.Handle(pb.DocumentService_GetDocumentYjsSnapshot_FullMethodName, connect.NewUnaryHandler(
 		pb.DocumentService_GetDocumentYjsSnapshot_FullMethodName,

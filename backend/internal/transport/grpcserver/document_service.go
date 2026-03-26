@@ -102,6 +102,75 @@ func (s *DocumentServiceServer) GetDocumentContent(ctx context.Context, req *pb.
 	}, nil
 }
 
+func (s *DocumentServiceServer) RecordRecentDocument(ctx context.Context, req *pb.RecordRecentDocumentRequest) (*pb.RecordRecentDocumentResponse, error) {
+	if req == nil || req.DocumentExternalId == "" {
+		return &pb.RecordRecentDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.RecordRecentDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if err := document_service.DocumentSvc.RecordRecentDocument(&dto.RecordRecentDocumentRequest{
+		UserExternalID:     userExternalID,
+		DocumentExternalID: req.DocumentExternalId,
+	}); err != nil {
+		return &pb.RecordRecentDocumentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	return &pb.RecordRecentDocumentResponse{Base: baseResponseFromErr(nil)}, nil
+}
+
+func (s *DocumentServiceServer) ListRecentDocuments(ctx context.Context, req *pb.ListRecentDocumentsRequest) (*pb.ListRecentDocumentsResponse, error) {
+	if req == nil {
+		return &pb.ListRecentDocumentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.ListRecentDocumentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	var startTime *time.Time
+	if req.StartTime != nil && *req.StartTime != "" {
+		t, err := time.Parse(time.RFC3339, *req.StartTime)
+		if err != nil {
+			return &pb.ListRecentDocumentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		}
+		startTime = &t
+	}
+	var endTime *time.Time
+	if req.EndTime != nil && *req.EndTime != "" {
+		t, err := time.Parse(time.RFC3339, *req.EndTime)
+		if err != nil {
+			return &pb.ListRecentDocumentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		}
+		endTime = &t
+	}
+
+	serviceReq := &dto.ListRecentDocumentsRequest{
+		UserExternalID: userExternalID,
+		StartTime:      startTime,
+		EndTime:        endTime,
+		Pagination: dto.Pagination{
+			Page:     int(req.Page),
+			PageSize: int(req.PageSize),
+		},
+	}
+	documents, total, err := document_service.DocumentSvc.ListRecentDocuments(serviceReq)
+	if err != nil {
+		return &pb.ListRecentDocumentsResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	respDocs := make([]*pb.DocumentResponse, 0, len(documents))
+	for _, doc := range documents {
+		respDocs = append(respDocs, toDocumentResponse(&doc.DocumentMetaResponse))
+	}
+
+	return &pb.ListRecentDocumentsResponse{
+		Base:      baseResponseFromErr(nil),
+		Documents: respDocs,
+		Total:     total,
+	}, nil
+}
+
 func (s *DocumentServiceServer) GetDocumentYjsSnapshot(ctx context.Context, req *pb.GetDocumentYjsSnapshotRequest) (*pb.GetDocumentYjsSnapshotResponse, error) {
 	if req == nil || req.DocumentExternalId == "" {
 		return &pb.GetDocumentYjsSnapshotResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil

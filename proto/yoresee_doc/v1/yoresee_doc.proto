@@ -339,6 +339,27 @@ message GetDocumentContentResponse {
   string content = 3;
 }
 
+message ListRecentDocumentsRequest {
+  optional string start_time = 1;
+  optional string end_time = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListRecentDocumentsResponse {
+  BaseResponse base = 1;
+  repeated DocumentResponse documents = 2;
+  int64 total = 3;
+}
+
+message RecordRecentDocumentRequest {
+  string document_external_id = 1;
+}
+
+message RecordRecentDocumentResponse {
+  BaseResponse base = 1;
+}
+
 message RecursiveOptions {
   bool include_children = 1;
   bool recursive = 2;
@@ -475,25 +496,23 @@ message UserResponse {
 }
 
 message InvitationResponse {
-  int64 id = 1;
-  string code = 2;
-  string created_by_external_id = 3;
-  string created_by_name = 4;
-  int64 used_cnt = 5;
-  optional int64 max_used_cnt = 6;
-  optional string expires_at = 7;
-  string created_at = 8;
-  bool disabled = 9;
-  optional string note = 10;
+  string code = 1;
+  string created_by_external_id = 2;
+  string created_by_name = 3;
+  int64 used_cnt = 4;
+  optional int64 max_used_cnt = 5;
+  optional string expires_at = 6;
+  string created_at = 7;
+  bool disabled = 8;
+  optional string note = 9;
 }
 
 message InvitationRecordResponse {
-  int64 id = 1;
-  string code = 2;
-  string used_by = 3;
-  optional string used_by_external_id = 4;
-  string used_at = 5;
-  string status = 6;
+  string code = 1;
+  string used_by = 2;
+  optional string used_by_external_id = 3;
+  string used_at = 4;
+  string status = 5;
 }
 
 message ListInvitationsRequest {
@@ -566,7 +585,7 @@ message ListInvitationRecordsResponse {
 }
 
 message Notification {
-  int64 id = 1;
+  string external_id = 1;
   string type = 2;
   string status = 3;
   string title = 4;
@@ -600,7 +619,7 @@ message ListNotificationsResponse {
 }
 
 message MarkNotificationsReadRequest {
-  repeated int64 ids = 1;
+  repeated string external_ids = 1;
 }
 
 message MarkNotificationsReadResponse {
@@ -805,6 +824,10 @@ service DocumentService {
   rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
   // getDocumentContent fetches a document with its content.
   rpc GetDocumentContent(GetDocumentContentRequest) returns (GetDocumentContentResponse);
+  // list recent documents for caller.
+  rpc ListRecentDocuments(ListRecentDocumentsRequest) returns (ListRecentDocumentsResponse);
+  // record recent document for caller.
+  rpc RecordRecentDocument(RecordRecentDocumentRequest) returns (RecordRecentDocumentResponse);
   // getDocumentYjsSnapshot fetches yjs snapshot by document external id.
   rpc GetDocumentYjsSnapshot(GetDocumentYjsSnapshotRequest) returns (GetDocumentYjsSnapshotResponse);
   // saveDocumentYjsSnapshot saves yjs snapshot state.

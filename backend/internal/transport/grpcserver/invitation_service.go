@@ -81,7 +81,6 @@ func (s *InvitationServiceServer) CreateInvitation(ctx context.Context, req *pb.
 
 	user, _ := s.userRepo.GetByExternalID(userExternalID).Exec()
 	resp := &dto.InvitationResponse{
-		ID:                  inv.ID,
 		Code:                inv.Code,
 		CreatedByExternalID: userExternalID,
 		CreatedByName:       "",
@@ -180,7 +179,6 @@ func (s *InvitationServiceServer) ListInvitations(ctx context.Context, req *pb.L
 			}
 		}
 		resp := &dto.InvitationResponse{
-			ID:                  inv.ID,
 			Code:                inv.Code,
 			CreatedByExternalID: createdByExternalID,
 			CreatedByName:       createdByName,
@@ -308,7 +306,6 @@ func (s *InvitationServiceServer) ListInvitationRecords(ctx context.Context, req
 			}
 		}
 		resp := &dto.InvitationRecordResponse{
-			ID:               r.ID,
 			Code:             r.Code,
 			UsedBy:           usedBy,
 			UsedByExternalID: usedByExternalID,

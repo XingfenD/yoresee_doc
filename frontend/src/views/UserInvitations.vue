@@ -57,7 +57,7 @@
           :rows="inviteRecords"
           :columns="recordColumns"
           :is-dark="isDarkMode"
-          row-key="id"
+          row-key="row_key"
           :empty-text="t('user.invite.records.empty')"
         >
           <template #cell-status="{ value }">
@@ -245,7 +245,7 @@ const fetchInvitations = async () => {
 };
 
 const mapInviteRecordRow = (record) => ({
-  id: record.id,
+  row_key: record.row_key || `${record.code || ''}_${record.used_at || ''}_${record.status || ''}`,
   code: record.code,
   used_by: record.used_by || '-',
   used_at: record.used_at || '-',

@@ -117,7 +117,7 @@ func (s *NotificationServiceServer) MarkNotificationsRead(ctx context.Context, r
 
 	err := notification_service.NotificationSvc.MarkRead(&dto.MarkNotificationsReadRequest{
 		UserExternalID: userExternalID,
-		IDs:            req.Ids,
+		ExternalIDs:    req.ExternalIds,
 	})
 	if err != nil {
 		return &pb.MarkNotificationsReadResponse{Base: baseResponseFromErr(err)}, nil
@@ -141,13 +141,13 @@ func toNotificationResponse(item *model.Notification) *pb.Notification {
 		return nil
 	}
 	return &pb.Notification{
-		Id:        item.ID,
-		Type:      item.Type,
-		Status:    item.Status,
-		Title:     item.Title,
-		Content:   item.Content,
-		Payload:   item.Payload,
-		CreatedAt: timeToString(item.CreatedAt),
+		ExternalId: item.ExternalID,
+		Type:       item.Type,
+		Status:     item.Status,
+		Title:      item.Title,
+		Content:    item.Content,
+		Payload:    item.Payload,
+		CreatedAt:  timeToString(item.CreatedAt),
 	}
 }
 

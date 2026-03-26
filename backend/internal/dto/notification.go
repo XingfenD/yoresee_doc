@@ -16,5 +16,5 @@ type ListNotificationsRequest struct {
 
 type MarkNotificationsReadRequest struct {
 	UserExternalID string
-	IDs            []int64
+	ExternalIDs    []string
 }

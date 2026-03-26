@@ -24,7 +24,7 @@
       :rows="displayNotifications"
       :columns="columns"
       :is-dark="isDarkMode"
-      row-key="id"
+      row-key="external_id"
       :empty-text="t('user.notifications.empty')"
       :show-title-bar="true"
       :title="t('user.notifications.title')"
@@ -50,7 +50,7 @@
         />
       </template>
       <template #cell-select="{ row }">
-        <el-checkbox v-model="selectedIds" :label="row.id" class="checkbox-only" />
+        <el-checkbox v-model="selectedIds" :label="row.external_id" class="checkbox-only" />
       </template>
       <template #cell-title="{ row }">
         <div class="notice-title" :class="{ 'is-unread': !row.read }">
@@ -160,20 +160,20 @@ const selectedIds = ref([]);
 
 const selectAll = computed(() => {
   if (!displayNotifications.value.length) return false;
-  return displayNotifications.value.every((item) => selectedIds.value.includes(item.id));
+  return displayNotifications.value.every((item) => selectedIds.value.includes(item.external_id));
 });
 
 const selectIndeterminate = computed(() => {
-  const selectedCount = displayNotifications.value.filter((item) => selectedIds.value.includes(item.id)).length;
+  const selectedCount = displayNotifications.value.filter((item) => selectedIds.value.includes(item.external_id)).length;
   return selectedCount > 0 && selectedCount < displayNotifications.value.length;
 });
 
 const toggleSelectAll = (value) => {
   if (value) {
-    selectedIds.value = displayNotifications.value.map((item) => item.id);
+    selectedIds.value = displayNotifications.value.map((item) => item.external_id);
   } else {
     selectedIds.value = selectedIds.value.filter(
-      (id) => !displayNotifications.value.some((item) => item.id === id)
+      (id) => !displayNotifications.value.some((item) => item.external_id === id)
     );
   }
 };
@@ -202,9 +202,9 @@ const formatDate = (value) => {
 };
 
 const markRead = async (row) => {
-  if (!row?.id) return;
+  if (!row?.external_id) return;
   try {
-    await markNotificationsRead([row.id]);
+    await markNotificationsRead([row.external_id]);
     await loadNotifications();
     await refreshUnreadStatus();
   } catch (err) {

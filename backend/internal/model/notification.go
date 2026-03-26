@@ -6,6 +6,7 @@ import (
 
 type Notification struct {
 	ID         int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	ExternalID string    `gorm:"size:100;unique;index" json:"external_id"`
 	ReceiverID int64     `gorm:"index;not null" json:"receiver_id"`
 	Type       string    `gorm:"size:64;not null" json:"type"`
 	Status     string    `gorm:"size:32;not null;default:unread" json:"status"`
