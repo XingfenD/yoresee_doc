@@ -22,6 +22,7 @@ var (
 	userInfoTabs = []string{
 		"home",
 		"user-center",
+		"user-notifications",
 		"user-invite",
 		"user-security",
 	}

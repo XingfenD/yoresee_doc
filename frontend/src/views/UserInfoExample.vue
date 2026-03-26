@@ -57,7 +57,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import { House, User, Ticket, Setting } from '@element-plus/icons-vue';
+import { House, User, Ticket, Setting, Bell } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -85,6 +85,7 @@ const handleLanguageChange = (command) => {
 const userMenuItems = [
   { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
   { key: 'user-center', labelKey: 'user.menu.center', icon: User, route: '/user_info/example' },
+  { key: 'user-notifications', labelKey: 'user.menu.notifications', icon: Bell, route: '/user_info/notifications' },
   { key: 'user-invite', labelKey: 'user.menu.invite', icon: Ticket, route: '/user_info/invatations' },
   { key: 'user-security', labelKey: 'user.menu.security', icon: Setting, route: '/user_info/example' }
 ];
