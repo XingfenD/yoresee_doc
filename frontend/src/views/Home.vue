@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
@@ -50,44 +50,31 @@ import PageLayout from '@/components/PageLayout.vue';
 import DocumentListSection from '@/components/DocumentListSection.vue';
 import KnowledgeBaseListSection from '@/components/KnowledgeBaseListSection.vue';
 import { getRecentKnowledgeBases, getRecentDocuments } from '@/services/api';
+import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
-const systemName = ref('Yoresee');
-const activeMenu = ref('home');
-const isDarkMode = computed(() => userStore.darkMode);
-
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
-
-// 计算当前语言
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (value) => {
-    locale.value = value;
-    localStorage.setItem('language', value);
-  }
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  userInfo,
+  userAvatar,
+  currentLanguage,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect,
+  fetchSystemInfo
+} = useWorkspaceShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: 'home'
 });
-
-// 处理语言切换
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-};
-
-// 处理主题切换
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-// 初始化语言
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
-  }
-};
 
 // 最近文档数据
 const recentDocuments = ref([]);
@@ -102,10 +89,6 @@ const goToDocuments = () => {
   router.push('/mydocuments');
 };
 
-const goToKnowledgeBases = () => {
-  router.push('/knowledge-base');
-};
-
 // 文档相关方法
 const viewDocument = (doc) => {
   router.push(`/mydocument/${doc.id}`);
@@ -117,35 +100,6 @@ const accessKnowledgeBase = (kb) => {
     return;
   }
   router.push(`/knowledge-base/${kbId}`);
-};
-
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
-
-const handleLogout = () => {
-  userStore.logout();
-  router.push('/login');
-};
-
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-const fetchSystemInfo = async () => {
-  try {
-    const info = await userStore.fetchSystemInfo();
-    systemName.value = info.system_name;
-  } catch (err) {
-    console.error('获取系统信息失败:', err);
-  }
 };
 
 const fetchRecentKnowledgeBases = async () => {

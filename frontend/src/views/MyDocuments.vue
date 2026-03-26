@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/store/user';
@@ -62,14 +62,12 @@ import PageLayout from '@/components/PageLayout.vue';
 import DocumentListSection from '@/components/DocumentListSection.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import { getMyDocuments, createDocument as createDocumentApi } from '@/services/api';
+import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
-const systemName = ref(userStore.systemName || 'Yoresee');
-const activeMenu = ref('documents');
-const isDarkMode = computed(() => userStore.darkMode);
 const loading = ref(false);
 const showCreateDialog = ref(false);
 const creatingLoading = ref(false);
@@ -78,17 +76,24 @@ const page = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
 
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(
-  () => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
-);
-
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (value) => {
-    locale.value = value;
-    localStorage.setItem('language', value);
-  }
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  userInfo,
+  userAvatar,
+  currentLanguage,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect,
+  fetchSystemInfo
+} = useWorkspaceShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: 'documents'
 });
 
 const documents = ref([]);
@@ -172,39 +177,6 @@ const handleSizeChange = (size) => {
 const handleCurrentChange = (current) => {
   page.value = current;
   fetchMyDocuments();
-};
-
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
-
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-};
-
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-const handleLogout = () => {
-  userStore.logout();
-  router.push('/login');
-};
-
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
-  }
-};
-
-const fetchSystemInfo = async () => {
-  try {
-    const info = await userStore.fetchSystemInfo();
-    systemName.value = info.system_name;
-  } catch (err) {
-    console.error('获取系统信息失败:', err);
-  }
 };
 
 const viewDocument = (doc) => {

@@ -93,15 +93,13 @@ import PageLayout from '@/components/PageLayout.vue';
 import TemplateListSection from '@/components/TemplateListSection.vue';
 import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
 import { listTemplates, listRecentTemplates, createTemplate as createTemplateApi } from '@/services/api';
+import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
-const systemName = ref(userStore.systemName || 'Yoresee');
-const activeMenu = ref('templates');
 const activeTab = ref('my');
-const isDarkMode = computed(() => userStore.darkMode);
 const showCreateDialog = ref(false);
 const creatingTemplate = ref(false);
 const templateDialogInit = ref({
@@ -112,17 +110,24 @@ const templateDialogInit = ref({
   content: ''
 });
 
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(
-  () => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
-);
-
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (value) => {
-    locale.value = value;
-    localStorage.setItem('language', value);
-  }
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  userInfo,
+  userAvatar,
+  currentLanguage,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect,
+  fetchSystemInfo
+} = useWorkspaceShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: 'templates'
 });
 
 const myTemplates = ref([]);
@@ -157,30 +162,6 @@ const openCreateTemplateDialog = () => {
     content: ''
   };
   showCreateDialog.value = true;
-};
-
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
-
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-};
-
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-const handleLogout = () => {
-  userStore.logout();
-  router.push('/login');
-};
-
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
-  }
 };
 
 const formatDate = (value) => {
@@ -277,15 +258,6 @@ const fetchTemplatesForTab = (tab) => {
     fetchRecentTemplates();
   } else if (tab === 'public') {
     fetchPublicTemplates();
-  }
-};
-
-const fetchSystemInfo = async () => {
-  try {
-    const info = await userStore.fetchSystemInfo();
-    systemName.value = info.system_name;
-  } catch (err) {
-    console.error('获取系统信息失败:', err);
   }
 };
 

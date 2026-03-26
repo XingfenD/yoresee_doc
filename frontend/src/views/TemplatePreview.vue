@@ -73,23 +73,32 @@ import PageLayout from '@/components/PageLayout.vue';
 import TitleBar from '@/components/TitleBar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import { getTemplate, createDocument as createDocumentApi } from '@/services/api';
+import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 
 const route = useRoute();
 const router = useRouter();
 const { locale, t } = useI18n();
 const userStore = useUserStore();
 
-const systemName = ref(userStore.systemName || 'Yoresee');
-const activeMenu = ref('templates');
-const isDarkMode = computed(() => userStore.darkMode);
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (val) => (locale.value = val)
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  currentLanguage,
+  userInfo,
+  userAvatar,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect,
+  fetchSystemInfo
+} = useWorkspaceShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: 'templates'
 });
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(
-  () => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
-);
 
 const loading = ref(false);
 const template = ref(null);
@@ -215,31 +224,6 @@ const createDocument = async (payload) => {
   }
 };
 
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
-
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-  localStorage.setItem('language', command);
-};
-
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-const handleLogout = () => {
-  userStore.logout();
-  router.push('/login');
-};
-
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
-  }
-};
-
 watch(previewContent, () => {
   renderPreview();
 });
@@ -249,6 +233,7 @@ watch(isDarkMode, () => {
 });
 
 onMounted(async () => {
+  await fetchSystemInfo();
   initLanguage();
   await fetchTemplate();
   renderPreview();

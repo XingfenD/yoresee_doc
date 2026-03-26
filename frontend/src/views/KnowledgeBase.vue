@@ -85,31 +85,33 @@ import { useI18n } from "vue-i18n";
 import PageLayout from "@/components/PageLayout.vue";
 import KnowledgeBaseListSection from "@/components/KnowledgeBaseListSection.vue";
 import * as api from "@/services/api";
-import { House, Collection, Plus } from "@element-plus/icons-vue";
+import { useWorkspaceShell } from "@/composables/useWorkspaceShell";
 
 // 国际化
 const { locale, t } = useI18n();
 const router = useRouter();
 const userStore = useUserStore();
 
-// 系统信息
-const systemName = ref("Yoresee");
-
-// 导航相关
-const activeMenu = ref("knowledge-base");
 const activeTab = ref("my");
-const isDarkMode = computed(() => userStore.darkMode);
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (value) => {
-    locale.value = value;
-    localStorage.setItem("language", value);
-  },
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  currentLanguage,
+  userInfo,
+  userAvatar,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect,
+  fetchSystemInfo
+} = useWorkspaceShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: "knowledge-base"
 });
-
-// 用户信息
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
 
 // 最近访问的知识库
 const recentKnowledgeBases = ref([]);
@@ -313,45 +315,6 @@ const viewKnowledgeBase = (kb) => {
 // 访问知识库
 const accessKnowledgeBase = (kb) => {
   router.push(`/knowledge-base/${kb.external_id}`);
-};
-
-// 处理菜单选择
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
-
-// 处理语言切换
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-};
-
-// 处理主题切换
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-// 初始化语言
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem("language");
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
-  }
-};
-
-// 获取系统信息
-const fetchSystemInfo = async () => {
-  try {
-    const info = await userStore.fetchSystemInfo();
-    systemName.value = info.system_name;
-  } catch (err) {
-    console.error("获取系统信息失败:", err);
-  }
-};
-
-// 登出处理
-const handleLogout = () => {
-  userStore.logout();
-  router.push("/login");
 };
 
 onMounted(async () => {
