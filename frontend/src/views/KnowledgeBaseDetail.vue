@@ -29,32 +29,12 @@
 
         <!-- 知识库详情内容 -->
         <div class="detail-content" v-loading="loading">
-          <div class="kb-info-card" v-if="knowledgeBaseData">
-            <h2 class="kb-title">{{ knowledgeBaseName }}</h2>
-            <p class="kb-description">{{ knowledgeBaseDescription }}</p>
-
-            <div class="kb-stats">
-              <div class="stat-item">
-                <el-icon>
-                  <Document />
-                </el-icon>
-                <span>{{ t("knowledgeBase.documentsCount") }}: {{ totalDocuments }}</span>
-              </div>
-              <div class="stat-item">
-                <el-icon>
-                  <Clock />
-                </el-icon>
-                <span>{{ t("knowledgeBase.lastUpdated") }}:
-                  {{ formatDate(lastUpdated) }}</span>
-              </div>
-              <div class="stat-item">
-                <el-icon>
-                  <User />
-                </el-icon>
-                <span>{{ t("knowledgeBase.owner") }}: {{ ownerName }}</span>
-              </div>
-            </div>
-          </div>
+          <InfoStatsCard
+            v-if="knowledgeBaseData"
+            :title="knowledgeBaseName"
+            :description="knowledgeBaseDescription"
+            :stats="knowledgeBaseStats"
+          />
           <div v-else-if="!loading" class="empty-state">
             <el-empty :description="t('message.empty')" />
           </div>
@@ -168,15 +148,13 @@ import TitleBar from "@/components/TitleBar.vue";
 import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import TemplateListSection from "@/components/TemplateListSection.vue";
+import InfoStatsCard from "@/components/InfoStatsCard.vue";
 import { getKnowledgeBaseDetail, createDocument as createDocumentApi, listTemplates } from "@/services/api.js";
 import {
   Document,
   Clock,
   User,
-  Folder,
-  FolderOpened,
-  MoreFilled,
-  Search,
+  MoreFilled
 } from "@element-plus/icons-vue";
 
 // 国际化
@@ -213,6 +191,11 @@ const knowledgeBaseData = ref(null);
 const loading = ref(false);
 const kbTemplates = ref([]);
 const kbTemplatesLoading = ref(false);
+const knowledgeBaseStats = computed(() => [
+  { key: 'documents', icon: Document, label: t("knowledgeBase.documentsCount"), value: totalDocuments.value },
+  { key: 'updated', icon: Clock, label: t("knowledgeBase.lastUpdated"), value: formatDate(lastUpdated.value) },
+  { key: 'owner', icon: User, label: t("knowledgeBase.owner"), value: ownerName.value }
+]);
 
 // 文档树相关
 const searchKeyword = ref("");
@@ -522,46 +505,6 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.kb-info-card {
-  background-color: var(--bg-white);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: var(--spacing-lg);
-  border: 1px solid var(--border-color);
-}
-
-.kb-title {
-  margin: 0 0 var(--spacing-md) 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.kb-description {
-  margin: 0 0 var(--spacing-lg) 0;
-  font-size: 16px;
-  color: var(--text-medium);
-  line-height: 1.6;
-}
-
-.kb-stats {
-  display: flex;
-  gap: var(--spacing-lg);
-  flex-wrap: wrap;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  color: var(--text-medium);
-  font-size: 14px;
-}
-
-.stat-item .el-icon {
-  color: var(--primary-color);
-}
-
 /* 文档树形结构区域 */
 .document-tree-section {
   background-color: var(--bg-white);
@@ -695,9 +638,6 @@ onMounted(async () => {
     width: 100%;
   }
 
-  .kb-stats {
-    flex-direction: column;
-  }
 }
 
 /* 深色模式支持 */
@@ -803,27 +743,6 @@ onMounted(async () => {
 
 .dark-mode .node-actions {
   color: var(--text-medium);
-}
-
-.dark-mode .kb-info-card {
-  background-color: var(--bg-medium);
-  border-color: var(--border-color);
-}
-
-.dark-mode .kb-title {
-  color: var(--text-dark);
-}
-
-.dark-mode .kb-description {
-  color: var(--text-medium);
-}
-
-.dark-mode .stat-item {
-  color: var(--text-medium);
-}
-
-.dark-mode .stat-item .el-icon {
-  color: var(--primary-color);
 }
 
 /* 夜间模式下的标签样式 */

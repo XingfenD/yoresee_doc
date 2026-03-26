@@ -117,7 +117,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
-import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
+import { useManageShell } from '@/composables/useManageShell';
 import { listOrgNodes, createOrgNode, updateOrgNode } from '@/services/api';
 import { ElMessage } from 'element-plus';
 
@@ -125,53 +125,25 @@ const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
-const systemName = ref('Yoresee');
-const activeMenu = ref('manage-organization');
-const isDarkMode = computed(() => userStore.darkMode);
-
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
-
-const manageMenuItems = [
-  { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
-  { key: 'manage-user', labelKey: 'system.menu.user', icon: User, route: '/manage/user' },
-  { key: 'manage-user-group', labelKey: 'system.menu.userGroup', icon: UserFilled, route: '/manage/user_group' },
-  { key: 'manage-organization', labelKey: 'system.menu.organization', icon: OfficeBuilding, route: '/manage/organization' },
-  { key: 'manage-invite', labelKey: 'system.menu.invite', icon: Ticket, route: '/manage/invitations' },
-  { key: 'manage-security', labelKey: 'system.menu.security', icon: Setting, route: '/manage/security' }
-];
-
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (value) => {
-    locale.value = value;
-    localStorage.setItem('language', value);
-  }
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  userInfo,
+  userAvatar,
+  manageMenuItems,
+  currentLanguage,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect
+} = useManageShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: 'manage-organization'
 });
-
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-};
-
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
-  }
-};
-
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-const handleLogout = () => {
-  userStore.logout();
-  router.push('/login');
-};
-
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
 
 const orgTreeData = ref([]);
 const orgLoading = ref(false);

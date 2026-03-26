@@ -106,7 +106,7 @@ import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
-import { House, Setting, Ticket, User, UserFilled, OfficeBuilding } from '@element-plus/icons-vue';
+import { useManageShell } from '@/composables/useManageShell';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listInvitations, listInvitationRecords, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
 
@@ -114,9 +114,26 @@ const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
 
-const systemName = ref('Yoresee');
-const activeMenu = ref('manage-invite');
 const activeTab = ref('list');
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  userInfo,
+  userAvatar,
+  manageMenuItems,
+  currentLanguage,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect
+} = useManageShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: 'manage-invite'
+});
 const invitePage = ref(1);
 const invitePageSize = ref(10);
 const inviteTotal = ref(0);
@@ -127,44 +144,6 @@ const recordTotal = ref(0);
 const recordKeyword = ref('');
 const inviteSearchTimer = ref(null);
 const recordSearchTimer = ref(null);
-const isDarkMode = computed(() => userStore.darkMode);
-
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
-
-const manageMenuItems = [
-  { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
-  { key: 'manage-user', labelKey: 'system.menu.user', icon: User, route: '/manage/user' },
-  { key: 'manage-user-group', labelKey: 'system.menu.userGroup', icon: UserFilled, route: '/manage/user_group' },
-  { key: 'manage-organization', labelKey: 'system.menu.organization', icon: OfficeBuilding, route: '/manage/organization' },
-  { key: 'manage-invite', labelKey: 'system.menu.invite', icon: Ticket, route: '/manage/invitations' },
-  { key: 'manage-security', labelKey: 'system.menu.security', icon: Setting, route: '/manage/security' }
-];
-
-const currentLanguage = computed({
-  get: () => locale.value,
-  set: (value) => {
-    locale.value = value;
-    localStorage.setItem('language', value);
-  }
-});
-
-const handleLanguageChange = (command) => {
-  currentLanguage.value = command;
-};
-
-const toggleTheme = () => {
-  userStore.toggleDarkMode();
-};
-
-const handleLogout = () => {
-  userStore.logout();
-  router.push('/login');
-};
-
-const handleMenuSelect = (key) => {
-  activeMenu.value = key;
-};
 
 const inviteColumns = computed(() => [
   { key: 'code', label: t('user.invite.code'), minWidth: 180 },
@@ -396,13 +375,6 @@ const copyInviteCode = async (code) => {
   } catch (err) {
     console.error('copy invite code failed', err);
     ElMessage.error(t('common.copyFailed'));
-  }
-};
-
-const initLanguage = () => {
-  const savedLanguage = localStorage.getItem('language');
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage;
   }
 };
 
