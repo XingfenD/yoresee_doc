@@ -9,45 +9,30 @@ import (
 	"gorm.io/gorm"
 )
 
+func createTestUserIntx(tx *gorm.DB) error {
+	logrus.Println("Creating test user in transaction...")
+	return createUserWithUsername(tx, "test")
+}
+
 func createNormalUserInTx(tx *gorm.DB) error {
 	logrus.Println("Creating 100 users in transaction...")
 
-	password := "user2pass123"
-	hashedPwd, err := utils.HashPassword(password)
-	if err != nil {
-		return err
-	}
-
 	for i := 1; i <= 100; i++ {
+		username := "user" + strconv.Itoa(i)
+		if err := createUserWithUsername(tx, username); err != nil {
+			return err
+		}
+
+		var user model.User
+		if err := tx.Where("username = ?", username).First(&user).Error; err != nil {
+			return err
+		}
 		userNum := strconv.Itoa(i)
-		externalID := utils.GenerateExternalID("usr")
-
-		user := model.User{
-			ExternalID:   externalID,
-			Username:     "user" + userNum,
-			PasswordHash: hashedPwd,
-			Email:        "user" + userNum + "@yoresee.cc",
-			Nickname:     "User " + userNum,
-			Status:       1,
-		}
-
-		var count int64
-		tx.Model(&model.User{}).Where("email = ?", user.Email).Count(&count)
-		if count == 0 {
-			if err := tx.Create(&user).Error; err != nil {
-				return err
-			}
-			logrus.Printf("User%s created successfully with ID: %s in transaction.\n", userNum, user.ExternalID)
-		} else {
-			logrus.Printf("User%s already exists in transaction.\n", userNum)
-			if err := tx.Where("email = ?", user.Email).First(&user).Error; err != nil {
-				return err
-			}
-		}
+		logrus.Printf("User%s created successfully with ID: %s in transaction.\n", userNum, user.ExternalID)
 
 		logrus.Printf("Creating knowledge base for user%s...\n", userNum)
 
-		kbExternalID := utils.GenerateExternalID("kb")
+		kbExternalID := utils.GenerateExternalID(utils.ExternalIDKnowledgeBase)
 		knowledgeBase := model.KnowledgeBase{
 			ExternalID:    kbExternalID,
 			Name:          "User" + userNum + "'s Knowledge Base",

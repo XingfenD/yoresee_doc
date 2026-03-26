@@ -18,7 +18,7 @@ func (s *KnowledgeBaseService) Create(req *dto.CreateKnowledgeBaseRequest) (*dto
 	}
 
 	kbModel := &model.KnowledgeBase{
-		ExternalID:    utils.GenerateExternalID("kb"),
+		ExternalID:    utils.GenerateExternalID(utils.ExternalIDKnowledgeBase),
 		Name:          req.Name,
 		Description:   req.Description,
 		Cover:         req.Cover,

@@ -23,7 +23,7 @@ func initializeKnowledgeBasesInTx(tx *gorm.DB) error {
 	}
 
 	defaultKnowledgeBase := model.KnowledgeBase{
-		ExternalID:    utils.GenerateExternalID("kb"),
+		ExternalID:    utils.GenerateExternalID(utils.ExternalIDKnowledgeBase),
 		Name:          "默认知识库",
 		Description:   "系统默认创建的知识库，用于存储常用文档和资料",
 		Cover:         "",
@@ -36,7 +36,7 @@ func initializeKnowledgeBasesInTx(tx *gorm.DB) error {
 	}
 
 	exampleKnowledgeBase := model.KnowledgeBase{
-		ExternalID:    utils.GenerateExternalID("kb"),
+		ExternalID:    utils.GenerateExternalID(utils.ExternalIDKnowledgeBase),
 		Name:          "示例知识库",
 		Description:   "示例知识库，展示知识库功能",
 		Cover:         "",

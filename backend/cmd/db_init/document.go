@@ -18,7 +18,7 @@ type DocumentInput struct {
 
 func createDocumentWithAllTables(tx *gorm.DB, adminUserID int64, input DocumentInput) (*model.Document, error) {
 	document := model.Document{
-		ExternalID:  utils.GenerateExternalID("doc"),
+		ExternalID:  utils.GenerateExternalID(utils.ExternalIDContextDocument),
 		Title:       input.Title,
 		Type:        "markdown",
 		Summary:     input.Summary,
@@ -74,7 +74,7 @@ func initializeDocumentsInTx(tx *gorm.DB) error {
 	contentString := "# 欢迎使用 Yoresee Doc\n\n这是您的第一个文档。Yoresee Doc 是一个功能强大的文档管理系统，支持以下特性：\n\n- 📝 富文本编辑\n- 📁 文档分类管理\n- 🔍 全文搜索\n- 👥 协作编辑\n- 📊 版本控制\n- 🔒 权限管理\n\n## 快速开始\n\n1. 点击左侧菜单创建新文档\n2. 使用编辑器撰写内容\n3. 保存文档并分享给团队成员\n\n祝您使用愉快！"
 
 	document := model.Document{
-		ExternalID: utils.GenerateExternalID("doc"),
+		ExternalID: utils.GenerateExternalID(utils.ExternalIDContextDocument),
 		Title:      "欢迎使用 Yoresee Doc",
 		Type:       "markdown",
 		Summary:    "Yoresee Doc 系统欢迎文档",

@@ -1,58 +1,58 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-func createAdminUserInTx(tx *gorm.DB) error {
-	logrus.Println("Creating admin user in transaction...")
+func createUserInTx(tx *gorm.DB, username, email, password string) error {
+	logrus.Printf("Creating user %s in transaction...", username)
 
-	password := "admin123456"
 	hashedPwd, err := utils.HashPassword(password)
 	if err != nil {
 		return err
 	}
-	externalID := utils.GenerateExternalID("admin")
+	externalID := utils.GenerateExternalID(utils.ExternalIDContextDocument)
 
-	adminUser := model.User{
+	user := model.User{
 		ExternalID:   externalID,
-		Username:     "admin",
+		Username:     username,
 		PasswordHash: hashedPwd,
-		Email:        "admin@yoresee.cc",
-		Nickname:     "Admin",
+		Email:        email,
+		Nickname:     username,
 		Status:       1,
 	}
 
 	var count int64
-	tx.Model(&model.User{}).Where("email = ?", adminUser.Email).Count(&count)
+	tx.Model(&model.User{}).Where("email = ?", user.Email).Count(&count)
 	if count == 0 {
-		if err := tx.Create(&adminUser).Error; err != nil {
+		if err := tx.Create(&user).Error; err != nil {
 			return err
 		}
-		logrus.Println("Admin user created successfully in transaction.")
+		logrus.Printf("User %s created successfully in transaction.", username)
 	} else {
-		logrus.Println("Admin user already exists in transaction.")
+		logrus.Printf("User %s already exists in transaction.", username)
 	}
 
-	// 为管理员创建文档级别的权限规则，确保能访问所有文档
-	// permissionsString := "read,edit,manage,admin,create,transfer,audit"
+	return nil
+}
 
-	// if err := tx.Exec(`
-	// 	INSERT INTO permission_rules (
-	// 		resource_type, resource_id, resource_path,
-	// 		subject_type, subject_id, permissions, scope_type,
-	// 		is_deny, priority, created_by, created_at
-	// 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-	// `,
-	// 	model.ResourceTypeDocument, "*", "", // 使用通配符*表示所有文档
-	// 	model.SubjectTypeUser, adminUser.ExternalID,
-	// 	permissionsString, model.ScopeTypeRecursive, false, 1, "",
-	// ).Error; err != nil {
-	// 	return err
-	// }
+func createUserWithUsername(tx *gorm.DB, username string) error {
+	email := fmt.Sprintf("%s@yoresee.cc", username)
+	password := username
+	return createUserInTx(tx, username, email, password)
+}
+
+func createAdminUserInTx(tx *gorm.DB) error {
+	logrus.Println("Creating admin user in transaction...")
+
+	if err := createUserWithUsername(tx, "admin"); err != nil {
+		return err
+	}
 
 	logrus.Println("Admin permission granted successfully in transaction.")
 	return nil

@@ -13,6 +13,7 @@ type ExternalIDContext string
 
 const (
 	ExternalIDContextUser      ExternalIDContext = "user"
+	ExternalIDKnowledgeBase    ExternalIDContext = "knowledge_base"
 	ExternalIDContextDocument  ExternalIDContext = "document"
 	ExternalIDContextUserGroup ExternalIDContext = "user_group"
 	ExternalIDContextOrgNode   ExternalIDContext = "org_node"
