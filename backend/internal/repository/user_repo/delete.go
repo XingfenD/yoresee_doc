@@ -1,7 +1,10 @@
 package user_repo
 
 import (
+	"context"
+
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/pkg/cache"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -26,7 +29,18 @@ func (op *UserDeleteOperation) WithTx(tx *gorm.DB) *UserDeleteOperation {
 
 func (op *UserDeleteOperation) Exec() error {
 	if op.tx != nil {
-		return op.tx.Delete(&model.User{}, op.id).Error
+		if err := op.tx.Delete(&model.User{}, op.id).Error; err != nil {
+			return err
+		}
+		return op.clearQueryCache()
 	}
-	return storage.DB.Delete(&model.User{}, op.id).Error
+	if err := storage.DB.Delete(&model.User{}, op.id).Error; err != nil {
+		return err
+	}
+	return op.clearQueryCache()
+}
+
+func (op *UserDeleteOperation) clearQueryCache() error {
+	_, _ = storage.KVS.Incr(context.Background(), cache.KeyUserQueryVersion()).Result()
+	return nil
 }

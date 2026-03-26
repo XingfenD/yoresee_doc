@@ -1,7 +1,10 @@
 package user_repo
 
 import (
+	"context"
+
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/pkg/cache"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -26,7 +29,18 @@ func (op *UserUpdateOperation) WithTx(tx *gorm.DB) *UserUpdateOperation {
 
 func (op *UserUpdateOperation) Exec() error {
 	if op.tx != nil {
-		return op.tx.Save(op.user).Error
+		if err := op.tx.Save(op.user).Error; err != nil {
+			return err
+		}
+		return op.clearQueryCache()
 	}
-	return storage.DB.Save(op.user).Error
+	if err := storage.DB.Save(op.user).Error; err != nil {
+		return err
+	}
+	return op.clearQueryCache()
+}
+
+func (op *UserUpdateOperation) clearQueryCache() error {
+	_, _ = storage.KVS.Incr(context.Background(), cache.KeyUserQueryVersion()).Result()
+	return nil
 }

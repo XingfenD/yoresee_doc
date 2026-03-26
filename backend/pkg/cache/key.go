@@ -49,3 +49,15 @@ func KeyDocSubtree(path string, version int64, depth *int) string {
 	}
 	return fmt.Sprintf("dms:doc:subtree:%s:v%d:%s", path, version, depthKey)
 }
+
+func KeyUserQueryList(queryHash string, page, pageSize int) string {
+	return fmt.Sprintf("dms:user:query:%s:p%d:s%d", queryHash, page, pageSize)
+}
+
+func KeyUserQueryPrefix() string {
+	return "dms:user:query:*"
+}
+
+func KeyUserQueryVersion() string {
+	return "dms:user:query:version"
+}
