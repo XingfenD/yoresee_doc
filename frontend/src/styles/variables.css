@@ -4,13 +4,13 @@
   --primary-color: #165DFF;
   --primary-light: #E8F0FF;
   --primary-dark: #0E42D2;
-  
+
   /* 辅助色 */
   --success-color: #00B42A;
   --warning-color: #FF7D00;
   --error-color: #F53F3F;
   --info-color: #86909C;
-  
+
   /* 中性色 */
   --text-dark: #1D2129;
   --text-medium: #4E5969;
@@ -19,17 +19,17 @@
   --bg-light: #F7F8FA;
   --bg-medium: #F2F3F5;
   --bg-white: #FFFFFF;
-  
+
   /* 布局 */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
-  
+
   /* 圆角 */
   --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
-  
+
   /* 间距 */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -44,13 +44,13 @@
   --primary-color: #4080FF;
   --primary-light: rgba(64, 128, 255, 0.2);
   --primary-dark: #6699FF;
-  
+
   /* 辅助色 */
   --success-color: #33D17A;
   --warning-color: #FF9800;
   --error-color: #FF5252;
   --info-color: #9E9E9E;
-  
+
   /* 中性色 */
   --text-dark: #F5F5F5;
   --text-medium: #DCDCDC;
@@ -59,7 +59,7 @@
   --bg-light: #121212;
   --bg-medium: #1E1E1E;
   --bg-white: #1E1E1E;
-  
+
   /* 输入框和下拉列表 */
   --input-bg: #2D2D2D;
   --input-border: #333333;
@@ -70,7 +70,7 @@
   --select-text: #DCDCDC;
   --select-option-bg: #2D2D2D;
   --select-option-hover: #3A3A3A;
-  
+
   /* 布局 */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
