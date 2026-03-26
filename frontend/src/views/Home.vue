@@ -51,6 +51,7 @@ import DocumentListSection from '@/components/DocumentListSection.vue';
 import KnowledgeBaseListSection from '@/components/KnowledgeBaseListSection.vue';
 import { getRecentKnowledgeBases, getRecentDocuments } from '@/services/api';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -75,6 +76,7 @@ const {
   userStore,
   defaultActiveMenu: 'home'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 // 最近文档数据
 const recentDocuments = ref([]);
@@ -134,10 +136,7 @@ const fetchRecentDocuments = async () => {
 };
 
 onMounted(() => {
-  fetchSystemInfo();
-  fetchRecentKnowledgeBases();
-  fetchRecentDocuments();
-  initLanguage();
+  boot(fetchRecentKnowledgeBases, fetchRecentDocuments);
 });
 </script>
 

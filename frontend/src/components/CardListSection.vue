@@ -2,6 +2,15 @@
   <div class="card-list-section">
     <div class="section-header">
       <h3 class="section-title">{{ title }}</h3>
+      <el-button
+        v-if="showViewAll"
+        link
+        type="primary"
+        class="section-link"
+        @click="$emit('view-all')"
+      >
+        {{ viewAllLabel }}
+      </el-button>
     </div>
     <div class="section-content">
       <el-empty v-if="showEmpty" :description="emptyText" />
@@ -19,7 +28,7 @@
           </div>
         </template>
 
-        <p class="item-description">
+        <p v-if="resolveItemDescription(item) || fallbackDescription" class="item-description">
           {{ resolveItemDescription(item) || fallbackDescription }}
         </p>
 
@@ -34,8 +43,15 @@
           </div>
         </div>
 
-        <div class="item-actions">
-          <el-button size="small" type="primary" @click="$emit('open', item)">
+        <div v-if="showActions" class="item-actions">
+          <el-button
+            v-if="secondaryActionLabel"
+            size="small"
+            @click="$emit('secondary-action', item)"
+          >
+            {{ secondaryActionLabel }}
+          </el-button>
+          <el-button v-if="actionLabel" size="small" type="primary" @click="$emit('open', item)">
             {{ actionLabel }}
           </el-button>
         </div>
@@ -60,10 +76,13 @@ const props = defineProps({
   emptyText: { type: String, default: '' },
   fallbackDescription: { type: String, default: '' },
   actionLabel: { type: String, default: '' },
+  secondaryActionLabel: { type: String, default: '' },
   tagType: { type: String, default: '' },
   tagLabel: { type: String, default: '' },
   tagMapper: { type: Function, default: null },
   metaMapper: { type: Function, default: null },
+  showViewAll: { type: Boolean, default: false },
+  viewAllLabel: { type: String, default: '' },
   showLoadMore: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
   loadMoreLabel: { type: String, default: '' },
@@ -73,9 +92,10 @@ const props = defineProps({
   itemDescriptionMapper: { type: Function, default: null }
 });
 
-defineEmits(['open', 'load-more']);
+defineEmits(['open', 'secondary-action', 'load-more', 'view-all']);
 
 const showEmpty = computed(() => props.items.length === 0 && props.emptyText);
+const showActions = computed(() => Boolean(props.actionLabel || props.secondaryActionLabel));
 
 const resolveItemKey = (item) => {
   if (props.itemKeyMapper) return props.itemKeyMapper(item);
@@ -130,6 +150,10 @@ const resolveMetaRows = (item) => {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.section-link {
+  padding: 0;
 }
 
 .section-content {

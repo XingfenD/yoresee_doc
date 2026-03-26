@@ -19,7 +19,7 @@
                   v-for="tpl in recentTemplates"
                   :key="tpl.id"
                   class="template-card"
-                  :class="{ 'is-selected': formState.template === tpl.id }"
+                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
                   @click="selectTemplate(tpl)"
                 >
                   <div class="template-card-title">
@@ -40,7 +40,7 @@
                   v-for="tpl in myTemplates"
                   :key="tpl.id"
                   class="template-card"
-                  :class="{ 'is-selected': formState.template === tpl.id }"
+                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
                   @click="selectTemplate(tpl)"
                 >
                   <div class="template-card-title">
@@ -61,7 +61,7 @@
                   v-for="tpl in publicTemplates"
                   :key="tpl.id"
                   class="template-card"
-                  :class="{ 'is-selected': formState.template === tpl.id }"
+                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
                   @click="selectTemplate(tpl)"
                 >
                   <div class="template-card-title">
@@ -82,7 +82,7 @@
                   v-for="tpl in kbTemplates"
                   :key="tpl.id"
                   class="template-card"
-                  :class="{ 'is-selected': formState.template === tpl.id }"
+                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
                   @click="selectTemplate(tpl)"
                 >
                   <div class="template-card-title">
@@ -112,7 +112,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
-import { listTemplates, listRecentTemplates } from '@/services/api';
+import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
 
 const props = defineProps({
   modelValue: {
@@ -165,20 +165,25 @@ const formState = reactive({
 });
 
 const activeTab = ref('recent');
-const recentTemplates = ref([]);
-const myTemplates = ref([]);
-const publicTemplates = ref([]);
-const kbTemplates = ref([]);
-const loadingRecent = ref(false);
-const loadingMy = ref(false);
-const loadingPublic = ref(false);
-const loadingKb = ref(false);
-const loadedRecent = ref(false);
-const loadedMy = ref(false);
-const loadedPublic = ref(false);
-const loadedKb = ref(false);
-
 const showKnowledgeBaseTemplates = computed(() => !!props.knowledgeBaseId);
+const {
+  recentTemplates,
+  myTemplates,
+  publicTemplates,
+  kbTemplates,
+  loadingRecent,
+  loadingMy,
+  loadingPublic,
+  loadingKb,
+  ensureLoaded: ensureTemplateLoaded,
+  invalidateScope: invalidateTemplateScope
+} = useTemplateCatalog({
+  includeKnowledgeBase: true,
+  knowledgeBaseId: computed(() => props.knowledgeBaseId || ''),
+  onError: (error, scope) => {
+    console.error(`[DocumentCreateDialog] load ${scope} templates failed`, error);
+  }
+});
 
 const resetForm = () => {
   formState.title = props.initialTitle || '';
@@ -206,90 +211,24 @@ const handleCreate = () => {
 };
 
 const selectTemplate = (tpl) => {
-  if (formState.template === tpl.id) {
+  const templateId = String(tpl.id);
+  if (formState.template === templateId) {
     formState.template = '';
     formState.templateMeta = null;
     return;
   }
-  formState.template = tpl.id;
+  formState.template = templateId;
   formState.templateMeta = tpl;
 };
 
 const fetchTemplates = async (tab) => {
-  if (tab === 'recent') {
-    if (loadedRecent.value) return;
-    if (loadingRecent.value) return;
-    loadingRecent.value = true;
-    try {
-      const data = await listRecentTemplates({
-        page: 1,
-        page_size: 50
-      });
-      recentTemplates.value = data.templates || [];
-      loadedRecent.value = true;
-    } finally {
-      loadingRecent.value = false;
-    }
+  if (!props.showTemplateSelector) {
     return;
   }
-  if (tab === 'my') {
-    if (loadedMy.value) return;
-    if (loadingMy.value) return;
-    loadingMy.value = true;
-    try {
-      const data = await listTemplates({
-        only_mine: true,
-        target_container: 'own',
-        order_by: 'updated_at',
-        order_desc: true,
-        page: 1,
-        page_size: 50
-      });
-      myTemplates.value = data.templates || [];
-      loadedMy.value = true;
-    } finally {
-      loadingMy.value = false;
-    }
+  if (tab === 'knowledge_base' && !showKnowledgeBaseTemplates.value) {
     return;
   }
-  if (tab === 'public') {
-    if (loadedPublic.value) return;
-    if (loadingPublic.value) return;
-    loadingPublic.value = true;
-    try {
-      const data = await listTemplates({
-        target_container: 'public',
-        order_by: 'updated_at',
-        order_desc: true,
-        page: 1,
-        page_size: 50
-      });
-      publicTemplates.value = data.templates || [];
-      loadedPublic.value = true;
-    } finally {
-      loadingPublic.value = false;
-    }
-    return;
-  }
-  if (tab === 'knowledge_base' && showKnowledgeBaseTemplates.value) {
-    if (loadedKb.value) return;
-    if (loadingKb.value) return;
-    loadingKb.value = true;
-    try {
-      const data = await listTemplates({
-        target_container: 'knowledge_base',
-        knowledge_base_id: props.knowledgeBaseId,
-        order_by: 'updated_at',
-        order_desc: true,
-        page: 1,
-        page_size: 50
-      });
-      kbTemplates.value = data.templates || [];
-      loadedKb.value = true;
-    } finally {
-      loadingKb.value = false;
-    }
-  }
+  await ensureTemplateLoaded(tab);
 };
 
 watch(
@@ -307,8 +246,7 @@ watch(
   () => props.knowledgeBaseId,
   (next, prev) => {
     if (next !== prev) {
-      loadedKb.value = false;
-      kbTemplates.value = [];
+      invalidateTemplateScope('knowledge_base');
       if (activeTab.value === 'knowledge_base' && props.modelValue) {
         fetchTemplates('knowledge_base');
       }

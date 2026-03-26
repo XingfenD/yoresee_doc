@@ -21,7 +21,11 @@
       </el-button>
     </template>
 
-    <InvitationCenter ref="invitationCenterRef" mode="system" :is-dark-mode="isDarkMode" />
+    <ManageLayout>
+      <ManageSection>
+        <InvitationCenter ref="invitationCenterRef" mode="system" :is-dark-mode="isDarkMode" />
+      </ManageSection>
+    </ManageLayout>
   </PageLayout>
 </template>
 
@@ -31,8 +35,11 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
+import ManageSection from '@/components/ManageSection.vue';
 import InvitationCenter from '@/components/InvitationCenter.vue';
 import { useManageShell } from '@/composables/useManageShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -48,6 +55,7 @@ const {
   manageMenuItems,
   currentLanguage,
   initLanguage,
+  fetchSystemInfo,
   handleLanguageChange,
   toggleTheme,
   handleLogout,
@@ -58,12 +66,13 @@ const {
   userStore,
   defaultActiveMenu: 'manage-invite'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const handleCreateClick = () => {
   invitationCenterRef.value?.openCreateDialog();
 };
 
 onMounted(() => {
-  initLanguage();
+  boot();
 });
 </script>

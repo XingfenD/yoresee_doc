@@ -63,6 +63,7 @@ import DocumentListSection from '@/components/DocumentListSection.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import { getMyDocuments, createDocument as createDocumentApi } from '@/services/api';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -95,6 +96,7 @@ const {
   userStore,
   defaultActiveMenu: 'documents'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const documents = ref([]);
 
@@ -184,9 +186,7 @@ const viewDocument = (doc) => {
 };
 
 onMounted(() => {
-  fetchSystemInfo();
-  initLanguage();
-  fetchMyDocuments();
+  boot(fetchMyDocuments);
 });
 </script>
 

@@ -15,7 +15,7 @@
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <div class="manage-layout">
+    <ManageLayout>
       <TitleBar :show-back="true" :back-text="t('common.back')" @back="router.back()">
         <template #actions>
           <el-button type="primary" @click="openEditDialog">
@@ -24,51 +24,47 @@
         </template>
       </TitleBar>
 
-      <section class="manage-section manage-section--plain">
-        <div class="section-body section-body--card">
-          <InfoStatsCard
-            :title="entityInfo?.name || t('common.unknown')"
-            :description="entityInfo?.description || t('common.unknown')"
-            :stats="entityStats"
-          />
-        </div>
-      </section>
+      <ManageSection plain>
+        <InfoStatsCard
+          :title="entityInfo?.name || t('common.unknown')"
+          :description="entityInfo?.description || t('common.unknown')"
+          :stats="entityStats"
+        />
+      </ManageSection>
 
-      <section class="manage-section">
-        <div class="section-body">
-          <CommonList
-            :rows="memberRows"
-            :columns="memberColumns"
-            :is-dark="isDarkMode"
-            row-key="external_id"
-            :empty-text="t('message.empty')"
-            :show-pagination="true"
-            :total="memberTotal"
-            v-model:current-page="memberPage"
-            v-model:page-size="memberPageSize"
-            :page-sizes="[6]"
-            @page-change="handleMemberPageChange"
-            :show-search="true"
-            v-model:search-query="memberSearch"
-            :search-placeholder="t('common.search')"
-            @search="handleMemberSearch"
-            :show-title-bar="true"
-          >
-            <template #title>{{ t(entityLabels.memberListKey) }}</template>
-            <template #toolbar-right>
-              <el-button size="small" type="primary" @click="openMemberDialog">
-                {{ t(entityLabels.manageMembersKey) }}
-              </el-button>
-            </template>
-            <template #cell-actions="{ row }">
-              <el-button size="small" text type="danger" @click="removeMember(row)">
-                {{ t('document.delete') }}
-              </el-button>
-            </template>
-          </CommonList>
-        </div>
-      </section>
-    </div>
+      <ManageSection>
+        <CommonList
+          :rows="memberRows"
+          :columns="memberColumns"
+          :is-dark="isDarkMode"
+          row-key="external_id"
+          :empty-text="t('message.empty')"
+          :show-pagination="true"
+          :total="memberTotal"
+          v-model:current-page="memberPage"
+          v-model:page-size="memberPageSize"
+          :page-sizes="[6]"
+          @page-change="handleMemberPageChange"
+          :show-search="true"
+          v-model:search-query="memberSearch"
+          :search-placeholder="t('common.search')"
+          @search="handleMemberSearch"
+          :show-title-bar="true"
+        >
+          <template #title>{{ t(entityLabels.memberListKey) }}</template>
+          <template #toolbar-right>
+            <el-button size="small" type="primary" @click="openMemberDialog">
+              {{ t(entityLabels.manageMembersKey) }}
+            </el-button>
+          </template>
+          <template #cell-actions="{ row }">
+            <el-button size="small" text type="danger" @click="removeMember(row)">
+              {{ t('document.delete') }}
+            </el-button>
+          </template>
+        </CommonList>
+      </ManageSection>
+    </ManageLayout>
 
     <el-dialog v-model="showEditDialog" :title="t('document.edit')" width="480px">
       <el-form label-position="top" :model="editForm">
@@ -136,13 +132,17 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useManageShell } from '@/composables/useManageShell';
+import { useServerTable } from '@/composables/useServerTable';
+import { usePageBoot } from '@/composables/usePageBoot';
 import PageLayout from '@/components/PageLayout.vue';
 import TitleBar from '@/components/TitleBar.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
+import ManageSection from '@/components/ManageSection.vue';
 import CommonList from '@/components/CommonList.vue';
 import InfoStatsCard from '@/components/InfoStatsCard.vue';
 import {
@@ -210,6 +210,7 @@ const {
   manageMenuItems,
   currentLanguage,
   initLanguage,
+  fetchSystemInfo,
   handleLanguageChange,
   toggleTheme,
   handleLogout,
@@ -220,24 +221,64 @@ const {
   userStore,
   defaultActiveMenu: entityAdapter.value.activeMenu
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const entityInfo = ref(null);
 const entityStats = computed(() => [
   { key: 'members', icon: User, label: t('common.members'), value: entityInfo.value?.member_count ?? 0 }
 ]);
-const memberRows = ref([]);
-const memberPage = ref(1);
-const memberPageSize = ref(6);
-const memberTotal = ref(0);
-const memberSearch = ref('');
-const memberSearchTimer = ref(null);
+const {
+  rows: memberRows,
+  page: memberPage,
+  pageSize: memberPageSize,
+  total: memberTotal,
+  keyword: memberSearch,
+  load: loadEntityMembers,
+  handlePageChange: handleMemberPageChange,
+  handleSearch: handleMemberSearch
+} = useServerTable({
+  initialPageSize: 6,
+  fetcher: async ({ page, page_size, keyword }) => {
+    const externalId = getExternalId();
+    if (!externalId) {
+      return { users: [], total: 0 };
+    }
+    return entityAdapter.value.loadMembers({
+      external_id: externalId,
+      keyword,
+      page,
+      page_size
+    });
+  },
+  mapRows: (resp) => resp.users || [],
+  onError: (err) => {
+    console.error('load entity members failed', err);
+  }
+});
 
-const candidateSearch = ref('');
-const candidateSearchTimer = ref(null);
-const candidatePage = ref(1);
-const candidatePageSize = ref(3);
-const candidateTotal = ref(0);
-const memberCandidates = ref([]);
+const {
+  rows: memberCandidates,
+  page: candidatePage,
+  pageSize: candidatePageSize,
+  total: candidateTotal,
+  keyword: candidateSearch,
+  load: loadMemberCandidates,
+  handlePageChange: handleCandidatePageChange,
+  handleSearch: handleCandidateSearch
+} = useServerTable({
+  initialPageSize: 3,
+  fetcher: ({ page, page_size, keyword }) =>
+    listUsers({
+      page,
+      page_size,
+      keyword
+    }),
+  mapRows: (resp) => resp.users || [],
+  onError: (err) => {
+    console.error('listUsers failed', err);
+  }
+});
+
 const selectedMemberIds = ref([]);
 const savingMembers = ref(false);
 
@@ -276,76 +317,11 @@ const loadEntityDetail = async () => {
   }
 };
 
-const loadEntityMembers = async () => {
-  const externalId = getExternalId();
-  if (!externalId) return;
-  try {
-    const resp = await entityAdapter.value.loadMembers({
-      external_id: externalId,
-      keyword: memberSearch.value,
-      page: memberPage.value,
-      page_size: memberPageSize.value
-    });
-    memberRows.value = resp.users || [];
-    const totalNumber = Number(resp.total);
-    memberTotal.value = Number.isFinite(totalNumber) ? totalNumber : 0;
-  } catch (err) {
-    console.error('load entity members failed', err);
-    memberRows.value = [];
-    memberTotal.value = 0;
-  }
-};
-
-const loadMemberCandidates = async () => {
-  try {
-    const resp = await listUsers({
-      keyword: candidateSearch.value,
-      page: candidatePage.value,
-      page_size: candidatePageSize.value
-    });
-    memberCandidates.value = resp.users || [];
-    const totalNumber = Number(resp.total);
-    candidateTotal.value = Number.isFinite(totalNumber) ? totalNumber : 0;
-  } catch (err) {
-    console.error('listUsers failed', err);
-    memberCandidates.value = [];
-    candidateTotal.value = 0;
-  }
-};
-
 const openMemberDialog = async () => {
   showMemberDialog.value = true;
   candidateSearch.value = '';
   candidatePage.value = 1;
   selectedMemberIds.value = memberRows.value.map((member) => member.external_id).filter(Boolean);
-  await loadMemberCandidates();
-};
-
-const handleMemberSearch = async () => {
-  if (memberSearchTimer.value) {
-    clearTimeout(memberSearchTimer.value);
-  }
-  memberSearchTimer.value = setTimeout(async () => {
-    memberPage.value = 1;
-    await loadEntityMembers();
-  }, 300);
-};
-
-const handleCandidateSearch = async () => {
-  if (candidateSearchTimer.value) {
-    clearTimeout(candidateSearchTimer.value);
-  }
-  candidateSearchTimer.value = setTimeout(async () => {
-    candidatePage.value = 1;
-    await loadMemberCandidates();
-  }, 300);
-};
-
-const handleMemberPageChange = async () => {
-  await loadEntityMembers();
-};
-
-const handleCandidatePageChange = async () => {
   await loadMemberCandidates();
 };
 
@@ -438,54 +414,11 @@ const submitEdit = async () => {
 };
 
 onMounted(() => {
-  initLanguage();
-  loadEntityDetail();
-  loadEntityMembers();
-});
-
-onBeforeUnmount(() => {
-  if (memberSearchTimer.value) {
-    clearTimeout(memberSearchTimer.value);
-  }
-  if (candidateSearchTimer.value) {
-    clearTimeout(candidateSearchTimer.value);
-  }
+  boot(loadEntityDetail, loadEntityMembers);
 });
 </script>
 
 <style scoped>
-.manage-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.manage-section + .manage-section {
-  margin-top: var(--spacing-lg);
-}
-
-.manage-section {
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.manage-section--plain {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.section-body {
-  padding: 0;
-}
-
-.section-body--card {
-  padding: 0;
-}
-
 .member-dialog {
   display: flex;
   flex-direction: column;
@@ -500,15 +433,4 @@ onBeforeUnmount(() => {
 .checkbox-only :deep(.el-checkbox__label) {
   display: none;
 }
-
-.dark-mode .manage-section {
-  background: #161b22;
-  border-color: #2b2f36;
-}
-
-.dark-mode .manage-section--plain {
-  background: transparent;
-  border-color: transparent;
-}
-
 </style>

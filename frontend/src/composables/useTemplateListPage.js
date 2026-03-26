@@ -1,7 +1,8 @@
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { createTemplate as createTemplateApi, listRecentTemplates, listTemplates } from '@/services/api';
+import { createTemplate as createTemplateApi } from '@/services/api';
 import { useLazyTabLoader } from '@/composables/useLazyTabLoader';
+import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
 
 export function useTemplateListPage({ t, router }) {
   const showCreateDialog = ref(false);
@@ -14,15 +15,22 @@ export function useTemplateListPage({ t, router }) {
     content: ''
   });
 
-  const myTemplates = ref([]);
-  const recentTemplates = ref([]);
-  const publicTemplates = ref([]);
-  const loadingMy = ref(false);
-  const loadingRecent = ref(false);
-  const loadingPublic = ref(false);
-  const myLoaded = ref(false);
-  const recentLoaded = ref(false);
-  const publicLoaded = ref(false);
+  const {
+    myTemplates,
+    recentTemplates,
+    publicTemplates,
+    loadingMy,
+    loadingRecent,
+    loadingPublic,
+    ensureLoaded,
+    invalidateScope,
+    isLoaded
+  } = useTemplateCatalog({
+    includeKnowledgeBase: false,
+    onError: (error, scope) => {
+      console.error(`[useTemplateListPage] load ${scope} templates failed`, error);
+    }
+  });
 
   const myTagMapper = () => ({ type: 'info', label: t('templates.private') });
   const recentTagMapper = (tpl) =>
@@ -58,90 +66,26 @@ export function useTemplateListPage({ t, router }) {
     showCreateDialog.value = true;
   };
 
-  const fetchMyTemplates = async () => {
-    if (loadingMy.value) return;
-    loadingMy.value = true;
-    try {
-      const data = await listTemplates({
-        only_mine: true,
-        target_container: 'own',
-        order_by: 'updated_at',
-        order_desc: true,
-        page: 1,
-        page_size: 50
-      });
-      myTemplates.value = data.templates || [];
-      myLoaded.value = true;
-    } catch (err) {
-      console.error('获取我的模板失败:', err);
-    } finally {
-      loadingMy.value = false;
-    }
-  };
-
-  const fetchRecentTemplates = async () => {
-    if (loadingRecent.value) return;
-    loadingRecent.value = true;
-    try {
-      const data = await listRecentTemplates({
-        page: 1,
-        page_size: 50
-      });
-      recentTemplates.value = data.templates || [];
-      recentLoaded.value = true;
-    } catch (err) {
-      console.error('获取最近模板失败:', err);
-    } finally {
-      loadingRecent.value = false;
-    }
-  };
-
-  const fetchPublicTemplates = async () => {
-    if (loadingPublic.value) return;
-    loadingPublic.value = true;
-    try {
-      const data = await listTemplates({
-        target_container: 'public',
-        order_by: 'updated_at',
-        order_desc: true,
-        page: 1,
-        page_size: 50
-      });
-      publicTemplates.value = data.templates || [];
-      publicLoaded.value = true;
-    } catch (err) {
-      console.error('获取公开模板失败:', err);
-    } finally {
-      loadingPublic.value = false;
-    }
-  };
-
   const { activeTab, ensureTabLoaded } = useLazyTabLoader({
     initialTab: 'my',
     tabs: {
       my: {
-        loaded: () => myLoaded.value,
-        load: fetchMyTemplates
+        loaded: () => isLoaded('my'),
+        load: () => ensureLoaded('my')
       },
       recent: {
-        loaded: () => recentLoaded.value,
-        load: fetchRecentTemplates
+        loaded: () => isLoaded('recent'),
+        load: () => ensureLoaded('recent')
       },
       public: {
-        loaded: () => publicLoaded.value,
-        load: fetchPublicTemplates
+        loaded: () => isLoaded('public'),
+        load: () => ensureLoaded('public')
       }
     }
   });
 
   const refreshCurrentTab = async () => {
-    if (activeTab.value === 'my') {
-      myLoaded.value = false;
-    } else if (activeTab.value === 'recent') {
-      recentLoaded.value = false;
-    } else if (activeTab.value === 'public') {
-      publicLoaded.value = false;
-    }
+    invalidateScope(activeTab.value);
     await ensureTabLoaded(activeTab.value);
   };
 

@@ -21,45 +21,43 @@
       </el-button>
     </template>
 
-    <div class="manage-layout">
-      <section class="manage-section">
-        <div class="section-body">
-          <CommonList
-            :rows="groupRows"
-            :columns="groupColumns"
-            :is-dark="isDarkMode"
-            row-key="external_id"
-            :empty-text="t('message.empty')"
-            :show-pagination="true"
-            :total="groupTotal"
-            v-model:current-page="groupPage"
-            v-model:page-size="groupPageSize"
-            :page-sizes="[10, 20, 50]"
-            @page-change="handleGroupPageChange"
-            :show-search="true"
-            v-model:search-query="groupKeyword"
-            :search-placeholder="t('common.search')"
-            @search="handleGroupSearch"
-            :show-title-bar="true"
-            :title="t('system.userGroup.placeholderTitle')"
-          >
-            <template #cell-name="{ row }">
-              <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
-                {{ row?.name || '-' }}
-              </el-button>
-            </template>
-            <template #cell-actions="{ row }">
-              <el-button size="small" text type="primary" @click="openEditDialog(row)">
-                {{ t('document.edit') }}
-              </el-button>
-              <el-button size="small" text type="danger" @click="handleDeleteGroup(row)">
-                {{ t('document.delete') }}
-              </el-button>
-            </template>
-          </CommonList>
-        </div>
-      </section>
-    </div>
+    <ManageLayout>
+      <ManageSection>
+        <CommonList
+          :rows="groupRows"
+          :columns="groupColumns"
+          :is-dark="isDarkMode"
+          row-key="external_id"
+          :empty-text="t('message.empty')"
+          :show-pagination="true"
+          :total="groupTotal"
+          v-model:current-page="groupPage"
+          v-model:page-size="groupPageSize"
+          :page-sizes="[10, 20, 50]"
+          @page-change="handleGroupPageChange"
+          :show-search="true"
+          v-model:search-query="groupKeyword"
+          :search-placeholder="t('common.search')"
+          @search="handleGroupSearch"
+          :show-title-bar="true"
+          :title="t('system.userGroup.placeholderTitle')"
+        >
+          <template #cell-name="{ row }">
+            <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
+              {{ row?.name || '-' }}
+            </el-button>
+          </template>
+          <template #cell-actions="{ row }">
+            <el-button size="small" text type="primary" @click="openEditDialog(row)">
+              {{ t('document.edit') }}
+            </el-button>
+            <el-button size="small" text type="danger" @click="handleDeleteGroup(row)">
+              {{ t('document.delete') }}
+            </el-button>
+          </template>
+        </CommonList>
+      </ManageSection>
+    </ManageLayout>
 
     <el-dialog v-model="showCreateDialog" :title="t('system.userGroup.title')" width="480px">
       <el-form label-position="top" :model="createForm">
@@ -98,13 +96,17 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
+import ManageSection from '@/components/ManageSection.vue';
 import CommonList from '@/components/CommonList.vue';
 import { useManageShell } from '@/composables/useManageShell';
+import { useServerTable } from '@/composables/useServerTable';
+import { usePageBoot } from '@/composables/usePageBoot';
 import { createUserGroup, deleteUserGroup, listUserGroups, updateUserGroup } from '@/services/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
@@ -121,6 +123,7 @@ const {
   manageMenuItems,
   currentLanguage,
   initLanguage,
+  fetchSystemInfo,
   handleLanguageChange,
   toggleTheme,
   handleLogout,
@@ -131,13 +134,31 @@ const {
   userStore,
   defaultActiveMenu: 'manage-user-group'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
-const groupRows = ref([]);
-const groupPage = ref(1);
-const groupPageSize = ref(10);
-const groupTotal = ref(0);
-const groupKeyword = ref('');
-const groupSearchTimer = ref(null);
+const {
+  rows: groupRows,
+  page: groupPage,
+  pageSize: groupPageSize,
+  total: groupTotal,
+  keyword: groupKeyword,
+  load: loadUserGroups,
+  handlePageChange: handleGroupPageChange,
+  handleSearch: handleGroupSearch
+} = useServerTable({
+  initialPageSize: 10,
+  fetcher: ({ page, page_size, keyword }) =>
+    listUserGroups({
+      page,
+      page_size,
+      keyword
+    }),
+  mapRows: (resp) => resp.user_groups || [],
+  onError: (err) => {
+    console.error('listUserGroups failed', err);
+  }
+});
+
 const showCreateDialog = ref(false);
 const creating = ref(false);
 const createForm = ref({
@@ -158,37 +179,6 @@ const groupColumns = computed(() => [
   { key: 'description', label: t('common.description'), minWidth: 260, flex: 1.6 },
   { key: 'actions', label: t('common.actions'), minWidth: 120, align: 'center' }
 ]);
-
-const loadUserGroups = async () => {
-  try {
-    const resp = await listUserGroups({
-      page: groupPage.value,
-      page_size: groupPageSize.value,
-      keyword: groupKeyword.value.trim() || undefined
-    });
-    groupRows.value = resp.user_groups || [];
-    groupTotal.value = Number(resp.total) || 0;
-  } catch (err) {
-    console.error('listUserGroups failed', err);
-    groupRows.value = [];
-    groupTotal.value = 0;
-  }
-};
-
-const handleGroupPageChange = async (page) => {
-  groupPage.value = page;
-  await loadUserGroups();
-};
-
-const handleGroupSearch = () => {
-  if (groupSearchTimer.value) {
-    clearTimeout(groupSearchTimer.value);
-  }
-  groupSearchTimer.value = setTimeout(async () => {
-    groupPage.value = 1;
-    await loadUserGroups();
-  }, 300);
-};
 
 const goToDetail = (row) => {
   if (!row?.external_id) {
@@ -289,47 +279,12 @@ const handleDeleteGroup = async (row) => {
 };
 
 onMounted(() => {
-  initLanguage();
-  loadUserGroups();
-});
-
-onBeforeUnmount(() => {
-  if (groupSearchTimer.value) {
-    clearTimeout(groupSearchTimer.value);
-  }
+  boot(loadUserGroups);
 });
 </script>
 
 <style scoped>
-.manage-layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.manage-section {
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.section-body {
-  padding: 0;
-}
-
 .link-btn {
   padding: 0;
-}
-
-.dark-mode .manage-section {
-  background: #161b22;
-  border-color: #2b2f36;
-}
-
-.dark-mode .section-header {
-  background: #161b22;
-  border-bottom-color: #2b2f36;
 }
 </style>

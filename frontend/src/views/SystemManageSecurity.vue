@@ -19,63 +19,63 @@
         {{ t('common.save') }}
       </el-button>
     </template>
-    <div class="manage-layout">
-      <section v-for="group in settingGroups" :key="group.key" class="manage-section">
-        <div class="section-header">
-          <h3 class="section-title">{{ resolveText(group.title_key, group.title) }}</h3>
-        </div>
-        <div class="section-body">
-          <div v-for="item in group.items" :key="item.key" class="setting-row setting-row--stacked">
-            <div class="setting-label">
-              {{ resolveText(item.label_key, item.label) }}
-              <span v-if="item.required" class="required-mark">*</span>
-            </div>
-            <div v-if="item.description || item.description_key" class="setting-desc">
-              {{ resolveText(item.description_key, item.description) }}
-            </div>
-            <div class="setting-control">
-              <el-radio-group
-                v-if="item.ui?.component === 'radio'"
-                v-model="settingValues[item.key]"
-                :disabled="item.readonly"
+    <ManageLayout>
+      <ManageSection
+        v-for="group in settingGroups"
+        :key="group.key"
+        :title="resolveText(group.title_key, group.title)"
+        body-padding="md"
+      >
+        <div v-for="item in group.items" :key="item.key" class="setting-row setting-row--stacked">
+          <div class="setting-label">
+            {{ resolveText(item.label_key, item.label) }}
+            <span v-if="item.required" class="required-mark">*</span>
+          </div>
+          <div v-if="item.description || item.description_key" class="setting-desc">
+            {{ resolveText(item.description_key, item.description) }}
+          </div>
+          <div class="setting-control">
+            <el-radio-group
+              v-if="item.ui?.component === 'radio'"
+              v-model="settingValues[item.key]"
+              :disabled="item.readonly"
+            >
+              <el-radio
+                v-for="opt in item.ui.options"
+                :key="opt.value"
+                :value="opt.value"
               >
-                <el-radio
-                  v-for="opt in item.ui.options"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ resolveText(opt.label_key, opt.label) }}
-                </el-radio>
-              </el-radio-group>
-              <el-select
-                v-else-if="item.ui?.component === 'select'"
-                v-model="settingValues[item.key]"
-                :placeholder="resolveText(item.ui?.placeholder_key, item.ui?.placeholder)"
-                :disabled="item.readonly"
-              >
-                <el-option
-                  v-for="opt in item.ui.options"
-                  :key="opt.value"
-                  :label="resolveText(opt.label_key, opt.label)"
-                  :value="opt.value"
-                />
-              </el-select>
-              <el-switch
-                v-else-if="item.ui?.component === 'switch'"
-                v-model="settingValues[item.key]"
-                :disabled="item.readonly"
+                {{ resolveText(opt.label_key, opt.label) }}
+              </el-radio>
+            </el-radio-group>
+            <el-select
+              v-else-if="item.ui?.component === 'select'"
+              v-model="settingValues[item.key]"
+              :placeholder="resolveText(item.ui?.placeholder_key, item.ui?.placeholder)"
+              :disabled="item.readonly"
+            >
+              <el-option
+                v-for="opt in item.ui.options"
+                :key="opt.value"
+                :label="resolveText(opt.label_key, opt.label)"
+                :value="opt.value"
               />
-              <el-input
-                v-else
-                v-model="settingValues[item.key]"
-                :placeholder="resolveText(item.ui?.placeholder_key, item.ui?.placeholder)"
-                :disabled="item.readonly"
-              />
-            </div>
+            </el-select>
+            <el-switch
+              v-else-if="item.ui?.component === 'switch'"
+              v-model="settingValues[item.key]"
+              :disabled="item.readonly"
+            />
+            <el-input
+              v-else
+              v-model="settingValues[item.key]"
+              :placeholder="resolveText(item.ui?.placeholder_key, item.ui?.placeholder)"
+              :disabled="item.readonly"
+            />
           </div>
         </div>
-      </section>
-    </div>
+      </ManageSection>
+    </ManageLayout>
   </PageLayout>
 </template>
 
@@ -85,7 +85,10 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
+import ManageLayout from '@/components/ManageLayout.vue';
+import ManageSection from '@/components/ManageSection.vue';
 import { useManageShell } from '@/composables/useManageShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 import { getSettings, updateSettings } from '@/services/api';
 import { ElMessage } from 'element-plus';
 
@@ -102,6 +105,7 @@ const {
   manageMenuItems,
   currentLanguage,
   initLanguage,
+  fetchSystemInfo,
   handleLanguageChange,
   toggleTheme,
   handleLogout,
@@ -112,6 +116,7 @@ const {
   userStore,
   defaultActiveMenu: 'manage-security'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 const isSaving = ref(false);
 const settingGroups = ref([]);
 const settingValues = ref({});
@@ -173,43 +178,11 @@ const handleSave = async () => {
 };
 
 onMounted(() => {
-  initLanguage();
-  loadSettings();
+  boot(loadSettings);
 });
 </script>
 
 <style scoped>
-.manage-layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.manage-section {
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.section-header {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-white);
-}
-
-.section-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.section-body {
-  padding: var(--spacing-md);
-}
-
 .setting-row {
   display: flex;
   align-items: center;

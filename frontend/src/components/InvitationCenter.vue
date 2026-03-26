@@ -77,12 +77,13 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import CommonList from '@/components/CommonList.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
 import AppTag from '@/components/AppTag.vue';
+import { useServerTable } from '@/composables/useServerTable';
 import { listInvitations, listInvitationRecords, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
 
 const props = defineProps({
@@ -101,25 +102,8 @@ const { t } = useI18n();
 
 const isSystemMode = computed(() => props.mode === 'system');
 const activeTab = ref('list');
-
-const invitePage = ref(1);
-const invitePageSize = ref(10);
-const inviteTotal = ref(0);
-const inviteKeyword = ref('');
-const recordPage = ref(1);
-const recordPageSize = ref(10);
-const recordTotal = ref(0);
-const recordKeyword = ref('');
-const inviteSearchTimer = ref(null);
-const recordSearchTimer = ref(null);
-
-const inviteList = ref([]);
-const inviteRecords = ref([]);
 const inviteLoaded = ref(false);
 const recordsLoaded = ref(false);
-const inviteLoading = ref(false);
-const recordsLoading = ref(false);
-
 const showCreateDialog = ref(false);
 
 const tabListLabel = computed(() => t(isSystemMode.value ? 'system.invite.tabs.list' : 'user.invite.tabs.list'));
@@ -236,65 +220,87 @@ const mapRecordRow = (record) => ({
   status: record.status || 'failed'
 });
 
-const fetchInvitations = async () => {
-  if (inviteLoading.value) return;
-  inviteLoading.value = true;
-  try {
-    const query = isSystemMode.value
-      ? {
-          page: invitePage.value,
-          page_size: invitePageSize.value,
-          keyword: inviteKeyword.value.trim() || undefined
-        }
-      : {
-          only_mine: true,
-          page: 1,
-          page_size: 50
-        };
-
-    const resp = await listInvitations(query);
-    inviteList.value = (resp.invitations || []).map(mapInviteRow);
-    inviteTotal.value = Number(resp.total) || inviteList.value.length;
-    inviteLoaded.value = true;
-  } catch (err) {
+const {
+  rows: inviteList,
+  page: invitePage,
+  pageSize: invitePageSize,
+  total: inviteTotal,
+  keyword: inviteKeyword,
+  load: loadInvitations,
+  handlePageChange: changeInvitePage,
+  handleSearch: triggerInviteSearch
+} = useServerTable({
+  initialPageSize: 10,
+  fetcher: ({ page, page_size, keyword }) =>
+    listInvitations(
+      isSystemMode.value
+        ? {
+            page,
+            page_size,
+            keyword
+          }
+        : {
+            only_mine: true,
+            page: 1,
+            page_size: 50
+          }
+    ),
+  mapRows: (resp) => (resp.invitations || []).map(mapInviteRow),
+  mapTotal: (resp, rows) => (isSystemMode.value ? resp.total : rows.length),
+  onError: (err) => {
     console.error('listInvitations failed', err);
-    inviteList.value = [];
-    inviteTotal.value = 0;
-  } finally {
-    inviteLoading.value = false;
+  }
+});
+
+const {
+  rows: inviteRecords,
+  page: recordPage,
+  pageSize: recordPageSize,
+  total: recordTotal,
+  keyword: recordKeyword,
+  load: loadInvitationRecords,
+  handlePageChange: changeRecordPage,
+  handleSearch: triggerRecordSearch
+} = useServerTable({
+  initialPageSize: 10,
+  fetcher: ({ page, page_size, keyword }) =>
+    listInvitationRecords(
+      isSystemMode.value
+        ? {
+            page,
+            page_size,
+            keyword
+          }
+        : {
+            only_mine: true,
+            page: 1,
+            page_size: 100
+          }
+    ),
+  mapRows: (resp) => {
+    const records = [...(resp.records || [])];
+    if (!isSystemMode.value) {
+      records.sort((a, b) => (b.used_at || '').localeCompare(a.used_at || ''));
+    }
+    return records.map(mapRecordRow);
+  },
+  mapTotal: (resp, rows) => (isSystemMode.value ? resp.total : rows.length),
+  onError: (err) => {
+    console.error('listInvitationRecords failed', err);
+  }
+});
+
+const fetchInvitations = async () => {
+  const resp = await loadInvitations();
+  if (resp) {
+    inviteLoaded.value = true;
   }
 };
 
 const fetchInvitationRecords = async () => {
-  if (recordsLoading.value) return;
-  recordsLoading.value = true;
-  try {
-    const query = isSystemMode.value
-      ? {
-          page: recordPage.value,
-          page_size: recordPageSize.value,
-          keyword: recordKeyword.value.trim() || undefined
-        }
-      : {
-          only_mine: true,
-          page: 1,
-          page_size: 100
-        };
-
-    const resp = await listInvitationRecords(query);
-    const records = resp.records || [];
-    if (!isSystemMode.value) {
-      records.sort((a, b) => (b.used_at || '').localeCompare(a.used_at || ''));
-    }
-    inviteRecords.value = records.map(mapRecordRow);
-    recordTotal.value = Number(resp.total) || inviteRecords.value.length;
+  const resp = await loadInvitationRecords();
+  if (resp) {
     recordsLoaded.value = true;
-  } catch (err) {
-    console.error('listInvitationRecords failed', err);
-    inviteRecords.value = [];
-    recordTotal.value = 0;
-  } finally {
-    recordsLoading.value = false;
   }
 };
 
@@ -354,36 +360,22 @@ const handleDeleteInvite = async (row) => {
 
 const handleInvitePageChange = async (page) => {
   if (!isSystemMode.value) return;
-  invitePage.value = page;
-  await fetchInvitations();
+  await changeInvitePage(page);
 };
 
 const handleRecordPageChange = async (page) => {
   if (!isSystemMode.value) return;
-  recordPage.value = page;
-  await fetchInvitationRecords();
+  await changeRecordPage(page);
 };
 
 const handleInviteSearch = () => {
   if (!isSystemMode.value) return;
-  if (inviteSearchTimer.value) {
-    clearTimeout(inviteSearchTimer.value);
-  }
-  inviteSearchTimer.value = setTimeout(async () => {
-    invitePage.value = 1;
-    await fetchInvitations();
-  }, 300);
+  triggerInviteSearch();
 };
 
 const handleRecordSearch = () => {
   if (!isSystemMode.value) return;
-  if (recordSearchTimer.value) {
-    clearTimeout(recordSearchTimer.value);
-  }
-  recordSearchTimer.value = setTimeout(async () => {
-    recordPage.value = 1;
-    await fetchInvitationRecords();
-  }, 300);
+  triggerRecordSearch();
 };
 
 const copyInviteCode = async (code) => {
@@ -418,15 +410,6 @@ watch(activeTab, async (tab) => {
 
 onMounted(async () => {
   await fetchInvitations();
-});
-
-onBeforeUnmount(() => {
-  if (inviteSearchTimer.value) {
-    clearTimeout(inviteSearchTimer.value);
-  }
-  if (recordSearchTimer.value) {
-    clearTimeout(recordSearchTimer.value);
-  }
 });
 
 defineExpose({

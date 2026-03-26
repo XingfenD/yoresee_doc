@@ -3,10 +3,11 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Document, Clock, User } from '@element-plus/icons-vue';
 import {
   getKnowledgeBaseDetail,
-  createDocument as createDocumentApi,
-  listTemplates
+  createDocument as createDocumentApi
 } from '@/services/api.js';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
+import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale }) {
   const {
@@ -28,6 +29,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
     userStore,
     defaultActiveMenu: 'knowledge-base'
   });
+  const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
   const knowledgeBaseName = ref('');
   const knowledgeBaseDescription = ref('');
@@ -36,8 +38,17 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   const ownerName = ref('');
   const knowledgeBaseData = ref(null);
   const loading = ref(false);
-  const kbTemplates = ref([]);
-  const kbTemplatesLoading = ref(false);
+  const {
+    kbTemplates,
+    loadingKb: kbTemplatesLoading,
+    ensureLoaded: ensureTemplateCatalogLoaded
+  } = useTemplateCatalog({
+    includeKnowledgeBase: true,
+    knowledgeBaseId: computed(() => route.params.id || ''),
+    onError: (error) => {
+      console.error('获取知识库模板失败:', error);
+    }
+  });
 
   const searchKeyword = ref('');
   const sortBy = ref('name');
@@ -117,25 +128,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   };
 
   const fetchKnowledgeBaseTemplates = async () => {
-    const knowledgeBaseExternalID = route.params.id;
-    if (!knowledgeBaseExternalID || kbTemplatesLoading.value) return;
-
-    kbTemplatesLoading.value = true;
-    try {
-      const data = await listTemplates({
-        target_container: 'knowledge_base',
-        knowledge_base_id: knowledgeBaseExternalID,
-        order_by: 'updated_at',
-        order_desc: true,
-        page: 1,
-        page_size: 50
-      });
-      kbTemplates.value = data.templates || [];
-    } catch (error) {
-      console.error('获取知识库模板失败:', error);
-    } finally {
-      kbTemplatesLoading.value = false;
-    }
+    await ensureTemplateCatalogLoaded('knowledge_base');
   };
 
   const openCreateDocumentDialog = () => {
@@ -236,10 +229,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   };
 
   const init = async () => {
-    await fetchSystemInfo();
-    initLanguage();
-    await loadKnowledgeBaseDetail();
-    await fetchKnowledgeBaseTemplates();
+    await boot(loadKnowledgeBaseDetail, fetchKnowledgeBaseTemplates);
   };
 
   return {

@@ -92,6 +92,7 @@ import PageLayout from '@/components/PageLayout.vue';
 import TemplateListSection from '@/components/TemplateListSection.vue';
 import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 import { useTemplateListPage } from '@/composables/useTemplateListPage';
 
 const router = useRouter();
@@ -117,6 +118,7 @@ const {
   userStore,
   defaultActiveMenu: 'templates'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const {
   activeTab,
@@ -143,9 +145,7 @@ const {
 });
 
 onMounted(async () => {
-  await fetchSystemInfo();
-  initLanguage();
-  await init();
+  await boot(init);
 });
 </script>
 
