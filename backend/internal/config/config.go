@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -18,9 +19,8 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Mode        string `mapstructure:"mode"`
-	GrpcPort    int    `mapstructure:"grpc_port"`
-	GrpcWebPort int    `mapstructure:"grpc_web_port"`
+	GrpcPort    int `mapstructure:"grpc_port"`
+	GrpcWebPort int `mapstructure:"grpc_web_port"`
 }
 
 type DatabaseConfig struct {
@@ -67,10 +67,14 @@ const (
 
 type BackendConfig struct {
 	Jwt            JWTConfig `mapstructure:"jwt"`
+	Log            LogConfig `mapstructure:"log"`
 	SystemName     string    `mapstructure:"system_name"`
 	InternalRPCKey string    `mapstructure:"internal_rpc_key"`
-	// Log           LogConfig      `mapstructure:"log"`
-	// document      DocumentConfig `mapstructure:"document"`
+}
+
+type LogConfig struct {
+	Level        string `mapstructure:"level"`
+	GormLogLevel string `mapstructure:"gorm_log_level"`
 }
 
 type MQConfig struct {
@@ -108,6 +112,16 @@ func InitConfig() error {
 	if err := viper.Unmarshal(&GlobalConfig); err != nil {
 		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "unmarshal config failed")
 	}
+
+	levelText := strings.TrimSpace(GlobalConfig.Backend.Log.Level)
+	if levelText == "" {
+		levelText = "info"
+	}
+	level, err := logrus.ParseLevel(strings.ToLower(levelText))
+	if err != nil {
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "invalid backend.log.level")
+	}
+	logrus.SetLevel(level)
 
 	return nil
 }

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"gorm.io/driver/postgres"
@@ -15,9 +16,13 @@ func InitPostgres(cfg *config.DatabaseConfig) error {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Name)
 
-	var err error
+	gormLogLevel, err := resolveGormLogLevel()
+	if err != nil {
+		return err
+	}
+
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(gormLogLevel),
 	})
 	if err != nil {
 		return err
@@ -36,6 +41,34 @@ func InitPostgres(cfg *config.DatabaseConfig) error {
 	}
 
 	return nil
+}
+
+func resolveGormLogLevel() (logger.LogLevel, error) {
+	levelText := ""
+	if config.GlobalConfig != nil {
+		levelText = strings.TrimSpace(config.GlobalConfig.Backend.Log.GormLogLevel)
+		if levelText == "" {
+			levelText = strings.TrimSpace(config.GlobalConfig.Backend.Log.Level)
+		}
+	}
+	if levelText == "" {
+		levelText = "info"
+	}
+
+	switch strings.ToLower(levelText) {
+	case "silent":
+		return logger.Silent, nil
+	case "error":
+		return logger.Error, nil
+	case "warn", "warning":
+		return logger.Warn, nil
+	case "info", "debug", "trace":
+		return logger.Info, nil
+	case "fatal", "panic":
+		return logger.Error, nil
+	default:
+		return logger.Info, fmt.Errorf("invalid gorm log level: %s", levelText)
+	}
 }
 
 func ClosePostgres() error {
