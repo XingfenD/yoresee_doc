@@ -298,6 +298,7 @@ const {
   updateCurrentDocTitle,
   expandToCurrentDoc,
   commentSidebarRef,
+  isCommentCollapsed,
   cancelEditTitle,
   closeContextMenu,
   recordRecentDocument

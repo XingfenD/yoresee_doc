@@ -21,6 +21,7 @@ export function useDocumentEditorLifecycle({
   updateCurrentDocTitle,
   expandToCurrentDoc,
   commentSidebarRef,
+  isCommentCollapsed,
   cancelEditTitle,
   closeContextMenu,
   recordRecentDocument
@@ -41,7 +42,7 @@ export function useDocumentEditorLifecycle({
     }
   };
 
-  const toggleCommentSidebar = (isCommentCollapsed) => {
+  const toggleCommentSidebar = () => {
     isCommentCollapsed.value = !isCommentCollapsed.value;
   };
 
