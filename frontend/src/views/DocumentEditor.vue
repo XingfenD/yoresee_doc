@@ -130,6 +130,7 @@ import DocumentEditorHeader from '@/components/DocumentEditorHeader.vue';
 import PageLayout from '@/components/PageLayout.vue';
 import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
 import { usePanelSidebar } from '@/composables/usePanelSidebar';
+import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { useDocumentRouteContext } from '@/composables/useDocumentRouteContext';
 import { useDirectoryTreeState } from '@/composables/useDirectoryTreeState';
 import { useEditorCommentBridge } from '@/composables/useEditorCommentBridge';
@@ -160,7 +161,6 @@ const userStore = useUserStore();
 const {
   kbId,
   docId,
-  activeMenu,
   resolveActiveMenu,
   collabEnabled,
   collabRoom,
@@ -170,11 +170,25 @@ const {
   lastSyncedDocId
 } = useDocumentRouteContext({ props, route });
 
-const systemName = ref(userStore.systemName || 'Yoresee');
-const userInfo = computed(() => userStore.userInfo);
-const userAvatar = computed(() => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png');
-const currentLanguage = computed(() => locale.value);
-const isDarkMode = computed(() => userStore.darkMode);
+const {
+  systemName,
+  activeMenu,
+  isDarkMode,
+  userInfo,
+  userAvatar,
+  currentLanguage,
+  initLanguage,
+  handleLanguageChange,
+  toggleTheme,
+  handleLogout,
+  handleMenuSelect,
+  fetchSystemInfo
+} = useWorkspaceShell({
+  locale,
+  router,
+  userStore,
+  defaultActiveMenu: resolveActiveMenu(kbId.value)
+});
 
 const treeComponentRef = ref(null);
 const {
@@ -272,18 +286,12 @@ const {
 });
 const {
   toggleCommentSidebar,
-  handleCollabSync,
-  handleLanguageChange,
-  toggleTheme,
-  handleMenuSelect,
-  handleLogout
+  handleCollabSync
 } = useDocumentEditorLifecycle({
   props,
   route,
-  router,
-  locale,
-  userStore,
-  systemName,
+  initLanguage,
+  fetchSystemInfo,
   kbId,
   docId,
   activeMenu,

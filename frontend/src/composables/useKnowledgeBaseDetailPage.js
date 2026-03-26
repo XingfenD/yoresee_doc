@@ -6,24 +6,28 @@ import {
   createDocument as createDocumentApi,
   listTemplates
 } from '@/services/api.js';
+import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 
 export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale }) {
-  const systemName = ref('Yoresee');
-  const activeMenu = ref('knowledge-base');
-  const isDarkMode = computed(() => userStore.darkMode);
-
-  const currentLanguage = computed({
-    get: () => locale.value,
-    set: (value) => {
-      locale.value = value;
-      localStorage.setItem('language', value);
-    }
+  const {
+    systemName,
+    activeMenu,
+    isDarkMode,
+    currentLanguage,
+    userInfo,
+    userAvatar,
+    initLanguage,
+    handleLanguageChange,
+    toggleTheme,
+    handleLogout,
+    handleMenuSelect,
+    fetchSystemInfo
+  } = useWorkspaceShell({
+    locale,
+    router,
+    userStore,
+    defaultActiveMenu: 'knowledge-base'
   });
-
-  const userInfo = computed(() => userStore.userInfo);
-  const userAvatar = computed(
-    () => userInfo.value?.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
-  );
 
   const knowledgeBaseName = ref('');
   const knowledgeBaseDescription = ref('');
@@ -206,34 +210,6 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
     }
   };
 
-  const handleMenuSelect = (key) => {
-    activeMenu.value = key;
-  };
-
-  const handleLanguageChange = (command) => {
-    currentLanguage.value = command;
-  };
-
-  const toggleTheme = () => {
-    userStore.toggleDarkMode();
-  };
-
-  const initLanguage = () => {
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage) {
-      currentLanguage.value = savedLanguage;
-    }
-  };
-
-  const fetchSystemInfo = async () => {
-    try {
-      const info = await userStore.fetchSystemInfo();
-      systemName.value = info.system_name;
-    } catch (err) {
-      console.error('获取系统信息失败:', err);
-    }
-  };
-
   const handleSizeChange = async (val) => {
     pageSize.value = val;
     currentPage.value = 1;
@@ -243,11 +219,6 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   const handleCurrentChange = async (val) => {
     currentPage.value = val;
     await loadKnowledgeBaseDetail();
-  };
-
-  const handleLogout = () => {
-    userStore.logout();
-    router.push('/login');
   };
 
   const goBackToKnowledgeBase = () => {

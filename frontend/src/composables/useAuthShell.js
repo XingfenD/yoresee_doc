@@ -1,45 +1,22 @@
-import { computed, ref } from 'vue';
+import { useAppShellBase } from '@/composables/useAppShellBase';
 
 export function useAuthShell({ locale, userStore }) {
-  const systemName = ref('Yoresee');
-  const isDarkMode = computed(() => userStore.darkMode);
-  const currentLanguage = ref(localStorage.getItem('language') || 'en');
-
-  const handleLanguageChange = (command) => {
-    currentLanguage.value = command;
-    locale.value = command;
-    localStorage.setItem('language', command);
-  };
-
-  const toggleTheme = () => {
-    userStore.toggleDarkMode();
-  };
-
-  const initLanguage = () => {
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage) {
-      currentLanguage.value = savedLanguage;
-      locale.value = savedLanguage;
-    }
-  };
-
-  const fetchSystemInfo = async (onLoaded) => {
-    try {
-      const info = await userStore.fetchSystemInfo();
-      systemName.value = info.system_name;
-      onLoaded?.(info);
-    } catch (err) {
-      console.error('获取系统信息失败:', err);
-    }
-  };
+  const shell = useAppShellBase({
+    locale,
+    // auth 场景没有侧边栏路由跳转需求，这里提供一个空 router 适配基座 API
+    router: { push: () => {} },
+    userStore,
+    defaultActiveMenu: 'home',
+    menuItems: []
+  });
 
   return {
-    systemName,
-    isDarkMode,
-    currentLanguage,
-    handleLanguageChange,
-    toggleTheme,
-    initLanguage,
-    fetchSystemInfo
+    systemName: shell.systemName,
+    isDarkMode: shell.isDarkMode,
+    currentLanguage: shell.currentLanguage,
+    handleLanguageChange: shell.handleLanguageChange,
+    toggleTheme: shell.toggleTheme,
+    initLanguage: shell.initLanguage,
+    fetchSystemInfo: shell.fetchSystemInfo
   };
 }

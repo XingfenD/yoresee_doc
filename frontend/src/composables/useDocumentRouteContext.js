@@ -10,7 +10,6 @@ export function useDocumentRouteContext({ props, route }) {
     return 'home';
   };
 
-  const activeMenu = ref(resolveActiveMenu(kbId.value));
   const collabEnabled = computed(() => !!docId.value && docId.value !== 'example');
   const collabRoom = computed(() => (docId.value ? `${docId.value}` : ''));
   const collabUrl = computed(() => '/ws/doc');
@@ -21,7 +20,6 @@ export function useDocumentRouteContext({ props, route }) {
   return {
     kbId,
     docId,
-    activeMenu,
     resolveActiveMenu,
     collabEnabled,
     collabRoom,

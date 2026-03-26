@@ -22,18 +22,8 @@ export function useWorkspaceShell({
     menuItems: workspaceMenuItems
   });
 
-  const fetchSystemInfo = async () => {
-    try {
-      const info = await userStore.fetchSystemInfo();
-      shell.systemName.value = info.system_name;
-    } catch (err) {
-      console.error('获取系统信息失败:', err);
-    }
-  };
-
   return {
     ...shell,
     workspaceMenuItems,
-    fetchSystemInfo
   };
 }

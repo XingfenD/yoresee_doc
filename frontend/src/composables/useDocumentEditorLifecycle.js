@@ -3,10 +3,8 @@ import { onBeforeUnmount, onMounted, watch } from 'vue';
 export function useDocumentEditorLifecycle({
   props,
   route,
-  router,
-  locale,
-  userStore,
-  systemName,
+  initLanguage,
+  fetchSystemInfo,
   kbId,
   docId,
   activeMenu,
@@ -26,22 +24,6 @@ export function useDocumentEditorLifecycle({
   closeContextMenu,
   recordRecentDocument
 }) {
-  const initLanguage = () => {
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage) {
-      locale.value = savedLanguage;
-    }
-  };
-
-  const fetchSystemInfo = async () => {
-    try {
-      const info = await userStore.fetchSystemInfo();
-      systemName.value = info.system_name;
-    } catch (err) {
-      console.error('获取系统信息失败:', err);
-    }
-  };
-
   const toggleCommentSidebar = () => {
     isCommentCollapsed.value = !isCommentCollapsed.value;
   };
@@ -55,24 +37,6 @@ export function useDocumentEditorLifecycle({
     if (isSynced) {
       lastSyncedDocId.value = docId.value || '';
     }
-  };
-
-  const handleLanguageChange = (command) => {
-    locale.value = command;
-    localStorage.setItem('language', command);
-  };
-
-  const toggleTheme = () => {
-    userStore.toggleDarkMode();
-  };
-
-  const handleMenuSelect = (menu) => {
-    activeMenu.value = menu;
-  };
-
-  const handleLogout = () => {
-    userStore.logout();
-    router.push('/login');
   };
 
   onMounted(async () => {
@@ -131,6 +95,7 @@ export function useDocumentEditorLifecycle({
         return;
       }
       kbId.value = newKbId;
+      activeMenu.value = resolveActiveMenu(kbId.value);
       cancelEditTitle();
       await fetchDocuments();
       if (lastSyncedDocId.value !== docId.value) {
@@ -142,10 +107,6 @@ export function useDocumentEditorLifecycle({
 
   return {
     toggleCommentSidebar,
-    handleCollabSync,
-    handleLanguageChange,
-    toggleTheme,
-    handleMenuSelect,
-    handleLogout
+    handleCollabSync
   };
 }

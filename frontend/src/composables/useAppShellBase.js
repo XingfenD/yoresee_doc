@@ -41,6 +41,16 @@ export function useAppShellBase({ locale, router, userStore, defaultActiveMenu, 
     activeMenu.value = key;
   };
 
+  const fetchSystemInfo = async (onLoaded) => {
+    try {
+      const info = await userStore.fetchSystemInfo();
+      systemName.value = info.system_name;
+      onLoaded?.(info);
+    } catch (err) {
+      console.error('获取系统信息失败:', err);
+    }
+  };
+
   return {
     systemName,
     activeMenu,
@@ -53,6 +63,7 @@ export function useAppShellBase({ locale, router, userStore, defaultActiveMenu, 
     handleLanguageChange,
     toggleTheme,
     handleLogout,
-    handleMenuSelect
+    handleMenuSelect,
+    fetchSystemInfo
   };
 }

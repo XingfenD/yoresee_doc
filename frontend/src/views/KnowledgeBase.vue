@@ -77,22 +77,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/store/user";
-import { ElMessage, ElMessageBox } from "element-plus";
 import { useI18n } from "vue-i18n";
 import PageLayout from "@/components/PageLayout.vue";
 import KnowledgeBaseListSection from "@/components/KnowledgeBaseListSection.vue";
-import * as api from "@/services/api";
 import { useWorkspaceShell } from "@/composables/useWorkspaceShell";
+import { useKnowledgeBaseListPage } from "@/composables/useKnowledgeBaseListPage";
 
-// 国际化
 const { locale, t } = useI18n();
 const router = useRouter();
 const userStore = useUserStore();
 
-const activeTab = ref("my");
 const {
   systemName,
   activeMenu,
@@ -113,231 +110,34 @@ const {
   defaultActiveMenu: "knowledge-base"
 });
 
-// 最近访问的知识库
-const recentKnowledgeBases = ref([]);
-const recentPage = ref(1);
-const recentPageSize = ref(10);
-const recentTotal = ref(0);
-const recentLoading = ref(false);
-const recentLoaded = ref(false);
-
-// 我的知识库
-const myKnowledgeBases = ref([]);
-const myPage = ref(1);
-const myPageSize = ref(10);
-const myTotal = ref(0);
-const myLoading = ref(false);
-const myHasMore = computed(() => myKnowledgeBases.value.length < myTotal.value);
-const myTagMapper = (kb) =>
-  kb.is_public ? null : { type: "info", label: t("knowledgeBase.private") };
-const myMetaMapper = (kb) => [
-  { label: t("knowledgeBase.documentsCount"), value: kb.documents_count || 0 },
-  { label: t("knowledgeBase.updatedAt"), value: formatDate(kb.updated_at) },
-];
-
-// 公开知识库
-const publicKnowledgeBases = ref([]);
-const publicPage = ref(1);
-const publicPageSize = ref(10);
-const publicTotal = ref(0);
-const publicLoading = ref(false);
-const publicHasMore = computed(
-  () => publicKnowledgeBases.value.length < publicTotal.value
-);
-const publicMetaMapper = (kb) => [
-  { label: t("knowledgeBase.documentsCount"), value: kb.documents_count || 0 },
-  { label: t("knowledgeBase.owner"), value: kb.creator_name || t("common.unknown") },
-];
-
-const recentTagMapper = (kb) =>
-  kb.is_public ? { type: "success", label: t("knowledgeBase.public") } : null;
-
-const myLoaded = ref(false);
-const publicLoaded = ref(false);
-
-// 获取最近访问的知识库
-const fetchRecentKnowledgeBases = async (page = 1, pageSize = 10) => {
-  if (recentLoading.value) return;
-
-  recentLoading.value = true;
-
-  try {
-    const params = {
-      page: page,
-      page_size: pageSize,
-    };
-    const data = await api.getRecentKnowledgeBases(params);
-
-    if (page === 1) {
-      recentKnowledgeBases.value = data.knowledge_bases || [];
-    } else {
-      recentKnowledgeBases.value.push(...(data.knowledge_bases || []));
-    }
-
-    recentTotal.value = data.total || 0;
-    recentLoaded.value = true;
-  } catch (error) {
-    console.error("Failed to fetch recent knowledge bases:", error);
-    ElMessage.error(t("knowledgeBase.fetchError"));
-  } finally {
-    recentLoading.value = false;
-  }
-};
-
-// 获取我的知识库
-const fetchMyKnowledgeBases = async (page = 1, pageSize = 10) => {
-  if (myLoading.value) return;
-
-  myLoading.value = true;
-
-  try {
-    const params = {
-      page: page,
-      page_size: pageSize,
-      only_mine: true,
-    };
-
-    const data = await api.getKnowledgeBases(params);
-
-    if (page === 1) {
-      myKnowledgeBases.value = data.knowledge_bases || [];
-    } else {
-      myKnowledgeBases.value.push(...(data.knowledge_bases || []));
-    }
-
-    myTotal.value = data.total || 0;
-    myLoaded.value = true;
-  } catch (error) {
-    console.error("Failed to fetch my knowledge bases:", error);
-    ElMessage.error(t("knowledgeBase.fetchError"));
-  } finally {
-    myLoading.value = false;
-  }
-};
-
-// 获取公开知识库
-const fetchPublicKnowledgeBases = async (page = 1, pageSize = 10) => {
-  if (publicLoading.value) return;
-
-  publicLoading.value = true;
-
-  try {
-    const params = {
-      page: page,
-      page_size: pageSize,
-      is_public: true, // 获取公开知识库
-    };
-
-    const data = await api.getKnowledgeBases(params);
-
-    if (page === 1) {
-      publicKnowledgeBases.value = data.knowledge_bases || [];
-    } else {
-      publicKnowledgeBases.value.push(...(data.knowledge_bases || []));
-    }
-
-    publicTotal.value = data.total || 0;
-    publicLoaded.value = true;
-  } catch (error) {
-    console.error("Failed to fetch public knowledge bases:", error);
-    ElMessage.error(t("knowledgeBase.fetchError"));
-  } finally {
-    publicLoading.value = false;
-  }
-};
-
-// 加载更多我的知识库
-const loadMoreMyKnowledgeBases = async () => {
-  if (!myHasMore.value || myLoading.value) return;
-
-  myPage.value++;
-  await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
-};
-
-// 加载更多公开知识库
-const loadMorePublicKnowledgeBases = async () => {
-  if (!publicHasMore.value || publicLoading.value) return;
-
-  publicPage.value++;
-  await fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value);
-};
-
-// 创建知识库
-const createKnowledgeBase = async () => {
-  try {
-    const { value } = await ElMessageBox.prompt(
-      t("knowledgeBase.createPrompt"),
-      t("knowledgeBase.createNew"),
-      {
-        confirmButtonText: t("button.confirm"),
-        cancelButtonText: t("button.cancel"),
-        inputPlaceholder: t("knowledgeBase.createPlaceholder"),
-        inputValidator: (val) => {
-          if (!val || !val.trim()) {
-            return t("knowledgeBase.titleRequired");
-          }
-          return true;
-        }
-      }
-    );
-
-    const name = value.trim();
-    const resp = await api.createKnowledgeBase({ name, is_public: false });
-    ElMessage.success(t("knowledgeBase.createSuccess"));
-
-    activeTab.value = "my";
-    myPage.value = 1;
-    await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
-
-    if (resp?.external_id) {
-      router.push(`/knowledge-base/${resp.external_id}`);
-    }
-  } catch (error) {
-    if (error !== "cancel") {
-      ElMessage.error(t("common.requestFailed"));
-    }
-  }
-};
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return t("common.unknown");
-
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-};
-
-// 查看知识库详情
-const viewKnowledgeBase = (kb) => {
-  router.push(`/knowledge-base/${kb.external_id}`);
-};
-
-// 访问知识库
-const accessKnowledgeBase = (kb) => {
-  router.push(`/knowledge-base/${kb.external_id}`);
-};
-
-onMounted(async () => {
-  // 获取系统信息
-  await fetchSystemInfo();
-
-  // 初始化主题和语言
-  initLanguage();
-
-  // 默认加载我的知识库
-  await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
+const {
+  activeTab,
+  recentKnowledgeBases,
+  myKnowledgeBases,
+  publicKnowledgeBases,
+  myLoading,
+  publicLoading,
+  myHasMore,
+  publicHasMore,
+  myTagMapper,
+  recentTagMapper,
+  myMetaMapper,
+  publicMetaMapper,
+  createKnowledgeBase,
+  loadMoreMyKnowledgeBases,
+  loadMorePublicKnowledgeBases,
+  viewKnowledgeBase,
+  accessKnowledgeBase,
+  init
+} = useKnowledgeBaseListPage({
+  t,
+  router
 });
 
-watch(activeTab, async (tab) => {
-  if (tab === "my" && !myLoaded.value) {
-    await fetchMyKnowledgeBases(myPage.value, myPageSize.value);
-  }
-  if (tab === "recent" && !recentLoaded.value) {
-    await fetchRecentKnowledgeBases(recentPage.value, recentPageSize.value);
-  }
-  if (tab === "public" && !publicLoaded.value) {
-    await fetchPublicKnowledgeBases(publicPage.value, publicPageSize.value);
-  }
+onMounted(async () => {
+  await fetchSystemInfo();
+  initLanguage();
+  await init();
 });
 </script>
 
