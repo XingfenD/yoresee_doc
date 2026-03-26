@@ -20,7 +20,7 @@
     </template>
 
     <div class="documents-content" v-loading="loading">
-      <RecentDocumentsSection
+      <DocumentListSection
         :title="t('home.myDocuments')"
         :items="documents"
         :empty-text="t('home.noMyDocuments')"
@@ -59,7 +59,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import RecentDocumentsSection from '@/components/RecentDocumentsSection.vue';
+import DocumentListSection from '@/components/DocumentListSection.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import { getMyDocuments, createDocument as createDocumentApi } from '@/services/api';
 

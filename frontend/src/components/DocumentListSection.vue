@@ -1,5 +1,5 @@
 <template>
-  <div class="recent-documents-section">
+  <div class="document-list-section">
     <div class="section-header">
       <h3 class="section-title">{{ title }}</h3>
       <el-button v-if="showViewAll" link type="primary" @click="handleViewAll">
@@ -11,12 +11,6 @@
       <el-card v-for="doc in items" :key="doc.id" class="document-item">
         <div class="item-card-header">
           <h4 class="item-title">{{ doc.title }}</h4>
-          <el-tag v-if="doc.status === 'draft'" type="warning" size="small">
-            {{ t('document.draft') }}
-          </el-tag>
-          <el-tag v-else type="success" size="small">
-            {{ t('document.published') }}
-          </el-tag>
         </div>
         
         <div class="item-meta">
@@ -114,7 +108,7 @@ const handleEdit = (doc) => {
 </script>
 
 <style scoped>
-.recent-documents-section {
+.document-list-section {
   display: flex;
   flex-direction: column;
   background-color: var(--bg-white);

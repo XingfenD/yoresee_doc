@@ -14,14 +14,15 @@
   >
     <div class="home-horizontal-layout">
       <div class="home-column">
-        <RecentDocumentsSection
+        <DocumentListSection
           :title="t('home.recentDocuments')"
           :items="recentDocuments"
           :empty-text="t('home.noRecentDocuments')"
           :show-view-all="true"
+          :single-action="true"
+          :primary-action-label="t('common.open')"
           @view-all="goToDocuments"
           @view-item="viewDocument"
-          @edit-item="editDocument"
         />
       </div>
 
@@ -46,7 +47,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
 import PageLayout from '@/components/PageLayout.vue';
-import RecentDocumentsSection from '@/components/RecentDocumentsSection.vue';
+import DocumentListSection from '@/components/DocumentListSection.vue';
 import KnowledgeBaseListSection from '@/components/KnowledgeBaseListSection.vue';
 import { getRecentKnowledgeBases, getRecentDocuments } from '@/services/api';
 
@@ -107,13 +108,7 @@ const goToKnowledgeBases = () => {
 
 // 文档相关方法
 const viewDocument = (doc) => {
-  console.log('View document:', doc);
-  // TODO: 实现查看文档功能
-};
-
-const editDocument = (doc) => {
-  console.log('Edit document:', doc);
-  // TODO: 实现编辑文档功能
+  router.push(`/mydocument/${doc.id}`);
 };
 
 const accessKnowledgeBase = (kb) => {
@@ -212,7 +207,7 @@ onMounted(() => {
 }
 
 .home-column :deep(.vertical-section),
-.home-column :deep(.recent-documents-section) {
+.home-column :deep(.document-list-section) {
   width: 100%;
 }
 
