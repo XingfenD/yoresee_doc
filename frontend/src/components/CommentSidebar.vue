@@ -96,6 +96,7 @@ const { t } = useI18n();
 
 const commentList = ref([]);
 const loading = ref(false);
+const loadVersion = ref(0);
 const inlineEmptyText = '暂无行内评论';
 const COMMENT_WIDTH_KEY = 'commentSidebarWidth';
 const MIN_COMMENT_WIDTH = 280;
@@ -123,6 +124,12 @@ const titleWithCount = computed(() => {
 const flattenComments = (items) => {
   if (!Array.isArray(items) || items.length === 0) return [];
   const childrenMap = new Map();
+  const idSet = new Set();
+  items.forEach((item) => {
+    if (item?.external_id) {
+      idSet.add(item.external_id);
+    }
+  });
   items.forEach((item) => {
     const parentId = item.parent_external_id || '';
     if (!childrenMap.has(parentId)) {
@@ -144,7 +151,13 @@ const flattenComments = (items) => {
     children.forEach((child) => walk(child, level + 1));
   };
 
-  const roots = childrenMap.get('') || [];
+  const roots = [];
+  items.forEach((item) => {
+    const parentId = item.parent_external_id || '';
+    if (!parentId || !idSet.has(parentId)) {
+      roots.push(item);
+    }
+  });
   roots.forEach((root) => walk(root, 0));
   return result;
 };
@@ -315,6 +328,7 @@ const saveEdit = async (item) => {
 
 const deleteCommentItem = async (item) => {
   if (!item) return;
+  const deletedAnchorId = item.anchor_id;
   if (item.external_id) {
     try {
       await ElMessageBox.confirm(
@@ -400,11 +414,15 @@ const copyComment = async (item) => {
 };
 
 const loadComments = async () => {
+  const requestVersion = ++loadVersion.value;
+  const requestDocId = props.docId;
   if (!props.docId || props.docId === 'example' || !props.inlineEnabled) {
     commentList.value = [];
+    if (requestVersion === loadVersion.value) {
+      loading.value = false;
+    }
     return;
   }
-  if (loading.value) return;
 
   loading.value = true;
   try {
@@ -413,6 +431,9 @@ const loadComments = async () => {
       page: 1,
       page_size: 100
     });
+    if (requestVersion !== loadVersion.value || requestDocId !== props.docId) {
+      return;
+    }
     commentList.value = (resp.comments || [])
       .filter((item) => item.anchor_id)
       .map((item) => ({
@@ -430,9 +451,14 @@ const loadComments = async () => {
         saving: false
       }));
   } catch (error) {
+    if (requestVersion !== loadVersion.value || requestDocId !== props.docId) {
+      return;
+    }
     commentList.value = [];
   } finally {
-    loading.value = false;
+    if (requestVersion === loadVersion.value) {
+      loading.value = false;
+    }
   }
 };
 
@@ -466,6 +492,8 @@ const formatCommentTime = (value) => {
 watch(
   () => props.docId,
   async () => {
+    commentList.value = [];
+    loading.value = false;
     await loadComments();
   },
   { immediate: true }
