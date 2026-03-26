@@ -1,47 +1,40 @@
 <template>
-  <div class="knowledge-base-detail-container">
-    <TopNav
-      :system-name="systemName"
-      :current-language="currentLanguage"
-      :is-dark-mode="isDarkMode"
-      :user-avatar="userAvatar"
-      :username="userInfo?.username || t('common.unknown')"
-      @change-language="handleLanguageChange"
-      @toggle-theme="toggleTheme"
-      @logout="handleLogout"
-    />
+  <PageLayout
+    :system-name="systemName"
+    :current-language="currentLanguage"
+    :is-dark-mode="isDarkMode"
+    :user-avatar="userAvatar"
+    :username="userInfo?.username || t('common.unknown')"
+    :active-menu="activeMenu"
+    :title="''"
+    content-padding="xl"
+    @change-language="handleLanguageChange"
+    @toggle-theme="toggleTheme"
+    @logout="handleLogout"
+    @menu-select="handleMenuSelect"
+  >
+    <TitleBar :show-back="true" :back-text="t('common.back')" @back="goBackToKnowledgeBase">
+      <template #actions>
+        <el-button type="primary" @click="openCreateDocumentDialog">
+          {{ t("knowledgeBase.createDocument") }}
+        </el-button>
+      </template>
+    </TitleBar>
 
-    <!-- 主内容区 -->
-    <div class="main-content">
-      <!-- 左侧导航 -->
-      <SideNav :active-menu="activeMenu" @menu-select="handleMenuSelect" />
+    <div class="detail-content" v-loading="loading">
+      <InfoStatsCard
+        v-if="knowledgeBaseData"
+        :title="knowledgeBaseName"
+        :description="knowledgeBaseDescription"
+        :stats="knowledgeBaseStats"
+      />
+      <div v-else-if="!loading" class="empty-state">
+        <el-empty :description="t('message.empty')" />
+      </div>
 
-      <!-- 右侧内容 -->
-      <div class="content-area">
-        <!-- 操作栏 -->
-        <TitleBar :show-back="true" :back-text="t('common.back')" @back="goBackToKnowledgeBase">
-          <template #actions>
-            <el-button type="primary" @click="openCreateDocumentDialog">
-              {{ t("knowledgeBase.createDocument") }}
-            </el-button>
-          </template>
-        </TitleBar>
-
-        <!-- 知识库详情内容 -->
-        <div class="detail-content" v-loading="loading">
-          <InfoStatsCard
-            v-if="knowledgeBaseData"
-            :title="knowledgeBaseName"
-            :description="knowledgeBaseDescription"
-            :stats="knowledgeBaseStats"
-          />
-          <div v-else-if="!loading" class="empty-state">
-            <el-empty :description="t('message.empty')" />
-          </div>
-
-          <div class="detail-columns">
-            <!-- 文档树形结构 -->
-            <div class="document-tree-section">
+      <div class="detail-columns">
+        <!-- 文档树形结构 -->
+        <div class="document-tree-section">
             <div class="section-header">
               <h3 class="section-title">{{ t("knowledgeBase.documentStructure") }}</h3>
 
@@ -110,26 +103,24 @@
                 :total="totalDocumentsCount" layout="total, sizes, prev, pager, next, jumper"
                 @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
-          </div>
-            <div class="kb-templates-section">
-              <div v-loading="kbTemplatesLoading">
-                <TemplateListSection
-                  :title="t('knowledgeBase.templates')"
-                  :items="kbTemplates"
-                  :empty-text="t('templates.noMy')"
-                  :fallback-description="t('templates.noDescription')"
-                  :tag-mapper="templateTagMapper"
-                  :meta-mapper="templateMetaMapper"
-                  :action-label="t('common.open')"
-                  @open="openTemplate"
-                />
-              </div>
-            </div>
+        </div>
+        <div class="kb-templates-section">
+          <div v-loading="kbTemplatesLoading">
+            <TemplateListSection
+              :title="t('knowledgeBase.templates')"
+              :items="kbTemplates"
+              :empty-text="t('templates.noMy')"
+              :fallback-description="t('templates.noDescription')"
+              :tag-mapper="templateTagMapper"
+              :meta-mapper="templateMetaMapper"
+              :action-label="t('common.open')"
+              @open="openTemplate"
+            />
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </PageLayout>
 
   <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
     :knowledge-base-id="route.params.id || ''" @submit="createDocument"
@@ -142,8 +133,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/store/user";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
-import SideNav from "@/components/SideNav.vue";
-import TopNav from "@/components/TopNav.vue";
+import PageLayout from "@/components/PageLayout.vue";
 import TitleBar from "@/components/TitleBar.vue";
 import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
@@ -462,31 +452,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.knowledge-base-detail-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-light);
-  transition: all 0.3s ease;
-}
-
-/* 顶部导航栏 */
-
-/* 主内容区 */
-.main-content {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-/* 右侧内容区域 */
-.content-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-xl);
-  background-color: var(--bg-light);
-}
-
 /* 知识库详情内容 */
 .detail-content {
   display: flex;
@@ -621,10 +586,6 @@ onMounted(async () => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .content-area {
-    padding: var(--spacing-md);
-  }
-
   .tree-controls {
     flex-direction: column;
     align-items: stretch;

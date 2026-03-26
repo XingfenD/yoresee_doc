@@ -1,122 +1,115 @@
 <template>
-  <div class="document-editor-container">
-    <TopNav
-      :system-name="systemName"
-      :current-language="currentLanguage"
-      :is-dark-mode="isDarkMode"
-      :user-avatar="userAvatar"
-      :username="userInfo?.username || '用户'"
-      @change-language="handleLanguageChange"
-      @toggle-theme="toggleTheme"
-      @logout="handleLogout"
-    />
+  <PageLayout
+    :system-name="systemName"
+    :current-language="currentLanguage"
+    :is-dark-mode="isDarkMode"
+    :user-avatar="userAvatar"
+    :username="userInfo?.username || '用户'"
+    :active-menu="activeMenu"
+    :title="''"
+    content-padding="lg"
+    @change-language="handleLanguageChange"
+    @toggle-theme="toggleTheme"
+    @logout="handleLogout"
+    @menu-select="handleMenuSelect"
+  >
+    <div class="editor-layout">
+      <DirectorySidebar
+        ref="treeComponentRef"
+        :collapsed="isSidebarCollapsed"
+        :resizing="isSidebarResizing"
+        :title="knowledgeBaseName"
+        :collapse-title="t('common.collapse')"
+        :back-label="t('common.back')"
+        :nodes="directoryTree"
+        :loading="treeLoading"
+        :current-id="docId"
+        :expand-all="isAllExpanded"
+        :disable-delete="!docId"
+        @back="goBack"
+        @toggle="toggleSidebar"
+        @resize-start="startResize"
+        @toggle-expand="toggleExpandAll"
+        @node-click="handleTreeNodeClick"
+        @create="handleCreateFromTree"
+        @delete="handleDeleteDocument"
+        @rename="handleRenameFromTree"
+      />
 
-    <!-- 主内容区 -->
-    <div class="main-content">
-      <!-- 左侧导航 -->
-      <SideNav :active-menu="activeMenu" scene="home" @menu-select="handleMenuSelect" />
-
-      <!-- 右侧内容 -->
-      <div class="content-area">
-        <div class="editor-layout">
-          <DirectorySidebar
-            ref="treeComponentRef"
-            :collapsed="isSidebarCollapsed"
-            :resizing="isSidebarResizing"
-            :title="knowledgeBaseName"
-            :collapse-title="t('common.collapse')"
-            :back-label="t('common.back')"
-            :nodes="directoryTree"
-            :loading="treeLoading"
-            :current-id="docId"
-            :expand-all="isAllExpanded"
-            :disable-delete="!docId"
-            @back="goBack"
-            @toggle="toggleSidebar"
-            @resize-start="startResize"
-            @toggle-expand="toggleExpandAll"
-            @node-click="handleTreeNodeClick"
-            @create="handleCreateFromTree"
-            @delete="handleDeleteDocument"
-            @rename="handleRenameFromTree"
-          />
-
-          <main class="editor-main">
-            <DocumentEditorHeader
-              :is-editing-title="isEditingTitle"
-              :current-doc-title="currentDocTitle"
-              :pending-title="pendingTitle"
-              :is-sidebar-collapsed="isSidebarCollapsed"
-              :title-placeholder="t('knowledgeBase.enterDocumentTitle')"
-              :collapse-title="t('common.collapse')"
-              :expand-title="t('common.expand')"
-              :comments-title="t('document.comments')"
-              :save-as-label="t('templates.saveAs')"
-              @update:pending-title="pendingTitle = $event"
-              @start-edit-title="startEditTitle"
-              @commit-title="commitTitle"
-              @cancel-edit-title="cancelEditTitle"
-              @toggle-sidebar="toggleSidebar"
-              @toggle-comment-sidebar="toggleCommentSidebar"
-              @header-command="handleHeaderCommand"
-            />
-            <div class="editor-content">
-              <div class="editor-wrapper">
-                <div v-if="collabEnabled && !collabReady" class="editor-loading">
-                  {{ t('document.loading') }}
-                </div>
-                <MarkdownEditor
-                  ref="markdownEditorRef"
-                  v-model="editorContent"
-                  :placeholder="t('document.editorPlaceholder')"
-                  :collab-enabled="collabEnabled"
-                  :collab-room="collabRoom"
-                  :collab-url="collabUrl"
-                  :collab-token="collabToken"
-                  :comment-enabled="inlineCommentEnabled"
-                  @collab-sync="handleCollabSync"
-                  @comment-add="handleInlineCommentAdd"
-                  @comment-remove="handleInlineCommentRemove"
-                  @comment-changed="handleRemoteCommentChanged"
-                />
-              </div>
+      <main class="editor-main">
+        <DocumentEditorHeader
+          :is-editing-title="isEditingTitle"
+          :current-doc-title="currentDocTitle"
+          :pending-title="pendingTitle"
+          :is-sidebar-collapsed="isSidebarCollapsed"
+          :title-placeholder="t('knowledgeBase.enterDocumentTitle')"
+          :collapse-title="t('common.collapse')"
+          :expand-title="t('common.expand')"
+          :comments-title="t('document.comments')"
+          :save-as-label="t('templates.saveAs')"
+          @update:pending-title="pendingTitle = $event"
+          @start-edit-title="startEditTitle"
+          @commit-title="commitTitle"
+          @cancel-edit-title="cancelEditTitle"
+          @toggle-sidebar="toggleSidebar"
+          @toggle-comment-sidebar="toggleCommentSidebar"
+          @header-command="handleHeaderCommand"
+        />
+        <div class="editor-content">
+          <div class="editor-wrapper">
+            <div v-if="collabEnabled && !collabReady" class="editor-loading">
+              {{ t('document.loading') }}
             </div>
-
-          </main>
-          <CommentSidebar
-            ref="commentSidebarRef"
-            :title="t('document.comments')"
-            :collapse-title="t('common.collapse')"
-            :collapsed="isCommentCollapsed"
-            :doc-id="docId"
-            :inline-enabled="inlineCommentEnabled"
-            :user-info="userInfo"
-            :on-anchor-click="scrollToInlineAnchor"
-            :on-anchor-hover="handleAnchorHover"
-            :on-anchor-remove="handleAnchorRemove"
-            :on-comment-mutated="handleCommentMutated"
-            @toggle="toggleCommentSidebar"
-          />
+            <MarkdownEditor
+              ref="markdownEditorRef"
+              v-model="editorContent"
+              :placeholder="t('document.editorPlaceholder')"
+              :collab-enabled="collabEnabled"
+              :collab-room="collabRoom"
+              :collab-url="collabUrl"
+              :collab-token="collabToken"
+              :comment-enabled="inlineCommentEnabled"
+              @collab-sync="handleCollabSync"
+              @comment-add="handleInlineCommentAdd"
+              @comment-remove="handleInlineCommentRemove"
+              @comment-changed="handleRemoteCommentChanged"
+            />
+          </div>
         </div>
-      </div>
+
+      </main>
+      <CommentSidebar
+        ref="commentSidebarRef"
+        :title="t('document.comments')"
+        :collapse-title="t('common.collapse')"
+        :collapsed="isCommentCollapsed"
+        :doc-id="docId"
+        :inline-enabled="inlineCommentEnabled"
+        :user-info="userInfo"
+        :on-anchor-click="scrollToInlineAnchor"
+        :on-anchor-hover="handleAnchorHover"
+        :on-anchor-remove="handleAnchorRemove"
+        :on-comment-mutated="handleCommentMutated"
+        @toggle="toggleCommentSidebar"
+      />
     </div>
-    <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
-      :parent-external-id="pendingParentId" :knowledge-base-id="kbId !== 'personal' ? kbId : ''"
-      @submit="createDocument" @cancel="cancelCreateDocument" />
-    <TemplateCreateDialog
-      v-model="showTemplateDialog"
-      :loading="savingTemplate"
-      :title="t('templates.createDialogTitle')"
-      :show-content="false"
-      :show-kb-scope="kbId !== 'personal'"
-      :initial-name="templateDialogInit.name"
-      :initial-description="templateDialogInit.description"
-      :initial-scope="templateDialogInit.scope"
-      :initial-tags="templateDialogInit.tags"
-      :initial-content="templateDialogInit.content"
-      @submit="submitCreateTemplate"
-    />
-  </div>
+  </PageLayout>
+  <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
+    :parent-external-id="pendingParentId" :knowledge-base-id="kbId !== 'personal' ? kbId : ''"
+    @submit="createDocument" @cancel="cancelCreateDocument" />
+  <TemplateCreateDialog
+    v-model="showTemplateDialog"
+    :loading="savingTemplate"
+    :title="t('templates.createDialogTitle')"
+    :show-content="false"
+    :show-kb-scope="kbId !== 'personal'"
+    :initial-name="templateDialogInit.name"
+    :initial-description="templateDialogInit.description"
+    :initial-scope="templateDialogInit.scope"
+    :initial-tags="templateDialogInit.tags"
+    :initial-content="templateDialogInit.content"
+    @submit="submitCreateTemplate"
+  />
 </template>
 
 <script>
@@ -134,8 +127,7 @@ import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import CommentSidebar from '@/components/CommentSidebar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentEditorHeader from '@/components/DocumentEditorHeader.vue';
-import SideNav from '@/components/SideNav.vue';
-import TopNav from '@/components/TopNav.vue';
+import PageLayout from '@/components/PageLayout.vue';
 import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
 import { usePanelSidebar } from '@/composables/usePanelSidebar';
 import { useDocumentRouteContext } from '@/composables/useDocumentRouteContext';
@@ -313,33 +305,6 @@ const {
 </script>
 
 <style scoped>
-.document-editor-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-light);
-}
-
-.dark-mode .document-editor-container {
-  background-color: var(--bg-light);
-}
-
-/* 顶部导航栏 */
-
-/* 主内容区 */
-.main-content {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-.content-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-lg);
-  background-color: var(--bg-light);
-}
-
 .editor-layout {
   display: flex;
   height: 100%;
