@@ -238,6 +238,12 @@ const {
 
 <style scoped>
 .common-list {
+  --list-cell-bg: var(--bg-white);
+  --list-cell-text: var(--text-dark);
+  --list-cell-border: #d6dbe3;
+  --list-head-bg: #e5ebf2;
+  --list-head-text: #1f2937;
+  --list-head-border: #aeb8c6;
   background: var(--bg-white);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
@@ -254,6 +260,12 @@ const {
 }
 
 .common-list.is-dark {
+  --list-cell-bg: #161b22;
+  --list-cell-text: #e5e7eb;
+  --list-cell-border: #2a313a;
+  --list-head-bg: #202734;
+  --list-head-text: #e5edf8;
+  --list-head-border: #4a5668;
   background: #161b22;
   border-color: #161b22;
 }

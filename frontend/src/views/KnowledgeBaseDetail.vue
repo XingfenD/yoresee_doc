@@ -61,9 +61,9 @@
                 @node-click="handleTreeNodeClick"
               >
                 <template #node-extra="{ data }">
-                  <el-tag v-if="data.tags && data.tags.length > 0" size="small" type="info" class="node-tag">
+                  <AppTag v-if="data.tags && data.tags.length > 0" size="small" type="info" class="node-tag">
                     {{ data.tags[0] }}
-                  </el-tag>
+                  </AppTag>
                 </template>
                 <template #node-actions="{ data }">
                   <el-button size="small" type="primary" text @click.stop="openDocument(data)">
@@ -138,6 +138,7 @@ import DocumentTree from "@/components/DocumentTree.vue";
 import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
 import TemplateListSection from "@/components/TemplateListSection.vue";
 import InfoStatsCard from "@/components/InfoStatsCard.vue";
+import AppTag from "@/components/AppTag.vue";
 import { MoreFilled } from "@element-plus/icons-vue";
 import { useKnowledgeBaseDetailPage } from "@/composables/useKnowledgeBaseDetailPage";
 
@@ -304,10 +305,7 @@ onMounted(async () => {
 }
 
 .node-tag {
-  height: 22px;
-  padding: 0 var(--spacing-xs);
-  font-size: 12px;
-  line-height: 20px;
+  flex-shrink: 0;
 }
 
 .node-actions {
@@ -452,41 +450,6 @@ onMounted(async () => {
 
 .dark-mode .node-actions {
   color: var(--text-medium);
-}
-
-/* 夜间模式下的标签样式 */
-.dark-mode .node-tag {
-  background-color: rgba(64, 128, 255, 0.1);
-  /* 更暗的背景色 */
-  border-color: rgba(64, 128, 255, 0.2);
-  /* 更暗的边框色 */
-  color: var(--text-light);
-  /* 调整文字颜色为更浅的灰色 */
-}
-
-/* 夜间模式下的Element Plus标签样式 */
-.dark-mode :deep(.el-tag--info) {
-  background-color: rgba(64, 128, 255, 0.1);
-  border-color: rgba(64, 128, 255, 0.2);
-  color: var(--text-light);
-}
-
-.dark-mode :deep(.el-tag--success) {
-  background-color: rgba(51, 209, 122, 0.1);
-  border-color: rgba(51, 209, 122, 0.2);
-  color: var(--text-light);
-}
-
-.dark-mode :deep(.el-tag--warning) {
-  background-color: rgba(255, 152, 0, 0.1);
-  border-color: rgba(255, 152, 0, 0.2);
-  color: var(--text-light);
-}
-
-.dark-mode :deep(.el-tag--danger) {
-  background-color: rgba(255, 82, 82, 0.1);
-  border-color: rgba(255, 82, 82, 0.2);
-  color: var(--text-light);
 }
 
 /* 深色模式对话框样式 */

@@ -27,9 +27,9 @@
           {{ template?.name || t('templates.untitled') }}
         </div>
         <div class="template-preview-meta">
-          <el-tag v-if="scopeLabel" size="small" :type="scopeTagType">
+          <AppTag v-if="scopeLabel" size="small" :type="scopeTagType">
             {{ scopeLabel }}
-          </el-tag>
+          </AppTag>
           <span class="template-preview-date" v-if="template?.updated_at || template?.updatedAt">
             {{ t('templates.updatedAt') }}: {{ formatDate(template?.updated_at || template?.updatedAt) }}
           </span>
@@ -70,6 +70,7 @@ import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import TitleBar from '@/components/TitleBar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
+import AppTag from '@/components/AppTag.vue';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { useTemplatePreviewPage } from '@/composables/useTemplatePreviewPage';
 

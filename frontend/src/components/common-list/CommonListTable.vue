@@ -63,8 +63,9 @@ defineProps({
   min-width: 0;
   padding: 12px 14px;
   font-size: 13px;
-  color: var(--text-dark);
-  border-bottom: 1px solid #d6dbe3;
+  color: var(--list-cell-text, var(--text-dark));
+  border-bottom: 1px solid var(--list-cell-border, #d6dbe3);
+  background: var(--list-cell-bg, var(--bg-white));
   display: flex;
   align-items: center;
   gap: 8px;
@@ -73,9 +74,9 @@ defineProps({
 .list-cell--head {
   font-size: 12px;
   font-weight: 700;
-  color: #1f2937;
-  background: #e5ebf2;
-  border-bottom-color: #aeb8c6;
+  color: var(--list-head-text, #1f2937);
+  background: var(--list-head-bg, #e5ebf2);
+  border-bottom-color: var(--list-head-border, #aeb8c6);
 }
 
 .list-row:last-child .list-cell {
@@ -97,15 +98,4 @@ defineProps({
   text-align: right;
 }
 
-:global(.common-list.is-dark) .list-cell {
-  color: #e5e7eb;
-  border-bottom-color: #2a313a;
-  background: #161b22;
-}
-
-:global(.common-list.is-dark) .list-cell--head {
-  color: #e5edf8;
-  background: #202734;
-  border-bottom-color: #4a5668;
-}
 </style>

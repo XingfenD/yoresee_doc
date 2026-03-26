@@ -133,7 +133,7 @@ defineEmits(['toggle-scroll']);
 }
 
 .tree-toggle-cell {
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--list-cell-border, var(--border-color));
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -162,8 +162,9 @@ defineEmits(['toggle-scroll']);
   min-width: 0;
   padding: 12px 14px;
   font-size: 13px;
-  color: var(--text-dark);
-  border-bottom: 1px solid #d6dbe3;
+  color: var(--list-cell-text, var(--text-dark));
+  border-bottom: 1px solid var(--list-cell-border, #d6dbe3);
+  background: var(--list-cell-bg, var(--bg-white));
   display: flex;
   align-items: center;
   gap: 8px;
@@ -172,13 +173,13 @@ defineEmits(['toggle-scroll']);
 .list-cell--head {
   font-size: 12px;
   font-weight: 700;
-  color: #1f2937;
-  background: #e5ebf2;
-  border-bottom-color: #aeb8c6;
+  color: var(--list-head-text, #1f2937);
+  background: var(--list-head-bg, #e5ebf2);
+  border-bottom-color: var(--list-head-border, #aeb8c6);
 }
 
 .list-cell--tree {
-  border-bottom: 1px solid #d6dbe3;
+  border-bottom: 1px solid var(--list-cell-border, #d6dbe3);
 }
 
 .is-left {
@@ -200,7 +201,8 @@ defineEmits(['toggle-scroll']);
   width: var(--tree-toggle-width);
   overflow-x: auto;
   overflow-y: hidden;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--list-cell-border, var(--border-color));
+  background: var(--list-cell-bg, var(--bg-white));
 }
 
 .tree-toggle-scrollbar-inner {
@@ -223,8 +225,8 @@ defineEmits(['toggle-scroll']);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-dark);
-  background: var(--bg-white);
+  color: var(--list-cell-text, var(--text-dark));
+  background: var(--list-cell-bg, var(--bg-white));
   cursor: pointer;
 }
 
@@ -246,46 +248,4 @@ defineEmits(['toggle-scroll']);
   color: var(--text-medium);
 }
 
-:global(.common-list.is-dark) .list-cell {
-  color: #e5e7eb;
-  border-bottom-color: #2a313a;
-  background: #161b22;
-}
-
-:global(.common-list.is-dark) .list-cell--head {
-  color: #e5edf8;
-  background: #202734;
-  border-bottom-color: #4a5668;
-}
-
-:global(.common-list.is-dark) .list-cell--tree {
-  border-bottom-color: #2a313a;
-}
-
-:global(.common-list.is-dark) .tree-toggle-cell {
-  border-right-color: #2a313a;
-}
-
-:global(.common-list.is-dark) .tree-toggle-scrollbar {
-  border-right-color: #2a313a;
-}
-
-:global(.common-list.is-dark) .tree-toggle {
-  background: #1b2230;
-  color: #e5e7eb;
-  border-color: #2a313a;
-}
-
-:global(.common-list.is-dark) .tree-toggle:hover {
-  color: #ffffff;
-  border-color: #4a90ff;
-}
-
-:global(.common-list.is-dark) .tree-node-label {
-  color: #e5e7eb;
-}
-
-:global(.common-list.is-dark) .tree-leaf-indicator {
-  background: #6b7280;
-}
 </style>

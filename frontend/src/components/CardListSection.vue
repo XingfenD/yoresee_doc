@@ -13,9 +13,9 @@
         <template #header>
           <div class="card-header">
             <span class="item-name">{{ resolveItemTitle(item) }}</span>
-            <el-tag v-if="resolveTag(item)" :type="resolveTag(item).type" size="small">
+            <AppTag v-if="resolveTag(item)" :type="resolveTag(item).type" size="small">
               {{ resolveTag(item).label }}
-            </el-tag>
+            </AppTag>
           </div>
         </template>
 
@@ -52,6 +52,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import AppTag from '@/components/AppTag.vue';
 
 const props = defineProps({
   title: { type: String, default: '' },

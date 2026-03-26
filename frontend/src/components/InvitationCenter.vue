@@ -21,9 +21,9 @@
         :title="tabListLabel"
       >
         <template #cell-status="{ value }">
-          <el-tag :type="inviteStatusType(value)" size="small">
+          <AppTag :type="inviteStatusType(value)" size="small">
             {{ inviteStatusLabel(value) }}
-          </el-tag>
+          </AppTag>
         </template>
         <template #cell-usage="{ row }">
           {{ row.used }}/{{ row.max === null ? '-' : row.max }}
@@ -65,9 +65,9 @@
         :title="tabRecordsLabel"
       >
         <template #cell-status="{ value }">
-          <el-tag :type="value === 'success' ? 'success' : 'warning'" size="small">
+          <AppTag :type="value === 'success' ? 'success' : 'warning'" size="small">
             {{ value === 'success' ? recordsSuccessLabel : recordsFailedLabel }}
-          </el-tag>
+          </AppTag>
         </template>
       </CommonList>
     </el-tab-pane>
@@ -82,6 +82,7 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import CommonList from '@/components/CommonList.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
+import AppTag from '@/components/AppTag.vue';
 import { listInvitations, listInvitationRecords, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
 
 const props = defineProps({

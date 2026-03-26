@@ -38,9 +38,9 @@
             :title="t('system.user.placeholderTitle')"
           >
             <template #cell-status="{ row }">
-              <span :class="['status-pill', row.status === 1 ? 'is-active' : 'is-disabled']">
+              <AppTag :type="row.status === 1 ? 'success' : 'danger'" size="small">
                 {{ row.status === 1 ? t('user.active') : t('user.disabled') }}
-              </span>
+              </AppTag>
             </template>
             <template #cell-actions="{ row }">
               <el-button size="small" text type="primary" @click="openEditDialog(row)">
@@ -89,6 +89,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
+import AppTag from '@/components/AppTag.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { listUsers, updateUser } from '@/services/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -271,25 +272,6 @@ onBeforeUnmount(() => {
 
 .section-body {
   padding: 0;
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.status-pill.is-active {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-}
-
-.status-pill.is-disabled {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
 }
 
 .dark-mode .manage-section {

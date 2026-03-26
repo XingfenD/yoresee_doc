@@ -62,9 +62,9 @@
         </div>
       </template>
       <template #cell-type="{ value }">
-        <el-tag size="small" :type="tagType(value)">
+        <AppTag size="small" :type="tagType(value)">
           {{ tagLabel(value) }}
-        </el-tag>
+        </AppTag>
       </template>
       <template #cell-created_at="{ value }">
         {{ formatDate(value) }}
@@ -89,6 +89,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import CommonList from '@/components/CommonList.vue';
+import AppTag from '@/components/AppTag.vue';
 import { useUserShell } from '@/composables/useUserShell';
 import { useNotificationCenter } from '@/composables/useNotificationCenter';
 
