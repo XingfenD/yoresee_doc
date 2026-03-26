@@ -270,6 +270,30 @@ onMounted(() => {
     mode: 'wysiwyg',
     theme: 'classic',
     icon: 'ant',
+    toolbar: [
+      'headings',
+      'bold',
+      'italic',
+      'strike',
+      '|',
+      'list',
+      'ordered-list',
+      'check',
+      '|',
+      'link',
+      'quote',
+      'code',
+      'table',
+      '|',
+      'edit-mode',
+      'undo',
+      'redo',
+      'outline',
+      'fullscreen'
+    ],
+    toolbarConfig: {
+      hide: false
+    },
     customWysiwygToolbar: () => [],
     counter: {
       enable: true
