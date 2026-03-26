@@ -19,35 +19,27 @@
       <!-- 右侧内容 -->
       <div class="content-area">
         <div class="editor-layout">
-          <div class="sidebar-container" :class="{ 'collapsed': isSidebarCollapsed }">
-            <aside class="sidebar">
-              <div class="sidebar-header">
-                <el-button text class="back-button" @click="goBack">
-                  <el-icon>
-                    <ArrowLeft />
-                  </el-icon>
-                  {{ t('common.back') }}
-                </el-button>
-              </div>
-              <div class="sidebar-title">
-                {{ knowledgeBaseName }}
-              </div>
-              <DocumentTree
-                ref="treeComponentRef"
-                :nodes="directoryTree"
-                :loading="treeLoading"
-                :current-id="docId"
-                :expand-all="isAllExpanded"
-                :disable-delete="!docId"
-                @toggle-expand="toggleExpandAll"
-                @node-click="handleTreeNodeClick"
-                @create="handleCreateFromTree"
-                @delete="handleDeleteDocument"
-                @rename="handleRenameFromTree"
-              />
-            </aside>
-            <div class="sidebar-resizer" role="separator" aria-orientation="vertical" @mousedown="startResize"></div>
-          </div>
+          <DirectorySidebar
+            ref="treeComponentRef"
+            :collapsed="isSidebarCollapsed"
+            :resizing="isSidebarResizing"
+            :title="knowledgeBaseName"
+            :collapse-title="t('common.collapse')"
+            :back-label="t('common.back')"
+            :nodes="directoryTree"
+            :loading="treeLoading"
+            :current-id="docId"
+            :expand-all="isAllExpanded"
+            :disable-delete="!docId"
+            @back="goBack"
+            @toggle="toggleSidebar"
+            @resize-start="startResize"
+            @toggle-expand="toggleExpandAll"
+            @node-click="handleTreeNodeClick"
+            @create="handleCreateFromTree"
+            @delete="handleDeleteDocument"
+            @rename="handleRenameFromTree"
+          />
 
           <main class="editor-main">
             <div class="editor-header">
@@ -174,14 +166,15 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, Expand, Fold, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
+import { Expand, Fold, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
+import DirectorySidebar from '@/components/DirectorySidebar.vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import CommentSidebar from '@/components/CommentSidebar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
-import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
 import TopNav from '@/components/TopNav.vue';
 import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
+import { usePanelSidebar } from '@/composables/usePanelSidebar';
 import { useUserStore } from '@/store/user';
 import {
   getKnowledgeBaseDocuments,
@@ -239,17 +232,34 @@ const collabReady = ref(false);
 const lastSyncedDocId = ref('');
 
 const treeLoading = ref(false);
-const sidebarWidth = ref(280);
-const isResizingSidebar = ref(false);
+const {
+  collapsed: isSidebarCollapsed,
+  resizing: isSidebarResizing,
+  toggleCollapsed: toggleSidebar,
+  startResize
+} = usePanelSidebar({
+  defaultWidth: 280,
+  minWidth: 220,
+  maxWidth: 520,
+  resizeEdge: 'right',
+  collapsedStorageKey: 'sidebarCollapsed',
+  widthStorageKey: 'docSidebarWidth',
+  getMaxWidth: () => {
+    const layoutRect = document.querySelector('.editor-layout')?.getBoundingClientRect();
+    if (!layoutRect) return 520;
+    return Math.min(520, layoutRect.width - 320);
+  },
+  onWidthChange: (value) => {
+    document.documentElement.style.setProperty('--sidebar-width', `${value}px`);
+  }
+});
 const showCreateDialog = ref(false);
 const creatingLoading = ref(false);
 const pendingParentId = ref(null);
 const treeComponentRef = ref(null);
 
-const treeRef = computed(() => treeComponentRef.value?.treeRef);
+const treeRef = computed(() => treeComponentRef.value?.getTreeRef());
 const isAllExpanded = ref(true);
-const savedState = localStorage.getItem('sidebarCollapsed');
-const isSidebarCollapsed = ref(savedState ? JSON.parse(savedState) : false);
 const isCommentCollapsed = ref(false);
 const markdownEditorRef = ref(null);
 const commentSidebarRef = ref(null);
@@ -350,20 +360,6 @@ const scrollToInlineAnchor = (id) => {
     editor.hlCommentIds([id]);
   }
 };
-
-// 更新CSS变量以支持宽度调节
-const updateSidebarWidth = () => {
-  document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth.value}px`);
-};
-
-// 初始化和监听宽度变化
-onMounted(() => {
-  updateSidebarWidth();
-});
-
-watch(sidebarWidth, () => {
-  updateSidebarWidth();
-});
 
 const directoryTree = ref([]);
 
@@ -492,59 +488,6 @@ const submitCreateTemplate = async (payload) => {
     savingTemplate.value = false;
   }
 };
-
-const onResizeMove = (event) => {
-  if (!isResizingSidebar.value) {
-    return;
-  }
-  const layoutRect = document.querySelector('.editor-layout')?.getBoundingClientRect();
-  if (!layoutRect) {
-    return;
-  }
-  const minWidth = 220;
-  const maxWidth = Math.min(520, layoutRect.width - 320);
-  const nextWidth = Math.min(Math.max(event.clientX - layoutRect.left, minWidth), maxWidth);
-  sidebarWidth.value = nextWidth;
-};
-
-const stopResize = () => {
-  if (!isResizingSidebar.value) {
-    return;
-  }
-  isResizingSidebar.value = false;
-  document.body.style.cursor = '';
-  document.body.style.userSelect = '';
-  // 重新启用过渡动画
-  const sidebarContainer = document.querySelector('.sidebar-container');
-  const sidebar = document.querySelector('.sidebar');
-  if (sidebarContainer) {
-    sidebarContainer.style.transition = 'all 0.3s ease-in-out';
-  }
-  if (sidebar) {
-    sidebar.style.transition = 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out, width 0.3s ease-in-out';
-  }
-  window.removeEventListener('mousemove', onResizeMove);
-  window.removeEventListener('mouseup', stopResize);
-};
-
-const startResize = (event) => {
-  event.preventDefault();
-  isResizingSidebar.value = true;
-  document.body.style.cursor = 'col-resize';
-  document.body.style.userSelect = 'none';
-  // 禁用过渡动画，使调整更跟手
-  const sidebarContainer = document.querySelector('.sidebar-container');
-  const sidebar = document.querySelector('.sidebar');
-  if (sidebarContainer) {
-    sidebarContainer.style.transition = 'none';
-  }
-  if (sidebar) {
-    sidebar.style.transition = 'none';
-  }
-  window.addEventListener('mousemove', onResizeMove);
-  window.addEventListener('mouseup', stopResize);
-};
-
 
 const transformDocumentsToTree = (documents, parentId = null) => {
   const tree = [];
@@ -767,11 +710,6 @@ const toggleExpandAll = () => {
   }
 };
 
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value;
-  localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed.value));
-};
-
 const toggleCommentSidebar = () => {
   isCommentCollapsed.value = !isCommentCollapsed.value;
 };
@@ -845,7 +783,6 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  stopResize();
   if (remoteCommentReloadTimer) {
     clearTimeout(remoteCommentReloadTimer);
     remoteCommentReloadTimer = null;
@@ -932,94 +869,6 @@ watch(
   overflow: hidden;
   transition: all 0.3s ease-in-out;
 }
-
-.sidebar-container {
-  display: flex;
-  align-items: stretch;
-  position: relative;
-  width: calc(var(--sidebar-width) + 6px);
-  overflow: hidden;
-  flex-shrink: 0;
-  transition: all 0.3s ease-in-out;
-}
-
-.sidebar-container.collapsed {
-  width: 0;
-}
-
-.sidebar-container.collapsed .sidebar {
-  transform: translateX(-100%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.sidebar-container.collapsed .sidebar-resizer {
-  display: none;
-}
-
-.sidebar {
-  background-color: var(--bg-white);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  width: var(--sidebar-width);
-  max-width: 520px;
-  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, width 0.3s ease-in-out;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.dark-mode .sidebar {
-  background-color: var(--bg-white);
-  border-color: var(--border-color);
-}
-
-.sidebar-header {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.dark-mode .sidebar-header {
-  border-color: var(--border-color);
-}
-
-.sidebar-title {
-  padding: var(--spacing-md);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-dark);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dark-mode .sidebar-title {
-  color: var(--text-dark);
-  border-color: var(--border-color);
-}
-
-.sidebar-resizer {
-  width: 6px;
-  cursor: col-resize;
-  background-color: var(--bg-light);
-  border-right: 1px solid var(--border-color);
-  transition: background-color 0.2s ease;
-}
-
-.sidebar-resizer:hover {
-  background-color: var(--bg-medium);
-}
-
-.dark-mode .sidebar-resizer {
-  background-color: var(--bg-medium);
-  border-color: var(--border-color);
-}
-
-.dark-mode .sidebar-resizer:hover {
-  background-color: var(--bg-white);
-}
-
 
 .editor-main {
   flex: 1;
