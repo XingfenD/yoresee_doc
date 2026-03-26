@@ -21,7 +21,7 @@ func createAdminUserInTx(tx *gorm.DB) error {
 		ExternalID:   externalID,
 		Username:     "admin",
 		PasswordHash: hashedPwd,
-		Email:        "admin@example.com",
+		Email:        "admin@yoresee.cc",
 		Nickname:     "Admin",
 		Status:       1,
 	}

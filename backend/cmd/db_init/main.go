@@ -12,12 +12,10 @@ import (
 )
 
 func main() {
-	// 初始化配置
 	if err := config.InitConfig(); err != nil {
 		logrus.Fatalf("Init config failed: %v", err)
 	}
 
-	// 初始化数据库连接
 	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
 		logrus.Fatalf("Init Postgres failed: %v", err)
 	}
@@ -29,11 +27,9 @@ func main() {
 		logrus.Fatal("Consul is required for config, but it is not enabled")
 	}
 
-	// 检查数据库是否已初始化
 	if isDatabaseInitialized() {
 		logrus.Println("Database already initialized, skipping initialization steps")
 	} else {
-		// 在事务中执行初始化操作
 		if err := initializeDatabaseInTransaction(); err != nil {
 			logrus.Fatalf("Database initialization failed: %v", err)
 		}
@@ -63,7 +59,6 @@ func isDatabaseInitialized() bool {
 
 func initializeDatabaseInTransaction() error {
 	return utils.WithTransaction(func(tx *gorm.DB) error {
-		// 执行各个初始化函数
 		if err := initializePermissionsInTx(tx); err != nil {
 			return err
 		}

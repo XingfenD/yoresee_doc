@@ -22,12 +22,11 @@ func initializeKnowledgeBasesInTx(tx *gorm.DB) error {
 		return nil
 	}
 
-	// 创建默认知识库
 	defaultKnowledgeBase := model.KnowledgeBase{
 		ExternalID:    utils.GenerateExternalID("kb"),
 		Name:          "默认知识库",
 		Description:   "系统默认创建的知识库，用于存储常用文档和资料",
-		Cover:         "", // 可以设置默认封面图片URL
+		Cover:         "",
 		CreatorUserID: adminUser.ID,
 		IsPublic:      false,
 	}
@@ -36,7 +35,6 @@ func initializeKnowledgeBasesInTx(tx *gorm.DB) error {
 		return err
 	}
 
-	// 创建另一个示例知识库
 	exampleKnowledgeBase := model.KnowledgeBase{
 		ExternalID:    utils.GenerateExternalID("kb"),
 		Name:          "示例知识库",

@@ -26,7 +26,7 @@ func createNormalUserInTx(tx *gorm.DB) error {
 			ExternalID:   externalID,
 			Username:     "user" + userNum,
 			PasswordHash: hashedPwd,
-			Email:        "user" + userNum + "@example.com",
+			Email:        "user" + userNum + "@yoresee.cc",
 			Nickname:     "User " + userNum,
 			Status:       1,
 		}
@@ -40,13 +40,11 @@ func createNormalUserInTx(tx *gorm.DB) error {
 			logrus.Printf("User%s created successfully with ID: %s in transaction.\n", userNum, user.ExternalID)
 		} else {
 			logrus.Printf("User%s already exists in transaction.\n", userNum)
-			// 获取已存在的用户信息
 			if err := tx.Where("email = ?", user.Email).First(&user).Error; err != nil {
 				return err
 			}
 		}
 
-		// 使用用户的身份创建一个知识库
 		logrus.Printf("Creating knowledge base for user%s...\n", userNum)
 
 		kbExternalID := utils.GenerateExternalID("kb")
@@ -54,11 +52,10 @@ func createNormalUserInTx(tx *gorm.DB) error {
 			ExternalID:    kbExternalID,
 			Name:          "User" + userNum + "'s Knowledge Base",
 			Description:   "Knowledge base created by user" + userNum,
-			CreatorUserID: user.ID, // 使用用户的ID
+			CreatorUserID: user.ID,
 			IsPublic:      false,
 		}
 
-		// 检查知识库是否已存在
 		var kbCount int64
 		tx.Model(&model.KnowledgeBase{}).Where("name = ?", knowledgeBase.Name).Count(&kbCount)
 		if kbCount == 0 {
