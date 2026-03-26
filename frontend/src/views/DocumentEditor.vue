@@ -121,6 +121,7 @@
                   @collab-sync="handleCollabSync"
                   @comment-add="handleInlineCommentAdd"
                   @comment-remove="handleInlineCommentRemove"
+                  @comment-changed="handleRemoteCommentChanged"
                 />
               </div>
             </div>
@@ -137,6 +138,7 @@
             :on-anchor-click="scrollToInlineAnchor"
             :on-anchor-hover="handleAnchorHover"
             :on-anchor-remove="handleAnchorRemove"
+            :on-comment-mutated="handleCommentMutated"
             @toggle="toggleCommentSidebar"
           />
         </div>
@@ -261,6 +263,7 @@ const templateDialogInit = ref({
   tags: '',
   content: ''
 });
+let remoteCommentReloadTimer = null;
 
 const getVditorInstance = () => markdownEditorRef.value?.getVditor?.();
 
@@ -294,6 +297,20 @@ const handleAnchorRemove = (ids) => {
     return;
   }
   editor.removeCommentIds(Array.isArray(ids) ? ids : [ids]);
+};
+
+const handleCommentMutated = () => {
+  markdownEditorRef.value?.broadcastCommentChange?.();
+};
+
+const handleRemoteCommentChanged = () => {
+  if (remoteCommentReloadTimer) {
+    clearTimeout(remoteCommentReloadTimer);
+  }
+  remoteCommentReloadTimer = setTimeout(() => {
+    commentSidebarRef.value?.reload?.();
+    remoteCommentReloadTimer = null;
+  }, 250);
 };
 
 const highlightInlineComment = (id) => {
@@ -829,6 +846,10 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   stopResize();
+  if (remoteCommentReloadTimer) {
+    clearTimeout(remoteCommentReloadTimer);
+    remoteCommentReloadTimer = null;
+  }
   window.removeEventListener('click', closeContextMenu);
   window.removeEventListener('scroll', closeContextMenu, true);
 });

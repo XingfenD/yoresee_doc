@@ -87,7 +87,8 @@ const props = defineProps({
   userInfo: { type: Object, default: null },
   onAnchorClick: { type: Function, default: null },
   onAnchorHover: { type: Function, default: null },
-  onAnchorRemove: { type: Function, default: null }
+  onAnchorRemove: { type: Function, default: null },
+  onCommentMutated: { type: Function, default: null }
 });
 
 defineEmits(['toggle']);
@@ -300,6 +301,9 @@ const saveEdit = async (item) => {
       item.creator_user_external_id = saved?.creator_user_external_id || item.creator_user_external_id;
       item.editing = false;
       item.draft = '';
+      if (typeof props.onCommentMutated === 'function') {
+        props.onCommentMutated({ type: 'update', comment_id: item.external_id, anchor_id: item.anchor_id });
+      }
     } else {
       const resp = await createDocumentComment({
         document_external_id: props.docId,
@@ -318,6 +322,9 @@ const saveEdit = async (item) => {
       item.anchor_id = saved?.anchor_id || item.anchor_id;
       item.editing = false;
       item.draft = '';
+      if (typeof props.onCommentMutated === 'function') {
+        props.onCommentMutated({ type: 'create', comment_id: item.external_id, anchor_id: item.anchor_id });
+      }
     }
   } catch (error) {
     ElMessage.error(t('common.requestFailed'));
@@ -341,6 +348,9 @@ const deleteCommentItem = async (item) => {
         }
       );
       await deleteDocumentComment(item.external_id);
+      if (typeof props.onCommentMutated === 'function') {
+        props.onCommentMutated({ type: 'delete', comment_id: item.external_id, anchor_id: deletedAnchorId });
+      }
     } catch (error) {
       return;
     }

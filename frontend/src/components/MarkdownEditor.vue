@@ -53,7 +53,8 @@ const emit = defineEmits([
   'comment-add',
   'comment-remove',
   'comment-scroll',
-  'comment-adjust'
+  'comment-adjust',
+  'comment-changed'
 ]);
 
 const editorRef = ref(null);
@@ -62,6 +63,8 @@ let themeObserver = null;
 let ydoc = null;
 let provider = null;
 let ytext = null;
+let ycommentMeta = null;
+let commentMetaObserver = null;
 let activeRoom = '';
 let isVditorReady = false;
 let suppressInput = false;
@@ -81,7 +84,16 @@ const removeCommentIds = (ids = []) => {
     syncEditorToYjs();
   });
 };
-defineExpose({ getVditor: getVditorInstance, removeCommentIds });
+const broadcastCommentChange = () => {
+  if (!props.collabEnabled || !ydoc) {
+    return;
+  }
+  if (!ycommentMeta) {
+    ycommentMeta = ydoc.getMap('comment_meta');
+  }
+  ycommentMeta.set('tick', `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+};
+defineExpose({ getVditor: getVditorInstance, removeCommentIds, broadcastCommentChange });
 
 const getEditableElement = () => {
   if (!vditor) {
@@ -205,6 +217,14 @@ const setupCollaboration = () => {
 
   ydoc = new Y.Doc();
   ytext = ydoc.getText('content');
+  ycommentMeta = ydoc.getMap('comment_meta');
+  commentMetaObserver = (event) => {
+    if (event?.transaction?.local) {
+      return;
+    }
+    emit('comment-changed');
+  };
+  ycommentMeta.observe(commentMetaObserver);
   activeRoom = props.collabRoom;
   provider = new WebsocketProvider(url, props.collabRoom, ydoc, {
     params: props.collabToken ? { token: props.collabToken } : {}
@@ -274,6 +294,11 @@ const setupCollaboration = () => {
 };
 
 const teardownCollaboration = () => {
+  if (ycommentMeta && commentMetaObserver) {
+    ycommentMeta.unobserve(commentMetaObserver);
+  }
+  ycommentMeta = null;
+  commentMetaObserver = null;
   if (provider) {
     provider.destroy();
     provider = null;
