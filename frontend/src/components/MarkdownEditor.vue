@@ -69,7 +69,19 @@ let collabSynced = false;
 let pendingSeed = '';
 
 const getVditorInstance = () => vditor;
-defineExpose({ getVditor: getVditorInstance });
+const removeCommentIds = (ids = []) => {
+  if (!vditor || typeof vditor.removeCommentIds !== 'function') {
+    return;
+  }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return;
+  }
+  vditor.removeCommentIds(ids);
+  queueMicrotask(() => {
+    syncEditorToYjs();
+  });
+};
+defineExpose({ getVditor: getVditorInstance, removeCommentIds });
 
 const getEditableElement = () => {
   if (!vditor) {

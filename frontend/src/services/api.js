@@ -51,8 +51,7 @@ const {
   CreateDocumentCommentRequest,
   ListDocumentCommentsRequest,
   DeleteDocumentCommentRequest,
-  UpdateDocumentCommentRequest,
-  CommentScope
+  UpdateDocumentCommentRequest
 } = messages;
 
 function baseToObject(resp) {
@@ -963,8 +962,7 @@ export const listDocumentComments = async (params = {}) => {
   const req = new ListDocumentCommentsRequest({
     documentExternalId: params.document_external_id || '',
     page: params.page || 1,
-    pageSize: params.page_size || 10,
-    scope: params.scope ?? CommentScope.COMMENT_SCOPE_ALL
+    pageSize: params.page_size || 10
   });
   const resp = await unaryCall(commentClient, 'listDocumentComments', req);
   const base = baseToObject(resp);
@@ -1043,8 +1041,5 @@ export default {
   createDocumentComment,
   listDocumentComments,
   deleteDocumentComment,
-  updateDocumentComment,
-  CommentScope
+  updateDocumentComment
 };
-
-export { CommentScope };

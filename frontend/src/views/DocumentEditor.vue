@@ -119,7 +119,6 @@
                   :collab-token="collabToken"
                   :comment-enabled="inlineCommentEnabled"
                   @collab-sync="handleCollabSync"
-                  @ready="handleEditorReady"
                   @comment-add="handleInlineCommentAdd"
                   @comment-remove="handleInlineCommentRemove"
                 />
@@ -127,131 +126,19 @@
             </div>
 
           </main>
-          <div class="comment-container" :class="{ 'collapsed': isCommentCollapsed }">
-            <aside class="comment-sidebar">
-              <div class="comment-header">
-                <div class="comment-title">{{ t('document.comments') }}</div>
-                <el-button text class="collapse-button" @click="toggleCommentSidebar" :title="t('common.collapse')">
-                  <el-icon>
-                    <ArrowRight />
-                  </el-icon>
-                </el-button>
-              </div>
-              <div class="comment-body">
-                <CommentList
-                  v-if="inlineCommentEnabled"
-                  title="行内评论"
-                  :items="inlineComments"
-                  empty-text="暂无行内评论"
-                  key-field="anchor_id"
-                >
-                  <template #item="{ item }">
-                    <CommentItem
-                      :avatar="item.creator_avatar"
-                      :author="item.creator_name"
-                      :time="formatCommentTime(item.created_at)"
-                      :content="item.content"
-                      :editing="item.editing"
-                      :actions="getInlineActions(item)"
-                      :content-clickable="true"
-                      :replyable="true"
-                      reply-label="回复"
-                      @action="(action) => handleInlineAction(item, action)"
-                      @content-click="scrollToInlineAnchor(item.anchor_id)"
-                      @reply="startInlineReply(item)"
-                      @mouseenter="highlightInlineComment(item.anchor_id)"
-                      @mouseleave="unhighlightInlineComment(item.anchor_id)"
-                    >
-                      <template #editor>
-                        <div class="inline-comment-editor">
-                          <el-input
-                            v-model="item.draft"
-                            type="textarea"
-                            :autosize="{ minRows: 2, maxRows: 4 }"
-                            placeholder="输入评论内容..."
-                          />
-                          <div class="inline-comment-editor-actions">
-                            <el-button size="small" type="primary" :loading="item.saving" @click="saveInlineComment(item)">保存</el-button>
-                            <el-button size="small" text @click="cancelInlineComment(item)">取消</el-button>
-                          </div>
-                        </div>
-                      </template>
-                    </CommentItem>
-                  </template>
-                </CommentList>
-
-                <CommentList
-                  :show-title="false"
-                  :items="displayComments"
-                  :empty-text="t('document.commentEmpty')"
-                  key-field="external_id"
-                >
-                  <template #item="{ item }">
-                    <CommentItem
-                      :class="{ 'comment-item--reply': item.level > 0 }"
-                      :style="{ paddingLeft: `${Math.min(item.level, 3) * 16}px` }"
-                      :avatar="item.creator_avatar"
-                      :author="item.creator_name"
-                      :time="formatCommentTime(item.created_at)"
-                      :content="item.content"
-                      :reply-text="item.parent_external_id ? t('document.commentReplyTo', { name: getParentName(item) }) : ''"
-                      :actions="getCommentActions(item)"
-                      :editing="item.editing"
-                      :replyable="true"
-                      reply-label="回复"
-                      @action="(action) => handleCommentAction(item, action)"
-                      @reply="startReply(item)"
-                    >
-                      <template #editor>
-                        <div class="inline-comment-editor">
-                          <el-input
-                            v-model="item.draft"
-                            type="textarea"
-                            :autosize="{ minRows: 2, maxRows: 4 }"
-                            placeholder="输入评论内容..."
-                          />
-                          <div class="inline-comment-editor-actions">
-                            <el-button size="small" type="primary" :loading="item.saving" @click="saveCommentEdit(item)">保存</el-button>
-                            <el-button size="small" text @click="cancelCommentEdit(item)">取消</el-button>
-                          </div>
-                        </div>
-                      </template>
-                    </CommentItem>
-                  </template>
-                </CommentList>
-              </div>
-              <div v-if="commentTotal > commentPageSize" class="comment-pagination">
-                <el-pagination
-                  background
-                  layout="prev, pager, next"
-                  :page-size="commentPageSize"
-                  :total="commentTotal"
-                  v-model:current-page="commentPage"
-                  @current-change="handleCommentPageChange"
-                />
-              </div>
-              <div class="comment-footer">
-                <div v-if="replyTarget" class="reply-hint">
-                  <span>
-                    {{ t('document.commentReplyingTo', { name: replyTarget.name }) }}
-                    <span v-if="replyTarget.content" class="reply-hint-snippet">
-                      {{ formatReplySnippet(replyTarget.content) }}
-                    </span>
-                  </span>
-                  <el-button text size="small" @click="cancelReply">{{ t('document.commentCancelReply') }}</el-button>
-                </div>
-                <el-input
-                  v-model="commentInput"
-                  type="textarea"
-                  :rows="3"
-                  :placeholder="replyTarget ? t('document.commentReplyPlaceholder') : t('document.commentPlaceholder')"
-                />
-                <el-button type="primary" size="small" :loading="commentSending" @click="submitComment">
-                  {{ t('document.commentSend') }}
-                </el-button>
-              </div>
-            </aside>
-          </div>
+          <CommentSidebar
+            ref="commentSidebarRef"
+            :title="t('document.comments')"
+            :collapse-title="t('common.collapse')"
+            :collapsed="isCommentCollapsed"
+            :doc-id="docId"
+            :inline-enabled="inlineCommentEnabled"
+            :user-info="userInfo"
+            :on-anchor-click="scrollToInlineAnchor"
+            :on-anchor-hover="handleAnchorHover"
+            :on-anchor-remove="handleAnchorRemove"
+            @toggle="toggleCommentSidebar"
+          />
         </div>
       </div>
     </div>
@@ -285,10 +172,9 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, ArrowRight, Check, Edit, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
+import { ArrowLeft, ArrowRight, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
-import CommentList from '@/components/CommentList.vue';
-import CommentItem from '@/components/CommentItem.vue';
+import CommentSidebar from '@/components/CommentSidebar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import DocumentTree from '@/components/DocumentTree.vue';
 import SideNav from '@/components/SideNav.vue';
@@ -301,12 +187,7 @@ import {
   createTemplate as createTemplateApi,
   getMyDocuments,
   updateDocumentMeta,
-  listDocumentComments,
-  createDocumentComment,
-  deleteDocumentComment,
-  recordRecentDocument,
-  CommentScope,
-  updateDocumentComment
+  recordRecentDocument
 } from '@/services/api';
 
 const props = defineProps({
@@ -368,34 +249,9 @@ const isAllExpanded = ref(true);
 const savedState = localStorage.getItem('sidebarCollapsed');
 const isSidebarCollapsed = ref(savedState ? JSON.parse(savedState) : false);
 const isCommentCollapsed = ref(false);
-const commentInput = ref('');
-const commentList = ref([]);
-const commentPage = ref(1);
-const commentPageSize = ref(6);
-const commentTotal = ref(0);
-const commentLoading = ref(false);
-const commentSending = ref(false);
-const replyTarget = ref(null);
-const displayComments = computed(() => flattenComments(commentList.value));
-const inlineComments = ref([]);
 const markdownEditorRef = ref(null);
+const commentSidebarRef = ref(null);
 const inlineCommentEnabled = computed(() => !!docId.value && docId.value !== 'example');
-const getInlineActions = (item) => {
-  const canModify = canModifyInlineComment(item);
-  return [
-    { key: 'copy', label: t('common.copy') },
-    { key: 'edit', label: t('common.edit'), disabled: !canModify },
-    { key: 'delete', label: t('document.commentDelete'), danger: true, disabled: !canModify }
-  ];
-};
-const getCommentActions = (item) => {
-  const canModify = canDeleteComment(item);
-  return [
-    { key: 'copy', label: t('common.copy') },
-    { key: 'edit', label: t('common.edit'), disabled: !canModify },
-    { key: 'delete', label: t('document.commentDelete'), danger: true, disabled: !canModify }
-  ];
-};
 const savingTemplate = ref(false);
 const showTemplateDialog = ref(false);
 const templateDialogInit = ref({
@@ -406,75 +262,38 @@ const templateDialogInit = ref({
   content: ''
 });
 
-const loadInlineComments = async () => {
-  if (!docId.value || docId.value === 'example') {
-    inlineComments.value = [];
-    return;
-  }
-  try {
-    const resp = await listDocumentComments({
-      document_external_id: docId.value,
-      page: 1,
-      page_size: 100,
-      scope: CommentScope.COMMENT_SCOPE_INLINE
-    });
-    inlineComments.value = (resp.comments || []).map((item) => ({
-      anchor_id: item.anchor_id,
-      external_id: item.external_id,
-      content: item.content,
-      created_at: item.created_at,
-      creator_name: item.creator_name,
-      creator_user_external_id: item.creator_user_external_id,
-      creator_avatar: item.creator_avatar,
-      editing: false,
-      draft: '',
-      saving: false
-    }));
-  } catch (error) {
-    inlineComments.value = [];
-  }
-};
-
 const getVditorInstance = () => markdownEditorRef.value?.getVditor?.();
 
-const handleEditorReady = () => {
-  loadInlineComments();
+const handleInlineCommentAdd = (payload) => {
+  if (isCommentCollapsed.value) {
+    isCommentCollapsed.value = false;
+  }
+  commentSidebarRef.value?.handleInlineAnchorAdd?.(payload);
 };
 
-const handleInlineCommentAdd = ({ id, text }) => {
-  if (!id) {
-    return;
-  }
-  if (inlineComments.value.some((item) => item.anchor_id === id)) {
-    return;
-  }
-  inlineComments.value.unshift({
-    anchor_id: id,
-    external_id: '',
-    quote: text || '',
-    content: '',
-    created_at: '',
-    creator_name: userInfo.value?.nickname || userInfo.value?.username || '我',
-    creator_user_external_id: userInfo.value?.external_id || '',
-    creator_avatar: userInfo.value?.avatar || '',
-    editing: true,
-    draft: '',
-    saving: false
-  });
+const handleInlineCommentRemove = (ids) => {
+  commentSidebarRef.value?.handleInlineAnchorRemove?.(ids);
 };
 
-const handleInlineCommentRemove = async (ids) => {
-  if (!Array.isArray(ids)) {
+const handleAnchorHover = (id, hovering) => {
+  if (hovering) {
+    highlightInlineComment(id);
     return;
   }
-  const idSet = new Set(ids);
-  const targets = inlineComments.value.filter((item) => idSet.has(item.anchor_id));
-  inlineComments.value = inlineComments.value.filter((item) => !idSet.has(item.anchor_id));
-  await Promise.all(
-    targets
-      .filter((item) => item.external_id)
-      .map((item) => deleteDocumentComment(item.external_id).catch(() => {}))
-  );
+  unhighlightInlineComment(id);
+};
+
+const handleAnchorRemove = (ids) => {
+  const markdownEditor = markdownEditorRef.value;
+  if (markdownEditor && typeof markdownEditor.removeCommentIds === 'function') {
+    markdownEditor.removeCommentIds(ids);
+    return;
+  }
+  const editor = getVditorInstance();
+  if (!editor || typeof editor.removeCommentIds !== 'function') {
+    return;
+  }
+  editor.removeCommentIds(Array.isArray(ids) ? ids : [ids]);
 };
 
 const highlightInlineComment = (id) => {
@@ -515,206 +334,6 @@ const scrollToInlineAnchor = (id) => {
   }
 };
 
-const deleteInlineComment = async (item) => {
-  if (!item) {
-    return;
-  }
-  if (item.external_id) {
-    try {
-      await deleteDocumentComment(item.external_id);
-    } catch (error) {
-      ElMessage.error(t('common.requestFailed'));
-      return;
-    }
-  }
-  const editor = getVditorInstance();
-  if (editor && typeof editor.removeCommentIds === 'function') {
-    editor.removeCommentIds([item.anchor_id]);
-  }
-  inlineComments.value = inlineComments.value.filter((entry) => entry.anchor_id !== item.anchor_id);
-};
-
-const saveInlineComment = async (item) => {
-  if (!item) {
-    return;
-  }
-  const content = (item.draft || '').trim();
-  if (!content) {
-    ElMessage.error('请输入评论内容');
-    return;
-  }
-  if (!docId.value || docId.value === 'example') {
-    return;
-  }
-  if (item.saving) {
-    return;
-  }
-  item.saving = true;
-  try {
-    if (item.external_id) {
-      const resp = await updateDocumentComment({
-        external_id: item.external_id,
-        content
-      });
-      const saved = resp.comment;
-      item.content = saved?.content || content;
-      item.created_at = saved?.created_at || item.created_at;
-      item.creator_name = saved?.creator_name || item.creator_name;
-      item.creator_avatar = saved?.creator_avatar || item.creator_avatar;
-      item.creator_user_external_id = saved?.creator_user_external_id || item.creator_user_external_id;
-    } else {
-      const resp = await createDocumentComment({
-        document_external_id: docId.value,
-        content,
-        anchor_id: item.anchor_id,
-        quote: item.quote
-      });
-      const saved = resp.comment;
-      item.content = saved?.content || content;
-      item.external_id = saved?.external_id || item.external_id;
-      item.created_at = saved?.created_at || new Date().toISOString();
-      item.creator_name = saved?.creator_name || item.creator_name;
-      item.creator_avatar = saved?.creator_avatar || item.creator_avatar;
-      item.creator_user_external_id = saved?.creator_user_external_id || item.creator_user_external_id;
-    }
-    item.draft = '';
-    item.editing = false;
-  } catch (error) {
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    item.saving = false;
-  }
-};
-
-const cancelInlineComment = (item) => {
-  if (!item?.anchor_id) {
-    return;
-  }
-  if (item.external_id) {
-    item.editing = false;
-    item.draft = '';
-    return;
-  }
-  const editor = getVditorInstance();
-  if (editor && typeof editor.removeCommentIds === 'function') {
-    editor.removeCommentIds([item.anchor_id]);
-  }
-  inlineComments.value = inlineComments.value.filter((entry) => entry.anchor_id !== item.anchor_id);
-};
-
-const canModifyInlineComment = (item) => {
-  if (!item) return false;
-  if (!item.external_id) return true;
-  const currentExternalId = userInfo.value?.external_id;
-  if (!currentExternalId) return false;
-  if (item.creator_user_external_id === currentExternalId) {
-    return true;
-  }
-  return userInfo.value?.username === 'admin';
-};
-
-const startInlineCommentEdit = (item) => {
-  if (!item || item.editing) {
-    return;
-  }
-  item.draft = item.content || '';
-  item.editing = true;
-};
-
-const startCommentEdit = (item) => {
-  if (!item || item.editing) {
-    return;
-  }
-  item.draft = item.content || '';
-  item.editing = true;
-};
-
-const handleInlineAction = (item, action) => {
-  if (!item || item.editing) {
-    return;
-  }
-  if (action === 'edit') {
-    if (!canModifyInlineComment(item)) {
-      return;
-    }
-    startInlineCommentEdit(item);
-    return;
-  }
-  if (action === 'delete') {
-    if (!canModifyInlineComment(item)) {
-      return;
-    }
-    deleteInlineComment(item);
-    return;
-  }
-  if (action === 'copy') {
-    copyComment(item);
-  }
-};
-
-const handleCommentAction = (item, action) => {
-  if (!item) {
-    return;
-  }
-  if (action === 'copy') {
-    copyComment(item);
-    return;
-  }
-  if (action === 'delete') {
-    if (!canDeleteComment(item)) {
-      return;
-    }
-    deleteComment(item);
-    return;
-  }
-  if (action === 'edit') {
-    if (!canDeleteComment(item)) {
-      return;
-    }
-    startCommentEdit(item);
-  }
-};
-
-const saveCommentEdit = async (item) => {
-  if (!item?.external_id) {
-    return;
-  }
-  const content = (item.draft || '').trim();
-  if (!content) {
-    ElMessage.error('请输入评论内容');
-    return;
-  }
-  if (item.saving) {
-    return;
-  }
-  item.saving = true;
-  try {
-    const resp = await updateDocumentComment({
-      external_id: item.external_id,
-      content
-    });
-    const saved = resp.comment;
-    item.content = saved?.content || content;
-    item.created_at = saved?.created_at || item.created_at;
-    item.creator_name = saved?.creator_name || item.creator_name;
-    item.creator_avatar = saved?.creator_avatar || item.creator_avatar;
-    item.draft = '';
-    item.editing = false;
-  } catch (error) {
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    item.saving = false;
-  }
-};
-
-const cancelCommentEdit = (item) => {
-  if (!item) {
-    return;
-  }
-  item.editing = false;
-  item.draft = '';
-};
-
 // 更新CSS变量以支持宽度调节
 const updateSidebarWidth = () => {
   document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth.value}px`);
@@ -730,8 +349,6 @@ watch(sidebarWidth, () => {
 });
 
 const directoryTree = ref([]);
-
-const isCurrentDoc = (data) => String(data.id) === String(docId.value);
 
 const openCreateDocumentDialog = (parentId = null) => {
   pendingParentId.value = parentId;
@@ -1142,184 +759,6 @@ const toggleCommentSidebar = () => {
   isCommentCollapsed.value = !isCommentCollapsed.value;
 };
 
-const startReply = (item) => {
-  replyTarget.value = {
-    external_id: item.external_id,
-    name: item.creator_name || t('document.commentUnknown'),
-    content: item.content || '',
-    anchor_id: '',
-    is_inline: false
-  };
-};
-
-const startInlineReply = (item) => {
-  replyTarget.value = {
-    external_id: item.external_id,
-    name: item.creator_name || t('document.commentUnknown'),
-    content: item.content || '',
-    anchor_id: item.anchor_id || '',
-    is_inline: true
-  };
-};
-
-const cancelReply = () => {
-  replyTarget.value = null;
-};
-
-const formatReplySnippet = (text, maxLen = 24) => {
-  if (!text) return '';
-  const trimmed = text.trim();
-  if (trimmed.length <= maxLen) return trimmed;
-  return `${trimmed.slice(0, maxLen)}...`;
-};
-
-const loadComments = async () => {
-  if (!docId.value || docId.value === 'example') {
-    commentList.value = [];
-    commentTotal.value = 0;
-    return;
-  }
-  if (commentLoading.value) {
-    return;
-  }
-  commentLoading.value = true;
-  try {
-    const resp = await listDocumentComments({
-      document_external_id: docId.value,
-      page: commentPage.value,
-      page_size: commentPageSize.value,
-      scope: CommentScope.COMMENT_SCOPE_NORMAL
-    });
-    commentList.value = (resp.comments || []).map((item) => ({
-      ...item,
-      editing: false,
-      draft: '',
-      saving: false
-    }));
-    commentTotal.value = Number(resp.total) || 0;
-  } catch (error) {
-    commentList.value = [];
-    commentTotal.value = 0;
-  } finally {
-    commentLoading.value = false;
-  }
-};
-
-const flattenComments = (items) => {
-  if (!Array.isArray(items) || items.length === 0) return [];
-  const childrenMap = new Map();
-  const itemMap = new Map();
-  items.forEach((item) => {
-    itemMap.set(item.external_id, item);
-    const parentId = item.parent_external_id || '';
-    if (!childrenMap.has(parentId)) {
-      childrenMap.set(parentId, []);
-    }
-    childrenMap.get(parentId).push(item);
-  });
-
-  const result = [];
-  const walk = (node, level) => {
-    node.level = level;
-    result.push(node);
-    const children = childrenMap.get(node.external_id) || [];
-    children.forEach((child) => walk(child, level + 1));
-  };
-
-  const roots = childrenMap.get('') || [];
-  roots.forEach((root) => walk(root, 0));
-  return result;
-};
-
-const handleCommentPageChange = async () => {
-  await loadComments();
-};
-
-const submitComment = async () => {
-  const content = commentInput.value.trim();
-  if (!content) {
-    return;
-  }
-  if (!docId.value || docId.value === 'example') {
-    return;
-  }
-  if (commentSending.value) {
-    return;
-  }
-  try {
-    commentSending.value = true;
-    await createDocumentComment({
-      document_external_id: docId.value,
-      content,
-      parent_external_id: replyTarget.value?.external_id,
-      anchor_id: replyTarget.value?.is_inline ? replyTarget.value?.anchor_id : undefined
-    });
-    commentInput.value = '';
-    replyTarget.value = null;
-    commentPage.value = 1;
-    await loadComments();
-  } catch (error) {
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    commentSending.value = false;
-  }
-};
-
-const formatCommentTime = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-};
-
-const canDeleteComment = (item) => {
-  if (!item) return false;
-  const currentExternalId = userInfo.value?.external_id;
-  if (!currentExternalId) return false;
-  if (item.creator_user_external_id === currentExternalId) {
-    return true;
-  }
-  return userInfo.value?.username === 'admin';
-};
-
-const deleteComment = async (item) => {
-  if (!item?.external_id) return;
-  if (!canDeleteComment(item)) return;
-  try {
-    await ElMessageBox.confirm(
-      t('document.commentDeleteConfirm'),
-      t('document.commentDelete'),
-      {
-        confirmButtonText: t('button.confirm'),
-        cancelButtonText: t('button.cancel'),
-        type: 'warning'
-      }
-    );
-    await deleteDocumentComment(item.external_id);
-    await loadComments();
-    ElMessage.success(t('message.deleteSuccess'));
-  } catch (error) {
-    // cancel or error
-  }
-};
-
-const copyComment = async (item) => {
-  const text = item?.content || '';
-  if (!text) return;
-  try {
-    await navigator.clipboard.writeText(text);
-    ElMessage.success(t('common.copySuccess'));
-  } catch (error) {
-    ElMessage.error(t('common.copyFailed'));
-  }
-};
-
-const getParentName = (item) => {
-  if (!item?.parent_external_id) return t('document.commentUnknown');
-  const parent = commentList.value.find((c) => c.external_id === item.parent_external_id);
-  return parent?.creator_name || t('document.commentUnknown');
-};
-
 
 const handleCollabSync = (isSynced) => {
   if (!collabEnabled.value) {
@@ -1386,8 +825,6 @@ onMounted(async () => {
   }
 
   await fetchSystemInfo();
-  await loadComments();
-  await loadInlineComments();
 });
 
 onBeforeUnmount(() => {
@@ -1408,10 +845,7 @@ watch(
     editorContent.value = '';
     currentDocTitle.value = '';
     cancelEditTitle();
-    commentPage.value = 1;
-    replyTarget.value = null;
-    await loadComments();
-    await loadInlineComments();
+    await commentSidebarRef.value?.reload?.();
     if (docId.value && docId.value !== 'example') {
       recordRecentDocument(docId.value).catch(() => {});
     }
@@ -1691,127 +1125,6 @@ watch(
   min-height: 500px;
   position: relative;
 }
-
-.comment-container {
-  position: relative;
-  width: 320px;
-  overflow: hidden;
-  flex-shrink: 0;
-  border-left: 1px solid var(--border-color);
-  background-color: var(--bg-white);
-  transition: all 0.3s ease-in-out;
-  display: flex;
-}
-
-.comment-container.collapsed {
-  width: 0;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  border-left: none;
-}
-
-.comment-sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 320px;
-  max-width: 360px;
-  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-  background-color: var(--bg-white);
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.comment-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.comment-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-md);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-
-
-.inline-comment-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.inline-comment-editor-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.comment-empty {
-  font-size: 13px;
-  color: var(--text-light);
-  text-align: center;
-  padding: var(--spacing-lg) 0;
-}
-
-.comment-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.reply-hint {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: var(--text-light);
-}
-
-.reply-hint-snippet {
-  margin-left: 6px;
-  color: var(--text-medium);
-}
-
-.comment-footer {
-  border-top: 1px solid var(--border-color);
-  padding: var(--spacing-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.comment-pagination {
-  padding: 0 var(--spacing-md) var(--spacing-md);
-}
-
-.comment-footer :deep(.el-textarea__inner) {
-  resize: none;
-}
-
-.dark-mode .comment-container,
-.dark-mode .comment-sidebar {
-  background-color: var(--bg-white);
-  border-color: var(--border-color);
-}
-
-.dark-mode .comment-title {
-  color: var(--text-dark);
-}
-
-.dark-mode .comment-empty {
-  color: var(--text-light);
-}
-
 .editor-loading {
   position: absolute;
   inset: 0;

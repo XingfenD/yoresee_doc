@@ -68,6 +68,11 @@ func (s *CommentService) CreateComment(req *dto.CreateCommentRequest) (*model.Do
 	}
 	if req.AnchorID != nil && strings.TrimSpace(*req.AnchorID) != "" {
 		item.AnchorID = strings.TrimSpace(*req.AnchorID)
+	} else if parentComment != nil && strings.TrimSpace(parentComment.AnchorID) != "" {
+		item.AnchorID = parentComment.AnchorID
+	}
+	if strings.TrimSpace(item.AnchorID) == "" {
+		return nil, status.StatusParamError
 	}
 	if err := s.commentRepo.Create(item).Exec(); err != nil {
 		return nil, status.StatusWriteDBError
@@ -91,12 +96,6 @@ func (s *CommentService) ListComments(req *dto.ListCommentsRequest) ([]model.Doc
 	}
 	op := s.commentRepo.ListByDocument(doc.ID).
 		WithPagination(req.Page, req.PageSize)
-	switch req.Scope {
-	case dto.CommentScopeNormal:
-		op = op.WithNormalOnly()
-	case dto.CommentScopeInline:
-		op = op.WithInlineOnly()
-	}
 	return op.ExecWithTotal()
 }
 

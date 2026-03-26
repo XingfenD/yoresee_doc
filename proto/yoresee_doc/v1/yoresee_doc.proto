@@ -671,7 +671,6 @@ message ListDocumentCommentsRequest {
   string document_external_id = 1;
   int32 page = 2;
   int32 page_size = 3;
-  CommentScope scope = 4;
 }
 
 message ListDocumentCommentsResponse {
@@ -696,13 +695,6 @@ message UpdateDocumentCommentRequest {
 message UpdateDocumentCommentResponse {
   BaseResponse base = 1;
   DocumentComment comment = 2;
-}
-
-enum CommentScope {
-  COMMENT_SCOPE_UNSPECIFIED = 0;
-  COMMENT_SCOPE_ALL = 1;
-  COMMENT_SCOPE_NORMAL = 2;
-  COMMENT_SCOPE_INLINE = 3;
 }
 
 message UpdateDocumentResponse {

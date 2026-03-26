@@ -75,7 +75,6 @@ func (s *CommentServiceServer) ListDocumentComments(ctx context.Context, req *pb
 		DocumentExternalID: req.DocumentExternalId,
 		Page:               int(req.Page),
 		PageSize:           int(req.PageSize),
-		Scope:              int32(req.Scope),
 	})
 	if err != nil {
 		return &pb.ListDocumentCommentsResponse{Base: baseResponseFromErr(err)}, nil
