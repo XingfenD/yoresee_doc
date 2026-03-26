@@ -53,7 +53,7 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item @click="goToUserCenter">{{ t('user.center') }}</el-dropdown-item>
+            <el-dropdown-item v-if="showUserCenter" @click="goToUserCenter">{{ t('user.center') }}</el-dropdown-item>
             <el-dropdown-item v-if="showSystemManage" @click="handleSystemManage">
               {{ t('system.management') }}
             </el-dropdown-item>
@@ -70,7 +70,7 @@ import { onMounted, onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell } from '@element-plus/icons-vue';
-import { querySideBarDisplay } from '@/services/auth';
+import { queryTopNavDisplay } from '@/services/auth';
 import { listNotifications } from '@/services/api';
 
 const props = defineProps({
@@ -100,6 +100,7 @@ const emit = defineEmits(['change-language', 'toggle-theme', 'logout']);
 const { t } = useI18n();
 const router = useRouter();
 const showSystemManage = ref(false);
+const showUserCenter = ref(false);
 const hasUnread = ref(false);
 
 const goToUserCenter = () => {
@@ -114,12 +115,14 @@ const goToNotifications = () => {
   router.push('/user_info/notifications');
 };
 
-const loadSystemManageDisplay = async () => {
+const loadTopNavDisplay = async () => {
   try {
-    const resp = await querySideBarDisplay('manage');
-    const tabs = resp.display_tabs || [];
-    showSystemManage.value = tabs.some((tab) => tab.startsWith('manage-'));
+    const resp = await queryTopNavDisplay();
+    const menus = resp.display_menus || [];
+    showUserCenter.value = menus.includes('user-center');
+    showSystemManage.value = menus.includes('system-manage');
   } catch (error) {
+    showUserCenter.value = false;
     showSystemManage.value = false;
   }
 };
@@ -141,7 +144,7 @@ const handleUnreadEvent = (event) => {
 };
 
 onMounted(() => {
-  loadSystemManageDisplay();
+  loadTopNavDisplay();
   loadUnreadNotifications();
   window.addEventListener('notifications:unread', handleUnreadEvent);
 });

@@ -1,7 +1,13 @@
 import { clients, messages, unaryCall } from './grpc_client';
 
 const { authClient, systemClient } = clients;
-const { AuthLoginRequest, AuthRegisterRequest, QuerySideBarDisplayRequest, SystemInfoRequest } = messages;
+const {
+  AuthLoginRequest,
+  AuthRegisterRequest,
+  QuerySideBarDisplayRequest,
+  QueryTopNavDisplayRequest,
+  SystemInfoRequest
+} = messages;
 
 function baseToObject(resp) {
   const base = resp.base;
@@ -79,6 +85,17 @@ export const querySideBarDisplay = async (scene) => {
   const base = baseToObject(resp);
   const data = {
     display_tabs: resp.displayTabs || []
+  };
+  return handleResponse(base, data);
+};
+
+// 查询顶栏可见菜单
+export const queryTopNavDisplay = async () => {
+  const req = new QueryTopNavDisplayRequest();
+  const resp = await unaryCall(authClient, 'queryTopNavDisplay', req);
+  const base = baseToObject(resp);
+  const data = {
+    display_menus: resp.displayMenus || []
   };
   return handleResponse(base, data);
 };
