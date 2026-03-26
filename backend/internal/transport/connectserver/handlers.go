@@ -55,6 +55,17 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		},
 		opts...,
 	))
+	mux.Handle(pb.AuthService_QueryTopNavDisplay_FullMethodName, connect.NewUnaryHandler(
+		pb.AuthService_QueryTopNavDisplay_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.QueryTopNavDisplayRequest]) (*connect.Response[pb.QueryTopNavDisplayResponse], error) {
+			resp, err := authSvc.QueryTopNavDisplay(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
 
 	mux.Handle(pb.DocumentService_ListDocuments_FullMethodName, connect.NewUnaryHandler(
 		pb.DocumentService_ListDocuments_FullMethodName,

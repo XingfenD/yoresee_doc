@@ -301,6 +301,14 @@ message QuerySideBarDisplayResponse {
   repeated string display_tabs = 2;
 }
 
+message QueryTopNavDisplayRequest {}
+
+message QueryTopNavDisplayResponse {
+  BaseResponse base = 1;
+  // menu key enum strings defined by frontend and backend convention.
+  repeated string display_menus = 2;
+}
+
 enum DocumentType {
   DOCUMENT_TYPE_UNSPECIFIED = 0;
   DOCUMENT_TYPE_MARKDOWN = 1;
@@ -787,6 +795,8 @@ service AuthService {
   rpc Register(AuthRegisterRequest) returns (AuthRegisterResponse);
   // query side bar visible tabs for scene.
   rpc QuerySideBarDisplay(QuerySideBarDisplayRequest) returns (QuerySideBarDisplayResponse);
+  // query top nav visible menus.
+  rpc QueryTopNavDisplay(QueryTopNavDisplayRequest) returns (QueryTopNavDisplayResponse);
 }
 
 // documentService provides document APIs.

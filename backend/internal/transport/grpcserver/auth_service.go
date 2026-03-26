@@ -79,3 +79,25 @@ func (s *AuthServiceServer) QuerySideBarDisplay(ctx context.Context, req *pb.Que
 		DisplayTabs: displayTabs,
 	}, nil
 }
+
+func (s *AuthServiceServer) QueryTopNavDisplay(ctx context.Context, req *pb.QueryTopNavDisplayRequest) (*pb.QueryTopNavDisplayResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.QueryTopNavDisplayResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+	}
+
+	isAdmin, err := auth_service.AuthSvc.IsAdmin(userExternalID)
+	if err != nil {
+		return &pb.QueryTopNavDisplayResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	menus, err := auth_service.AuthSvc.QueryTopNavDisplay(isAdmin)
+	if err != nil {
+		return &pb.QueryTopNavDisplayResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.QueryTopNavDisplayResponse{
+		Base:         baseResponseFromErr(nil),
+		DisplayMenus: menus,
+	}, nil
+}
