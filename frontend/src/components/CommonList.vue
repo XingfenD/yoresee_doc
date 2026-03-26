@@ -83,8 +83,8 @@
 </template>
 
 <script setup>
-import { computed, useSlots } from 'vue';
 import { useCommonListState } from '@/composables/useCommonListState';
+import { useForwardedSlotNames } from '@/composables/useForwardedSlotNames';
 import CommonListToolbar from '@/components/common-list/CommonListToolbar.vue';
 import CommonListPagination from '@/components/common-list/CommonListPagination.vue';
 import CommonListTable from '@/components/common-list/CommonListTable.vue';
@@ -208,10 +208,7 @@ const emit = defineEmits([
   'tree-toggle'
 ]);
 
-const slots = useSlots();
-const forwardedSlotNames = computed(() =>
-  Object.keys(slots).filter((name) => !['title', 'toolbar-actions', 'toolbar-right'].includes(name))
-);
+const forwardedSlotNames = useForwardedSlotNames(['title', 'toolbar-actions', 'toolbar-right']);
 
 const {
   treeToggleColumnKey,

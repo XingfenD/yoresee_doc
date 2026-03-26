@@ -6,6 +6,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/sirupsen/logrus"
 
 	internal_dto "github.com/XingfenD/yoresee_doc/internal/service/dto"
 )
@@ -13,11 +14,13 @@ import (
 func (s *DocumentService) listDocuments(ctx context.Context, req *internal_dto.DocumentsListReq) ([]*dto.DocumentMetaResponse, int64, error) {
 	listOp, err := s.buildListDocumentsOperation(req)
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: DocumentService] buildListDocumentsOperation failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "build document list operation failed")
 	}
 	models, total, err := listOp.ExecWithTotal()
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: DocumentService] list documents failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "list documents failed")
 	}
 
 	// if children is not needed or depth less than 1, return directly
@@ -38,7 +41,8 @@ func (s *DocumentService) listDocuments(ctx context.Context, req *internal_dto.D
 
 	allDescendants, err := getOp.Exec(ctx)
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: DocumentService] getDocumentsWithDescendants failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "list document descendants failed")
 	}
 
 	docs := s.buildDocumentTree(models, allDescendants)
@@ -53,7 +57,8 @@ func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.
 	if req.ExternalArgs != nil && req.ExternalArgs.UserExternalID != nil && *req.ExternalArgs.UserExternalID != "" {
 		id, err := s.userRepo.GetIDByExternalID(*req.ExternalArgs.UserExternalID).Exec()
 		if err != nil {
-			return nil, 0, err
+			logrus.Errorf("[Service layer: DocumentService] query user id by external id failed, external_id=%s, err=%+v", *req.ExternalArgs.UserExternalID, err)
+			return nil, 0, status.GenErrWithCustomMsg(status.StatusUserNotFound, "user not found")
 		}
 		userID = &id
 	}
@@ -62,7 +67,8 @@ func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.
 	if req.ExternalArgs != nil && req.ExternalArgs.RootDocumentExternalID != nil && *req.ExternalArgs.RootDocumentExternalID != "" {
 		doc, err := s.documentRepo.GetByExternalID(*req.ExternalArgs.RootDocumentExternalID).Exec(ctx)
 		if err != nil {
-			return nil, 0, err
+			logrus.Errorf("[Service layer: DocumentService] query root document failed, external_id=%s, err=%+v", *req.ExternalArgs.RootDocumentExternalID, err)
+			return nil, 0, status.GenErrWithCustomMsg(status.StatusDocumentNotFound, "root document not found")
 		}
 		parentID = doc.ID
 	}
@@ -71,7 +77,8 @@ func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.
 	if req.ExternalArgs != nil && req.ExternalArgs.KnowledgeExternalID != nil && *req.ExternalArgs.KnowledgeExternalID != "" {
 		id, err := s.kbRepo.GetIDByExternalID(*req.ExternalArgs.KnowledgeExternalID).Exec()
 		if err != nil {
-			return nil, 0, err
+			logrus.Errorf("[Service layer: DocumentService] query knowledge base id failed, external_id=%s, err=%+v", *req.ExternalArgs.KnowledgeExternalID, err)
+			return nil, 0, status.GenErrWithCustomMsg(status.StatusKnowledgeBaseNotFound, "knowledge base not found")
 		}
 		knowledgeID = &id
 	}
@@ -139,7 +146,8 @@ func (op *GetDocumentsWithDescendantsOperation) Exec(ctx context.Context) ([]*mo
 			WithDirectoryOnly(op.directoryOnly).
 			Exec(ctx)
 		if err != nil {
-			return nil, err
+			logrus.Errorf("[Service layer: DocumentService] get subtree failed, root_parent_id=%d, err=%+v", rootParentID, err)
+			return nil, status.GenErrWithCustomMsg(status.StatusReadDBError, "get document subtree failed")
 		}
 
 		for _, doc := range docs {

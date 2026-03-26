@@ -8,6 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/bytedance/gg/gslice"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -156,7 +157,8 @@ func (s *MembershipService) ListUserGroups(req *dto.ListUserGroupsRequest) ([]*d
 
 	responses, err := s.buildUserGroupResponses(groups, false)
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: MembershipService] buildUserGroupResponses failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "build user group response failed")
 	}
 	return responses, total, nil
 }
@@ -172,7 +174,8 @@ func (s *MembershipService) GetUserGroup(req *dto.GetUserGroupRequest) (*dto.Use
 
 	responses, err := s.buildUserGroupResponses([]model.UserGroupMeta{*group}, false)
 	if err != nil {
-		return nil, err
+		logrus.Errorf("[Service layer: MembershipService] buildUserGroupResponses failed, external_id=%s, err=%+v", req.ExternalID, err)
+		return nil, status.GenErrWithCustomMsg(err, "build user group response failed")
 	}
 	if len(responses) == 0 {
 		return nil, status.StatusMembershipMetaNotFound
@@ -204,17 +207,20 @@ func (s *MembershipService) CreateUserGroup(req *dto.CreateUserGroupRequest) (st
 
 		userIDs, err := s.resolveUserExternalIDsToIDs(req.MemberUserExternalIDs, tx)
 		if err != nil {
-			return err
+			logrus.Errorf("[Service layer: MembershipService] resolveUserExternalIDsToIDs failed, err=%+v", err)
+			return status.GenErrWithCustomMsg(err, "resolve user ids failed")
 		}
 		if err := s.syncUserGroupMembers(tx, group.ID, userIDs); err != nil {
-			return err
+			logrus.Errorf("[Service layer: MembershipService] syncUserGroupMembers failed, group_id=%d, err=%+v", group.ID, err)
+			return status.GenErrWithCustomMsg(err, "sync user group members failed")
 		}
 
 		createdExternalID = group.ExternalID
 		return nil
 	})
 	if err != nil {
-		return "", err
+		logrus.Errorf("[Service layer: MembershipService] CreateUserGroup transaction failed, err=%+v", err)
+		return "", status.GenErrWithCustomMsg(err, "create user group failed")
 	}
 	return createdExternalID, nil
 }
@@ -255,10 +261,12 @@ func (s *MembershipService) UpdateUserGroup(req *dto.UpdateUserGroupRequest) err
 		if req.SyncMembers {
 			userIDs, err := s.resolveUserExternalIDsToIDs(req.MemberUserExternalIDs, tx)
 			if err != nil {
-				return err
+				logrus.Errorf("[Service layer: MembershipService] resolveUserExternalIDsToIDs failed, external_id=%s, err=%+v", req.ExternalID, err)
+				return status.GenErrWithCustomMsg(err, "resolve user ids failed")
 			}
 			if err := s.syncUserGroupMembers(tx, group.ID, userIDs); err != nil {
-				return err
+				logrus.Errorf("[Service layer: MembershipService] syncUserGroupMembers failed, group_id=%d, err=%+v", group.ID, err)
+				return status.GenErrWithCustomMsg(err, "sync user group members failed")
 			}
 		}
 		return nil

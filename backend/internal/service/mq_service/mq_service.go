@@ -27,7 +27,11 @@ func (srvc *MQService) PublishTo(ctx context.Context, backend mq.Backend, topic 
 		return status.StatusMQNotInitialized
 	}
 
-	return mq.PublishTo(ctx, backend, topic, data)
+	if err := mq.PublishTo(ctx, backend, topic, data); err != nil {
+		logrus.Errorf("[Service layer: MQService] PublishTo failed, backend=%s, topic=%s, err=%+v", backend, topic, err)
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "publish message failed")
+	}
+	return nil
 }
 
 func (srvc *MQService) SubscribeTo(backend mq.Backend, topic string, handler func([]byte) error) error {
@@ -35,9 +39,13 @@ func (srvc *MQService) SubscribeTo(backend mq.Backend, topic string, handler fun
 		return status.StatusMQNotInitialized
 	}
 
-	return mq.SubscribeTo(backend, topic, func(ctx context.Context, data []byte) error {
+	if err := mq.SubscribeTo(backend, topic, func(ctx context.Context, data []byte) error {
 		return handler(data)
-	})
+	}); err != nil {
+		logrus.Errorf("[Service layer: MQService] SubscribeTo failed, backend=%s, topic=%s, err=%+v", backend, topic, err)
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "subscribe message failed")
+	}
+	return nil
 }
 
 func PublishByProducer[T any](ctx context.Context, producer svc_iface.TopicProducer, taskData T) error {
@@ -46,8 +54,8 @@ func PublishByProducer[T any](ctx context.Context, producer svc_iface.TopicProdu
 	}
 	data, err := sonic.Marshal(taskData)
 	if err != nil {
-		logrus.Error("marshal failed")
-		return err
+		logrus.Errorf("[Service layer: MQService] marshal failed, producer=%s, err=%+v", producer.Topic(), err)
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "marshal message failed")
 	}
 	return MQSvc.PublishTo(ctx, MQSvc.backend, producer.Topic(), data)
 }
@@ -58,8 +66,8 @@ func PublishByProducerTo[T any](ctx context.Context, backend mq.Backend, produce
 	}
 	data, err := sonic.Marshal(taskData)
 	if err != nil {
-		logrus.Error("marshal failed")
-		return err
+		logrus.Errorf("[Service layer: MQService] marshal failed, backend=%s, producer=%s, err=%+v", backend, producer.Topic(), err)
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "marshal message failed")
 	}
 	return MQSvc.PublishTo(ctx, backend, producer.Topic(), data)
 }

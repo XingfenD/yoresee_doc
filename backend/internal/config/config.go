@@ -1,9 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/spf13/viper"
 )
 
@@ -99,14 +99,14 @@ func InitConfig() error {
 	viper.AddConfigPath("./config")
 
 	if err := viper.ReadInConfig(); err != nil {
-		return fmt.Errorf("read config failed: %w", err)
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "read config failed")
 	}
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	if err := viper.Unmarshal(&GlobalConfig); err != nil {
-		return fmt.Errorf("unmarshal config failed: %w", err)
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "unmarshal config failed")
 	}
 
 	return nil

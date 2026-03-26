@@ -9,6 +9,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
+	"github.com/sirupsen/logrus"
 )
 
 type NotificationService struct {
@@ -80,7 +81,8 @@ func (s *NotificationService) ListNotifications(req *dto.ListNotificationsReques
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 		ExecWithTotal()
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: NotificationService] list notifications failed, user_external_id=%s, err=%+v", req.UserExternalID, err)
+		return nil, 0, status.GenErrWithCustomMsg(status.StatusReadDBError, "list notifications failed")
 	}
 
 	for i := range list {

@@ -12,6 +12,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/service/invitation_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -34,13 +35,14 @@ func (s *AuthService) Register(ctx context.Context, userCreate *dto.UserCreate) 
 			}
 			err := invitation_service.InvitationSvc.ValidateAndUseWithTx(tx, *userCreate.InvitationCode)
 			if err != nil {
+				logrus.Errorf("[Service layer: AuthService] ValidateAndUseWithTx failed, invitation_code=%s, err=%+v", *userCreate.InvitationCode, err)
 				_ = invitation_service.InvitationSvc.CreateInvitationRecord(&model.InvitationRecord{
 					Code:   *userCreate.InvitationCode,
 					UsedBy: userCreate.Email,
 					Status: "failed",
 					UsedAt: time.Now(),
 				})
-				return err
+				return status.GenErrWithCustomMsg(err, "invitation validation failed")
 			}
 		}
 
@@ -51,7 +53,8 @@ func (s *AuthService) Register(ctx context.Context, userCreate *dto.UserCreate) 
 
 		hashedPwd, err := utils.HashPassword(userCreate.Password)
 		if err != nil {
-			return err
+			logrus.Errorf("[Service layer: AuthService] HashPassword failed, email=%s, err=%+v", userCreate.Email, err)
+			return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "hash password failed")
 		}
 
 		user := &model.User{
@@ -64,7 +67,8 @@ func (s *AuthService) Register(ctx context.Context, userCreate *dto.UserCreate) 
 		}
 
 		if err := s.userRepo.Create(user).WithTx(tx).Exec(); err != nil {
-			return err
+			logrus.Errorf("[Service layer: AuthService] Create user failed, email=%s, err=%+v", userCreate.Email, err)
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create user failed")
 		}
 
 		if mode == constant.RegisterMode_Invite && userCreate.InvitationCode != nil && *userCreate.InvitationCode != "" {
@@ -93,7 +97,8 @@ func (s *AuthService) Login(email string, password string) (string, *dto.UserRes
 
 	token, err := utils.GenerateToken(user.ExternalID, user.Username)
 	if err != nil {
-		return "", nil, err
+		logrus.Errorf("[Service layer: AuthService] GenerateToken failed, user_external_id=%s, err=%+v", user.ExternalID, err)
+		return "", nil, status.GenErrWithCustomMsg(status.StatusServiceInternalError, "generate token failed")
 	}
 
 	userResponse := dto.NewUserResponseFromModel(user)

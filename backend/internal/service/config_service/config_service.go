@@ -2,8 +2,8 @@ package config_service
 
 import (
 	"context"
-	"errors"
 
+	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 )
 
@@ -33,7 +33,7 @@ func (s *ConfigService) GetSystemRegisterLimit(ctx context.Context) bool {
 
 func (s *ConfigService) Set(ctx context.Context, key, value string) error {
 	if !storage.ConsulEnabled() {
-		return errors.New("consul is not enabled")
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "consul is not enabled")
 	}
 	return storage.Consul.Set(ctx, key, value)
 }

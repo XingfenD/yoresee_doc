@@ -8,12 +8,14 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.UpdateDocumentMetaRequest) (bool, error) {
 	if err := validateUpdateDocumentMetaReq(req); err != nil {
-		return false, err
+		logrus.Errorf("[Service layer: DocumentService] validateUpdateDocumentMetaReq failed, err=%+v", err)
+		return false, status.GenErrWithCustomMsg(err, "invalid update document meta request")
 	}
 
 	cacheKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_Doc, req.ExternalID)
@@ -47,7 +49,8 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 				}
 
 				if err := op.Exec(); err != nil {
-					return err
+					logrus.Errorf("[Service layer: DocumentService] update document meta failed, external_id=%s, err=%+v", req.ExternalID, err)
+					return status.GenErrWithCustomMsg(status.StatusWriteDBError, "update document meta failed")
 				}
 
 				versionModel := &model.DocumentVersion{
@@ -58,7 +61,8 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 					ChangeSummary: "Update document meta",
 				}
 				if err := s.docVersionRepo.Create(versionModel).WithTx(tx).Exec(); err != nil {
-					return err
+					logrus.Errorf("[Service layer: DocumentService] create document version failed, document_id=%d, err=%+v", oldDoc.ID, err)
+					return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create document version failed")
 				}
 
 				return nil
@@ -67,7 +71,8 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 		cacheKey,
 	)
 	if err != nil {
-		return false, err
+		logrus.Errorf("[Service layer: DocumentService] UpdateDocumentMeta failed, external_id=%s, err=%+v", req.ExternalID, err)
+		return false, status.GenErrWithCustomMsg(err, "update document meta failed")
 	}
 
 	return true, nil

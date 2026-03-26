@@ -96,7 +96,12 @@ func (s *CommentService) ListComments(req *dto.ListCommentsRequest) ([]model.Doc
 	}
 	op := s.commentRepo.ListByDocument(doc.ID).
 		WithPagination(req.Page, req.PageSize)
-	return op.ExecWithTotal()
+	list, total, err := op.ExecWithTotal()
+	if err != nil {
+		logrus.Errorf("[Service layer: CommentService] list comments failed, document_external_id=%s, err=%+v", req.DocumentExternalID, err)
+		return nil, 0, status.GenErrWithCustomMsg(status.StatusReadDBError, "list comments failed")
+	}
+	return list, total, nil
 }
 
 func (s *CommentService) DeleteComment(req *dto.DeleteCommentRequest, isAdmin bool) error {

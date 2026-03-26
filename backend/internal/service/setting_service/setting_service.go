@@ -2,13 +2,14 @@ package setting_service
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
+	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
+	"github.com/sirupsen/logrus"
 )
 
 type SettingOption struct {
@@ -75,10 +76,11 @@ func (s *SettingService) UpdateSettings(ctx context.Context, updates []SettingUp
 		case systemRegisterModeKey():
 			val := strings.TrimSpace(update.Value)
 			if val != constant.RegisterMode_Open && val != constant.RegisterMode_Invite {
-				return fmt.Errorf("invalid register mode")
+				return status.GenErrWithCustomMsg(status.StatusParamError, "invalid register mode")
 			}
 			if err := config_service.ConfigSvc.Set(ctx, key, val); err != nil {
-				return err
+				logrus.Errorf("[Service layer: SettingService] set register mode failed, key=%s, value=%s, err=%+v", key, val, err)
+				return status.GenErrWithCustomMsg(err, "update register mode failed")
 			}
 			storage.Consul.ClearCacheKey(key)
 		case systemRegisterLimitKey():
@@ -89,11 +91,12 @@ func (s *SettingService) UpdateSettings(ctx context.Context, updates []SettingUp
 				writeVal = constant.RegisterLimit_On
 			}
 			if err := config_service.ConfigSvc.Set(ctx, key, writeVal); err != nil {
-				return err
+				logrus.Errorf("[Service layer: SettingService] set register limit failed, key=%s, value=%s, err=%+v", key, writeVal, err)
+				return status.GenErrWithCustomMsg(err, "update register limit failed")
 			}
 			storage.Consul.ClearCacheKey(key)
 		default:
-			return fmt.Errorf("unknown setting key")
+			return status.GenErrWithCustomMsg(status.StatusParamError, "unknown setting key")
 		}
 	}
 	return nil

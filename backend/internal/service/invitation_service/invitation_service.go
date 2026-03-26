@@ -3,7 +3,6 @@ package invitation_service
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
@@ -12,6 +11,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +30,8 @@ func NewInvitationService() *InvitationService {
 func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt *time.Time, note *string) (*model.Invitation, error) {
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
-		return nil, err
+		logrus.Errorf("[Service layer: InvitationService] generate random code failed, err=%+v", err)
+		return nil, status.GenErrWithCustomMsg(status.StatusServiceInternalError, "generate invitation code failed")
 	}
 	code := hex.EncodeToString(bytes)
 
@@ -49,12 +50,17 @@ func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt 
 }
 
 func (s *InvitationService) ListByCreator(userID int64) ([]model.Invitation, error) {
-	return s.invitationRepo.List(&model.Invitation{CreatedBy: userID}).Exec()
+	list, err := s.invitationRepo.List(&model.Invitation{CreatedBy: userID}).Exec()
+	if err != nil {
+		logrus.Errorf("[Service layer: InvitationService] ListByCreator failed, user_id=%d, err=%+v", userID, err)
+		return nil, status.GenErrWithCustomMsg(status.StatusReadDBError, "list invitations failed")
+	}
+	return list, nil
 }
 
 func (s *InvitationService) ListInvitations(req *dto.ListInvitationsReq) ([]model.Invitation, int64, error) {
 
-	return s.invitationRepo.List(&model.Invitation{}).
+	list, total, err := s.invitationRepo.List(&model.Invitation{}).
 		WithCreatorID(req.CreatorID).
 		WithKeyword(req.Keyword).
 		WithMaxUsedCnt(req.MaxUsedCnt).
@@ -64,6 +70,11 @@ func (s *InvitationService) ListInvitations(req *dto.ListInvitationsReq) ([]mode
 		WithSort(req.SortArgs.Field, req.SortArgs.Desc).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize).
 		ExecWithTotal()
+	if err != nil {
+		logrus.Errorf("[Service layer: InvitationService] ListInvitations failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(status.StatusReadDBError, "list invitations failed")
+	}
+	return list, total, nil
 }
 
 func (s *InvitationService) CreateInvitation(req *dto.CreateInvitationRequest) (*model.Invitation, error) {
@@ -154,16 +165,16 @@ func (s *InvitationService) ValidateAndUse(code string) error {
 	}
 
 	if invitation.DeletedAt != nil {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s deleted", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code deleted")
 	}
 	if invitation.Disabled == true {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s disabled", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code disabled")
 	}
 	if invitation.ExpiresAt != nil && invitation.ExpiresAt.Before(time.Now()) {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s expired", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code expired")
 	}
 	if invitation.MaxUsedCnt != nil && invitation.UsedCnt >= *invitation.MaxUsedCnt {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s used up", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code used up")
 	}
 
 	return status.StatusInvitationInvalid
@@ -184,16 +195,16 @@ func (s *InvitationService) ValidateAndUseWithTx(tx *gorm.DB, code string) error
 	}
 
 	if invitation.DeletedAt != nil {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s deleted", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code deleted")
 	}
 	if invitation.Disabled == true {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s disabled", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code disabled")
 	}
 	if invitation.ExpiresAt != nil && invitation.ExpiresAt.Before(time.Now()) {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s expired", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code expired")
 	}
 	if invitation.MaxUsedCnt != nil && invitation.UsedCnt >= *invitation.MaxUsedCnt {
-		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, fmt.Sprintf("invitation code: %s used up", code))
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code used up")
 	}
 
 	return status.StatusInvitationInvalid
@@ -202,7 +213,8 @@ func (s *InvitationService) ValidateAndUseWithTx(tx *gorm.DB, code string) error
 func (s *InvitationService) UpdateCode(code string, newExpireTime *time.Time, newMaxUsedCnt *int64, isDisabled *bool, note *string) error {
 	invitation, err := s.invitationRepo.GetByCode(code).Exec()
 	if err != nil {
-		return err
+		logrus.Errorf("[Service layer: InvitationService] GetByCode failed, code=%s, err=%+v", code, err)
+		return status.GenErrWithCustomMsg(status.StatusInvitationInvalid, "invitation code invalid")
 	}
 	if newExpireTime != nil {
 		invitation.ExpiresAt = newExpireTime

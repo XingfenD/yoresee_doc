@@ -8,6 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/bytedance/gg/gslice"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -37,7 +38,8 @@ func (s *MembershipService) ListOrgNodes(req *dto.ListOrgNodesRequest) ([]*dto.O
 
 	responses, err := s.buildOrgNodeResponses(nodes, req.IncludeChildren)
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: MembershipService] buildOrgNodeResponses failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "build org node response failed")
 	}
 	return responses, total, nil
 }
@@ -57,7 +59,8 @@ func (s *MembershipService) GetOrgNode(req *dto.GetOrgNodeRequest) (*dto.OrgNode
 
 	responses, err := s.buildOrgNodeResponses([]model.OrgNodeMeta{*node}, false)
 	if err != nil {
-		return nil, err
+		logrus.Errorf("[Service layer: MembershipService] buildOrgNodeResponses failed, external_id=%s, err=%+v", req.ExternalID, err)
+		return nil, status.GenErrWithCustomMsg(err, "build org node response failed")
 	}
 	if len(responses) == 0 {
 		return nil, status.StatusMembershipMetaNotFound
@@ -107,17 +110,20 @@ func (s *MembershipService) CreateOrgNode(req *dto.CreateOrgNodeRequest) (string
 
 		userIDs, err := s.resolveUserExternalIDsToIDs(req.MemberUserExternalIDs, tx)
 		if err != nil {
-			return err
+			logrus.Errorf("[Service layer: MembershipService] resolveUserExternalIDsToIDs failed, err=%+v", err)
+			return status.GenErrWithCustomMsg(err, "resolve user ids failed")
 		}
 		if err := s.syncOrgNodeMembers(tx, node.ID, userIDs); err != nil {
-			return err
+			logrus.Errorf("[Service layer: MembershipService] syncOrgNodeMembers failed, node_id=%d, err=%+v", node.ID, err)
+			return status.GenErrWithCustomMsg(err, "sync org node members failed")
 		}
 
 		createdExternalID = node.ExternalID
 		return nil
 	})
 	if err != nil {
-		return "", err
+		logrus.Errorf("[Service layer: MembershipService] CreateOrgNode transaction failed, err=%+v", err)
+		return "", status.GenErrWithCustomMsg(err, "create org node failed")
 	}
 	return createdExternalID, nil
 }
@@ -158,10 +164,12 @@ func (s *MembershipService) UpdateOrgNode(req *dto.UpdateOrgNodeRequest) error {
 		if req.SyncMembers {
 			userIDs, err := s.resolveUserExternalIDsToIDs(req.MemberUserExternalIDs, tx)
 			if err != nil {
-				return err
+				logrus.Errorf("[Service layer: MembershipService] resolveUserExternalIDsToIDs failed, external_id=%s, err=%+v", req.ExternalID, err)
+				return status.GenErrWithCustomMsg(err, "resolve user ids failed")
 			}
 			if err := s.syncOrgNodeMembers(tx, node.ID, userIDs); err != nil {
-				return err
+				logrus.Errorf("[Service layer: MembershipService] syncOrgNodeMembers failed, node_id=%d, err=%+v", node.ID, err)
+				return status.GenErrWithCustomMsg(err, "sync org node members failed")
 			}
 		}
 		return nil
@@ -389,7 +397,8 @@ func (s *MembershipService) buildOrgNodeResponses(nodes []model.OrgNodeMeta, inc
 			if len(children) > 0 {
 				childResponses, err := s.buildOrgNodeResponses(children, true)
 				if err != nil {
-					return nil, err
+					logrus.Errorf("[Service layer: MembershipService] buildOrgNodeResponses children failed, node_id=%d, err=%+v", node.ID, err)
+					return nil, status.GenErrWithCustomMsg(err, "build org node children response failed")
 				}
 				resp.Children = childResponses
 			}
@@ -402,7 +411,8 @@ func (s *MembershipService) buildOrgNodeResponses(nodes []model.OrgNodeMeta, inc
 func (s *MembershipService) buildOrgNodeWithChildren(node *model.OrgNodeMeta) (*dto.OrgNodeResponse, error) {
 	responses, err := s.buildOrgNodeResponses([]model.OrgNodeMeta{*node}, true)
 	if err != nil {
-		return nil, err
+		logrus.Errorf("[Service layer: MembershipService] buildOrgNodeResponses tree failed, node_external_id=%s, err=%+v", node.ExternalID, err)
+		return nil, status.GenErrWithCustomMsg(err, "build org node tree failed")
 	}
 	if len(responses) == 0 {
 		return nil, status.StatusMembershipMetaNotFound

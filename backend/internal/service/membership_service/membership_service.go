@@ -6,6 +6,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository/membership_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/sirupsen/logrus"
 )
 
 type MembershipService struct {
@@ -43,12 +44,14 @@ func (s *MembershipService) GetMembershipIDByExternalID(req *dto.MembershipBaseR
 func (s *MembershipService) CreateMembershipRelation(membership *dto.CreateMembershipRelationRequest) error {
 	userID, err := s.useRepo.GetIDByExternalID(membership.UserExternalID).Exec()
 	if err != nil {
+		logrus.Errorf("[Service layer: MembershipService] GetIDByExternalID failed, user_external_id=%s, err=%+v", membership.UserExternalID, err)
 		return status.StatusUserNotFound
 	}
 
 	membershipID, err := s.GetMembershipIDByExternalID(&membership.MembershipBaseRequest)
 	if err != nil {
-		return err
+		logrus.Errorf("[Service layer: MembershipService] GetMembershipIDByExternalID failed, membership_external_id=%s, type=%d, err=%+v", membership.MembershipExternalID, membership.Type, err)
+		return status.GenErrWithCustomMsg(err, "membership target not found")
 	}
 	model := &model.MembershipRelation{
 		UserID:       userID,
@@ -56,15 +59,29 @@ func (s *MembershipService) CreateMembershipRelation(membership *dto.CreateMembe
 		Type:         membership.Type,
 	}
 
-	return s.repo.CreateMembership(model).Exec()
+	if err := s.repo.CreateMembership(model).Exec(); err != nil {
+		logrus.Errorf("[Service layer: MembershipService] CreateMembership failed, user_id=%d, membership_id=%d, type=%d, err=%+v", userID, membershipID, membership.Type, err)
+		return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create membership relation failed")
+	}
+	return nil
 }
 
 func (s *MembershipService) GetUserGroupMeta(externalID string) (*model.UserGroupMeta, error) {
-	return s.repo.GetUserGroupByExternalID(externalID).Exec()
+	meta, err := s.repo.GetUserGroupByExternalID(externalID).Exec()
+	if err != nil {
+		logrus.Errorf("[Service layer: MembershipService] GetUserGroupMeta failed, external_id=%s, err=%+v", externalID, err)
+		return nil, status.GenErrWithCustomMsg(status.StatusMembershipMetaNotFound, "user group not found")
+	}
+	return meta, nil
 }
 
 func (s *MembershipService) GetOrgNodeMeta(externalID string) (*model.OrgNodeMeta, error) {
-	return s.repo.GetOrgNodeByExternalID(externalID).Exec()
+	meta, err := s.repo.GetOrgNodeByExternalID(externalID).Exec()
+	if err != nil {
+		logrus.Errorf("[Service layer: MembershipService] GetOrgNodeMeta failed, external_id=%s, err=%+v", externalID, err)
+		return nil, status.GenErrWithCustomMsg(status.StatusMembershipMetaNotFound, "org node not found")
+	}
+	return meta, nil
 }
 
 // func (s *MembershipService) GetMembershipRelation(req *dto.MembershipBaseRequest) (*dto.MembershipRelationResponse, error) {

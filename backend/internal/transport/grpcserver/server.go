@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/XingfenD/yoresee_doc/internal/status"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
@@ -31,7 +32,7 @@ func Start(grpcPort, grpcWebPort int) (*grpc.Server, error) {
 
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
-		return nil, fmt.Errorf("listen grpc port failed: %w", err)
+		return nil, status.GenErrWithCustomMsg(status.StatusServiceInternalError, "listen grpc port failed")
 	}
 
 	go func() {

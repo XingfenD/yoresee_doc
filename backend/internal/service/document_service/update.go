@@ -13,7 +13,8 @@ import (
 
 func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentRequest) (bool, error) {
 	if err := validateUpdateDocumentReq(req); err != nil {
-		return false, err
+		logrus.Errorf("[Service layer: DocumentService] validateUpdateDocumentReq failed, err=%+v", err)
+		return false, status.GenErrWithCustomMsg(err, "invalid update document request")
 	}
 
 	var (
@@ -63,7 +64,8 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		}
 
 		if err := s.docVersionRepo.Create(versionModel).WithTx(tx).Exec(); err != nil {
-			return err
+			logrus.Errorf("[Service layer: DocumentService] create document version failed, document_id=%d, err=%+v", oldDoc.ID, err)
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create document version failed")
 		}
 
 		// update kb relation
@@ -82,15 +84,18 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		}
 
 		if err := op.Exec(); err != nil {
-			return err
+			logrus.Errorf("[Service layer: DocumentService] update document failed, external_id=%s, err=%+v", req.ExternalID, err)
+			return status.GenErrWithCustomMsg(status.StatusWriteDBError, "update document failed")
 		}
 		if moved {
 			if err := s.documentRepo.MoveSubtree(oldDoc.ID, newParentID).WithTx(tx).Exec(); err != nil {
-				return err
+				logrus.Errorf("[Service layer: DocumentService] move subtree failed, document_id=%d, new_parent_id=%d, err=%+v", oldDoc.ID, newParentID, err)
+				return status.GenErrWithCustomMsg(status.StatusWriteDBError, "move document subtree failed")
 			}
 			path, err := s.documentRepo.GetPathByIDWithTx(tx, oldDoc.ID)
 			if err != nil {
-				return err
+				logrus.Errorf("[Service layer: DocumentService] query new path failed, document_id=%d, err=%+v", oldDoc.ID, err)
+				return status.GenErrWithCustomMsg(status.StatusReadDBError, "query document path failed")
 			}
 			newPath = path
 		}
@@ -98,7 +103,8 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		return nil
 	})
 	if err != nil {
-		return false, err
+		logrus.Errorf("[Service layer: DocumentService] Update failed, external_id=%s, err=%+v", req.ExternalID, err)
+		return false, status.GenErrWithCustomMsg(err, "update document failed")
 	}
 
 	if moved {

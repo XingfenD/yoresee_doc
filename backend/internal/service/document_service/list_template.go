@@ -24,11 +24,13 @@ func (s *DocumentService) listTemplates(req *internal_dto.TemplateListReq) *temp
 func (op *templateListOperation) ExecWithTotal() ([]*dto.TemplateResponse, int64, error) {
 	listOp, err := op.srvc.buildListTemplateOperation(op.req)
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: DocumentService] buildListTemplateOperation failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "build template list operation failed")
 	}
 	templates, total, err := listOp.ExecWithTotal()
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: DocumentService] list templates failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "list templates failed")
 	}
 
 	kbExternalIDMap := make(map[int64]string)
@@ -85,9 +87,15 @@ func (s *DocumentService) ListTemplatesByExternal(req *dto.TemplateListByExterna
 
 	internalReq, err := buildTemplateListReqFromExternal(req, creatorID)
 	if err != nil {
-		return nil, 0, err
+		logrus.Errorf("[Service layer: DocumentService] buildTemplateListReqFromExternal failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "build template list request failed")
 	}
-	return s.listTemplates(internalReq).ExecWithTotal()
+	list, total, err := s.listTemplates(internalReq).ExecWithTotal()
+	if err != nil {
+		logrus.Errorf("[Service layer: DocumentService] ListTemplatesByExternal failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(err, "list templates failed")
+	}
+	return list, total, nil
 }
 
 func buildTemplateListReqFromExternal(req *dto.TemplateListByExternalReq, creatorID *int64) (*internal_dto.TemplateListReq, error) {
@@ -136,6 +144,7 @@ func (b *templateListOperationBuilder) ExecWithTotal() ([]*model.Template, int64
 		if b.req.FilterArgs.KnowledgeBaseID != nil && *b.req.FilterArgs.KnowledgeBaseID != "" {
 			kbID, err := b.srvc.kbRepo.GetIDByExternalID(*b.req.FilterArgs.KnowledgeBaseID).Exec()
 			if err != nil {
+				logrus.Errorf("[Service layer: DocumentService] Get knowledge base id for template list failed, external_id=%s, err=%+v", *b.req.FilterArgs.KnowledgeBaseID, err)
 				return nil, 0, status.StatusKnowledgeBaseNotFound
 			}
 			op = op.WithKnowledgeBaseID(&kbID)
@@ -157,5 +166,10 @@ func (b *templateListOperationBuilder) ExecWithTotal() ([]*model.Template, int64
 		op = op.WithPagination(b.req.Pagination.Page, b.req.Pagination.PageSize)
 	}
 
-	return op.ExecWithTotal()
+	templates, total, err := op.ExecWithTotal()
+	if err != nil {
+		logrus.Errorf("[Service layer: DocumentService] template repository list failed, err=%+v", err)
+		return nil, 0, status.GenErrWithCustomMsg(status.StatusReadDBError, "list templates failed")
+	}
+	return templates, total, nil
 }

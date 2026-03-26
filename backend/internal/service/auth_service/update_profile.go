@@ -20,21 +20,21 @@ const maxAvatarSize = 5 * 1024 * 1024
 
 func (s *AuthService) UpdateProfile(userExternalID string, req *dto.UpdateProfileRequest) (*dto.UserResponse, error) {
 	if strings.TrimSpace(userExternalID) == "" || req == nil {
-		return nil, status.StatusParamError
+		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "user_external_id and request are required")
 	}
 	if req.Username == nil && req.Email == nil && req.Nickname == nil && req.Password == nil && req.Avatar == nil && req.AvatarFile == nil {
-		return nil, status.StatusParamError
+		return nil, status.GenErrWithCustomMsg(status.StatusParamError, "no profile fields to update")
 	}
 
 	user, err := s.userRepo.GetByExternalID(userExternalID).Exec()
 	if err != nil {
-		return nil, status.StatusUserNotFound
+		return nil, status.GenErrWithCustomMsg(status.StatusUserNotFound, "user not found")
 	}
 
 	if req.Username != nil {
 		username := strings.TrimSpace(*req.Username)
 		if username == "" {
-			return nil, status.StatusParamError
+			return nil, status.GenErrWithCustomMsg(status.StatusParamError, "username cannot be empty")
 		}
 		user.Username = username
 	}
@@ -42,7 +42,7 @@ func (s *AuthService) UpdateProfile(userExternalID string, req *dto.UpdateProfil
 	if req.Email != nil {
 		email := strings.TrimSpace(*req.Email)
 		if email == "" {
-			return nil, status.StatusParamError
+			return nil, status.GenErrWithCustomMsg(status.StatusParamError, "email cannot be empty")
 		}
 		existingUser, getErr := s.userRepo.GetByEmail(email).Exec()
 		if getErr == nil && existingUser.ID != user.ID {
@@ -58,11 +58,11 @@ func (s *AuthService) UpdateProfile(userExternalID string, req *dto.UpdateProfil
 	if req.Password != nil {
 		password := strings.TrimSpace(*req.Password)
 		if password == "" {
-			return nil, status.StatusParamError
+			return nil, status.GenErrWithCustomMsg(status.StatusParamError, "password cannot be empty")
 		}
 		hashedPwd, hashErr := utils.HashPassword(password)
 		if hashErr != nil {
-			return nil, status.StatusServiceInternalError
+			return nil, status.GenErrWithCustomMsg(status.StatusServiceInternalError, "hash password failed")
 		}
 		user.PasswordHash = hashedPwd
 	}
@@ -70,7 +70,7 @@ func (s *AuthService) UpdateProfile(userExternalID string, req *dto.UpdateProfil
 	if req.AvatarFile != nil {
 		avatarURL, uploadErr := uploadAvatar(user.ExternalID, req.AvatarFile, req.AvatarFilename, req.AvatarContentType)
 		if uploadErr != nil {
-			return nil, status.GenErrWithCustomMsg(status.StatusServiceInternalError, uploadErr.Error())
+			return nil, status.GenErrWithCustomMsg(status.StatusServiceInternalError, "upload avatar failed")
 		}
 		user.Avatar = avatarURL
 	} else if req.Avatar != nil {
@@ -86,13 +86,13 @@ func (s *AuthService) UpdateProfile(userExternalID string, req *dto.UpdateProfil
 
 func uploadAvatar(userExternalID string, avatarFile []byte, filename, contentType *string) (string, error) {
 	if len(avatarFile) == 0 {
-		return "", fmt.Errorf("avatar file is empty")
+		return "", status.GenErrWithCustomMsg(status.StatusParamError, "avatar file is empty")
 	}
 	if len(avatarFile) > maxAvatarSize {
-		return "", fmt.Errorf("avatar file exceeds 5MB limit")
+		return "", status.GenErrWithCustomMsg(status.StatusParamError, "avatar file exceeds 5MB limit")
 	}
 	if storage.MinioClient == nil {
-		return "", fmt.Errorf("minio client is not initialized")
+		return "", status.GenErrWithCustomMsg(status.StatusServiceInternalError, "minio client is not initialized")
 	}
 
 	fileName := "avatar"

@@ -8,6 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
+	"github.com/sirupsen/logrus"
 )
 
 type templatePayload struct {
@@ -19,7 +20,8 @@ type templatePayload struct {
 
 func (s *DocumentService) CreateTemplate(ctx context.Context, req *dto.CreateTemplateRequest) error {
 	if err := validateCreateTemplateReq(req); err != nil {
-		return err
+		logrus.Errorf("[Service layer: DocumentService] validateCreateTemplateReq failed, err=%+v", err)
+		return status.GenErrWithCustomMsg(err, "invalid create template request")
 	}
 	_ = ctx
 

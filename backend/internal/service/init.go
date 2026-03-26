@@ -6,7 +6,9 @@ import (
 	svc_iface "github.com/XingfenD/yoresee_doc/internal/service/interface"
 	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/setting_service"
+	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
+	"github.com/sirupsen/logrus"
 )
 
 func RegisterTopicConsumer(h svc_iface.TopicConsumer) error {
@@ -18,7 +20,8 @@ func Init(cfg *config.Config) error {
 	config_service.InitConfigService()
 	setting_service.InitSettingService()
 	if err := InitMQTopicConsumer(); err != nil {
-		return err
+		logrus.Errorf("[Service layer] InitMQTopicConsumer failed, err=%+v", err)
+		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "initialize message queue topic consumer failed")
 	}
 
 	return nil
