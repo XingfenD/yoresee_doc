@@ -15,48 +15,44 @@
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <ManageLayout>
-      <ManageSection>
-        <CommonList
-          :rows="userRows"
-          :columns="userColumns"
-          :is-dark="isDarkMode"
-          row-key="external_id"
-          :empty-text="t('message.empty')"
-          :show-pagination="true"
-          :total="userTotal"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10]"
-          @page-change="handlePageChange"
-          :show-search="true"
-          v-model:search-query="keyword"
-          :search-placeholder="t('common.search')"
-          @search="handleSearch"
-          :show-title-bar="true"
-          :title="t('system.user.placeholderTitle')"
+    <ManageCrudListSection
+      :rows="userRows"
+      :columns="userColumns"
+      :is-dark="isDarkMode"
+      row-key="external_id"
+      :empty-text="t('message.empty')"
+      :show-pagination="true"
+      :total="userTotal"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :page-sizes="[10]"
+      @page-change="handlePageChange"
+      :show-search="true"
+      v-model:search-query="keyword"
+      :search-placeholder="t('common.search')"
+      @search="handleSearch"
+      :show-title-bar="true"
+      :title="t('system.user.placeholderTitle')"
+    >
+      <template #cell-status="{ row }">
+        <AppTag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+          {{ row.status === 1 ? t('user.active') : t('user.disabled') }}
+        </AppTag>
+      </template>
+      <template #cell-actions="{ row }">
+        <el-button size="small" text type="primary" @click="openEditDialog(row)">
+          {{ t('document.edit') }}
+        </el-button>
+        <el-button
+          size="small"
+          text
+          :type="row.status === 1 ? 'danger' : 'success'"
+          @click="toggleUserStatus(row)"
         >
-          <template #cell-status="{ row }">
-            <AppTag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-              {{ row.status === 1 ? t('user.active') : t('user.disabled') }}
-            </AppTag>
-          </template>
-          <template #cell-actions="{ row }">
-            <el-button size="small" text type="primary" @click="openEditDialog(row)">
-              {{ t('document.edit') }}
-            </el-button>
-            <el-button
-              size="small"
-              text
-              :type="row.status === 1 ? 'danger' : 'success'"
-              @click="toggleUserStatus(row)"
-            >
-              {{ row.status === 1 ? t('user.ban') : t('user.unban') }}
-            </el-button>
-          </template>
-        </CommonList>
-      </ManageSection>
-    </ManageLayout>
+          {{ row.status === 1 ? t('user.ban') : t('user.unban') }}
+        </el-button>
+      </template>
+    </ManageCrudListSection>
 
     <el-dialog v-model="showEditDialog" :title="t('document.edit')" width="480px">
       <el-form label-position="top" :model="editForm">
@@ -81,18 +77,17 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import ManageLayout from '@/components/ManageLayout.vue';
-import ManageSection from '@/components/ManageSection.vue';
-import CommonList from '@/components/CommonList.vue';
+import ManageCrudListSection from '@/components/ManageCrudListSection.vue';
 import AppTag from '@/components/AppTag.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { useServerTable } from '@/composables/useServerTable';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { useCrudDialog } from '@/composables/useCrudDialog';
 import { listUsers, updateUser } from '@/services/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
@@ -145,13 +140,48 @@ const {
   }
 });
 
-const showEditDialog = ref(false);
-const editing = ref(false);
-const editForm = ref({
-  external_id: '',
-  username: '',
-  email: '',
-  nickname: ''
+const {
+  visible: showEditDialog,
+  submitting: editing,
+  form: editForm,
+  open: openEditDialogRaw,
+  submit: submitEditUser
+} = useCrudDialog({
+  initialForm: () => ({
+    external_id: '',
+    username: '',
+    email: '',
+    nickname: ''
+  }),
+  mapOpenForm: (row) => ({
+    external_id: row?.external_id || '',
+    username: row?.username || '',
+    email: row?.email || '',
+    nickname: row?.nickname || ''
+  }),
+  validate: (form) => {
+    if (!form.username.trim()) {
+      ElMessage.warning(t('message.warning'));
+      return false;
+    }
+    return true;
+  },
+  submitRequest: async (form) => {
+    await updateUser({
+      external_id: form.external_id,
+      username: form.username.trim(),
+      email: form.email.trim(),
+      nickname: form.nickname.trim()
+    });
+  },
+  onSuccess: async () => {
+    await loadUsers();
+    ElMessage.success(t('message.success'));
+  },
+  onError: (err) => {
+    console.error('updateUser failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  }
 });
 
 const userColumns = computed(() => [
@@ -167,40 +197,7 @@ const openEditDialog = (row) => {
   if (!row?.external_id) {
     return;
   }
-  editForm.value = {
-    external_id: row.external_id,
-    username: row.username || '',
-    email: row.email || '',
-    nickname: row.nickname || ''
-  };
-  showEditDialog.value = true;
-};
-
-const submitEditUser = async () => {
-  if (editing.value) {
-    return;
-  }
-  if (!editForm.value.username.trim()) {
-    ElMessage.warning(t('message.warning'));
-    return;
-  }
-  try {
-    editing.value = true;
-    await updateUser({
-      external_id: editForm.value.external_id,
-      username: editForm.value.username.trim(),
-      email: editForm.value.email.trim(),
-      nickname: editForm.value.nickname.trim()
-    });
-    showEditDialog.value = false;
-    await loadUsers();
-    ElMessage.success(t('message.success'));
-  } catch (err) {
-    console.error('updateUser failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    editing.value = false;
-  }
+  openEditDialogRaw(row);
 };
 
 const toggleUserStatus = async (row) => {

@@ -21,43 +21,41 @@
       </el-button>
     </template>
 
-    <ManageLayout>
-      <ManageSection :title="t('system.organization.placeholderTitle')" body-padding="md">
-        <CommonList
-          mode="tree"
-          :rows="pagedOrgNodes"
-          :columns="orgColumns"
-          :is-dark="isDarkMode"
-          row-key="external_id"
-          :empty-text="t('message.empty')"
-          tree-column-key="name"
-          tree-key-field="external_id"
-          :tree-loading="orgLoading"
-          show-pagination
-          :current-page="currentPage"
-          :page-size="pageSize"
-          :page-sizes="pageSizes"
-          :total="totalOrgs"
-          :pagination-layout="paginationLayout"
-          @page-change="handlePageChange"
-          @size-change="handleSizeChange"
-        >
-          <template #tree-cell="{ row }">
-            <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
-              {{ row?.name || '-' }}
-            </el-button>
-          </template>
-          <template #cell-actions="{ row }">
-            <el-button size="small" text type="primary" @click="openEditDialog(row)">
-              {{ t('common.edit') }}
-            </el-button>
-            <el-button size="small" text type="primary" @click="openCreateChildDialog(row)">
-              {{ t('system.organization.createChild') }}
-            </el-button>
-          </template>
-        </CommonList>
-      </ManageSection>
-    </ManageLayout>
+    <ManageCrudListSection
+      :section-title="t('system.organization.placeholderTitle')"
+      body-padding="md"
+      mode="tree"
+      :rows="pagedOrgNodes"
+      :columns="orgColumns"
+      :is-dark="isDarkMode"
+      row-key="external_id"
+      :empty-text="t('message.empty')"
+      tree-column-key="name"
+      tree-key-field="external_id"
+      :tree-loading="orgLoading"
+      show-pagination
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :page-sizes="pageSizes"
+      :total="totalOrgs"
+      :pagination-layout="paginationLayout"
+      @page-change="handlePageChange"
+      @size-change="handleSizeChange"
+    >
+      <template #tree-cell="{ row }">
+        <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
+          {{ row?.name || '-' }}
+        </el-button>
+      </template>
+      <template #cell-actions="{ row }">
+        <el-button size="small" text type="primary" @click="openEditDialog(row)">
+          {{ t('common.edit') }}
+        </el-button>
+        <el-button size="small" text type="primary" @click="openCreateChildDialog(row)">
+          {{ t('system.organization.createChild') }}
+        </el-button>
+      </template>
+    </ManageCrudListSection>
   </PageLayout>
 
   <el-dialog
@@ -111,12 +109,11 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import ManageLayout from '@/components/ManageLayout.vue';
-import ManageSection from '@/components/ManageSection.vue';
-import CommonList from '@/components/CommonList.vue';
+import ManageCrudListSection from '@/components/ManageCrudListSection.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { useServerTable } from '@/composables/useServerTable';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { useCrudDialog } from '@/composables/useCrudDialog';
 import { listOrgNodes, createOrgNode, updateOrgNode } from '@/services/api';
 import { ElMessage } from 'element-plus';
 
@@ -170,19 +167,82 @@ const {
   }
 });
 
-const showCreateDialog = ref(false);
-const creating = ref(false);
 const createParent = ref(null);
-const showEditDialog = ref(false);
-const editing = ref(false);
-const editForm = ref({
-  external_id: '',
-  name: '',
-  description: ''
+const {
+  visible: showCreateDialog,
+  submitting: creating,
+  form: createForm,
+  open: openCreateDialogRaw,
+  submit: submitCreate
+} = useCrudDialog({
+  initialForm: () => ({
+    name: '',
+    description: ''
+  }),
+  validate: (form) => {
+    if (!form.name.trim()) {
+      ElMessage.warning(t('message.nameRequiredGeneric'));
+      return false;
+    }
+    return true;
+  },
+  submitRequest: async (form) => {
+    await createOrgNode({
+      creator_user_external_id: userInfo.value?.external_id || '',
+      name: form.name.trim(),
+      description: form.description.trim(),
+      parent_external_id: createParent.value?.external_id || '',
+      member_user_external_ids: []
+    });
+  },
+  onSuccess: async () => {
+    ElMessage.success(t('message.createSuccessGeneric'));
+    await fetchOrgNodes();
+  },
+  onError: () => {
+    ElMessage.error(t('message.createFailedGeneric'));
+  }
 });
-const createForm = ref({
-  name: '',
-  description: ''
+const {
+  visible: showEditDialog,
+  submitting: editing,
+  form: editForm,
+  open: openEditDialogRaw,
+  submit: submitEdit
+} = useCrudDialog({
+  initialForm: () => ({
+    external_id: '',
+    name: '',
+    description: ''
+  }),
+  mapOpenForm: (row) => ({
+    external_id: row?.external_id || '',
+    name: row?.name || '',
+    description: row?.description || ''
+  }),
+  validate: (form) => {
+    if (!form.name.trim()) {
+      ElMessage.warning(t('message.nameRequiredGeneric'));
+      return false;
+    }
+    return true;
+  },
+  submitRequest: async (form) => {
+    await updateOrgNode({
+      external_id: form.external_id,
+      name: form.name.trim(),
+      description: form.description.trim(),
+      sync_members: false,
+      member_user_external_ids: []
+    });
+  },
+  onSuccess: async () => {
+    ElMessage.success(t('message.saveSuccessGeneric'));
+    await fetchOrgNodes();
+  },
+  onError: () => {
+    ElMessage.error(t('message.saveFailedGeneric'));
+  }
 });
 
 const orgColumns = computed(() => [
@@ -205,30 +265,17 @@ const dialogTitle = computed(() => {
 });
 
 const openCreateDialog = () => {
-  createForm.value = {
-    name: '',
-    description: ''
-  };
   createParent.value = null;
-  showCreateDialog.value = true;
+  openCreateDialogRaw();
 };
 
 const openCreateChildDialog = (row) => {
-  createForm.value = {
-    name: '',
-    description: ''
-  };
   createParent.value = row || null;
-  showCreateDialog.value = true;
+  openCreateDialogRaw();
 };
 
 const openEditDialog = (row) => {
-  editForm.value = {
-    external_id: row?.external_id || '',
-    name: row?.name || '',
-    description: row?.description || ''
-  };
-  showEditDialog.value = true;
+  openEditDialogRaw(row);
 };
 
 const goToDetail = (row) => {
@@ -236,54 +283,6 @@ const goToDetail = (row) => {
     return;
   }
   router.push(`/manage/organization/${row.external_id}`);
-};
-
-const submitCreate = async () => {
-  if (!createForm.value.name.trim()) {
-    ElMessage.warning(t('message.nameRequiredGeneric'));
-    return;
-  }
-  creating.value = true;
-  try {
-    await createOrgNode({
-      creator_user_external_id: userInfo.value?.external_id || '',
-      name: createForm.value.name.trim(),
-      description: createForm.value.description.trim(),
-      parent_external_id: createParent.value?.external_id || '',
-      member_user_external_ids: []
-    });
-    ElMessage.success(t('message.createSuccessGeneric'));
-    showCreateDialog.value = false;
-    fetchOrgNodes();
-  } catch (error) {
-    ElMessage.error(t('message.createFailedGeneric'));
-  } finally {
-    creating.value = false;
-  }
-};
-
-const submitEdit = async () => {
-  if (!editForm.value.name.trim()) {
-    ElMessage.warning(t('message.nameRequiredGeneric'));
-    return;
-  }
-  editing.value = true;
-  try {
-    await updateOrgNode({
-      external_id: editForm.value.external_id,
-      name: editForm.value.name.trim(),
-      description: editForm.value.description.trim(),
-      sync_members: false,
-      member_user_external_ids: []
-    });
-    ElMessage.success(t('message.saveSuccessGeneric'));
-    showEditDialog.value = false;
-    fetchOrgNodes();
-  } catch (error) {
-    ElMessage.error(t('message.saveFailedGeneric'));
-  } finally {
-    editing.value = false;
-  }
 };
 
 onMounted(() => {

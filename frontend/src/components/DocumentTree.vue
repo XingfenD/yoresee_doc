@@ -88,9 +88,11 @@
 </template>
 
 <script setup>
-import { computed, ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Folder, FolderOpened, Document, Plus, Delete, Edit } from '@element-plus/icons-vue';
+import { useDocumentTreeContextMenu } from '@/composables/useDocumentTreeContextMenu';
+import { useInlineRename } from '@/composables/useInlineRename';
 
 const props = defineProps({
   nodes: {
@@ -143,13 +145,26 @@ const emit = defineEmits(['node-click', 'toggle-expand', 'create', 'delete', 're
 const { t } = useI18n();
 
 const treeRef = ref(null);
-const contextMenu = ref({
-  visible: false,
-  x: 0,
-  y: 0,
-  data: null
+const contextMenuEnabled = computed(() => props.contextMenuEnabled);
+const {
+  contextMenu,
+  contextMenuStyle,
+  openContextMenu,
+  closeContextMenu
+} = useDocumentTreeContextMenu({
+  enabled: contextMenuEnabled
 });
-const renamingInputRef = ref(null);
+const {
+  setRenamingInputRef,
+  startInlineRename,
+  cancelInlineRename,
+  confirmInlineRename
+} = useInlineRename({
+  revertRename: computed(() => props.revertRename),
+  onConfirm: ({ node, title }) => {
+    emit('rename', { data: node, title });
+  }
+});
 
 const treeProps = {
   children: 'children',
@@ -159,12 +174,6 @@ const treeProps = {
 
 const isSelected = (data) => String(data?.id) === String(props.currentId);
 
-const setRenamingInputRef = (el, data) => {
-  if (el && data?.isRenaming) {
-    renamingInputRef.value = el;
-  }
-};
-
 const handleNodeClick = (data) => {
   if (data?.isRenaming) {
     return;
@@ -173,33 +182,7 @@ const handleNodeClick = (data) => {
 };
 
 const handleNodeContextMenu = (event, data) => {
-  if (!props.contextMenuEnabled) {
-    return;
-  }
-  event.preventDefault();
-  event.stopPropagation();
-  const menuWidth = 150;
-  const menuHeight = 120;
-  let x = event.clientX;
-  let y = event.clientY;
-  if (x + menuWidth > window.innerWidth) {
-    x = window.innerWidth - menuWidth - 8;
-  }
-  if (y + menuHeight > window.innerHeight) {
-    y = window.innerHeight - menuHeight - 8;
-  }
-  contextMenu.value = {
-    visible: true,
-    x,
-    y,
-    data
-  };
-};
-
-const closeContextMenu = () => {
-  if (contextMenu.value.visible) {
-    contextMenu.value.visible = false;
-  }
+  openContextMenu(event, data);
 };
 
 const handleContextCommand = (command) => {
@@ -220,67 +203,6 @@ const handleContextCommand = (command) => {
     startInlineRename(target);
   }
 };
-
-const startInlineRename = (node) => {
-  if (!node || node.isRenaming) {
-    return;
-  }
-  node.isRenaming = true;
-  node.originalLabel = node.label;
-  node.renameValue = node.label;
-  nextTick(() => {
-    const inputEl = renamingInputRef.value?.input || renamingInputRef.value;
-    if (inputEl && typeof inputEl.focus === 'function') {
-      inputEl.focus();
-      if (typeof inputEl.select === 'function') {
-        inputEl.select();
-      }
-    }
-  });
-};
-
-const cancelInlineRename = (node) => {
-  if (!node?.isRenaming) {
-    return;
-  }
-  node.label = node.originalLabel || node.label;
-  node.renameValue = '';
-  node.isRenaming = false;
-};
-
-const confirmInlineRename = (node) => {
-  if (!node?.isRenaming) {
-    return;
-  }
-  const nextName = node.renameValue?.trim();
-  if (!nextName) {
-    cancelInlineRename(node);
-    return;
-  }
-  node.isRenaming = false;
-  node.renameValue = '';
-  emit('rename', { data: node, title: nextName });
-  if (props.revertRename) {
-    node.label = node.originalLabel || node.label;
-  } else {
-    node.label = nextName;
-  }
-};
-
-const contextMenuStyle = computed(() => ({
-  left: `${contextMenu.value.x}px`,
-  top: `${contextMenu.value.y}px`
-}));
-
-onMounted(() => {
-  window.addEventListener('click', closeContextMenu);
-  window.addEventListener('scroll', closeContextMenu, true);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('click', closeContextMenu);
-  window.removeEventListener('scroll', closeContextMenu, true);
-});
 
 defineExpose({ treeRef, closeContextMenu });
 </script>

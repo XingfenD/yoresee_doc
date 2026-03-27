@@ -21,43 +21,39 @@
       </el-button>
     </template>
 
-    <ManageLayout>
-      <ManageSection>
-        <CommonList
-          :rows="groupRows"
-          :columns="groupColumns"
-          :is-dark="isDarkMode"
-          row-key="external_id"
-          :empty-text="t('message.empty')"
-          :show-pagination="true"
-          :total="groupTotal"
-          v-model:current-page="groupPage"
-          v-model:page-size="groupPageSize"
-          :page-sizes="[10, 20, 50]"
-          @page-change="handleGroupPageChange"
-          :show-search="true"
-          v-model:search-query="groupKeyword"
-          :search-placeholder="t('common.search')"
-          @search="handleGroupSearch"
-          :show-title-bar="true"
-          :title="t('system.userGroup.placeholderTitle')"
-        >
-          <template #cell-name="{ row }">
-            <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
-              {{ row?.name || '-' }}
-            </el-button>
-          </template>
-          <template #cell-actions="{ row }">
-            <el-button size="small" text type="primary" @click="openEditDialog(row)">
-              {{ t('document.edit') }}
-            </el-button>
-            <el-button size="small" text type="danger" @click="handleDeleteGroup(row)">
-              {{ t('document.delete') }}
-            </el-button>
-          </template>
-        </CommonList>
-      </ManageSection>
-    </ManageLayout>
+    <ManageCrudListSection
+      :rows="groupRows"
+      :columns="groupColumns"
+      :is-dark="isDarkMode"
+      row-key="external_id"
+      :empty-text="t('message.empty')"
+      :show-pagination="true"
+      :total="groupTotal"
+      v-model:current-page="groupPage"
+      v-model:page-size="groupPageSize"
+      :page-sizes="[10, 20, 50]"
+      @page-change="handleGroupPageChange"
+      :show-search="true"
+      v-model:search-query="groupKeyword"
+      :search-placeholder="t('common.search')"
+      @search="handleGroupSearch"
+      :show-title-bar="true"
+      :title="t('system.userGroup.placeholderTitle')"
+    >
+      <template #cell-name="{ row }">
+        <el-button class="link-btn" type="primary" text @click="goToDetail(row)">
+          {{ row?.name || '-' }}
+        </el-button>
+      </template>
+      <template #cell-actions="{ row }">
+        <el-button size="small" text type="primary" @click="openEditDialog(row)">
+          {{ t('document.edit') }}
+        </el-button>
+        <el-button size="small" text type="danger" @click="handleDeleteGroup(row)">
+          {{ t('document.delete') }}
+        </el-button>
+      </template>
+    </ManageCrudListSection>
 
     <el-dialog v-model="showCreateDialog" :title="t('system.userGroup.title')" width="480px">
       <el-form label-position="top" :model="createForm">
@@ -96,17 +92,16 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
-import ManageLayout from '@/components/ManageLayout.vue';
-import ManageSection from '@/components/ManageSection.vue';
-import CommonList from '@/components/CommonList.vue';
+import ManageCrudListSection from '@/components/ManageCrudListSection.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { useServerTable } from '@/composables/useServerTable';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { useCrudDialog } from '@/composables/useCrudDialog';
 import { createUserGroup, deleteUserGroup, listUserGroups, updateUserGroup } from '@/services/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
@@ -159,18 +154,79 @@ const {
   }
 });
 
-const showCreateDialog = ref(false);
-const creating = ref(false);
-const createForm = ref({
-  name: '',
-  description: ''
+const {
+  visible: showCreateDialog,
+  submitting: creating,
+  form: createForm,
+  open: openCreateDialog,
+  submit: submitCreateGroup
+} = useCrudDialog({
+  initialForm: () => ({
+    name: '',
+    description: ''
+  }),
+  validate: (form) => {
+    if (!form.name.trim()) {
+      ElMessage.warning(t('message.warning'));
+      return false;
+    }
+    return true;
+  },
+  submitRequest: async (form) => {
+    await createUserGroup({
+      name: form.name.trim(),
+      description: form.description.trim()
+    });
+  },
+  onSuccess: async () => {
+    await loadUserGroups();
+    ElMessage.success(t('message.success'));
+  },
+  onError: (err) => {
+    console.error('createUserGroup failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  }
 });
-const showEditDialog = ref(false);
-const editing = ref(false);
-const editForm = ref({
-  external_id: '',
-  name: '',
-  description: ''
+
+const {
+  visible: showEditDialog,
+  submitting: editing,
+  form: editForm,
+  open: openEditGroupDialog,
+  submit: submitEditGroup
+} = useCrudDialog({
+  initialForm: () => ({
+    external_id: '',
+    name: '',
+    description: ''
+  }),
+  mapOpenForm: (row) => ({
+    external_id: row?.external_id || '',
+    name: row?.name || '',
+    description: row?.description || ''
+  }),
+  validate: (form) => {
+    if (!form.name.trim()) {
+      ElMessage.warning(t('message.warning'));
+      return false;
+    }
+    return true;
+  },
+  submitRequest: async (form) => {
+    await updateUserGroup({
+      external_id: form.external_id,
+      name: form.name.trim(),
+      description: form.description.trim()
+    });
+  },
+  onSuccess: async () => {
+    await loadUserGroups();
+    ElMessage.success(t('message.success'));
+  },
+  onError: (err) => {
+    console.error('updateUserGroup failed', err);
+    ElMessage.error(t('common.requestFailed'));
+  }
 });
 
 const groupColumns = computed(() => [
@@ -187,75 +243,11 @@ const goToDetail = (row) => {
   router.push(`/manage/user_group/${row.external_id}`);
 };
 
-const openCreateDialog = () => {
-  createForm.value = {
-    name: '',
-    description: ''
-  };
-  showCreateDialog.value = true;
-};
-
 const openEditDialog = (row) => {
   if (!row?.external_id) {
     return;
   }
-  editForm.value = {
-    external_id: row.external_id,
-    name: row.name || '',
-    description: row.description || ''
-  };
-  showEditDialog.value = true;
-};
-
-const submitCreateGroup = async () => {
-  if (creating.value) {
-    return;
-  }
-  if (!createForm.value.name.trim()) {
-    ElMessage.warning(t('message.warning'));
-    return;
-  }
-  try {
-    creating.value = true;
-    await createUserGroup({
-      name: createForm.value.name.trim(),
-      description: createForm.value.description.trim()
-    });
-    showCreateDialog.value = false;
-    await loadUserGroups();
-    ElMessage.success(t('message.success'));
-  } catch (err) {
-    console.error('createUserGroup failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    creating.value = false;
-  }
-};
-
-const submitEditGroup = async () => {
-  if (editing.value) {
-    return;
-  }
-  if (!editForm.value.name.trim()) {
-    ElMessage.warning(t('message.warning'));
-    return;
-  }
-  try {
-    editing.value = true;
-    await updateUserGroup({
-      external_id: editForm.value.external_id,
-      name: editForm.value.name.trim(),
-      description: editForm.value.description.trim()
-    });
-    showEditDialog.value = false;
-    await loadUserGroups();
-    ElMessage.success(t('message.success'));
-  } catch (err) {
-    console.error('updateUserGroup failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    editing.value = false;
-  }
+  openEditGroupDialog(row);
 };
 
 const handleDeleteGroup = async (row) => {

@@ -10,88 +10,44 @@
       <el-form-item v-if="showTemplateSelector" :label="t('knowledgeBase.template')">
         <el-tabs v-model="activeTab" class="template-tabs">
           <el-tab-pane :label="t('templates.recent')" name="recent">
-            <div v-loading="loadingRecent">
-              <div v-if="recentTemplates.length === 0" class="template-empty">
-                <el-empty :description="t('templates.noRecent')" />
-              </div>
-              <div v-else class="template-list">
-                <div
-                  v-for="tpl in recentTemplates"
-                  :key="tpl.id"
-                  class="template-card"
-                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
-                  @click="selectTemplate(tpl)"
-                >
-                  <div class="template-card-title">
-                    {{ tpl.name }}
-                  </div>
-                  <div class="template-card-desc">{{ tpl.description || t('templates.noDescription') }}</div>
-                </div>
-              </div>
-            </div>
+            <TemplatePickerPane
+              :loading="loadingRecent"
+              :items="recentTemplates"
+              :selected-template-id="formState.template"
+              :empty-text="t('templates.noRecent')"
+              :fallback-description="t('templates.noDescription')"
+              @select="selectTemplate"
+            />
           </el-tab-pane>
           <el-tab-pane :label="t('templates.my')" name="my">
-            <div v-loading="loadingMy">
-              <div v-if="myTemplates.length === 0" class="template-empty">
-                <el-empty :description="t('templates.noMy')" />
-              </div>
-              <div v-else class="template-list">
-                <div
-                  v-for="tpl in myTemplates"
-                  :key="tpl.id"
-                  class="template-card"
-                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
-                  @click="selectTemplate(tpl)"
-                >
-                  <div class="template-card-title">
-                    {{ tpl.name }}
-                  </div>
-                  <div class="template-card-desc">{{ tpl.description || t('templates.noDescription') }}</div>
-                </div>
-              </div>
-            </div>
+            <TemplatePickerPane
+              :loading="loadingMy"
+              :items="myTemplates"
+              :selected-template-id="formState.template"
+              :empty-text="t('templates.noMy')"
+              :fallback-description="t('templates.noDescription')"
+              @select="selectTemplate"
+            />
           </el-tab-pane>
           <el-tab-pane :label="t('templates.public')" name="public">
-            <div v-loading="loadingPublic">
-              <div v-if="publicTemplates.length === 0" class="template-empty">
-                <el-empty :description="t('templates.noPublic')" />
-              </div>
-              <div v-else class="template-list">
-                <div
-                  v-for="tpl in publicTemplates"
-                  :key="tpl.id"
-                  class="template-card"
-                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
-                  @click="selectTemplate(tpl)"
-                >
-                  <div class="template-card-title">
-                    {{ tpl.name }}
-                  </div>
-                  <div class="template-card-desc">{{ tpl.description || t('templates.noDescription') }}</div>
-                </div>
-              </div>
-            </div>
+            <TemplatePickerPane
+              :loading="loadingPublic"
+              :items="publicTemplates"
+              :selected-template-id="formState.template"
+              :empty-text="t('templates.noPublic')"
+              :fallback-description="t('templates.noDescription')"
+              @select="selectTemplate"
+            />
           </el-tab-pane>
           <el-tab-pane v-if="showKnowledgeBaseTemplates" :label="t('templates.knowledgeBaseTab')" name="knowledge_base">
-            <div v-loading="loadingKb">
-              <div v-if="kbTemplates.length === 0" class="template-empty">
-                <el-empty :description="t('templates.noKb')" />
-              </div>
-              <div v-else class="template-list">
-                <div
-                  v-for="tpl in kbTemplates"
-                  :key="tpl.id"
-                  class="template-card"
-                  :class="{ 'is-selected': formState.template === String(tpl.id) }"
-                  @click="selectTemplate(tpl)"
-                >
-                  <div class="template-card-title">
-                    {{ tpl.name }}
-                  </div>
-                  <div class="template-card-desc">{{ tpl.description || t('templates.noDescription') }}</div>
-                </div>
-              </div>
-            </div>
+            <TemplatePickerPane
+              :loading="loadingKb"
+              :items="kbTemplates"
+              :selected-template-id="formState.template"
+              :empty-text="t('templates.noKb')"
+              :fallback-description="t('templates.noDescription')"
+              @select="selectTemplate"
+            />
           </el-tab-pane>
         </el-tabs>
       </el-form-item>
@@ -112,6 +68,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
+import TemplatePickerPane from '@/components/TemplatePickerPane.vue';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
 
 const props = defineProps({
@@ -299,63 +256,6 @@ watch(activeTab, (tab) => {
   background: var(--tab-active);
 }
 
-.template-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-}
-
-.template-card {
-  cursor: pointer;
-  border-bottom: 1px solid #eef0f4;
-  padding: 12px 8px 12px 12px;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  position: relative;
-}
-
-.template-card:hover {
-  background-color: #f7f8fa;
-}
-
-.template-card.is-selected {
-  background-color: #f0f5ff;
-}
-
-.template-card-title {
-  font-weight: 600;
-  color: #111827;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.template-card-desc {
-  margin-top: 4px;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.template-card.is-selected::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 2px;
-  background: #3370ff;
-}
-
-.template-empty {
-  padding: var(--spacing-md) 0;
-}
-
-@media (max-width: 640px) {
-  .template-list {
-    grid-template-columns: 1fr;
-  }
-}
-
 .dark-mode .template-tabs {
   --tab-active: #4c8dff;
   --tab-text: #9ca3af;
@@ -368,26 +268,5 @@ watch(activeTab, (tab) => {
 
 .dark-mode .template-tabs :deep(.el-tabs__item.is-active) {
   color: var(--tab-active);
-}
-
-.dark-mode .template-card {
-  background-color: transparent;
-  border-color: #1f2937;
-}
-
-.dark-mode .template-card:hover {
-  background-color: #111827;
-}
-
-.dark-mode .template-card.is-selected {
-  background-color: #0b1f3a;
-}
-
-.dark-mode .template-card-title {
-  color: #e5e7eb;
-}
-
-.dark-mode .template-card-desc {
-  color: #9ca3af;
 }
 </style>
