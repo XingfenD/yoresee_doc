@@ -72,6 +72,7 @@ import TitleBar from '@/components/TitleBar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
 import AppTag from '@/components/AppTag.vue';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 import { useTemplatePreviewPage } from '@/composables/useTemplatePreviewPage';
 
 const route = useRoute();
@@ -98,6 +99,7 @@ const {
   userStore,
   defaultActiveMenu: 'templates'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const {
   loading,
@@ -121,10 +123,8 @@ const {
   isDarkMode
 });
 
-onMounted(async () => {
-  await fetchSystemInfo();
-  initLanguage();
-  await init();
+onMounted(() => {
+  boot(init);
 });
 </script>
 

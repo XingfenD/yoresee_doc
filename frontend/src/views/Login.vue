@@ -66,6 +66,7 @@ import { useUserStore } from '../store/user';
 import { useI18n } from 'vue-i18n';
 import AuthLayout from '@/components/AuthLayout.vue';
 import { useAuthShell } from '@/composables/useAuthShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 const router = useRouter();
 const route = useRoute();
@@ -83,6 +84,7 @@ const {
   initLanguage,
   fetchSystemInfo
 } = useAuthShell({ locale, userStore });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const loginForm = reactive({
   email: route.query.email || '',
@@ -124,8 +126,7 @@ const handleLogin = async () => {
 };
 
 onMounted(() => {
-  fetchSystemInfo();
-  initLanguage();
+  boot();
 });
 </script>
 

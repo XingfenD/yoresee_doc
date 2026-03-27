@@ -16,7 +16,7 @@
     <TitleBar :show-back="true" :compact="true" :back-text="t('common.back')" @back="goBackToKnowledgeBase">
       <template #actions>
         <el-button type="primary" @click="openCreateDocumentDialog">
-          {{ t("knowledgeBase.createDocument") }}
+          {{ t('knowledgeBase.createDocument') }}
         </el-button>
       </template>
     </TitleBar>
@@ -33,114 +33,68 @@
       </div>
 
       <div class="detail-columns">
-        <!-- 文档树形结构 -->
-        <div class="document-tree-section">
-            <div class="section-header">
-              <h3 class="section-title">{{ t("knowledgeBase.documentStructure") }}</h3>
+        <KnowledgeBaseDocumentTreePanel
+          class="detail-tree-panel"
+          v-model:search-keyword="searchKeyword"
+          v-model:sort-by="sortBy"
+          :title="t('knowledgeBase.documentStructure')"
+          :search-placeholder="t('knowledgeBase.searchDocuments')"
+          :sort-placeholder="t('knowledgeBase.sortBy')"
+          :sort-options="sortOptions"
+          :nodes="directoryTreeData"
+          :loading="loading"
+          :empty-text="t('knowledgeBase.noDocuments')"
+          :total="totalDocumentsCount"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :open-label="t('common.open')"
+          :rename-label="t('common.rename')"
+          :share-label="t('document.share')"
+          :delete-label="t('common.delete')"
+          @node-click="handleTreeNodeClick"
+          @open="openDocument"
+          @node-action="handleNodeAction"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
 
-              <div class="tree-controls">
-                <el-input v-model="searchKeyword" :placeholder="t('knowledgeBase.searchDocuments')" prefix-icon="Search"
-                  clearable class="search-input" />
-
-                <el-select v-model="sortBy" :placeholder="t('knowledgeBase.sortBy')" class="sort-select">
-                  <el-option v-for="option in sortOptions" :key="option.value" :label="option.label"
-                    :value="option.value" />
-                </el-select>
-              </div>
-            </div>
-
-            <div class="tree-content" v-loading="loading">
-              <DocumentTree
-                v-if="directoryTreeData.length > 0"
-                :nodes="directoryTreeData"
-                :loading="loading"
-                :show-toolbar="false"
-                :show-create="false"
-                :show-delete="false"
-                :context-menu-enabled="false"
-                @node-click="handleTreeNodeClick"
-              >
-                <template #node-extra="{ data }">
-                  <AppTag v-if="data.tags && data.tags.length > 0" size="small" type="info" class="node-tag">
-                    {{ data.tags[0] }}
-                  </AppTag>
-                </template>
-                <template #node-actions="{ data }">
-                  <el-button size="small" type="primary" text @click.stop="openDocument(data)">
-                    {{ t("common.open") }}
-                  </el-button>
-
-                  <el-dropdown trigger="click" @command="handleNodeAction($event, data)">
-                    <el-button size="small" text @click.stop>
-                      <el-icon>
-                        <MoreFilled />
-                      </el-icon>
-                    </el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="rename">
-                          {{ t("common.rename") }}
-                        </el-dropdown-item>
-                        <el-dropdown-item command="share" divided>
-                          {{ t("document.share") }}
-                        </el-dropdown-item>
-                        <el-dropdown-item command="delete" divided>
-                          {{ t("common.delete") }}
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
-                </template>
-              </DocumentTree>
-              <div v-else-if="!loading" class="empty-tree-state">
-                <el-empty :description="t('knowledgeBase.noDocuments')" :image-size="64" />
-              </div>
-            </div>
-
-            <!-- 分页控件 -->
-            <div class="pagination-container" v-if="totalDocumentsCount > pageSize">
-              <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[20, 50, 100]"
-                :total="totalDocumentsCount" layout="total, sizes, prev, pager, next, jumper"
-                @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-            </div>
-        </div>
-        <div class="kb-templates-section">
-          <div class="kb-templates-inner" v-loading="kbTemplatesLoading">
-            <TemplateListSection
-              :title="t('knowledgeBase.templates')"
-              :items="kbTemplates"
-              :empty-text="t('templates.noMy')"
-              :fallback-description="t('templates.noDescription')"
-              :tag-mapper="templateTagMapper"
-              :meta-mapper="templateMetaMapper"
-              :action-label="t('common.open')"
-              @open="openTemplate"
-            />
-          </div>
-        </div>
+        <KnowledgeBaseTemplatesPanel
+          class="detail-templates-panel"
+          :loading="kbTemplatesLoading"
+          :title="t('knowledgeBase.templates')"
+          :items="kbTemplates"
+          :empty-text="t('templates.noMy')"
+          :fallback-description="t('templates.noDescription')"
+          :tag-mapper="templateTagMapper"
+          :meta-mapper="templateMetaMapper"
+          :action-label="t('common.open')"
+          @open="openTemplate"
+        />
       </div>
     </div>
   </PageLayout>
 
-  <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
-    :knowledge-base-id="route.params.id || ''" @submit="createDocument"
-    @cancel="cancelCreateDocument" />
+  <DocumentCreateDialog
+    v-model="showCreateDialog"
+    :loading="creatingLoading"
+    :knowledge-base-id="route.params.id || ''"
+    @submit="createDocument"
+    @cancel="cancelCreateDocument"
+  />
 </template>
 
 <script setup>
-import { onMounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { useUserStore } from "@/store/user";
-import { useI18n } from "vue-i18n";
-import PageLayout from "@/components/PageLayout.vue";
-import TitleBar from "@/components/TitleBar.vue";
-import DocumentTree from "@/components/DocumentTree.vue";
-import DocumentCreateDialog from "@/components/DocumentCreateDialog.vue";
-import TemplateListSection from "@/components/TemplateListSection.vue";
-import InfoStatsCard from "@/components/InfoStatsCard.vue";
-import AppTag from "@/components/AppTag.vue";
-import { MoreFilled } from "@element-plus/icons-vue";
-import { useKnowledgeBaseDetailPage } from "@/composables/useKnowledgeBaseDetailPage";
+import { onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useUserStore } from '@/store/user';
+import { useI18n } from 'vue-i18n';
+import PageLayout from '@/components/PageLayout.vue';
+import TitleBar from '@/components/TitleBar.vue';
+import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
+import InfoStatsCard from '@/components/InfoStatsCard.vue';
+import KnowledgeBaseDocumentTreePanel from '@/components/KnowledgeBaseDocumentTreePanel.vue';
+import KnowledgeBaseTemplatesPanel from '@/components/KnowledgeBaseTemplatesPanel.vue';
+import { useKnowledgeBaseDetailPage } from '@/composables/useKnowledgeBaseDetailPage';
 
 const { locale, t } = useI18n();
 const router = useRouter();
@@ -201,7 +155,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 知识库详情内容 */
 .detail-content {
   display: flex;
   flex-direction: column;
@@ -218,175 +171,16 @@ onMounted(async () => {
   align-items: stretch;
 }
 
-.kb-templates-section {
-  display: flex;
-  min-height: 0;
-  width: 320px;
-  flex-shrink: 0;
-}
-
-.kb-templates-inner {
+.detail-tree-panel {
   flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 
-.kb-templates-section :deep(.card-list-section) {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.kb-templates-section :deep(.section-content) {
-  flex: 1;
+.detail-templates-panel {
   min-height: 0;
-  overflow-y: auto;
 }
 
-/* 文档树形结构区域 */
-.document-tree-section {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  background-color: var(--bg-white);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  flex: 1;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-white);
-}
-
-.section-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.tree-controls {
-  display: flex;
-  gap: var(--spacing-md);
-  align-items: center;
-}
-
-.search-input {
-  width: 200px;
-}
-
-.sort-select {
-  width: 150px;
-}
-
-@media (max-width: 1200px) {
-  .detail-columns {
-    flex-direction: column;
-  }
-
-  .kb-templates-section {
-    width: 100%;
-  }
-}
-
-.tree-content {
-  flex: 1;
-  min-height: 0;
-  padding: var(--spacing-md);
-  overflow-y: auto;
-}
-
-.custom-tree {
-  width: 100%;
-}
-
-.tree-node-content {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: var(--spacing-xs) 0;
-}
-
-.node-icon {
-  width: 24px;
-  margin-right: var(--spacing-sm);
-  color: var(--primary-color);
-}
-
-.node-info {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.node-label {
-  color: var(--text-medium);
-  font-size: 14px;
-}
-
-.node-tag {
-  flex-shrink: 0;
-}
-
-.node-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.custom-tree :deep(.el-tree-node__content):hover .node-actions {
-  opacity: 1;
-}
-
-/* 分页容器样式 */
-.pagination-container {
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--border-color);
-  background-color: var(--bg-white);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .tree-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-input {
-    width: 100%;
-  }
-
-  .sort-select {
-    width: 100%;
-  }
-
-}
-
-/* 深色模式支持 */
-.dark-mode .search-input :deep(.el-input__wrapper) {
-  background-color: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--input-text);
-}
-
-.dark-mode .search-input :deep(.el-input__inner) {
-  background-color: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--input-text);
-}
-
-/* 空状态样式 */
 .empty-state {
   display: flex;
   justify-content: center;
@@ -398,161 +192,9 @@ onMounted(async () => {
   border: 1px solid var(--border-color);
 }
 
-.empty-tree-state {
-  display: flex;
-  height: 100%;
-  justify-content: center;
-  align-items: center;
-  background-color: var(--bg-white);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-}
-
-.dark-mode .sort-select :deep(.el-input__wrapper) {
-  background-color: var(--select-bg);
-  border-color: var(--select-border);
-  color: var(--select-text);
-}
-
-.dark-mode .sort-select :deep(.el-input__inner) {
-  background-color: var(--select-bg);
-  border-color: var(--select-border);
-  color: var(--select-text);
-}
-
-.dark-mode .sort-select :deep(.el-select__dropdown) {
-  background-color: var(--select-bg);
-  border-color: var(--select-border);
-}
-
-.dark-mode .sort-select :deep(.el-popper) {
-  background-color: var(--select-bg);
-  border-color: var(--select-border);
-  color: var(--select-text);
-}
-
-.dark-mode .sort-select :deep(.el-select-dropdown__item) {
-  background-color: var(--select-option-bg);
-  color: var(--select-text);
-}
-
-.dark-mode .sort-select :deep(.el-select-dropdown__item:hover) {
-  background-color: var(--select-option-hover);
-}
-
-/* 文档树的深色模式支持 */
-.dark-mode .document-tree-section {
-  background-color: var(--bg-medium);
-  border-color: var(--border-color);
-}
-
-.dark-mode .section-header {
-  background-color: var(--bg-medium);
-  border-color: var(--border-color);
-}
-
-.dark-mode .section-title {
-  color: var(--text-dark);
-}
-
-.dark-mode .custom-tree :deep(.el-tree-node__content) {
-  background-color: var(--bg-medium);
-  color: var(--text-medium);
-}
-
-.dark-mode .custom-tree :deep(.el-tree-node__content:hover) {
-  background-color: var(--bg-white);
-  color: var(--text-dark);
-}
-
-.dark-mode .node-label {
-  color: var(--text-medium);
-}
-
-.dark-mode .node-icon {
-  color: var(--primary-color);
-}
-
-.dark-mode .node-actions {
-  color: var(--text-medium);
-}
-
-/* 深色模式对话框样式 */
-.dark-mode .el-dialog {
-  background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
-  color: var(--text-dark);
-}
-
-.dark-mode .el-dialog__header {
-  background-color: var(--bg-white);
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-dark);
-}
-
-.dark-mode .el-dialog__body {
-  background-color: var(--bg-white);
-  color: var(--text-dark);
-}
-
-.dark-mode .el-dialog__footer {
-  background-color: var(--bg-white);
-  border-top: 1px solid var(--border-color);
-}
-
-.dark-mode .el-form-item__label {
-  color: var(--text-dark);
-}
-
-.dark-mode :deep(.el-input__wrapper) {
-  background-color: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--input-text);
-}
-
-.dark-mode :deep(.el-input__inner) {
-  background-color: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--input-text);
-}
-
-.dark-mode :deep(.el-select__wrapper) {
-  background-color: var(--select-bg);
-  border-color: var(--select-border);
-  color: var(--select-text);
-}
-
-.dark-mode :deep(.el-select__input) {
-  background-color: var(--select-bg);
-  color: var(--select-text);
-}
-
-.dark-mode :deep(.el-select-dropdown__item) {
-  background-color: var(--select-option-bg);
-  color: var(--select-text);
-}
-
-.dark-mode :deep(.el-select-dropdown__item.hover) {
-  background-color: var(--select-option-hover);
-}
-
-.dark-mode :deep(.el-select-dropdown__item:hover) {
-  background-color: var(--select-option-hover);
-}
-
-.dark-mode :deep(.el-button) {
-  --el-button-bg-color: var(--bg-light);
-  --el-button-text-color: var(--text-dark);
-  --el-button-hover-bg-color: var(--bg-medium);
-  --el-button-hover-text-color: var(--text-dark);
-  --el-button-border-color: var(--border-color);
-}
-
-.dark-mode :deep(.el-button--primary) {
-  --el-button-bg-color: var(--primary-color);
-  --el-button-text-color: var(--text-light);
-  --el-button-hover-bg-color: var(--primary-color);
-  --el-button-hover-text-color: var(--text-light);
+@media (max-width: 1200px) {
+  .detail-columns {
+    flex-direction: column;
+  }
 }
 </style>

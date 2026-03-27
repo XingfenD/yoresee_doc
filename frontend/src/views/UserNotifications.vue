@@ -92,6 +92,7 @@ import CommonList from '@/components/CommonList.vue';
 import AppTag from '@/components/AppTag.vue';
 import { useUserShell } from '@/composables/useUserShell';
 import { useNotificationCenter } from '@/composables/useNotificationCenter';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -106,6 +107,7 @@ const {
   userMenuItems,
   currentLanguage,
   initLanguage,
+  fetchSystemInfo,
   handleLanguageChange,
   toggleTheme,
   handleLogout,
@@ -116,6 +118,7 @@ const {
   userStore,
   defaultActiveMenu: 'user-notifications'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const {
   activeTab,
@@ -140,8 +143,7 @@ const {
 } = useNotificationCenter({ t });
 
 onMounted(() => {
-  initLanguage();
-  init();
+  boot(init);
 });
 const openDetail = () => {
   // Sample only; would route to doc + comment anchor in real integration.

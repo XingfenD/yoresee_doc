@@ -85,6 +85,7 @@ import PageLayout from "@/components/PageLayout.vue";
 import KnowledgeBaseListSection from "@/components/KnowledgeBaseListSection.vue";
 import { useWorkspaceShell } from "@/composables/useWorkspaceShell";
 import { useKnowledgeBaseListPage } from "@/composables/useKnowledgeBaseListPage";
+import { usePageBoot } from "@/composables/usePageBoot";
 
 const { locale, t } = useI18n();
 const router = useRouter();
@@ -109,6 +110,7 @@ const {
   userStore,
   defaultActiveMenu: "knowledge-base"
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const {
   activeTab,
@@ -134,10 +136,8 @@ const {
   router
 });
 
-onMounted(async () => {
-  await fetchSystemInfo();
-  initLanguage();
-  await init();
+onMounted(() => {
+  boot(init);
 });
 </script>
 
@@ -249,6 +249,4 @@ onMounted(async () => {
   background-color: var(--bg-medium);
   border-bottom: 1px solid var(--border-color);
 }
-
-
 </style>

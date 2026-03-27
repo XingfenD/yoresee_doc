@@ -4,7 +4,7 @@ import { Document, Clock, User } from '@element-plus/icons-vue';
 import {
   getKnowledgeBaseDetail,
   createDocument as createDocumentApi
-} from '@/services/api.js';
+} from '@/services/api';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
 import { usePageBoot } from '@/composables/usePageBoot';

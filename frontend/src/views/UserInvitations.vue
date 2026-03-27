@@ -32,6 +32,7 @@ import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import InvitationCenter from '@/components/InvitationCenter.vue';
 import { useUserShell } from '@/composables/useUserShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -47,6 +48,7 @@ const {
   userMenuItems,
   currentLanguage,
   initLanguage,
+  fetchSystemInfo,
   handleLanguageChange,
   toggleTheme,
   handleLogout,
@@ -57,12 +59,13 @@ const {
   userStore,
   defaultActiveMenu: 'user-invite'
 });
+const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const handleCreateClick = () => {
   invitationCenterRef.value?.openCreateDialog();
 };
 
 onMounted(() => {
-  initLanguage();
+  boot();
 });
 </script>

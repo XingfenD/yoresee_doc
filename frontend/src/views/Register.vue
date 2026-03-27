@@ -88,6 +88,7 @@ import { useUserStore } from '../store/user';
 import { useI18n } from 'vue-i18n';
 import AuthLayout from '@/components/AuthLayout.vue';
 import { useAuthShell } from '@/composables/useAuthShell';
+import { usePageBoot } from '@/composables/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -105,6 +106,13 @@ const {
   initLanguage,
   fetchSystemInfo
 } = useAuthShell({ locale, userStore });
+const { boot } = usePageBoot({
+  initLanguage,
+  fetchSystemInfo: () =>
+    fetchSystemInfo((info) => {
+      systemRegisterMode.value = info.system_register_mode || 'open';
+    })
+});
 
 const registerForm = reactive({
   username: '',
@@ -182,10 +190,7 @@ const handleRegister = async () => {
 };
 
 onMounted(() => {
-  fetchSystemInfo((info) => {
-    systemRegisterMode.value = info.system_register_mode || 'open';
-  });
-  initLanguage();
+  boot();
 });
 </script>
 
