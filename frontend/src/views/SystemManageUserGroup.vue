@@ -101,6 +101,7 @@ import ManageCrudListSection from '@/components/ManageCrudListSection.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { useServerTable } from '@/composables/useServerTable';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { isActionCancelled, useApiAction } from '@/composables/useApiAction';
 import { useCrudDialog } from '@/composables/useCrudDialog';
 import { createUserGroup, deleteUserGroup, listUserGroups, updateUserGroup } from '@/services/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -108,6 +109,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
+const { runApi, createApiErrorHandler } = useApiAction({ t });
 
 const {
   systemName,
@@ -182,10 +184,7 @@ const {
     await loadUserGroups();
     ElMessage.success(t('message.success'));
   },
-  onError: (err) => {
-    console.error('createUserGroup failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  }
+  onError: createApiErrorHandler({ context: 'createUserGroup' })
 });
 
 const {
@@ -223,10 +222,7 @@ const {
     await loadUserGroups();
     ElMessage.success(t('message.success'));
   },
-  onError: (err) => {
-    console.error('updateUserGroup failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  }
+  onError: createApiErrorHandler({ context: 'updateUserGroup' })
 });
 
 const groupColumns = computed(() => [
@@ -254,20 +250,23 @@ const handleDeleteGroup = async (row) => {
   if (!row?.external_id) {
     return;
   }
-  try {
-    await ElMessageBox.confirm(t('message.confirmDelete'), t('document.delete'), {
-      confirmButtonText: t('button.confirm'),
-      cancelButtonText: t('button.cancel'),
-      type: 'warning'
-    });
-    await deleteUserGroup(row.external_id);
-    await loadUserGroups();
-    ElMessage.success(t('message.deleteSuccess'));
-  } catch (err) {
-    if (err) {
-      console.error('deleteUserGroup failed', err);
+
+  await runApi(
+    async () => {
+      await ElMessageBox.confirm(t('message.confirmDelete'), t('document.delete'), {
+        confirmButtonText: t('button.confirm'),
+        cancelButtonText: t('button.cancel'),
+        type: 'warning'
+      });
+      await deleteUserGroup(row.external_id);
+      await loadUserGroups();
+    },
+    {
+      context: 'deleteUserGroup',
+      successMessage: t('message.deleteSuccess'),
+      ignoreError: isActionCancelled
     }
-  }
+  );
 };
 
 onMounted(() => {

@@ -1,4 +1,5 @@
 import { clients, messages, unaryCall } from './grpc_client';
+import { baseToObject, handleResponse, mapUser } from './api/shared';
 
 const { authClient, systemClient } = clients;
 const {
@@ -8,36 +9,6 @@ const {
   QueryTopNavDisplayRequest,
   SystemInfoRequest
 } = messages;
-
-function baseToObject(resp) {
-  const base = resp.base;
-  return {
-    code: base?.code ?? 50000,
-    message: base?.message ?? 'unknown error'
-  };
-}
-
-function mapUser(user) {
-  if (!user) return null;
-  return {
-    external_id: user.externalId,
-    username: user.username,
-    email: user.email,
-    nickname: user.nickname,
-    avatar: user.avatar,
-    status: user.status,
-    created_at: user.createdAt,
-    updated_at: user.updatedAt,
-    invitation_code: user.invitationCode ?? null
-  };
-}
-
-function handleResponse(base, data) {
-  if (base.code === 0) {
-    return { ...base, ...data };
-  }
-  throw new Error('request failed');
-}
 
 // 登录
 export const login = async (email, password) => {

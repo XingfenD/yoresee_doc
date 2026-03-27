@@ -139,6 +139,7 @@ import { useUserStore } from '@/store/user';
 import { useManageShell } from '@/composables/useManageShell';
 import { useServerTable } from '@/composables/useServerTable';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { isActionCancelled, useApiAction } from '@/composables/useApiAction';
 import PageLayout from '@/components/PageLayout.vue';
 import TitleBar from '@/components/TitleBar.vue';
 import ManageLayout from '@/components/ManageLayout.vue';
@@ -169,6 +170,7 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
+const { runApi } = useApiAction({ t });
 
 const entityAdapters = {
   organization: {
@@ -308,13 +310,19 @@ const getExternalId = () => route.params.externalID;
 
 const loadEntityDetail = async () => {
   const externalId = getExternalId();
-  if (!externalId) return;
-  try {
-    entityInfo.value = await entityAdapter.value.loadDetail(externalId);
-  } catch (err) {
-    console.error('load entity detail failed', err);
+  if (!externalId) {
     entityInfo.value = null;
+    return;
   }
+
+  entityInfo.value = await runApi(
+    async () => entityAdapter.value.loadDetail(externalId),
+    {
+      context: 'load entity detail',
+      showErrorMessage: false,
+      fallback: null
+    }
+  );
 };
 
 const openMemberDialog = async () => {
@@ -329,50 +337,57 @@ const submitMemberUpdate = async () => {
   if (savingMembers.value || !entityInfo.value?.external_id) {
     return;
   }
-  try {
-    savingMembers.value = true;
-    const memberIds = Array.from(new Set(selectedMemberIds.value)).filter(Boolean);
-    await entityAdapter.value.update({
-      external_id: entityInfo.value.external_id,
-      sync_members: true,
-      member_user_external_ids: memberIds
-    });
-    showMemberDialog.value = false;
-    await loadEntityMembers();
-    ElMessage.success(t('message.success'));
-  } catch (err) {
-    console.error('update entity members failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    savingMembers.value = false;
-  }
+
+  savingMembers.value = true;
+  await runApi(
+    async () => {
+      const memberIds = Array.from(new Set(selectedMemberIds.value)).filter(Boolean);
+      await entityAdapter.value.update({
+        external_id: entityInfo.value.external_id,
+        sync_members: true,
+        member_user_external_ids: memberIds
+      });
+      showMemberDialog.value = false;
+      await loadEntityMembers();
+    },
+    {
+      context: 'update entity members',
+      successMessage: t('message.success'),
+      onFinally: () => {
+        savingMembers.value = false;
+      }
+    }
+  );
 };
 
 const removeMember = async (row) => {
   if (!row?.external_id || !entityInfo.value?.external_id) {
     return;
   }
-  try {
-    await ElMessageBox.confirm(t('message.confirmDelete'), t('document.delete'), {
-      confirmButtonText: t('button.confirm'),
-      cancelButtonText: t('button.cancel'),
-      type: 'warning'
-    });
-    const remaining = memberRows.value
-      .filter((member) => member.external_id !== row.external_id)
-      .map((member) => member.external_id);
-    await entityAdapter.value.update({
-      external_id: entityInfo.value.external_id,
-      sync_members: true,
-      member_user_external_ids: remaining
-    });
-    await loadEntityMembers();
-    ElMessage.success(t('message.deleteSuccess'));
-  } catch (err) {
-    if (err) {
-      console.error('remove member failed', err);
+
+  await runApi(
+    async () => {
+      await ElMessageBox.confirm(t('message.confirmDelete'), t('document.delete'), {
+        confirmButtonText: t('button.confirm'),
+        cancelButtonText: t('button.cancel'),
+        type: 'warning'
+      });
+      const remaining = memberRows.value
+        .filter((member) => member.external_id !== row.external_id)
+        .map((member) => member.external_id);
+      await entityAdapter.value.update({
+        external_id: entityInfo.value.external_id,
+        sync_members: true,
+        member_user_external_ids: remaining
+      });
+      await loadEntityMembers();
+    },
+    {
+      context: 'remove member',
+      successMessage: t('message.deleteSuccess'),
+      ignoreError: isActionCancelled
     }
-  }
+  );
 };
 
 const openEditDialog = () => {
@@ -395,22 +410,25 @@ const submitEdit = async () => {
     ElMessage.warning(t('message.warning'));
     return;
   }
-  try {
-    editing.value = true;
-    await entityAdapter.value.update({
-      external_id: editForm.value.external_id,
-      name: editForm.value.name.trim(),
-      description: editForm.value.description.trim()
-    });
-    showEditDialog.value = false;
-    await loadEntityDetail();
-    ElMessage.success(t('message.success'));
-  } catch (err) {
-    console.error('update entity failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  } finally {
-    editing.value = false;
-  }
+  editing.value = true;
+  await runApi(
+    async () => {
+      await entityAdapter.value.update({
+        external_id: editForm.value.external_id,
+        name: editForm.value.name.trim(),
+        description: editForm.value.description.trim()
+      });
+      showEditDialog.value = false;
+      await loadEntityDetail();
+    },
+    {
+      context: 'update entity',
+      successMessage: t('message.success'),
+      onFinally: () => {
+        editing.value = false;
+      }
+    }
+  );
 };
 
 onMounted(() => {

@@ -79,11 +79,12 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessageBox } from 'element-plus';
 import CommonList from '@/components/CommonList.vue';
 import InviteCreateDialog from '@/components/InviteCreateDialog.vue';
 import AppTag from '@/components/AppTag.vue';
 import { useServerTable } from '@/composables/useServerTable';
+import { isActionCancelled, useApiAction } from '@/composables/useApiAction';
 import { listInvitations, listInvitationRecords, createInvitation, updateInvitation, deleteInvitation } from '@/services/api';
 
 const props = defineProps({
@@ -99,6 +100,7 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+const { runApi } = useApiAction({ t });
 
 const isSystemMode = computed(() => props.mode === 'system');
 const activeTab = ref('list');
@@ -305,57 +307,66 @@ const fetchInvitationRecords = async () => {
 };
 
 const handleCreateInvite = async (payload) => {
-  try {
-    let expiresAt = payload.expires_at;
-    if (payload.expire_type === 'days' && payload.expire_days) {
-      const target = new Date();
-      target.setDate(target.getDate() + Number(payload.expire_days));
-      expiresAt = formatDateYYYYMMDD(target);
-    }
-    await createInvitation({
-      expires_at: expiresAt ? toRfc3339EndOfDay(expiresAt) : undefined,
-      max_used_cnt: payload.limit_enabled ? payload.max_usage : undefined,
-      note: payload.note
-    });
-    ElMessage.success(t('message.success'));
-    await fetchInvitations();
-  } catch (err) {
-    console.error('createInvitation failed', err);
-    ElMessage.error(t('common.requestFailed'));
+  let expiresAt = payload.expires_at;
+  if (payload.expire_type === 'days' && payload.expire_days) {
+    const target = new Date();
+    target.setDate(target.getDate() + Number(payload.expire_days));
+    expiresAt = formatDateYYYYMMDD(target);
   }
+
+  await runApi(
+    async () => {
+      await createInvitation({
+        expires_at: expiresAt ? toRfc3339EndOfDay(expiresAt) : undefined,
+        max_used_cnt: payload.limit_enabled ? payload.max_usage : undefined,
+        note: payload.note
+      });
+      await fetchInvitations();
+    },
+    {
+      context: 'createInvitation',
+      successMessage: t('message.success')
+    }
+  );
 };
 
 const handlePauseInvite = async (row) => {
   if (!row?.code) return;
-  try {
-    await updateInvitation({
-      code: row.code,
-      disabled: !row.disabled
-    });
-    ElMessage.success(t('message.success'));
-    await fetchInvitations();
-  } catch (err) {
-    console.error('updateInvitation failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  }
+
+  await runApi(
+    async () => {
+      await updateInvitation({
+        code: row.code,
+        disabled: !row.disabled
+      });
+      await fetchInvitations();
+    },
+    {
+      context: 'updateInvitation',
+      successMessage: t('message.success')
+    }
+  );
 };
 
 const handleDeleteInvite = async (row) => {
   if (!row?.code) return;
-  try {
-    await ElMessageBox.confirm(t('message.confirmDelete'), t('user.invite.delete'), {
-      confirmButtonText: t('button.confirm'),
-      cancelButtonText: t('button.cancel'),
-      type: 'warning'
-    });
-    await deleteInvitation(row.code);
-    ElMessage.success(t('message.deleteSuccess'));
-    await fetchInvitations();
-  } catch (err) {
-    if (err) {
-      console.error('deleteInvitation failed', err);
+
+  await runApi(
+    async () => {
+      await ElMessageBox.confirm(t('message.confirmDelete'), t('user.invite.delete'), {
+        confirmButtonText: t('button.confirm'),
+        cancelButtonText: t('button.cancel'),
+        type: 'warning'
+      });
+      await deleteInvitation(row.code);
+      await fetchInvitations();
+    },
+    {
+      context: 'deleteInvitation',
+      successMessage: t('message.deleteSuccess'),
+      ignoreError: isActionCancelled
     }
-  }
+  );
 };
 
 const handleInvitePageChange = async (page) => {
@@ -380,13 +391,17 @@ const handleRecordSearch = () => {
 
 const copyInviteCode = async (code) => {
   if (!code) return;
-  try {
-    await navigator.clipboard.writeText(code);
-    ElMessage.success(t('common.copySuccess'));
-  } catch (err) {
-    console.error('copy invite code failed', err);
-    ElMessage.error(t('common.copyFailed'));
-  }
+
+  await runApi(
+    async () => {
+      await navigator.clipboard.writeText(code);
+    },
+    {
+      context: 'copy invite code',
+      successMessage: t('common.copySuccess'),
+      errorMessage: t('common.copyFailed')
+    }
+  );
 };
 
 const openCreateDialog = () => {

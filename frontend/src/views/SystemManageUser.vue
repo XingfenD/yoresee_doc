@@ -87,6 +87,7 @@ import AppTag from '@/components/AppTag.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { useServerTable } from '@/composables/useServerTable';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { isActionCancelled, useApiAction } from '@/composables/useApiAction';
 import { useCrudDialog } from '@/composables/useCrudDialog';
 import { listUsers, updateUser } from '@/services/api';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -94,6 +95,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
+const { runApi, createApiErrorHandler } = useApiAction({ t });
 
 const {
   systemName,
@@ -178,10 +180,7 @@ const {
     await loadUsers();
     ElMessage.success(t('message.success'));
   },
-  onError: (err) => {
-    console.error('updateUser failed', err);
-    ElMessage.error(t('common.requestFailed'));
-  }
+  onError: createApiErrorHandler({ context: 'updateUser' })
 });
 
 const userColumns = computed(() => [
@@ -204,29 +203,32 @@ const toggleUserStatus = async (row) => {
   if (!row?.external_id) {
     return;
   }
-  try {
-    const isActive = row.status === 1;
-    await ElMessageBox.confirm(
-      isActive ? t('message.confirmBan') : t('message.confirmUnban'),
-      isActive ? t('user.ban') : t('user.unban'),
-      {
-      confirmButtonText: t('button.confirm'),
-      cancelButtonText: t('button.cancel'),
-      type: 'warning'
-      }
-    );
-    const nextStatus = isActive ? 0 : 1;
-    await updateUser({
-      external_id: row.external_id,
-      status: nextStatus
-    });
-    await loadUsers();
-    ElMessage.success(t('message.success'));
-  } catch (err) {
-    if (err) {
-      console.error('toggleUserStatus failed', err);
+
+  await runApi(
+    async () => {
+      const isActive = row.status === 1;
+      await ElMessageBox.confirm(
+        isActive ? t('message.confirmBan') : t('message.confirmUnban'),
+        isActive ? t('user.ban') : t('user.unban'),
+        {
+          confirmButtonText: t('button.confirm'),
+          cancelButtonText: t('button.cancel'),
+          type: 'warning'
+        }
+      );
+      const nextStatus = isActive ? 0 : 1;
+      await updateUser({
+        external_id: row.external_id,
+        status: nextStatus
+      });
+      await loadUsers();
+    },
+    {
+      context: 'toggleUserStatus',
+      successMessage: t('message.success'),
+      ignoreError: isActionCancelled
     }
-  }
+  );
 };
 
 onMounted(() => {

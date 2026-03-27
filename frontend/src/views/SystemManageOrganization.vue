@@ -113,6 +113,7 @@ import ManageCrudListSection from '@/components/ManageCrudListSection.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { useServerTable } from '@/composables/useServerTable';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { useApiAction } from '@/composables/useApiAction';
 import { useCrudDialog } from '@/composables/useCrudDialog';
 import { listOrgNodes, createOrgNode, updateOrgNode } from '@/services/api';
 import { ElMessage } from 'element-plus';
@@ -120,6 +121,7 @@ import { ElMessage } from 'element-plus';
 const router = useRouter();
 const userStore = useUserStore();
 const { locale, t } = useI18n();
+const { createApiErrorHandler } = useApiAction({ t });
 
 const {
   systemName,
@@ -199,9 +201,10 @@ const {
     ElMessage.success(t('message.createSuccessGeneric'));
     await fetchOrgNodes();
   },
-  onError: () => {
-    ElMessage.error(t('message.createFailedGeneric'));
-  }
+  onError: createApiErrorHandler({
+    context: 'createOrgNode',
+    errorMessage: t('message.createFailedGeneric')
+  })
 });
 const {
   visible: showEditDialog,
@@ -240,9 +243,10 @@ const {
     ElMessage.success(t('message.saveSuccessGeneric'));
     await fetchOrgNodes();
   },
-  onError: () => {
-    ElMessage.error(t('message.saveFailedGeneric'));
-  }
+  onError: createApiErrorHandler({
+    context: 'updateOrgNode',
+    errorMessage: t('message.saveFailedGeneric')
+  })
 });
 
 const orgColumns = computed(() => [
