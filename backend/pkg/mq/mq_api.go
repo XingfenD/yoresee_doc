@@ -3,48 +3,83 @@ package mq
 import (
 	"context"
 	"fmt"
-
-	"github.com/XingfenD/yoresee_doc/internal/config"
+	"strings"
+	"time"
 )
 
-func Init(cfg *config.MQConfig) error {
-	mqs, err := InitMessageQueues(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to initialize message queue: %w", err)
+type Message struct {
+	ID        string
+	Topic     string
+	Key       string
+	Body      []byte
+	Headers   map[string]string
+	Timestamp time.Time
+}
+
+type PublishMessage struct {
+	Topic   string
+	Key     string
+	Body    []byte
+	Headers map[string]string
+}
+
+type ConsumeMode string
+
+const (
+	ConsumeModeFanout ConsumeMode = "fanout"
+	ConsumeModeGroup  ConsumeMode = "group"
+)
+
+type ErrorAction string
+
+const (
+	ErrorActionDrop    ErrorAction = "drop"
+	ErrorActionRequeue ErrorAction = "requeue"
+)
+
+type ConsumeOptions struct {
+	Topic    string
+	Mode     ConsumeMode
+	Group    string
+	Consumer string
+	AutoAck  bool
+	OnError  ErrorAction
+}
+
+func (o ConsumeOptions) normalize() ConsumeOptions {
+	n := o
+	n.Topic = strings.TrimSpace(n.Topic)
+	n.Group = strings.TrimSpace(n.Group)
+	n.Consumer = strings.TrimSpace(n.Consumer)
+	if n.Mode == "" {
+		n.Mode = ConsumeModeFanout
+	}
+	if n.OnError == "" {
+		n.OnError = ErrorActionRequeue
+	}
+	return n
+}
+
+func (o ConsumeOptions) validate() error {
+	switch o.Mode {
+	case ConsumeModeFanout, ConsumeModeGroup:
+	default:
+		return fmt.Errorf("invalid consume mode: %s", o.Mode)
 	}
 
-	MQs = mqs
+	switch o.OnError {
+	case ErrorActionDrop, ErrorActionRequeue:
+	default:
+		return fmt.Errorf("invalid error action: %s", o.OnError)
+	}
 
 	return nil
 }
 
-func Close() error {
-	for _, q := range MQs {
-		if q != nil {
-			_ = q.Close()
-		}
-	}
-	return nil
-}
+type MessageHandler func(ctx context.Context, msg Message) error
 
-func PublishTo(ctx context.Context, backend Backend, topic string, data []byte) error {
-	if MQs == nil {
-		return fmt.Errorf("message queue not initialized")
-	}
-	q, ok := MQs[backend]
-	if !ok || q == nil {
-		return fmt.Errorf("message queue backend not initialized: %s", backend)
-	}
-	return q.Publish(ctx, topic, data)
-}
-
-func SubscribeTo(backend Backend, topic string, handler MessageHandler) error {
-	if MQs == nil {
-		return fmt.Errorf("message queue not initialized")
-	}
-	q, ok := MQs[backend]
-	if !ok || q == nil {
-		return fmt.Errorf("message queue backend not initialized: %s", backend)
-	}
-	return q.Subscribe(topic, handler)
+type MessageQueue interface {
+	Publish(ctx context.Context, msg PublishMessage) error
+	Consume(ctx context.Context, opts ConsumeOptions, handler MessageHandler) error
+	Close() error
 }

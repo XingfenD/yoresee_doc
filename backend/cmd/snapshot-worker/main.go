@@ -14,6 +14,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
+	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
@@ -42,6 +43,7 @@ func main() {
 	topic := constant.DirtyDocTopicDefault
 
 	backend := mq.BackendRabbitMQ
+	group := resolveMQConsumerGroup()
 
 	collabCoreHTTP := os.Getenv("COLLAB_CORE_HTTP")
 	if collabCoreHTTP == "" {
@@ -52,16 +54,27 @@ func main() {
 	dirtySetKey := constant.DirtyDocSetDefault
 	inFlight := &sync.Map{}
 
-	logrus.Infof("Snapshot worker started: topic=%s collabCore=%s", topic, collabCoreHTTP)
+	logrus.Infof("Snapshot worker started: topic=%s group=%s collabCore=%s", topic, group, collabCoreHTTP)
 
 	go func() {
-		if err := mq.SubscribeTo(backend, topic, func(ctx context.Context, data []byte) error {
-			docID := parseDocID(data)
-			if docID == "" {
-				return nil
-			}
-			return snapshotDoc(ctx, inFlight, client, collabCoreHTTP, dirtySetKey, docID, true)
-		}); err != nil {
+		if err := mq_service.MQSvc.Consume(
+			context.Background(),
+			backend,
+			mq.ConsumeOptions{
+				Topic:   topic,
+				Mode:    mq.ConsumeModeGroup,
+				Group:   group,
+				AutoAck: false,
+				OnError: mq.ErrorActionRequeue,
+			},
+			func(ctx context.Context, message mq.Message) error {
+				docID := parseDocID(message.Body)
+				if docID == "" {
+					return nil
+				}
+				return snapshotDoc(ctx, inFlight, client, collabCoreHTTP, dirtySetKey, docID, true)
+			},
+		); err != nil {
 			logrus.Fatalf("Subscribe failed: %v", err)
 		}
 	}()
@@ -87,6 +100,14 @@ func main() {
 	}()
 
 	initializer.ShutdownOnSignal(0)
+}
+
+func resolveMQConsumerGroup() string {
+	group := strings.TrimSpace(os.Getenv("SNAPSHOT_MQ_GROUP"))
+	if group == "" {
+		return "snapshot-worker"
+	}
+	return group
 }
 
 func parseDocID(data []byte) string {
