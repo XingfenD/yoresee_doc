@@ -49,11 +49,7 @@ export const useUserStore = defineStore('user', {
       this.loading = true;
       this.error = '';
       try {
-        const response = await register(username, password, email, invitationCode);
-        this.token = response.token;
-        this.userInfo = response.user;
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('userInfo', JSON.stringify(response.user));
+        await register(username, password, email, invitationCode);
         return true;
       } catch (error) {
         this.error = 'request_failed';

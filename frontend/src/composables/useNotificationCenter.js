@@ -1,8 +1,12 @@
 import { computed, ref, watch } from 'vue';
-import { ElMessage } from 'element-plus';
 import { listNotifications, markNotificationsRead, markAllNotificationsRead } from '@/services/api';
+import { useApiAction } from '@/composables/useApiAction';
 
 export function useNotificationCenter({ t }) {
+  const { runApi, runSilent, runWithLoading } = useApiAction({ t });
+  const runNotificationSilent = (context, action, options = {}) =>
+    runSilent(action, { context, ...options });
+
   const activeTab = ref('all');
   const notifications = ref([]);
   const totalCount = ref(0);
@@ -64,65 +68,87 @@ export function useNotificationCenter({ t }) {
     return date.toLocaleString();
   };
 
+  const emitUnread = (hasUnread) => {
+    window.dispatchEvent(new CustomEvent('notifications:unread', { detail: { hasUnread } }));
+  };
+
   const refreshUnreadStatus = async () => {
-    try {
-      const resp = await listNotifications({ page: 1, page_size: 1, status: 'unread' });
-      const hasUnread = Number(resp.total) > 0;
-      window.dispatchEvent(new CustomEvent('notifications:unread', { detail: { hasUnread } }));
-    } catch (err) {
-      window.dispatchEvent(new CustomEvent('notifications:unread', { detail: { hasUnread: false } }));
-    }
+    await runNotificationSilent(
+      'refreshUnreadStatus',
+      () => listNotifications({ page: 1, page_size: 1, status: 'unread' }),
+      {
+        onSuccess: (resp) => {
+          emitUnread(Number(resp.total) > 0);
+        },
+        onError: () => {
+          emitUnread(false);
+        }
+      }
+    );
   };
 
   const loadNotifications = async () => {
-    if (loading.value) return;
-    loading.value = true;
-    try {
-      const resp = await listNotifications({
-        page: currentPage.value,
-        page_size: pageSize.value,
-        status: activeTab.value === 'unread' ? 'unread' : undefined
-      });
-      notifications.value = resp.notifications || [];
-      totalCount.value = Number(resp.total) || 0;
-      selectedIds.value = [];
-      if (activeTab.value === 'unread') {
-        window.dispatchEvent(
-          new CustomEvent('notifications:unread', { detail: { hasUnread: totalCount.value > 0 } })
-        );
-      }
-    } catch (err) {
-      notifications.value = [];
-      totalCount.value = 0;
-    } finally {
-      loading.value = false;
-    }
+    await runWithLoading(
+      loading,
+      () => runNotificationSilent(
+        'loadNotifications',
+        () =>
+          listNotifications({
+            page: currentPage.value,
+            page_size: pageSize.value,
+            status: activeTab.value === 'unread' ? 'unread' : undefined
+          }),
+        {
+          onSuccess: (resp) => {
+            notifications.value = resp.notifications || [];
+            totalCount.value = Number(resp.total) || 0;
+            selectedIds.value = [];
+            if (activeTab.value === 'unread') {
+              emitUnread(totalCount.value > 0);
+            }
+          },
+          onError: () => {
+            notifications.value = [];
+            totalCount.value = 0;
+            selectedIds.value = [];
+          }
+        }
+      )
+    );
   };
 
   const markRead = async (row) => {
     if (!row?.external_id) return;
-    try {
-      await markNotificationsRead([row.external_id]);
-      await loadNotifications();
-      await refreshUnreadStatus();
-    } catch (err) {
-      ElMessage.error(t('common.requestFailed'));
-    }
+    await runApi(
+      async () => {
+        await markNotificationsRead([row.external_id]);
+        await loadNotifications();
+        await refreshUnreadStatus();
+      },
+      {
+        context: 'markNotificationRead',
+        errorMessage: t('common.requestFailed')
+      }
+    );
   };
 
   const handleMarkRead = async () => {
-    try {
-      if (selectedIds.value.length) {
-        await markNotificationsRead(selectedIds.value);
-      } else {
-        await markAllNotificationsRead();
+    await runApi(
+      async () => {
+        if (selectedIds.value.length) {
+          await markNotificationsRead(selectedIds.value);
+        } else {
+          await markAllNotificationsRead();
+        }
+        selectedIds.value = [];
+        await loadNotifications();
+        await refreshUnreadStatus();
+      },
+      {
+        context: 'markNotificationsRead',
+        errorMessage: t('common.requestFailed')
       }
-      selectedIds.value = [];
-      await loadNotifications();
-      await refreshUnreadStatus();
-    } catch (err) {
-      ElMessage.error(t('common.requestFailed'));
-    }
+    );
   };
 
   const handlePageChange = async () => {

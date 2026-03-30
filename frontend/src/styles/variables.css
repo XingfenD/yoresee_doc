@@ -13,12 +13,17 @@
 
   /* 中性色 */
   --text-dark: #1D2129;
+  --text-primary: #1D2129;
   --text-medium: #4E5969;
   --text-light: #86909C;
   --border-color: #C9CDD4;
   --bg-light: #F7F8FA;
   --bg-medium: #F2F3F5;
   --bg-white: #FFFFFF;
+
+  /* 运行时布局变量默认值，避免首次渲染闪动 */
+  --sidebar-width: 280px;
+  --tree-toggle-width: 81px;
 
   /* 布局 */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -53,6 +58,7 @@
 
   /* 中性色 */
   --text-dark: #F5F5F5;
+  --text-primary: #F5F5F5;
   --text-medium: #DCDCDC;
   --text-light: #A9A9A9;
   --border-color: #333333;

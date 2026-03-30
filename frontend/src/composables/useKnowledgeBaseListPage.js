@@ -1,9 +1,17 @@
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessageBox } from 'element-plus';
 import * as api from '@/services/api';
 import { usePagedList } from '@/composables/usePagedList';
 import { useLazyTabLoader } from '@/composables/useLazyTabLoader';
+import { isActionCancelled, useApiAction } from '@/composables/useApiAction';
 
 export function useKnowledgeBaseListPage({ t, router }) {
+  const { runApi } = useApiAction({ t });
+  const runFetch = (context, action) =>
+    runApi(action, {
+      context,
+      errorMessage: t('knowledgeBase.fetchError')
+    });
+
   const myList = usePagedList({
     initialPage: 1,
     initialPageSize: 10,
@@ -51,21 +59,11 @@ export function useKnowledgeBaseListPage({ t, router }) {
   ];
 
   const loadMoreMyKnowledgeBases = async () => {
-    try {
-      await myList.loadMore();
-    } catch (error) {
-      console.error('Failed to fetch my knowledge bases:', error);
-      ElMessage.error(t('knowledgeBase.fetchError'));
-    }
+    await runFetch('loadMoreMyKnowledgeBases', () => myList.loadMore());
   };
 
   const loadMorePublicKnowledgeBases = async () => {
-    try {
-      await publicList.loadMore();
-    } catch (error) {
-      console.error('Failed to fetch public knowledge bases:', error);
-      ElMessage.error(t('knowledgeBase.fetchError'));
-    }
+    await runFetch('loadMorePublicKnowledgeBases', () => publicList.loadMore());
   };
 
   const viewKnowledgeBase = (kb) => {
@@ -79,38 +77,41 @@ export function useKnowledgeBaseListPage({ t, router }) {
   };
 
   const createKnowledgeBase = async () => {
-    try {
-      const { value } = await ElMessageBox.prompt(
-        t('knowledgeBase.createPrompt'),
-        t('knowledgeBase.createNew'),
-        {
-          confirmButtonText: t('button.confirm'),
-          cancelButtonText: t('button.cancel'),
-          inputPlaceholder: t('knowledgeBase.createPlaceholder'),
-          inputValidator: (val) => {
-            if (!val || !val.trim()) {
-              return t('knowledgeBase.titleRequired');
+    await runApi(
+      async () => {
+        const { value } = await ElMessageBox.prompt(
+          t('knowledgeBase.createPrompt'),
+          t('knowledgeBase.createNew'),
+          {
+            confirmButtonText: t('button.confirm'),
+            cancelButtonText: t('button.cancel'),
+            inputPlaceholder: t('knowledgeBase.createPlaceholder'),
+            inputValidator: (val) => {
+              if (!val || !val.trim()) {
+                return t('knowledgeBase.titleRequired');
+              }
+              return true;
             }
-            return true;
           }
+        );
+
+        const name = value.trim();
+        const resp = await api.createKnowledgeBase({ name, is_public: false });
+
+        activeTab.value = 'my';
+        await myList.fetchPage(1, myList.pageSize.value);
+
+        if (resp?.external_id) {
+          router.push(`/knowledge-base/${resp.external_id}`);
         }
-      );
-
-      const name = value.trim();
-      const resp = await api.createKnowledgeBase({ name, is_public: false });
-      ElMessage.success(t('knowledgeBase.createSuccess'));
-
-      activeTab.value = 'my';
-      await myList.fetchPage(1, myList.pageSize.value);
-
-      if (resp?.external_id) {
-        router.push(`/knowledge-base/${resp.external_id}`);
+      },
+      {
+        context: 'createKnowledgeBase',
+        successMessage: t('knowledgeBase.createSuccess'),
+        errorMessage: t('common.requestFailed'),
+        ignoreError: isActionCancelled
       }
-    } catch (error) {
-      if (error !== 'cancel') {
-        ElMessage.error(t('common.requestFailed'));
-      }
-    }
+    );
   };
 
   const { activeTab, ensureTabLoaded } = useLazyTabLoader({
@@ -118,36 +119,15 @@ export function useKnowledgeBaseListPage({ t, router }) {
     tabs: {
       my: {
         loaded: () => myList.loaded.value,
-        load: async () => {
-          try {
-            await myList.fetchPage(myList.page.value, myList.pageSize.value);
-          } catch (error) {
-            console.error('Failed to fetch my knowledge bases:', error);
-            ElMessage.error(t('knowledgeBase.fetchError'));
-          }
-        }
+        load: () => runFetch('fetchMyKnowledgeBases', () => myList.fetchPage(myList.page.value, myList.pageSize.value))
       },
       recent: {
         loaded: () => recentList.loaded.value,
-        load: async () => {
-          try {
-            await recentList.fetchPage(recentList.page.value, recentList.pageSize.value);
-          } catch (error) {
-            console.error('Failed to fetch recent knowledge bases:', error);
-            ElMessage.error(t('knowledgeBase.fetchError'));
-          }
-        }
+        load: () => runFetch('fetchRecentKnowledgeBases', () => recentList.fetchPage(recentList.page.value, recentList.pageSize.value))
       },
       public: {
         loaded: () => publicList.loaded.value,
-        load: async () => {
-          try {
-            await publicList.fetchPage(publicList.page.value, publicList.pageSize.value);
-          } catch (error) {
-            console.error('Failed to fetch public knowledge bases:', error);
-            ElMessage.error(t('knowledgeBase.fetchError'));
-          }
-        }
+        load: () => runFetch('fetchPublicKnowledgeBases', () => publicList.fetchPage(publicList.page.value, publicList.pageSize.value))
       }
     }
   });

@@ -94,9 +94,41 @@ export function useApiAction(options = {}) {
     });
   };
 
+  const runSilent = async (action, options = {}) =>
+    runApi(action, {
+      showErrorMessage: false,
+      logError: false,
+      ...options
+    });
+
+  const runWithLoading = async (loadingRef, action, options = {}) => {
+    if (!loadingRef || typeof loadingRef.value !== 'boolean') {
+      return runApi(action, options);
+    }
+    if (loadingRef.value) {
+      return options.fallback ?? null;
+    }
+    loadingRef.value = true;
+    const originalOnFinally = options.onFinally;
+    try {
+      return await runApi(action, {
+        ...options,
+        onFinally: async () => {
+          if (typeof originalOnFinally === 'function') {
+            await originalOnFinally();
+          }
+        }
+      });
+    } finally {
+      loadingRef.value = false;
+    }
+  };
+
   return {
     pending,
     runApi,
+    runSilent,
+    runWithLoading,
     handleApiError,
     createApiErrorHandler
   };

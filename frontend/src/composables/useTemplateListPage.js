@@ -1,10 +1,16 @@
 import { ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import { createTemplate as createTemplateApi } from '@/services/api';
 import { useLazyTabLoader } from '@/composables/useLazyTabLoader';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
+import { useApiAction } from '@/composables/useApiAction';
 
 export function useTemplateListPage({ t, router }) {
+  const { runWithLoading, createApiErrorHandler } = useApiAction({ t });
+  const handleTemplateLoadError = createApiErrorHandler({
+    context: 'loadTemplates',
+    errorMessage: t('common.requestFailed')
+  });
+
   const showCreateDialog = ref(false);
   const creatingTemplate = ref(false);
   const templateDialogInit = ref({
@@ -27,9 +33,7 @@ export function useTemplateListPage({ t, router }) {
     isLoaded
   } = useTemplateCatalog({
     includeKnowledgeBase: false,
-    onError: (error, scope) => {
-      console.error(`[useTemplateListPage] load ${scope} templates failed`, error);
-    }
+    onError: handleTemplateLoadError
   });
 
   const myTagMapper = () => ({ type: 'info', label: t('templates.private') });
@@ -90,28 +94,30 @@ export function useTemplateListPage({ t, router }) {
   };
 
   const submitCreateTemplate = async (payload) => {
-    if (creatingTemplate.value) return;
-    try {
-      creatingTemplate.value = true;
-      const requestBody = {
-        target_container: payload.scope,
-        template_content: JSON.stringify({
-          name: payload.name,
-          description: payload.description,
-          content: payload.content,
-          tags: payload.tags || []
-        })
-      };
-      await createTemplateApi(requestBody);
-      showCreateDialog.value = false;
-      ElMessage.success(t('templates.saveSuccess'));
-      await refreshCurrentTab();
-    } catch (err) {
-      console.error('创建模板失败:', err);
-      ElMessage.error(t('templates.saveFailed'));
-    } finally {
-      creatingTemplate.value = false;
-    }
+    await runWithLoading(
+      creatingTemplate,
+      async () => {
+        const requestBody = {
+          target_container: payload.scope,
+          template_content: JSON.stringify({
+            name: payload.name,
+            description: payload.description,
+            content: payload.content,
+            tags: payload.tags || []
+          })
+        };
+        await createTemplateApi(requestBody);
+      },
+      {
+        context: 'createTemplate',
+        successMessage: t('templates.saveSuccess'),
+        errorMessage: t('templates.saveFailed'),
+        onSuccess: async () => {
+          showCreateDialog.value = false;
+          await refreshCurrentTab();
+        }
+      }
+    );
   };
 
   const init = async () => {

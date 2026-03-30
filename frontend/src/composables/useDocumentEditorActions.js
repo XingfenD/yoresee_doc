@@ -5,6 +5,7 @@ import {
   createTemplate as createTemplateApi,
   updateDocumentMeta
 } from '@/services/api';
+import { useApiAction } from '@/composables/useApiAction';
 
 export function useDocumentEditorActions({
   t,
@@ -17,6 +18,8 @@ export function useDocumentEditorActions({
   updateTreeNodeTitle,
   fetchDocuments
 }) {
+  const { runWithLoading } = useApiAction({ t });
+
   const isEditingTitle = ref(false);
   const pendingTitle = ref('');
   const savingTitle = ref(false);
@@ -49,44 +52,46 @@ export function useDocumentEditorActions({
       ElMessage.error(t('knowledgeBase.titleRequired'));
       return;
     }
-
-    try {
-      creatingLoading.value = true;
-      const isPersonal = kbId.value === 'personal';
-      const requestBody = {
-        title: payload.title,
-        type: payload.type || 'markdown',
-        container_type: isPersonal ? 'own' : 'knowledge_base'
-      };
-      if (!isPersonal) {
-        requestBody.knowledge_base_external_id = kbId.value;
-      }
-      if (payload?.parent_external_id) {
-        requestBody.parent_external_id = payload.parent_external_id;
-      } else if (pendingParentId.value) {
-        requestBody.parent_external_id = pendingParentId.value;
-      }
-      if (payload?.template) {
-        requestBody.template_id = payload.template;
-      }
-      const response = await createDocumentApi(requestBody);
-
-      showCreateDialog.value = false;
-      pendingParentId.value = null;
-      await fetchDocuments();
-      if (response?.external_id) {
-        if (isPersonal) {
-          router.push(`/mydocument/${response.external_id}`);
-        } else {
-          router.push(`/knowledge-base/${kbId.value}/document/${response.external_id}`);
+    await runWithLoading(
+      creatingLoading,
+      async () => {
+        const isPersonal = kbId.value === 'personal';
+        const requestBody = {
+          title: payload.title,
+          type: payload.type || 'markdown',
+          container_type: isPersonal ? 'own' : 'knowledge_base'
+        };
+        if (!isPersonal) {
+          requestBody.knowledge_base_external_id = kbId.value;
+        }
+        if (payload?.parent_external_id) {
+          requestBody.parent_external_id = payload.parent_external_id;
+        } else if (pendingParentId.value) {
+          requestBody.parent_external_id = pendingParentId.value;
+        }
+        if (payload?.template) {
+          requestBody.template_id = payload.template;
+        }
+        return createDocumentApi(requestBody);
+      },
+      {
+        context: 'createDocument',
+        errorMessage: t('knowledgeBase.createDocumentError'),
+        onSuccess: async (response) => {
+          const isPersonal = kbId.value === 'personal';
+          showCreateDialog.value = false;
+          pendingParentId.value = null;
+          await fetchDocuments();
+          if (response?.external_id) {
+            if (isPersonal) {
+              router.push(`/mydocument/${response.external_id}`);
+            } else {
+              router.push(`/knowledge-base/${kbId.value}/document/${response.external_id}`);
+            }
+          }
         }
       }
-    } catch (error) {
-      console.error('创建文档失败:', error);
-      ElMessage.error(t('knowledgeBase.createDocumentError'));
-    } finally {
-      creatingLoading.value = false;
-    }
+    );
   };
 
   const handleCreateFromTree = (target) => {
@@ -143,21 +148,19 @@ export function useDocumentEditorActions({
       cancelEditTitle();
       return;
     }
-    if (savingTitle.value) {
-      return;
-    }
-    savingTitle.value = true;
-    try {
-      await updateDocumentMeta(docId.value, { title: nextTitle });
-      currentDocTitle.value = nextTitle;
-      updateTreeNodeTitle(directoryTree.value, docId.value, nextTitle);
-      cancelEditTitle();
-    } catch (error) {
-      console.error('更新文档标题失败:', error);
-      ElMessage.error(t('common.requestFailed'));
-    } finally {
-      savingTitle.value = false;
-    }
+    await runWithLoading(
+      savingTitle,
+      () => updateDocumentMeta(docId.value, { title: nextTitle }),
+      {
+        context: 'updateDocumentMeta',
+        errorMessage: t('common.requestFailed'),
+        onSuccess: () => {
+          currentDocTitle.value = nextTitle;
+          updateTreeNodeTitle(directoryTree.value, docId.value, nextTitle);
+          cancelEditTitle();
+        }
+      }
+    );
   };
 
   const openCreateTemplateDialog = () => {
@@ -179,37 +182,37 @@ export function useDocumentEditorActions({
   };
 
   const submitCreateTemplate = async (payload) => {
-    if (savingTemplate.value) {
-      return;
-    }
     if (!editorContent.value || !editorContent.value.trim()) {
       ElMessage.error(t('templates.emptyContent'));
       return;
     }
 
-    try {
-      savingTemplate.value = true;
-      const requestBody = {
-        target_container: payload.scope,
-        template_content: JSON.stringify({
-          name: payload.name,
-          description: payload.description,
-          content: editorContent.value,
-          tags: payload.tags || []
-        })
-      };
-      if (payload.scope === 'knowledge_base' && kbId.value && kbId.value !== 'personal') {
-        requestBody.knowledge_base_id = kbId.value;
+    await runWithLoading(
+      savingTemplate,
+      async () => {
+        const requestBody = {
+          target_container: payload.scope,
+          template_content: JSON.stringify({
+            name: payload.name,
+            description: payload.description,
+            content: editorContent.value,
+            tags: payload.tags || []
+          })
+        };
+        if (payload.scope === 'knowledge_base' && kbId.value && kbId.value !== 'personal') {
+          requestBody.knowledge_base_id = kbId.value;
+        }
+        await createTemplateApi(requestBody);
+      },
+      {
+        context: 'createTemplate',
+        successMessage: t('templates.saveSuccess'),
+        errorMessage: t('templates.saveFailed'),
+        onSuccess: () => {
+          showTemplateDialog.value = false;
+        }
       }
-      await createTemplateApi(requestBody);
-      showTemplateDialog.value = false;
-      ElMessage.success(t('templates.saveSuccess'));
-    } catch (error) {
-      console.error('创建模板失败:', error);
-      ElMessage.error(t('templates.saveFailed'));
-    } finally {
-      savingTemplate.value = false;
-    }
+    );
   };
 
   return {

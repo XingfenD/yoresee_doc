@@ -24,9 +24,11 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { House, Collection, Document, Tickets, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
 import { querySideBarDisplay } from '@/services/auth';
+import { useApiAction } from '@/composables/useApiAction';
 
 const router = useRouter();
 const { t } = useI18n();
+const { runSilent, runWithLoading } = useApiAction({ t });
 
 const isCollapsed = ref(localStorage.getItem('sideNavCollapsed') === 'true');
 
@@ -83,17 +85,23 @@ const loadDisplayTabs = async () => {
     displayTabs.value = null;
     return;
   }
-  if (filterLoading.value) return;
-  filterLoading.value = true;
-  try {
-    const resp = await querySideBarDisplay(scene);
-    displayTabs.value = resp.display_tabs || [];
-  } catch (error) {
-    // fail closed so privileged menu is not exposed by client fallback.
-    displayTabs.value = [];
-  } finally {
-    filterLoading.value = false;
-  }
+  await runWithLoading(
+    filterLoading,
+    () =>
+      runSilent(
+        () => querySideBarDisplay(scene),
+        {
+          context: 'loadSideBarDisplay',
+          onSuccess: (resp) => {
+            displayTabs.value = resp.display_tabs || [];
+          },
+          onError: () => {
+            // fail closed so privileged menu is not exposed by client fallback.
+            displayTabs.value = [];
+          }
+        }
+      )
+  );
 };
 
 const getMenuLabel = (item) => {

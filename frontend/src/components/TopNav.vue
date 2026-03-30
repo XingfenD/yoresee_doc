@@ -72,6 +72,7 @@ import { useI18n } from 'vue-i18n';
 import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell } from '@element-plus/icons-vue';
 import { queryTopNavDisplay } from '@/services/auth';
 import { listNotifications } from '@/services/api';
+import { useApiAction } from '@/composables/useApiAction';
 
 const props = defineProps({
   systemName: {
@@ -99,6 +100,7 @@ const props = defineProps({
 const emit = defineEmits(['change-language', 'toggle-theme', 'logout']);
 const { t } = useI18n();
 const router = useRouter();
+const { runSilent } = useApiAction({ t });
 const showSystemManage = ref(false);
 const showUserCenter = ref(false);
 const hasUnread = ref(false);
@@ -116,24 +118,36 @@ const goToNotifications = () => {
 };
 
 const loadTopNavDisplay = async () => {
-  try {
-    const resp = await queryTopNavDisplay();
-    const menus = resp.display_menus || [];
-    showUserCenter.value = menus.includes('user-center');
-    showSystemManage.value = menus.includes('system-manage');
-  } catch (error) {
-    showUserCenter.value = false;
-    showSystemManage.value = false;
-  }
+  await runSilent(
+    () => queryTopNavDisplay(),
+    {
+      context: 'loadTopNavDisplay',
+      onSuccess: (resp) => {
+        const menus = resp.display_menus || [];
+        showUserCenter.value = menus.includes('user-center');
+        showSystemManage.value = menus.includes('system-manage');
+      },
+      onError: () => {
+        showUserCenter.value = false;
+        showSystemManage.value = false;
+      }
+    }
+  );
 };
 
 const loadUnreadNotifications = async () => {
-  try {
-    const resp = await listNotifications({ page: 1, page_size: 1, status: 'unread' });
-    hasUnread.value = Number(resp.total) > 0;
-  } catch (error) {
-    hasUnread.value = false;
-  }
+  await runSilent(
+    () => listNotifications({ page: 1, page_size: 1, status: 'unread' }),
+    {
+      context: 'loadUnreadNotifications',
+      onSuccess: (resp) => {
+        hasUnread.value = Number(resp.total) > 0;
+      },
+      onError: () => {
+        hasUnread.value = false;
+      }
+    }
+  );
 };
 
 const handleUnreadEvent = (event) => {

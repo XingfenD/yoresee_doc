@@ -89,8 +89,8 @@ import ManageLayout from '@/components/ManageLayout.vue';
 import ManageSection from '@/components/ManageSection.vue';
 import { useManageShell } from '@/composables/useManageShell';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { useApiAction } from '@/composables/useApiAction';
 import { getSettings, updateSettings } from '@/services/api';
-import { ElMessage } from 'element-plus';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -117,6 +117,7 @@ const {
   defaultActiveMenu: 'manage-security'
 });
 const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
+const { runSilent, runWithLoading } = useApiAction({ t });
 const isSaving = ref(false);
 const settingGroups = ref([]);
 const settingValues = ref({});
@@ -129,52 +130,58 @@ const resolveText = (key, fallback) => {
 };
 
 const loadSettings = async () => {
-  try {
-    const resp = await getSettings('system');
-    settingGroups.value = resp.groups || [];
-    const nextValues = {};
-    settingGroups.value.forEach((group) => {
-      (group.items || []).forEach((item) => {
-        if (item.type === 'bool') {
-          nextValues[item.key] = item.value === 'true';
-        } else {
-          nextValues[item.key] = item.value ?? item.default_value ?? '';
-        }
-      });
-    });
-    settingValues.value = nextValues;
-  } catch (error) {
-    settingGroups.value = [];
-  }
+  await runSilent(
+    () => getSettings('system'),
+    {
+      context: 'loadSystemSettings',
+      onSuccess: (resp) => {
+        settingGroups.value = resp.groups || [];
+        const nextValues = {};
+        settingGroups.value.forEach((group) => {
+          (group.items || []).forEach((item) => {
+            if (item.type === 'bool') {
+              nextValues[item.key] = item.value === 'true';
+            } else {
+              nextValues[item.key] = item.value ?? item.default_value ?? '';
+            }
+          });
+        });
+        settingValues.value = nextValues;
+      },
+      onError: () => {
+        settingGroups.value = [];
+        settingValues.value = {};
+      }
+    }
+  );
 };
 
 const handleSave = async () => {
-  if (isSaving.value) {
-    return;
-  }
-  isSaving.value = true;
-  try {
-    const updates = [];
-    settingGroups.value.forEach((group) => {
-      (group.items || []).forEach((item) => {
-        let value = settingValues.value[item.key];
-        if (item.type === 'bool') {
-          value = value ? 'true' : 'false';
-        } else if (value == null) {
-          value = '';
-        } else {
-          value = String(value);
-        }
-        updates.push({ key: item.key, value });
+  await runWithLoading(
+    isSaving,
+    async () => {
+      const updates = [];
+      settingGroups.value.forEach((group) => {
+        (group.items || []).forEach((item) => {
+          let value = settingValues.value[item.key];
+          if (item.type === 'bool') {
+            value = value ? 'true' : 'false';
+          } else if (value == null) {
+            value = '';
+          } else {
+            value = String(value);
+          }
+          updates.push({ key: item.key, value });
+        });
       });
-    });
-    await updateSettings(updates);
-    ElMessage.success(t('message.saveSuccessGeneric'));
-  } catch (error) {
-    ElMessage.error(t('message.saveFailedGeneric'));
-  } finally {
-    isSaving.value = false;
-  }
+      await updateSettings(updates);
+    },
+    {
+      context: 'saveSystemSettings',
+      successMessage: t('message.saveSuccessGeneric'),
+      errorMessage: t('message.saveFailedGeneric')
+    }
+  );
 };
 
 onMounted(() => {

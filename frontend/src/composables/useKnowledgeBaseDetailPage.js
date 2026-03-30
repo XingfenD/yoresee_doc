@@ -8,8 +8,11 @@ import {
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { useApiAction } from '@/composables/useApiAction';
 
 export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale }) {
+  const { runWithLoading, createApiErrorHandler } = useApiAction({ t });
+
   const {
     systemName,
     activeMenu,
@@ -45,9 +48,10 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   } = useTemplateCatalog({
     includeKnowledgeBase: true,
     knowledgeBaseId: computed(() => route.params.id || ''),
-    onError: (error) => {
-      console.error('获取知识库模板失败:', error);
-    }
+    onError: createApiErrorHandler({
+      context: 'loadKnowledgeBaseTemplates',
+      errorMessage: t('common.requestFailed')
+    })
   });
 
   const searchKeyword = ref('');
@@ -101,30 +105,31 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
       return;
     }
 
-    loading.value = true;
-    try {
-      const data = await getKnowledgeBaseDetail(knowledgeBaseExternalID, {
-        record_recent_log: true,
-        page: currentPage.value,
-        page_size: pageSize.value
-      });
+    await runWithLoading(
+      loading,
+      () =>
+        getKnowledgeBaseDetail(knowledgeBaseExternalID, {
+          record_recent_log: true,
+          page: currentPage.value,
+          page_size: pageSize.value
+        }),
+      {
+        context: 'loadKnowledgeBaseDetail',
+        errorMessage: t('message.loadKnowledgeBaseError'),
+        onSuccess: (data) => {
+          knowledgeBaseData.value = data;
 
-      knowledgeBaseData.value = data;
-
-      if (data.knowledge_base) {
-        knowledgeBaseName.value = data.knowledge_base.name;
-        knowledgeBaseDescription.value = data.knowledge_base.description;
-        lastUpdated.value = data.knowledge_base.updated_at;
-        totalDocuments.value = data.knowledge_base.documents_count || 0;
-        totalDocumentsCount.value = data.total_count || 0;
-        ownerName.value = data.knowledge_base.creator_name || t('common.unknown');
+          if (data.knowledge_base) {
+            knowledgeBaseName.value = data.knowledge_base.name;
+            knowledgeBaseDescription.value = data.knowledge_base.description;
+            lastUpdated.value = data.knowledge_base.updated_at;
+            totalDocuments.value = data.knowledge_base.documents_count || 0;
+            totalDocumentsCount.value = data.total_count || 0;
+            ownerName.value = data.knowledge_base.creator_name || t('common.unknown');
+          }
+        }
       }
-    } catch (error) {
-      console.error('加载知识库详情失败:', error);
-      ElMessage.error(t('message.loadKnowledgeBaseError'));
-    } finally {
-      loading.value = false;
-    }
+    );
   };
 
   const fetchKnowledgeBaseTemplates = async () => {
@@ -140,33 +145,32 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
       ElMessage.error(t('knowledgeBase.titleRequired'));
       return;
     }
-
-    try {
-      const knowledgeBaseExternalID = route.params.id;
-      if (!knowledgeBaseExternalID) {
-        ElMessage.error(t('message.knowledgeBaseNotFound'));
-        return;
-      }
-
-      creatingLoading.value = true;
-
-      await createDocumentApi({
-        title: payload.title,
-        type: payload.type || 'markdown',
-        container_type: 'knowledge_base',
-        knowledge_base_external_id: knowledgeBaseExternalID,
-        parent_external_id: payload.parent_external_id || undefined,
-        template_id: payload.template || undefined
-      });
-
-      showCreateDialog.value = false;
-      await loadKnowledgeBaseDetail();
-    } catch (error) {
-      console.error('创建文档失败:', error);
-      ElMessage.error(t('knowledgeBase.createDocumentError'));
-    } finally {
-      creatingLoading.value = false;
+    const knowledgeBaseExternalID = route.params.id;
+    if (!knowledgeBaseExternalID) {
+      ElMessage.error(t('message.knowledgeBaseNotFound'));
+      return;
     }
+
+    await runWithLoading(
+      creatingLoading,
+      () =>
+        createDocumentApi({
+          title: payload.title,
+          type: payload.type || 'markdown',
+          container_type: 'knowledge_base',
+          knowledge_base_external_id: knowledgeBaseExternalID,
+          parent_external_id: payload.parent_external_id || undefined,
+          template_id: payload.template || undefined
+        }),
+      {
+        context: 'createDocument',
+        errorMessage: t('knowledgeBase.createDocumentError'),
+        onSuccess: async () => {
+          showCreateDialog.value = false;
+          await loadKnowledgeBaseDetail();
+        }
+      }
+    );
   };
 
   const cancelCreateDocument = () => {

@@ -2,8 +2,11 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import Vditor from 'vditor';
 import { createDocument as createDocumentApi, getTemplate } from '@/services/api';
+import { useApiAction } from '@/composables/useApiAction';
 
 export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
+  const { runWithLoading } = useApiAction({ t });
+
   const loading = ref(false);
   const template = ref(null);
   const previewRef = ref(null);
@@ -67,16 +70,17 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
 
   const fetchTemplate = async () => {
     if (!templateId.value) return;
-    loading.value = true;
-    try {
-      const data = await getTemplate(templateId.value, { record_recent_log: true });
-      template.value = data.template;
-    } catch (error) {
-      console.error('获取模板失败:', error);
-      ElMessage.error(t('common.requestFailed'));
-    } finally {
-      loading.value = false;
-    }
+    await runWithLoading(
+      loading,
+      () => getTemplate(templateId.value, { record_recent_log: true }),
+      {
+        context: 'fetchTemplate',
+        errorMessage: t('common.requestFailed'),
+        onSuccess: (data) => {
+          template.value = data.template;
+        }
+      }
+    );
   };
 
   const goBack = () => {
@@ -96,39 +100,43 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
       ElMessage.error(t('knowledgeBase.titleRequired'));
       return;
     }
-    try {
-      creatingLoading.value = true;
-      const kbExternalId = template.value?.knowledge_base_external_id || '';
-      const isKnowledgeBase = template.value?.scope === 'knowledge_base' && !!kbExternalId;
-      const requestBody = {
-        title: payload.title,
-        type: payload.type || 'markdown',
-        container_type: isKnowledgeBase ? 'knowledge_base' : 'own'
-      };
-      if (isKnowledgeBase) {
-        requestBody.knowledge_base_external_id = kbExternalId;
-      }
-      if (payload?.parent_external_id) {
-        requestBody.parent_external_id = payload.parent_external_id;
-      }
-      if (payload?.template) {
-        requestBody.template_id = payload.template;
-      }
-      const response = await createDocumentApi(requestBody);
-      showCreateDialog.value = false;
-      if (response?.external_id) {
+    await runWithLoading(
+      creatingLoading,
+      async () => {
+        const kbExternalId = template.value?.knowledge_base_external_id || '';
+        const isKnowledgeBase = template.value?.scope === 'knowledge_base' && !!kbExternalId;
+        const requestBody = {
+          title: payload.title,
+          type: payload.type || 'markdown',
+          container_type: isKnowledgeBase ? 'knowledge_base' : 'own'
+        };
         if (isKnowledgeBase) {
-          router.push(`/knowledge-base/${kbExternalId}/document/${response.external_id}`);
-        } else {
-          router.push(`/mydocument/${response.external_id}`);
+          requestBody.knowledge_base_external_id = kbExternalId;
+        }
+        if (payload?.parent_external_id) {
+          requestBody.parent_external_id = payload.parent_external_id;
+        }
+        if (payload?.template) {
+          requestBody.template_id = payload.template;
+        }
+        const response = await createDocumentApi(requestBody);
+        return { response, isKnowledgeBase, kbExternalId };
+      },
+      {
+        context: 'createDocumentFromTemplate',
+        errorMessage: t('knowledgeBase.createDocumentError'),
+        onSuccess: ({ response, isKnowledgeBase, kbExternalId }) => {
+          showCreateDialog.value = false;
+          if (response?.external_id) {
+            if (isKnowledgeBase) {
+              router.push(`/knowledge-base/${kbExternalId}/document/${response.external_id}`);
+            } else {
+              router.push(`/mydocument/${response.external_id}`);
+            }
+          }
         }
       }
-    } catch (error) {
-      console.error('创建文档失败:', error);
-      ElMessage.error(t('knowledgeBase.createDocumentError'));
-    } finally {
-      creatingLoading.value = false;
-    }
+    );
   };
 
   watch(previewContent, () => {
