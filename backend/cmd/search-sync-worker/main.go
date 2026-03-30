@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
@@ -13,6 +11,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/search"
 	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/sirupsen/logrus"
 )
@@ -29,9 +28,9 @@ func main() {
 		logrus.Fatalf("Init search-sync-worker failed: %v", err)
 	}
 
-	backend := resolveMQBackend()
+	backend := mq.BackendRabbitMQ
 	topic := domain_event.DocumentSyncTopic()
-	group := resolveMQConsumerGroup()
+	group := utils.GetEnvVar("SEARCH_SYNC_MQ_GROUP", "search-sync-worker")
 	logrus.Infof("Search sync worker started: backend=%s topic=%s group=%s", backend, topic, group)
 
 	go func() {
@@ -71,26 +70,6 @@ func initSearchSyncWorker() (*bootstrap.Initializer, error) {
 		InitMQ().
 		InitRepository()
 	return initializer, initializer.Err()
-}
-
-func resolveMQBackend() mq.Backend {
-	raw := strings.TrimSpace(os.Getenv("SEARCH_SYNC_MQ"))
-	switch strings.ToLower(raw) {
-	case string(mq.BackendRedis):
-		return mq.BackendRedis
-	case string(mq.BackendRabbitMQ), "":
-		return mq.BackendRabbitMQ
-	default:
-		return mq.BackendRabbitMQ
-	}
-}
-
-func resolveMQConsumerGroup() string {
-	group := strings.TrimSpace(os.Getenv("SEARCH_SYNC_MQ_GROUP"))
-	if group == "" {
-		return "search-sync-worker"
-	}
-	return group
 }
 
 func handleDocumentEvent(ctx context.Context, data []byte) error {

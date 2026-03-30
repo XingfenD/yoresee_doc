@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -43,12 +42,8 @@ func main() {
 	topic := constant.DirtyDocTopicDefault
 
 	backend := mq.BackendRabbitMQ
-	group := resolveMQConsumerGroup()
-
-	collabCoreHTTP := os.Getenv("COLLAB_CORE_HTTP")
-	if collabCoreHTTP == "" {
-		collabCoreHTTP = "http://collab-core:1234"
-	}
+	group := utils.GetEnvVar("SNAPSHOT_MQ_GROUP", "snapshot-worker")
+	collabCoreHTTP := utils.GetEnvVar("COLLAB_CORE_HTTP", "http://collab-core:1234")
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	dirtySetKey := constant.DirtyDocSetDefault
@@ -100,14 +95,6 @@ func main() {
 	}()
 
 	initializer.ShutdownOnSignal(0)
-}
-
-func resolveMQConsumerGroup() string {
-	group := strings.TrimSpace(os.Getenv("SNAPSHOT_MQ_GROUP"))
-	if group == "" {
-		return "snapshot-worker"
-	}
-	return group
 }
 
 func parseDocID(data []byte) string {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
 	"strings"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/notification_service"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/sirupsen/logrus"
 )
@@ -27,7 +27,7 @@ func main() {
 	}
 
 	topic := domain_event.NotificationCreateTopic()
-	group := resolveMQConsumerGroup()
+	group := utils.GetEnvVar("NOTIFICATION_MQ_GROUP", "notification-worker")
 
 	go func() {
 		if err := mq_service.MQSvc.Consume(
@@ -49,14 +49,6 @@ func main() {
 	}()
 
 	initializer.ShutdownOnSignal(500 * time.Millisecond)
-}
-
-func resolveMQConsumerGroup() string {
-	group := strings.TrimSpace(os.Getenv("NOTIFICATION_MQ_GROUP"))
-	if group == "" {
-		return "notification-worker"
-	}
-	return group
 }
 
 func handleNotificationEvent(ctx context.Context, data []byte) error {
