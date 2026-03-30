@@ -12,14 +12,15 @@ import (
 )
 
 func main() {
-	if err := bootstrap.NewInitializer().
+	initializer := bootstrap.NewInitializer().
 		InitConfig().
 		InitPostgres().
 		InitConsul().
-		RequireConsulEnabled().
-		Err(); err != nil {
+		RequireConsulEnabled()
+	if err := initializer.Err(); err != nil {
 		logrus.Fatalf("Init db_init failed: %v", err)
 	}
+	defer initializer.Shutdown()
 
 	if isDatabaseInitialized() {
 		logrus.Println("Database already initialized, skipping initialization steps")

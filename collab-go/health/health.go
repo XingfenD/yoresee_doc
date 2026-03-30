@@ -2,9 +2,10 @@ package health
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"log"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	yoreseedocpb "github.com/XingfenD/yoresee_doc/collab-go/pkg/gen/yoresee_doc/v1"
@@ -12,6 +13,7 @@ import (
 
 type HealthChecker struct {
 	systemService yoreseedocpb.SystemServiceClient
+	draining      atomic.Bool
 }
 
 func NewHealthChecker(systemService yoreseedocpb.SystemServiceClient) *HealthChecker {
@@ -20,29 +22,70 @@ func NewHealthChecker(systemService yoreseedocpb.SystemServiceClient) *HealthChe
 	}
 }
 
-func (h *HealthChecker) Check(w http.ResponseWriter, r *http.Request) {
-	selfStatus := "ok"
+func (h *HealthChecker) SetDraining(v bool) {
+	h.draining.Store(v)
+}
 
-	backendStatus := "unknown"
-	if h.systemService != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
+func (h *HealthChecker) Liveness(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "ok",
+	})
+}
 
-		_, err := h.systemService.Health(ctx, &yoreseedocpb.HealthRequest{})
-		if err != nil {
-			log.Printf("backend health check failed: %v", err)
-			backendStatus = "unhealthy"
-		} else {
-			backendStatus = "ok"
-		}
+func (h *HealthChecker) Readiness(w http.ResponseWriter, r *http.Request) {
+	if h.draining.Load() {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"status":  "not_ready",
+			"backend": "unknown",
+			"detail":  "server is draining",
+		})
+		return
 	}
 
-	response := fmt.Sprintf(`{
-	"status": "%s",
-	"backend": "%s"
-}`, selfStatus, backendStatus)
+	if err := h.checkBackend(); err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"status":  "not_ready",
+			"backend": "unhealthy",
+			"detail":  err.Error(),
+		})
+		return
+	}
 
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":  "ok",
+		"backend": "ok",
+	})
+}
+
+func (h *HealthChecker) Check(w http.ResponseWriter, r *http.Request) {
+	backendStatus := "ok"
+	if err := h.checkBackend(); err != nil {
+		backendStatus = "unhealthy"
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":  "ok",
+		"backend": backendStatus,
+	})
+}
+
+func (h *HealthChecker) checkBackend() error {
+	if h.systemService == nil {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if _, err := h.systemService.Health(ctx, &yoreseedocpb.HealthRequest{}); err != nil {
+		log.Printf("backend health check failed: %v", err)
+		return err
+	}
+	return nil
+}
+
+func writeJSON(w http.ResponseWriter, status int, body map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(response))
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
 }

@@ -9,20 +9,18 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/service/notification_service"
-	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	if err := bootstrap.NewInitializer().
+	initializer := bootstrap.NewInitializer().
 		InitConfig().
 		InitPostgres().
 		InitRedis().
 		InitMQ().
-		InitRepository().
-		Err(); err != nil {
+		InitRepository()
+	if err := initializer.Err(); err != nil {
 		logrus.Fatalf("Init notification-worker failed: %v", err)
 	}
 
@@ -34,17 +32,7 @@ func main() {
 		}
 	}()
 
-	utils.WaitForShutdownSignal()
-	time.Sleep(500 * time.Millisecond)
-	if err := mq.Close(); err != nil {
-		logrus.Errorf("Close MQ failed: %v", err)
-	}
-	if err := storage.CloseRedis(); err != nil {
-		logrus.Errorf("Close Redis failed: %v", err)
-	}
-	if err := storage.ClosePostgres(); err != nil {
-		logrus.Errorf("Close Postgres failed: %v", err)
-	}
+	initializer.ShutdownOnSignal(500 * time.Millisecond)
 }
 
 func handleNotificationEvent(ctx context.Context, data []byte) error {

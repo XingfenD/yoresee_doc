@@ -20,7 +20,7 @@ const reindexBatchSize = 200
 var errESInitDisabled = errors.New("es_init disabled")
 
 func main() {
-	if err := bootstrap.NewInitializer().
+	initializer := bootstrap.NewInitializer().
 		InitConfig().
 		Check("check elasticsearch enabled", func() error {
 			if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
@@ -31,8 +31,8 @@ func main() {
 		InitPostgres().
 		InitConsul().
 		RequireConsulEnabled().
-		InitElasticsearch().
-		Err(); err != nil {
+		InitElasticsearch()
+	if err := initializer.Err(); err != nil {
 		if errors.Is(err, errESInitDisabled) {
 			logrus.Println("Elasticsearch disabled, skip es_init")
 			return
@@ -40,8 +40,7 @@ func main() {
 		logrus.Fatalf("Init es_init failed: %v", err)
 	}
 
-	defer storage.ClosePostgres()
-	defer storage.CloseElasticsearch()
+	defer initializer.Shutdown()
 
 	ctx := context.Background()
 	indexName := search.DocumentIndexName()

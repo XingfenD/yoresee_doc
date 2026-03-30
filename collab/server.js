@@ -10,15 +10,51 @@ const mq = require('./src/mq');
 
 const server = http.createServer();
 const wss = new WebSocket.Server({ server });
+let isDraining = false;
+let shuttingDown = false;
+
+function writeJson(res, status, payload) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(payload));
+}
+
+function closeServerGracefully() {
+  return new Promise((resolve) => {
+    server.close(() => resolve());
+  });
+}
+
+function closeWssGracefully() {
+  return new Promise((resolve) => {
+    wss.close(() => resolve());
+  });
+}
 
 server.on('request', async (req, res) => {
+  if (req.url === '/livez') {
+    writeJson(res, 200, { status: 'ok' });
+    return;
+  }
+
+  if (req.url === '/readyz') {
+    const ready = !isDraining && !!redis.redisClient;
+    writeJson(res, ready ? 200 : 503, {
+      status: ready ? 'ok' : 'not_ready',
+      redis: redis.redisClient ? 'connected' : 'disconnected',
+      detail: isDraining ? 'server is draining' : undefined
+    });
+    return;
+  }
+
   if (req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
+    const ready = !isDraining && !!redis.redisClient;
+    writeJson(res, 200, {
       status: 'ok',
       redis: redis.redisClient ? 'connected' : 'disconnected',
-      persistence: 'custom'
-    }));
+      persistence: 'custom',
+      ready: ready ? 'true' : 'false',
+      detail: isDraining ? 'server is draining' : undefined
+    });
     return;
   }
 
@@ -129,8 +165,44 @@ server.listen(config.port, async () => {
   console.log(`HTTP API: /api/active-rooms`);
 });
 
-process.on('SIGTERM', async () => {
-  await mq.close();
-  await redis.closeRedis();
+async function shutdown(signal) {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+  isDraining = true;
+  console.log(`Received ${signal}, start graceful shutdown`);
+
+  const forceExitTimer = setTimeout(() => {
+    console.error('Graceful shutdown timeout, force exiting');
+    process.exit(1);
+  }, 10000);
+  forceExitTimer.unref();
+
+  await Promise.all([
+    closeWssGracefully(),
+    closeServerGracefully()
+  ]);
+
+  try {
+    await mq.close();
+  } catch (err) {
+    console.error('Failed to close MQ:', err);
+  }
+  try {
+    await redis.closeRedis();
+  } catch (err) {
+    console.error('Failed to close Redis:', err);
+  }
+
+  clearTimeout(forceExitTimer);
   process.exit(0);
+}
+
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
 });

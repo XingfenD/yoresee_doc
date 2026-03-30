@@ -28,14 +28,14 @@ type dirtyDocMessage struct {
 }
 
 func main() {
-	if err := bootstrap.NewInitializer().
+	initializer := bootstrap.NewInitializer().
 		InitConfig().
 		InitPostgres().
 		InitRedis().
 		InitElasticsearchAllowFail().
 		InitMQ().
-		InitRepository().
-		Err(); err != nil {
+		InitRepository()
+	if err := initializer.Err(); err != nil {
 		logrus.Fatalf("Init snapshot-worker failed: %v", err)
 	}
 
@@ -86,19 +86,7 @@ func main() {
 		}
 	}()
 
-	utils.WaitForShutdownSignal()
-	if err := mq.Close(); err != nil {
-		logrus.Errorf("Close MQ failed: %v", err)
-	}
-	if err := storage.CloseRedis(); err != nil {
-		logrus.Errorf("Close Redis failed: %v", err)
-	}
-	if err := storage.CloseElasticsearch(); err != nil {
-		logrus.Errorf("Close Elasticsearch failed: %v", err)
-	}
-	if err := storage.ClosePostgres(); err != nil {
-		logrus.Errorf("Close Postgres failed: %v", err)
-	}
+	initializer.ShutdownOnSignal(0)
 }
 
 func parseDocID(data []byte) string {

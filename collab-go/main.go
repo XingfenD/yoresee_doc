@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"google.golang.org/grpc"
@@ -52,13 +57,39 @@ func main() {
 	proxyHandler := proxy.NewProxy(coreURL)
 	healthChecker := health.NewHealthChecker(systemService)
 
-	http.HandleFunc("/health", healthChecker.Check)
-	http.HandleFunc("/ws/doc/", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", healthChecker.Check)
+	mux.HandleFunc("/readyz", healthChecker.Readiness)
+	mux.HandleFunc("/livez", healthChecker.Liveness)
+	mux.HandleFunc("/ws/doc/", func(w http.ResponseWriter, r *http.Request) {
 		handleWebSocket(w, r, authenticator, proxyHandler)
 	})
 
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
 	log.Printf("collab-gateway listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("collab-gateway exited unexpectedly: %v", err)
+		}
+	}()
+
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	<-signalCtx.Done()
+
+	log.Printf("shutdown signal received, start draining")
+	healthChecker.SetDraining(true)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("collab-gateway graceful shutdown failed: %v", err)
+	}
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request, authenticator *auth.Authenticator, proxyHandler *proxy.Proxy) {

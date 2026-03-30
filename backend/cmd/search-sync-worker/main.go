@@ -12,16 +12,15 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/search"
-	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 )
 
 var errSearchSyncWorkerDisabled = errors.New("search-sync-worker disabled")
 
 func main() {
-	if err := initSearchSyncWorker(); err != nil {
+	initializer, err := initSearchSyncWorker()
+	if err != nil {
 		if errors.Is(err, errSearchSyncWorkerDisabled) {
 			logrus.Println("Elasticsearch disabled, skip search-sync-worker")
 			return
@@ -39,24 +38,11 @@ func main() {
 		}
 	}()
 
-	utils.WaitForShutdownSignal()
-	time.Sleep(500 * time.Millisecond)
-	if err := mq.Close(); err != nil {
-		logrus.Errorf("Close MQ failed: %v", err)
-	}
-	if err := storage.CloseElasticsearch(); err != nil {
-		logrus.Errorf("Close Elasticsearch failed: %v", err)
-	}
-	if err := storage.CloseRedis(); err != nil {
-		logrus.Errorf("Close Redis failed: %v", err)
-	}
-	if err := storage.ClosePostgres(); err != nil {
-		logrus.Errorf("Close Postgres failed: %v", err)
-	}
+	initializer.ShutdownOnSignal(500 * time.Millisecond)
 }
 
-func initSearchSyncWorker() error {
-	return bootstrap.NewInitializer().
+func initSearchSyncWorker() (*bootstrap.Initializer, error) {
+	initializer := bootstrap.NewInitializer().
 		InitConfig().
 		Check("check elasticsearch enabled", func() error {
 			if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
@@ -68,8 +54,8 @@ func initSearchSyncWorker() error {
 		InitRedis().
 		InitElasticsearch().
 		InitMQ().
-		InitRepository().
-		Err()
+		InitRepository()
+	return initializer, initializer.Err()
 }
 
 func resolveMQBackend() mq.Backend {
