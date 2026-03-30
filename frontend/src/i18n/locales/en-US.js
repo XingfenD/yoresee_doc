@@ -18,6 +18,7 @@ export default {
     signIn: 'Sign In',
     noAccount: 'Don\'t have an account?',
     signUp: 'Sign Up',
+    failed: 'Login failed',
     validation: {
       emailRequired: 'Please enter email',
       emailFormat: 'Please enter a valid email format',
@@ -251,6 +252,10 @@ export default {
       title: 'Invite Management',
       create: 'Create Invite',
       createTitle: 'Create Invitation',
+      tabs: {
+        list: 'Invites',
+        records: 'Usage Records'
+      },
       code: 'Invite Code',
       createdAt: 'Created At',
       createdBy: 'Created By',
@@ -272,7 +277,16 @@ export default {
       notePlaceholder: 'Optional description for this invite',
       active: 'Active',
       expired: 'Expired',
-      disabled: 'Disabled'
+      disabled: 'Disabled',
+      records: {
+        code: 'Invite Code',
+        usedBy: 'Used By',
+        usedAt: 'Used At',
+        result: 'Result',
+        success: 'Success',
+        failed: 'Failed',
+        empty: 'No records'
+      }
     }
   },
   editor: {
@@ -386,6 +400,8 @@ export default {
     unknown: 'Unknown',
     refresh: 'Refresh',
     open: 'Open',
+    loadMore: 'Load More',
+    loading: 'Loading...',
     rename: 'Rename',
     actions: 'Actions',
     size: 'Size',
@@ -408,6 +424,11 @@ export default {
     confirm: 'Confirm',
     copy: 'Copy',
     copySuccess: 'Copied',
-    copyFailed: 'Copy failed, please retry'
+    copyFailed: 'Copy failed, please retry',
+    delete: 'Delete',
+    warning: 'Warning',
+    user: 'User',
+    me: 'Me',
+    reply: 'Reply'
   }
 };

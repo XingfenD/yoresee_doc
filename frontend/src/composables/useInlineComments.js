@@ -22,7 +22,7 @@ export function useInlineComments(options = {}) {
   const inlineEmptyText = computed(() => t('document.inlineCommentEmpty'));
   const userDisplayName = computed(() => {
     const userInfo = getUserInfo?.();
-    return userInfo?.nickname || userInfo?.username || '我';
+    return userInfo?.nickname || userInfo?.username || t('common.me');
   });
   const titleWithCount = computed(() => {
     const count = commentList.value.length;

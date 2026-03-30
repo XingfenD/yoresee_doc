@@ -4,7 +4,7 @@
     :current-language="currentLanguage"
     :is-dark-mode="isDarkMode"
     :user-avatar="userAvatar"
-    :username="userInfo?.username || '用户'"
+    :username="userInfo?.username || t('common.user')"
     :active-menu="activeMenu"
     :side-menu-items="userMenuItems"
     sidebar-scene="user_info"
@@ -19,7 +19,7 @@
         <div class="user-card-header">
           <el-avatar :size="56" :src="userAvatar" />
           <div class="user-card-title">
-            <div class="user-name">{{ userInfo?.username || '用户' }}</div>
+            <div class="user-name">{{ userInfo?.username || t('common.user') }}</div>
             <div class="user-subtitle">{{ t('user.profile') }}</div>
           </div>
         </div>

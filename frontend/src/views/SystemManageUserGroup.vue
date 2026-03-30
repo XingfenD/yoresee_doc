@@ -4,7 +4,7 @@
     :current-language="currentLanguage"
     :is-dark-mode="isDarkMode"
     :user-avatar="userAvatar"
-    :username="userInfo?.username || '用户'"
+    :username="userInfo?.username || t('common.user')"
     :active-menu="activeMenu"
     :side-menu-items="manageMenuItems"
     sidebar-scene="manage"

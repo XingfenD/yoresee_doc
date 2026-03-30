@@ -37,7 +37,7 @@
             :editing="item.editing"
             :content-clickable="true"
             :replyable="true"
-            reply-label="回复"
+            :reply-label="t('common.reply')"
             @action="(action) => handleAction(item, action)"
             @reply="() => handleReply(item)"
             @content-click="() => handleContentClick(item)"
@@ -53,8 +53,12 @@
                   :placeholder="t('document.inlineCommentInputPlaceholder')"
                 />
                 <div class="inline-comment-editor-actions">
-                  <el-button size="small" type="primary" :loading="item.saving" @click="saveEdit(item)">保存</el-button>
-                  <el-button size="small" text @click="cancelEdit(item)">取消</el-button>
+                  <el-button size="small" type="primary" :loading="item.saving" @click="saveEdit(item)">
+                    {{ t('common.save') }}
+                  </el-button>
+                  <el-button size="small" text @click="cancelEdit(item)">
+                    {{ t('common.cancel') }}
+                  </el-button>
                 </div>
               </div>
             </template>

@@ -398,6 +398,8 @@ export default {
     unknown: '未知',
     refresh: '刷新',
     open: '打开',
+    loadMore: '加载更多',
+    loading: '加载中...',
     rename: '重命名',
     actions: '操作',
     size: '大小',
@@ -420,6 +422,11 @@ export default {
     confirm: '确认',
     copy: '复制',
     copySuccess: '复制成功',
-    copyFailed: '复制失败，请重试'
+    copyFailed: '复制失败，请重试',
+    delete: '删除',
+    warning: '警告',
+    user: '用户',
+    me: '我',
+    reply: '回复'
   }
 };

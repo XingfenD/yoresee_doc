@@ -43,7 +43,7 @@
         class="comment-reply-action"
         @click="$emit('reply')"
       >
-        {{ replyLabel }}
+        {{ resolvedReplyLabel }}
       </button>
     </div>
   </div>
@@ -51,6 +51,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { MoreFilled } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -100,14 +101,16 @@ const props = defineProps({
   },
   replyLabel: {
     type: String,
-    default: '回复'
+    default: ''
   }
 });
 
 const emit = defineEmits(['content-click', 'action', 'reply']);
+const { t } = useI18n();
 
 const rootClass = computed(() => '');
 const hasActions = computed(() => Array.isArray(props.actions) && props.actions.length > 0);
+const resolvedReplyLabel = computed(() => props.replyLabel || t('common.reply'));
 
 const emitAction = (key) => {
   emit('action', key);
