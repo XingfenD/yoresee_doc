@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
@@ -13,6 +11,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/search"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
@@ -51,7 +50,8 @@ func main() {
 		}
 	}()
 
-	waitForShutdown()
+	utils.WaitForShutdownSignal()
+	time.Sleep(500 * time.Millisecond)
 	if err := mq.Close(); err != nil {
 		logrus.Errorf("Close MQ failed: %v", err)
 	}
@@ -103,11 +103,4 @@ func handleDocumentEvent(ctx context.Context, data []byte) error {
 		logrus.Warnf("Search sync skip unknown action, action=%s, external_id=%s", evt.Action, evt.ExternalID)
 	}
 	return nil
-}
-
-func waitForShutdown() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-	<-signalChan
-	time.Sleep(500 * time.Millisecond)
 }

@@ -3,11 +3,16 @@ package utils
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"sync"
 
 	"github.com/bwmarrin/snowflake"
 )
 
-var node *snowflake.Node
+var (
+	node     *snowflake.Node
+	nodeOnce sync.Once
+	nodeErr  error
+)
 
 type ExternalIDContext string
 
@@ -22,8 +27,18 @@ const (
 )
 
 func GenerateExternalID(context ExternalIDContext) string {
+	initSnowflakeNode()
+	if nodeErr != nil {
+		panic(nodeErr)
+	}
 	id := node.Generate()
 	combined := string(context) + ":" + id.String()
 	hash := md5.Sum([]byte(combined))
 	return hex.EncodeToString(hash[:])
+}
+
+func initSnowflakeNode() {
+	nodeOnce.Do(func() {
+		node, nodeErr = snowflake.NewNode(1)
+	})
 }

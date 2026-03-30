@@ -2,10 +2,7 @@ package main
 
 import (
 	"context"
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
@@ -13,6 +10,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/service/notification_service"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
@@ -45,7 +43,8 @@ func main() {
 		}
 	}()
 
-	waitForShutdown()
+	utils.WaitForShutdownSignal()
+	time.Sleep(500 * time.Millisecond)
 	if err := mq.Close(); err != nil {
 		logrus.Errorf("Close MQ failed: %v", err)
 	}
@@ -80,11 +79,4 @@ func handleNotificationEvent(ctx context.Context, data []byte) error {
 		logrus.Errorf("create notifications failed: %v", err)
 	}
 	return nil
-}
-
-func waitForShutdown() {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-	<-signalChan
-	time.Sleep(500 * time.Millisecond)
 }

@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"os/signal"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
@@ -18,6 +15,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
+	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
@@ -99,7 +97,7 @@ func main() {
 		}
 	}()
 
-	waitForShutdown()
+	utils.WaitForShutdownSignal()
 	if err := mq.Close(); err != nil {
 		logrus.Errorf("Close MQ failed: %v", err)
 	}
@@ -158,7 +156,7 @@ func fetchDocSnapshot(client *http.Client, baseURL, docID string) ([]byte, strin
 	if payload.State == "" {
 		return nil, payload.Content, nil
 	}
-	state, err := decodeBase64(payload.State)
+	state, err := utils.DecodeBase64(payload.State)
 	if err != nil {
 		return nil, "", err
 	}
@@ -189,7 +187,7 @@ func scanDirtyDocs(client *http.Client, baseURL, dirtySetKey string) ([]string, 
 			logrus.Infof("Dirty doc %s skipped: room key missing", docID)
 			continue
 		}
-		last, parseErr := parseInt64(lastStr)
+		last, parseErr := utils.ParseInt64(lastStr)
 		if parseErr != nil {
 			logrus.Infof("Dirty doc %s skipped: invalid room timestamp %s", docID, lastStr)
 			continue
@@ -259,20 +257,4 @@ func publishDocumentSearchSyncUpsertEvent(ctx context.Context, externalID string
 	if err := domain_event.PublishDocumentUpsertEvent(ctx, externalID); err != nil {
 		logrus.Warnf("Snapshot publish search sync event failed docId=%s err=%v", externalID, err)
 	}
-}
-
-func parseInt64(value string) (int64, error) {
-	var result int64
-	_, err := fmt.Sscanf(value, "%d", &result)
-	return result, err
-}
-
-func decodeBase64(value string) ([]byte, error) {
-	return base64.StdEncoding.DecodeString(value)
-}
-
-func waitForShutdown() {
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
-	<-signalCh
 }
