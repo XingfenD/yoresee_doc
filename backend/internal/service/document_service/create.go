@@ -115,7 +115,7 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 			AccessTime:     time.Now(),
 		})
 	}
-	s.syncDocumentSearchIndexByExternalID(ctx, docExternalID)
+	s.publishDocumentSearchSyncUpsertEvent(ctx, docExternalID)
 
 	return &dto.CreateDocumentResponse{
 		ExternalID: docExternalID,

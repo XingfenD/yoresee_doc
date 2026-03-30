@@ -2,17 +2,15 @@ package grpcserver
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/service/auth_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/notification_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
-	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
-	"github.com/XingfenD/yoresee_doc/pkg/mq"
 )
 
 type NotificationServiceServer struct {
@@ -48,20 +46,14 @@ func (s *NotificationServiceServer) CreateNotification(ctx context.Context, req 
 		}
 	}
 
-	evt := notificationEvent{
+	evt := domain_event.NotificationCreateEvent{
 		ReceiverExternalIDs: receiverExternalIDs,
 		Type:                req.Type,
 		Title:               req.Title,
 		Content:             req.Content,
 		PayloadJSON:         req.PayloadJson,
 	}
-	data, err := json.Marshal(evt)
-	if err != nil {
-		return &pb.CreateNotificationResponse{Base: baseResponseFromErr(status.StatusInternalParamsError)}, nil
-	}
-	topic := constant.NotificationTopicDefault
-
-	if err := mq.PublishTo(ctx, mq.BackendRabbitMQ, topic, data); err != nil {
+	if err := domain_event.PublishNotificationCreateEvent(ctx, evt); err != nil {
 		return &pb.CreateNotificationResponse{Base: baseResponseFromErr(status.StatusMQNotInitialized)}, nil
 	}
 
@@ -164,12 +156,4 @@ func onlySelf(list []string, self string) bool {
 		}
 	}
 	return true
-}
-
-type notificationEvent struct {
-	ReceiverExternalIDs []string `json:"receiver_external_ids"`
-	Type                string   `json:"type"`
-	Title               string   `json:"title"`
-	Content             string   `json:"content"`
-	PayloadJSON         string   `json:"payload_json"`
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository/comment_repo"
@@ -12,8 +13,6 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
-	"github.com/XingfenD/yoresee_doc/pkg/constant"
-	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/sirupsen/logrus"
 )
 
@@ -194,22 +193,14 @@ func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *mode
 	}
 	payloadJSON, _ := json.Marshal(payload)
 
-	evt := map[string]any{
-		"receiver_external_ids": receivers,
-		"type":                  "comment",
-		"title":                 "新评论",
-		"content":               comment.Content,
-		"anchor_id":             comment.AnchorID,
-		"quote":                 quote,
-		"payload_json":          string(payloadJSON),
+	evt := domain_event.NotificationCreateEvent{
+		ReceiverExternalIDs: receivers,
+		Type:                "comment",
+		Title:               "新评论",
+		Content:             comment.Content,
+		PayloadJSON:         string(payloadJSON),
 	}
-	data, err := json.Marshal(evt)
-	if err != nil {
-		return
-	}
-
-	topic := constant.NotificationTopicDefault
-	if err := mq.PublishTo(context.Background(), mq.BackendRabbitMQ, topic, data); err != nil {
+	if err := domain_event.PublishNotificationCreateEvent(context.Background(), evt); err != nil {
 		logrus.Errorf("publish comment notification failed: %v", err)
 	}
 }

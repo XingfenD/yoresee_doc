@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"os/signal"
 	"strings"
@@ -10,24 +9,14 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/service/notification_service"
-	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
-	"github.com/bytedance/sonic"
 	"github.com/sirupsen/logrus"
 )
-
-type notificationEvent struct {
-	ReceiverExternalIDs []string        `json:"receiver_external_ids"`
-	Type                string          `json:"type"`
-	Title               string          `json:"title"`
-	Content             string          `json:"content"`
-	PayloadJSON         string          `json:"payload_json"`
-	Payload             json.RawMessage `json:"payload"`
-}
 
 func main() {
 	if err := config.InitConfig(); err != nil {
@@ -48,7 +37,7 @@ func main() {
 
 	repository.MustInit()
 
-	topic := constant.NotificationTopicDefault
+	topic := domain_event.NotificationCreateTopic()
 
 	go func() {
 		if err := mq.SubscribeTo(mq.BackendRabbitMQ, topic, handleNotificationEvent); err != nil {
@@ -74,13 +63,10 @@ func handleNotificationEvent(ctx context.Context, data []byte) error {
 		return nil
 	}
 
-	var evt notificationEvent
-	if err := sonic.Unmarshal(data, &evt); err != nil {
+	evt, err := domain_event.DecodeNotificationCreateEvent(data)
+	if err != nil {
 		logrus.Errorf("parse notification event failed: %v", err)
 		return nil
-	}
-	if evt.PayloadJSON == "" && len(evt.Payload) > 0 {
-		evt.PayloadJSON = string(evt.Payload)
 	}
 
 	req := &dto.CreateNotificationRequest{

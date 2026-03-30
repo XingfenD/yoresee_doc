@@ -217,6 +217,25 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
+  search-sync-worker:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.search-sync.prod
+    image: yoresee_doc_search_sync_worker:latest
+    container_name: yoresee_doc_search_sync_worker
+    volumes:
+      - ../backend/config.toml:/app/config.toml
+    environment:
+      - SEARCH_SYNC_MQ=${SEARCH_SYNC_MQ:-rabbitmq}
+    depends_on:
+      - rabbitmq
+      - redis
+      - postgres
+      - elasticsearch
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
 volumes:
   yoresee_doc_postgres_data:
   yoresee_doc_redis_data:

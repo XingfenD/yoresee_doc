@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
-	"github.com/XingfenD/yoresee_doc/internal/search"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
@@ -230,7 +230,7 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 		logrus.Errorf("Snapshot content update failed docId=%s err=%v", docID, err)
 		return err
 	}
-	syncDocumentSearchIndex(ctx, docID)
+	publishDocumentSearchSyncUpsertEvent(ctx, docID)
 
 	if storage.GetRedis() != nil {
 		key := fmt.Sprintf("collab:yjs:doc:updates:%s", docID)
@@ -255,18 +255,12 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 	return nil
 }
 
-func syncDocumentSearchIndex(ctx context.Context, externalID string) {
-	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled || storage.ES == nil {
+func publishDocumentSearchSyncUpsertEvent(ctx context.Context, externalID string) {
+	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
 		return
 	}
-
-	doc, err := document_repo.DocumentRepo.GetByExternalID(externalID).Exec(ctx)
-	if err != nil {
-		logrus.Warnf("Snapshot sync search index query doc failed docId=%s err=%v", externalID, err)
-		return
-	}
-	if err := search.UpsertDocument(ctx, doc); err != nil {
-		logrus.Warnf("Snapshot sync search index failed docId=%s err=%v", externalID, err)
+	if err := domain_event.PublishDocumentUpsertEvent(ctx, externalID); err != nil {
+		logrus.Warnf("Snapshot publish search sync event failed docId=%s err=%v", externalID, err)
 	}
 }
 

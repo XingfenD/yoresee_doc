@@ -120,7 +120,7 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		}
 	}
 
-	s.syncDocumentSearchIndexByExternalID(ctx, req.ExternalID)
+	s.publishDocumentSearchSyncUpsertEvent(ctx, req.ExternalID)
 
 	return true, nil
 }

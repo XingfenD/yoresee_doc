@@ -271,6 +271,31 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
+  search-sync-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: dev
+    image: yoresee_doc_search_sync_worker_dev:latest
+    container_name: yoresee_doc_search_sync_worker
+    volumes:
+      - ../backend:/app
+    environment:
+      - SEARCH_SYNC_MQ=${SEARCH_SYNC_MQ:-rabbitmq}
+    command: sh -c "go mod download && go run ./cmd/search-sync-worker"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
 volumes:
   yoresee_doc_postgres_data:
   yoresee_doc_redis_data:
