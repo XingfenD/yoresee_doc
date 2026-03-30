@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
@@ -12,19 +12,13 @@ import (
 )
 
 func main() {
-	if err := config.InitConfig(); err != nil {
-		logrus.Fatalf("Init config failed: %v", err)
-	}
-
-	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
-		logrus.Fatalf("Init Postgres failed: %v", err)
-	}
-
-	if err := storage.InitConsul(&config.GlobalConfig.Consul); err != nil {
-		logrus.Fatalf("Init Consul failed: %v", err)
-	}
-	if !storage.ConsulEnabled() {
-		logrus.Fatal("Consul is required for config, but it is not enabled")
+	if err := bootstrap.NewInitializer().
+		InitConfig().
+		InitPostgres().
+		InitConsul().
+		RequireConsulEnabled().
+		Err(); err != nil {
+		logrus.Fatalf("Init db_init failed: %v", err)
 	}
 
 	if isDatabaseInitialized() {

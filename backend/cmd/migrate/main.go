@@ -3,18 +3,18 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 )
 
 func main() {
-	if err := config.InitConfig(); err != nil {
-		logrus.Fatalf("Init config failed: %v", err)
+	if err := bootstrap.NewInitializer().
+		InitConfig().
+		InitPostgres().
+		Err(); err != nil {
+		logrus.Fatalf("Init migrate failed: %v", err)
 	}
-
-	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
-		logrus.Fatalf("Init Postgres failed: %v", err)
-	}
+	defer storage.ClosePostgres()
 
 	logrus.Println("Starting migration...")
 

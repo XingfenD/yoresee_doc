@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
-	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/search"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -17,28 +18,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func main() {
-	if err := config.InitConfig(); err != nil {
-		logrus.Fatalf("Init config failed: %v", err)
-	}
-	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
-		logrus.Println("Elasticsearch disabled, skip search-sync-worker")
-		return
-	}
+var errSearchSyncWorkerDisabled = errors.New("search-sync-worker disabled")
 
-	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
-		logrus.Fatalf("Init Postgres failed: %v", err)
+func main() {
+	if err := initSearchSyncWorker(); err != nil {
+		if errors.Is(err, errSearchSyncWorkerDisabled) {
+			logrus.Println("Elasticsearch disabled, skip search-sync-worker")
+			return
+		}
+		logrus.Fatalf("Init search-sync-worker failed: %v", err)
 	}
-	if err := storage.InitRedis(&config.GlobalConfig.Redis); err != nil {
-		logrus.Fatalf("Init Redis failed: %v", err)
-	}
-	if err := storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch); err != nil {
-		logrus.Fatalf("Init Elasticsearch failed: %v", err)
-	}
-	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
-		logrus.Fatalf("Init MQ failed: %v", err)
-	}
-	repository.MustInit()
 
 	backend := resolveMQBackend()
 	topic := domain_event.DocumentSyncTopic()
@@ -64,6 +53,23 @@ func main() {
 	if err := storage.ClosePostgres(); err != nil {
 		logrus.Errorf("Close Postgres failed: %v", err)
 	}
+}
+
+func initSearchSyncWorker() error {
+	return bootstrap.NewInitializer().
+		InitConfig().
+		Check("check elasticsearch enabled", func() error {
+			if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
+				return errSearchSyncWorkerDisabled
+			}
+			return nil
+		}).
+		InitPostgres().
+		InitRedis().
+		InitElasticsearch().
+		InitMQ().
+		InitRepository().
+		Err()
 }
 
 func resolveMQBackend() mq.Backend {

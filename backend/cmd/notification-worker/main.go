@@ -5,10 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
-	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/service/notification_service"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
@@ -17,23 +16,15 @@ import (
 )
 
 func main() {
-	if err := config.InitConfig(); err != nil {
-		logrus.Fatalf("Init config failed: %v", err)
+	if err := bootstrap.NewInitializer().
+		InitConfig().
+		InitPostgres().
+		InitRedis().
+		InitMQ().
+		InitRepository().
+		Err(); err != nil {
+		logrus.Fatalf("Init notification-worker failed: %v", err)
 	}
-
-	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
-		logrus.Fatalf("Init Postgres failed: %v", err)
-	}
-
-	if err := storage.InitRedis(&config.GlobalConfig.Redis); err != nil {
-		logrus.Fatalf("Init Redis failed: %v", err)
-	}
-
-	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
-		logrus.Fatalf("Init MQ failed: %v", err)
-	}
-
-	repository.MustInit()
 
 	topic := domain_event.NotificationCreateTopic()
 

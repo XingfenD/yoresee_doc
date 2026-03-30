@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 
+	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/model"
@@ -15,30 +17,30 @@ import (
 
 const reindexBatchSize = 200
 
+var errESInitDisabled = errors.New("es_init disabled")
+
 func main() {
-	if err := config.InitConfig(); err != nil {
-		logrus.Fatalf("Init config failed: %v", err)
-	}
-	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
-		logrus.Println("Elasticsearch disabled, skip es_init")
-		return
+	if err := bootstrap.NewInitializer().
+		InitConfig().
+		Check("check elasticsearch enabled", func() error {
+			if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
+				return errESInitDisabled
+			}
+			return nil
+		}).
+		InitPostgres().
+		InitConsul().
+		RequireConsulEnabled().
+		InitElasticsearch().
+		Err(); err != nil {
+		if errors.Is(err, errESInitDisabled) {
+			logrus.Println("Elasticsearch disabled, skip es_init")
+			return
+		}
+		logrus.Fatalf("Init es_init failed: %v", err)
 	}
 
-	if err := storage.InitPostgres(&config.GlobalConfig.Database); err != nil {
-		logrus.Fatalf("Init Postgres failed: %v", err)
-	}
 	defer storage.ClosePostgres()
-
-	if err := storage.InitConsul(&config.GlobalConfig.Consul); err != nil {
-		logrus.Fatalf("Init Consul failed: %v", err)
-	}
-	if !storage.ConsulEnabled() {
-		logrus.Fatal("Consul is required for config, but it is not enabled")
-	}
-
-	if err := storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch); err != nil {
-		logrus.Fatalf("Init Elasticsearch failed: %v", err)
-	}
 	defer storage.CloseElasticsearch()
 
 	ctx := context.Background()
