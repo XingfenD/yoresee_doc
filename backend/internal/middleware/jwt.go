@@ -3,8 +3,8 @@ package middleware
 import (
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/auth"
 	"github.com/XingfenD/yoresee_doc/internal/status"
-	"github.com/XingfenD/yoresee_doc/internal/utils"
 )
 
 var JWTAuth = &JWTAuthMiddleware{}
@@ -12,11 +12,11 @@ var JWTAuth = &JWTAuthMiddleware{}
 type JWTAuthMiddleware struct {
 }
 
-func (m *JWTAuthMiddleware) ValidateAuthorizationHeader(authHeader string) (*utils.Claims, error) {
+func (m *JWTAuthMiddleware) ValidateAuthorizationHeader(authHeader string) (*auth.Claims, error) {
 	return m.handle(authHeader)
 }
 
-func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
+func (m *JWTAuthMiddleware) handle(authHeader string) (*auth.Claims, error) {
 	if authHeader == "" {
 		return nil, status.GenErrWithCustomMsg(status.StatusTokenInvalid, "unlogin or illegal access")
 	}
@@ -26,15 +26,16 @@ func (m *JWTAuthMiddleware) handle(authHeader string) (*utils.Claims, error) {
 		return nil, status.GenErrWithCustomMsg(status.StatusTokenInvalid, "invalid token format")
 	}
 	token := parts[1]
-	jwtValidator := &utils.JWTValidator{}
-	claims, err := jwtValidator.Validate(token)
+	claims, err := auth.ParseToken(token)
 	if err != nil {
 		return nil, status.StatusTokenInvalid
 	}
 
-	// TODO: jwt + redis
-	if jwtValidator.IsExpired(claims) {
+	if (&auth.JWTValidator{}).IsExpired(claims) {
 		return nil, status.StatusTokenExpired
+	}
+	if err := auth.ValidateJWTTokenInRedis(claims.ExternalID, token); err != nil {
+		return nil, err
 	}
 	return claims, nil
 }

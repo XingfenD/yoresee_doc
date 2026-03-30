@@ -1,10 +1,10 @@
-package utils
+package auth
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
-
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -39,7 +39,16 @@ func GenerateToken(externalID string, username string) (string, error) {
 	}
 
 	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return tokenClaims.SignedString([]byte(cfg.Secret))
+	token, err := tokenClaims.SignedString([]byte(cfg.Secret))
+	if err != nil {
+		return "", err
+	}
+
+	if err := StoreJWTToken(externalID, token, time.Until(expireTime)); err != nil {
+		return "", fmt.Errorf("store jwt token failed: %w", err)
+	}
+
+	return token, nil
 }
 
 func ParseToken(token string) (*Claims, error) {

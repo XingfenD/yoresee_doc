@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/internal/auth"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
@@ -90,12 +91,15 @@ func (s *AuthService) Login(email string, password string) (string, *dto.UserRes
 	if err != nil {
 		return "", nil, status.StatusUserNotFound
 	}
+	if user.Status <= 0 {
+		return "", nil, status.GenErrWithCustomMsg(status.StatusPermissionDenied, "user is banned")
+	}
 
 	if !utils.CheckPassword(password, user.PasswordHash) {
 		return "", nil, status.StatusInvalidPassword
 	}
 
-	token, err := utils.GenerateToken(user.ExternalID, user.Username)
+	token, err := auth.GenerateToken(user.ExternalID, user.Username)
 	if err != nil {
 		logrus.Errorf("[Service layer: AuthService] GenerateToken failed, user_external_id=%s, err=%+v", user.ExternalID, err)
 		return "", nil, status.GenErrWithCustomMsg(status.StatusServiceInternalError, "generate token failed")

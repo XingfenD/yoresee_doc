@@ -61,3 +61,15 @@ func KeyUserQueryPrefix() string {
 func KeyUserQueryVersion() string {
 	return "dms:user:query:version"
 }
+
+func KeyJWTActiveToken(tokenHash string) string {
+	return fmt.Sprintf("dms:auth:jwt:active:%s", tokenHash)
+}
+
+func KeyJWTBlacklistToken(tokenHash string) string {
+	return fmt.Sprintf("dms:auth:jwt:blacklist:%s", tokenHash)
+}
+
+func KeyJWTUserTokenSet(userExternalID string) string {
+	return fmt.Sprintf("dms:auth:jwt:user_tokens:%s", userExternalID)
+}

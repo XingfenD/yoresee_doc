@@ -3,6 +3,7 @@ package membership_service
 import (
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/auth"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -65,6 +66,7 @@ func (s *MembershipService) UpdateUser(req *dto.UpdateUserRequest) error {
 	if err != nil {
 		return status.StatusUserNotFound
 	}
+	oldStatus := user.Status
 
 	if req.Username != nil {
 		username := strings.TrimSpace(*req.Username)
@@ -89,6 +91,12 @@ func (s *MembershipService) UpdateUser(req *dto.UpdateUserRequest) error {
 
 	if err := s.useRepo.Update(user).Exec(); err != nil {
 		return status.StatusWriteDBError
+	}
+	if req.Status != nil && oldStatus > 0 && user.Status <= 0 {
+		if err := auth.BlacklistUserJWTs(user.ExternalID); err != nil {
+			logrus.Errorf("[Service layer: MembershipService] blacklist user jwt tokens failed, user_external_id=%s, err=%+v", user.ExternalID, err)
+			return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "ban user failed: blacklist jwt tokens failed")
+		}
 	}
 	return nil
 }
