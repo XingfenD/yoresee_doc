@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
 	svc_iface "github.com/XingfenD/yoresee_doc/internal/service/interface"
@@ -12,7 +14,19 @@ import (
 )
 
 func RegisterTopicConsumer(h svc_iface.TopicConsumer) error {
-	return mq_service.MQSvc.SubscribeTo(mq.BackendRedis, h.Topic(), h.Consume())
+	return mq_service.MQSvc.Consume(
+		context.Background(),
+		mq.BackendRedis,
+		mq.ConsumeOptions{
+			Topic:   h.Topic(),
+			Mode:    mq.ConsumeModeFanout,
+			AutoAck: true,
+			OnError: mq.ErrorActionDrop,
+		},
+		func(ctx context.Context, message mq.Message) error {
+			return h.Consume()(message.Body)
+		},
+	)
 
 }
 

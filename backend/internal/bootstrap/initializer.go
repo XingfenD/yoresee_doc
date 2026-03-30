@@ -7,8 +7,8 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
+	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
-	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -103,10 +103,10 @@ func (i *Initializer) InitElasticsearchAllowFail() *Initializer {
 }
 
 func (i *Initializer) InitMQ() *Initializer {
-	i.Check("mq.Init", func() error {
-		return mq.Init(&config.GlobalConfig.MQConfig)
+	i.Check("mq_service.Init", func() error {
+		return mq_service.MQSvc.Init(&config.GlobalConfig.MQConfig)
 	})
-	return i.addShutdownHook("MQ", mq.Close)
+	return i.addShutdownHook("MQ", mq_service.MQSvc.Close)
 }
 
 func (i *Initializer) InitRepository() *Initializer {

@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/notification_service"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/sirupsen/logrus"
@@ -25,14 +27,36 @@ func main() {
 	}
 
 	topic := domain_event.NotificationCreateTopic()
+	group := resolveMQConsumerGroup()
 
 	go func() {
-		if err := mq.SubscribeTo(mq.BackendRabbitMQ, topic, handleNotificationEvent); err != nil {
+		if err := mq_service.MQSvc.Consume(
+			context.Background(),
+			mq.BackendRabbitMQ,
+			mq.ConsumeOptions{
+				Topic:   topic,
+				Mode:    mq.ConsumeModeGroup,
+				Group:   group,
+				AutoAck: false,
+				OnError: mq.ErrorActionRequeue,
+			},
+			func(ctx context.Context, message mq.Message) error {
+				return handleNotificationEvent(ctx, message.Body)
+			},
+		); err != nil {
 			logrus.Fatalf("Subscribe failed: %v", err)
 		}
 	}()
 
 	initializer.ShutdownOnSignal(500 * time.Millisecond)
+}
+
+func resolveMQConsumerGroup() string {
+	group := strings.TrimSpace(os.Getenv("NOTIFICATION_MQ_GROUP"))
+	if group == "" {
+		return "notification-worker"
+	}
+	return group
 }
 
 func handleNotificationEvent(ctx context.Context, data []byte) error {
@@ -56,6 +80,7 @@ func handleNotificationEvent(ctx context.Context, data []byte) error {
 	}
 	if err := notification_service.NotificationSvc.CreateNotifications(req); err != nil {
 		logrus.Errorf("create notifications failed: %v", err)
+		return err
 	}
 	return nil
 }

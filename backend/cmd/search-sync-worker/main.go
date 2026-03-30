@@ -12,6 +12,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/search"
+	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/sirupsen/logrus"
 )
@@ -30,10 +31,24 @@ func main() {
 
 	backend := resolveMQBackend()
 	topic := domain_event.DocumentSyncTopic()
-	logrus.Infof("Search sync worker started: backend=%s topic=%s", backend, topic)
+	group := resolveMQConsumerGroup()
+	logrus.Infof("Search sync worker started: backend=%s topic=%s group=%s", backend, topic, group)
 
 	go func() {
-		if err := mq.SubscribeTo(backend, topic, handleDocumentEvent); err != nil {
+		if err := mq_service.MQSvc.Consume(
+			context.Background(),
+			backend,
+			mq.ConsumeOptions{
+				Topic:   topic,
+				Mode:    mq.ConsumeModeGroup,
+				Group:   group,
+				AutoAck: false,
+				OnError: mq.ErrorActionRequeue,
+			},
+			func(ctx context.Context, message mq.Message) error {
+				return handleDocumentEvent(ctx, message.Body)
+			},
+		); err != nil {
 			logrus.Fatalf("Subscribe search sync topic failed: %v", err)
 		}
 	}()
@@ -70,6 +85,14 @@ func resolveMQBackend() mq.Backend {
 	}
 }
 
+func resolveMQConsumerGroup() string {
+	group := strings.TrimSpace(os.Getenv("SEARCH_SYNC_MQ_GROUP"))
+	if group == "" {
+		return "search-sync-worker"
+	}
+	return group
+}
+
 func handleDocumentEvent(ctx context.Context, data []byte) error {
 	evt, err := domain_event.DecodeDocumentSyncEvent(data)
 	if err != nil {
@@ -82,11 +105,11 @@ func handleDocumentEvent(ctx context.Context, data []byte) error {
 		doc, err := document_repo.DocumentRepo.GetByExternalID(evt.ExternalID).Exec(ctx)
 		if err != nil {
 			logrus.Warnf("Search sync load document failed, external_id=%s, err=%v", evt.ExternalID, err)
-			return nil
+			return err
 		}
 		if err := search.UpsertDocument(ctx, doc); err != nil {
 			logrus.Warnf("Search sync upsert failed, external_id=%s, err=%v", evt.ExternalID, err)
-			return nil
+			return err
 		}
 		logrus.Infof("Search sync upsert success, external_id=%s", evt.ExternalID)
 	case domain_event.DocumentActionDelete:
