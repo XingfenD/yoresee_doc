@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 )
 
 type ConsulKVClient struct {
@@ -148,7 +149,7 @@ func (c *ConsulKVClient) Get(ctx context.Context, key string) (string, bool, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return "", false, fmt.Errorf("consul kv get failed: %s", string(body))
+		return "", false, errs.Detail(errs.ErrConsulKVGet, string(body))
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -173,7 +174,7 @@ func (c *ConsulKVClient) Set(ctx context.Context, key, value string) error {
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("consul kv set failed: %s", string(body))
+		return errs.Detail(errs.ErrConsulKVSet, string(body))
 	}
 	return nil
 }
@@ -199,15 +200,15 @@ var consulBindCache sync.Map
 
 func BindConsulConfig(target interface{}, client *ConsulKVClient) error {
 	if target == nil {
-		return fmt.Errorf("consul config bind target is nil")
+		return errs.ErrConsulBindTargetNil
 	}
 	if client == nil {
-		return fmt.Errorf("consul client is nil")
+		return errs.ErrConsulClientNil
 	}
 
 	val := reflect.ValueOf(target)
 	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("consul config bind target must be pointer to struct")
+		return errs.ErrConsulBindTargetInvalid
 	}
 	val = val.Elem()
 	typ := val.Type()
@@ -219,11 +220,11 @@ func BindConsulConfig(target interface{}, client *ConsulKVClient) error {
 			continue
 		}
 		if field.Type.Kind() != reflect.Func || field.Type.NumIn() != 0 || field.Type.NumOut() != 1 {
-			return fmt.Errorf("field %s must be func()T", field.Name)
+			return errs.Detail(errs.ErrConsulFieldMustBeFunc, field.Name)
 		}
 		parsed, err := parseConsulTag(tag)
 		if err != nil {
-			return fmt.Errorf("field %s tag invalid: %w", field.Name, err)
+			return errs.DetailWrap(errs.ErrConsulFieldTagInvalid, field.Name, err)
 		}
 
 		outType := field.Type.Out(0)
@@ -269,14 +270,14 @@ func BindConsulConfig(target interface{}, client *ConsulKVClient) error {
 func parseConsulTag(tag string) (consulTag, error) {
 	tag = strings.TrimSpace(tag)
 	if tag == "" {
-		return consulTag{}, fmt.Errorf("empty tag")
+		return consulTag{}, errs.ErrConsulTagEmpty
 	}
 	parts := strings.Split(tag, ",")
 	result := consulTag{
 		Key: strings.TrimSpace(parts[0]),
 	}
 	if result.Key == "" {
-		return consulTag{}, fmt.Errorf("missing key")
+		return consulTag{}, errs.ErrConsulTagMissingKey
 	}
 	for _, part := range parts[1:] {
 		part = strings.TrimSpace(part)
@@ -334,6 +335,6 @@ func convertConsulValue(raw string, found bool, tag consulTag, outType reflect.T
 		}
 		return reflect.ValueOf(val).Convert(outType), nil
 	default:
-		return reflect.Zero(outType), fmt.Errorf("unsupported type: %s", outType.Kind())
+		return reflect.Zero(outType), errs.Detailf(errs.ErrConsulUnsupportedType, "%s", outType.Kind())
 	}
 }

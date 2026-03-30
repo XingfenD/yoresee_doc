@@ -2,10 +2,10 @@ package mq
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
@@ -24,10 +24,10 @@ func NewRedisMQ() *RedisMQ {
 func (rmq *RedisMQ) Publish(ctx context.Context, msg PublishMessage) error {
 	topic := strings.TrimSpace(msg.Topic)
 	if topic == "" {
-		return fmt.Errorf("topic is empty")
+		return errs.ErrTopicEmpty
 	}
 	if rmq.client == nil {
-		return fmt.Errorf("redis client not initialized")
+		return errs.ErrRedisClientNotInitialized
 	}
 	return rmq.client.Publish(ctx, topic, msg.Body).Err()
 }
@@ -36,10 +36,10 @@ func (rmq *RedisMQ) Consume(ctx context.Context, opts ConsumeOptions, handler Me
 	opts = opts.normalize()
 	topic := strings.TrimSpace(opts.Topic)
 	if topic == "" {
-		return fmt.Errorf("topic is empty")
+		return errs.ErrTopicEmpty
 	}
 	if rmq.client == nil {
-		return fmt.Errorf("redis client not initialized")
+		return errs.ErrRedisClientNotInitialized
 	}
 	if opts.Mode == ConsumeModeGroup && strings.TrimSpace(opts.Group) != "" {
 		logrus.Warnf("Redis Pub/Sub does not support true group consume, fallback to fanout mode, topic=%s, group=%s", topic, opts.Group)

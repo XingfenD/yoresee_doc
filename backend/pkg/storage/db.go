@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -67,7 +68,7 @@ func resolveGormLogLevel() (logger.LogLevel, error) {
 	case "fatal", "panic":
 		return logger.Error, nil
 	default:
-		return logger.Info, fmt.Errorf("invalid gorm log level: %s", levelText)
+		return logger.Info, errs.Detail(errs.ErrInvalidGormLogLevel, levelText)
 	}
 }
 

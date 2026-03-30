@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 )
@@ -23,13 +24,13 @@ type RabbitMQConfig struct {
 func NewRabbitMQ(config RabbitMQConfig) (*RabbitMQ, error) {
 	conn, err := amqp091.Dial(config.URL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+		return nil, errs.Wrap(errs.ErrRabbitMQConnectFailed, err)
 	}
 
 	channel, err := conn.Channel()
 	if err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to open a channel: %w", err)
+		return nil, errs.Wrap(errs.ErrRabbitMQOpenChannelFailed, err)
 	}
 
 	return &RabbitMQ{
@@ -41,10 +42,10 @@ func NewRabbitMQ(config RabbitMQConfig) (*RabbitMQ, error) {
 func (rmq *RabbitMQ) Publish(ctx context.Context, msg PublishMessage) error {
 	topic := strings.TrimSpace(msg.Topic)
 	if topic == "" {
-		return fmt.Errorf("topic is empty")
+		return errs.ErrTopicEmpty
 	}
 	if err := rmq.declareTopicExchange(topic); err != nil {
-		return fmt.Errorf("failed to declare an exchange: %w", err)
+		return errs.Wrap(errs.ErrRabbitMQDeclareExchange, err)
 	}
 
 	if err := rmq.channel.PublishWithContext(
@@ -61,7 +62,7 @@ func (rmq *RabbitMQ) Publish(ctx context.Context, msg PublishMessage) error {
 			Timestamp:   time.Now(),
 		},
 	); err != nil {
-		return fmt.Errorf("failed to publish a message: %w", err)
+		return errs.Wrap(errs.ErrRabbitMQPublishMessage, err)
 	}
 	return nil
 }
@@ -70,11 +71,11 @@ func (rmq *RabbitMQ) Consume(ctx context.Context, opts ConsumeOptions, handler M
 	opts = opts.normalize()
 	topic := strings.TrimSpace(opts.Topic)
 	if topic == "" {
-		return fmt.Errorf("topic is empty")
+		return errs.ErrTopicEmpty
 	}
 
 	if err := rmq.declareTopicExchange(topic); err != nil {
-		return fmt.Errorf("failed to declare an exchange: %w", err)
+		return errs.Wrap(errs.ErrRabbitMQDeclareExchange, err)
 	}
 
 	queueName, durable, autoDelete, exclusive := consumeQueueConfig(topic, opts)
@@ -87,7 +88,7 @@ func (rmq *RabbitMQ) Consume(ctx context.Context, opts ConsumeOptions, handler M
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %w", err)
+		return errs.Wrap(errs.ErrRabbitMQDeclareQueue, err)
 	}
 
 	if err := rmq.channel.QueueBind(
@@ -97,7 +98,7 @@ func (rmq *RabbitMQ) Consume(ctx context.Context, opts ConsumeOptions, handler M
 		false,
 		nil,
 	); err != nil {
-		return fmt.Errorf("failed to bind a queue: %w", err)
+		return errs.Wrap(errs.ErrRabbitMQBindQueue, err)
 	}
 
 	consumerTag := buildConsumerTag(opts.Consumer, topic)
@@ -111,7 +112,7 @@ func (rmq *RabbitMQ) Consume(ctx context.Context, opts ConsumeOptions, handler M
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to register a consumer: %w", err)
+		return errs.Wrap(errs.ErrRabbitMQRegisterConsumer, err)
 	}
 
 	logrus.Infof("RabbitMQ consume started, topic=%s, queue=%s, mode=%s, group=%s, auto_ack=%v",
@@ -124,7 +125,7 @@ func (rmq *RabbitMQ) Consume(ctx context.Context, opts ConsumeOptions, handler M
 			return ctx.Err()
 		case d, ok := <-msgs:
 			if !ok {
-				return fmt.Errorf("consumer channel closed, topic=%s, queue=%s", topic, queue.Name)
+				return errs.Detailf(errs.ErrRabbitMQConsumerChanClosed, "topic=%s, queue=%s", topic, queue.Name)
 			}
 
 			message := Message{

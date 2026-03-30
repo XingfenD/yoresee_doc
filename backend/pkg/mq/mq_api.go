@@ -2,9 +2,10 @@ package mq
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
+
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 )
 
 type Message struct {
@@ -64,13 +65,13 @@ func (o ConsumeOptions) validate() error {
 	switch o.Mode {
 	case ConsumeModeFanout, ConsumeModeGroup:
 	default:
-		return fmt.Errorf("invalid consume mode: %s", o.Mode)
+		return errs.Detailf(errs.ErrInvalidConsumeMode, "%s", o.Mode)
 	}
 
 	switch o.OnError {
 	case ErrorActionDrop, ErrorActionRequeue:
 	default:
-		return fmt.Errorf("invalid error action: %s", o.OnError)
+		return errs.Detailf(errs.ErrInvalidErrorAction, "%s", o.OnError)
 	}
 
 	return nil

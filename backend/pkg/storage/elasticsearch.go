@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 )
 
 type ElasticsearchClient struct {
@@ -37,7 +38,7 @@ func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
 		addresses = append(addresses, strings.TrimRight(trimmed, "/"))
 	}
 	if len(addresses) == 0 {
-		return fmt.Errorf("elasticsearch addresses are empty")
+		return errs.ErrElasticAddressesEmpty
 	}
 
 	timeout := time.Duration(cfg.Timeout) * time.Second
@@ -56,14 +57,14 @@ func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
 
 	if err := ES.Ping(context.Background()); err != nil {
 		ES = nil
-		return fmt.Errorf("ping elasticsearch failed: %w", err)
+		return errs.Wrap(errs.ErrElasticPingFailed, err)
 	}
 	return nil
 }
 
 func (c *ElasticsearchClient) Ping(ctx context.Context) error {
 	if c == nil {
-		return fmt.Errorf("elasticsearch client is nil")
+		return errs.ErrElasticClientNil
 	}
 	var lastErr error
 	for _, address := range c.addresses {
@@ -88,17 +89,17 @@ func (c *ElasticsearchClient) Ping(ctx context.Context) error {
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 && decodeErr == nil {
 			return nil
 		}
-		lastErr = fmt.Errorf("status=%d decodeErr=%v", resp.StatusCode, decodeErr)
+		lastErr = errs.Detailf(errs.ErrElasticStatusDecode, "status=%d decodeErr=%v", resp.StatusCode, decodeErr)
 	}
 	return lastErr
 }
 
 func (c *ElasticsearchClient) UpsertDocument(ctx context.Context, index string, docID string, body map[string]interface{}) error {
 	if c == nil {
-		return fmt.Errorf("elasticsearch client is nil")
+		return errs.ErrElasticClientNil
 	}
 	if strings.TrimSpace(index) == "" || strings.TrimSpace(docID) == "" {
-		return fmt.Errorf("index or docID is empty")
+		return errs.ErrElasticIndexOrDocID
 	}
 	payload, err := json.Marshal(body)
 	if err != nil {
@@ -128,14 +129,14 @@ func (c *ElasticsearchClient) UpsertDocument(ctx context.Context, index string, 
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			return nil
 		}
-		lastErr = fmt.Errorf("status=%d", resp.StatusCode)
+		lastErr = errs.Detailf(errs.ErrElasticStatus, "%d", resp.StatusCode)
 	}
 	return lastErr
 }
 
 func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searchBody map[string]interface{}) ([]int64, error) {
 	if c == nil {
-		return nil, fmt.Errorf("elasticsearch client is nil")
+		return nil, errs.ErrElasticClientNil
 	}
 	payload, err := json.Marshal(searchBody)
 	if err != nil {
@@ -167,7 +168,7 @@ func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searc
 			continue
 		}
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			lastErr = fmt.Errorf("status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+			lastErr = errs.Detailf(errs.ErrElasticStatusWithBody, "status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
 			continue
 		}
 
@@ -205,11 +206,11 @@ func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searc
 
 func (c *ElasticsearchClient) IndexExists(ctx context.Context, index string) (bool, error) {
 	if c == nil {
-		return false, fmt.Errorf("elasticsearch client is nil")
+		return false, errs.ErrElasticClientNil
 	}
 	index = strings.TrimSpace(index)
 	if index == "" {
-		return false, fmt.Errorf("index is empty")
+		return false, errs.ErrElasticIndexEmpty
 	}
 
 	var lastErr error
@@ -237,18 +238,18 @@ func (c *ElasticsearchClient) IndexExists(ctx context.Context, index string) (bo
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			return true, nil
 		}
-		lastErr = fmt.Errorf("status=%d", resp.StatusCode)
+		lastErr = errs.Detailf(errs.ErrElasticStatus, "%d", resp.StatusCode)
 	}
 	return false, lastErr
 }
 
 func (c *ElasticsearchClient) CreateIndex(ctx context.Context, index string, body map[string]interface{}) error {
 	if c == nil {
-		return fmt.Errorf("elasticsearch client is nil")
+		return errs.ErrElasticClientNil
 	}
 	index = strings.TrimSpace(index)
 	if index == "" {
-		return fmt.Errorf("index is empty")
+		return errs.ErrElasticIndexEmpty
 	}
 
 	payload := []byte("{}")
@@ -287,7 +288,7 @@ func (c *ElasticsearchClient) CreateIndex(ctx context.Context, index string, bod
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			return nil
 		}
-		lastErr = fmt.Errorf("status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+		lastErr = errs.Detailf(errs.ErrElasticStatusWithBody, "status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
 	}
 	return lastErr
 }

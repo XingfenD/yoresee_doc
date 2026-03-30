@@ -2,11 +2,11 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -20,18 +20,18 @@ func InitMinio(cfg *config.MinioConfig) error {
 		Secure: cfg.UseSSL,
 	})
 	if err != nil {
-		return fmt.Errorf("init minio client failed: %w", err)
+		return errs.Wrap(errs.ErrMinioInitClient, err)
 	}
 
 	// 检查并创建存储桶
 	exists, err := MinioClient.BucketExists(context.Background(), cfg.Bucket)
 	if err != nil {
-		return fmt.Errorf("check bucket exists failed: %w", err)
+		return errs.Wrap(errs.ErrMinioCheckBucketExists, err)
 	}
 	if !exists {
 		err = MinioClient.MakeBucket(context.Background(), cfg.Bucket, minio.MakeBucketOptions{})
 		if err != nil {
-			return fmt.Errorf("create bucket failed: %w", err)
+			return errs.Wrap(errs.ErrMinioCreateBucket, err)
 		}
 	}
 
@@ -45,12 +45,12 @@ func UploadFile(bucketName, objectName string, reader io.Reader, objectSize int6
 		ContentType: contentType,
 	})
 	if err != nil {
-		return "", fmt.Errorf("upload file failed: %w", err)
+		return "", errs.Wrap(errs.ErrMinioUploadFile, err)
 	}
 
 	presignedURL, err := MinioClient.PresignedGetObject(ctx, bucketName, objectName, 7*24*time.Hour, nil)
 	if err != nil {
-		return "", fmt.Errorf("generate presigned url failed: %w", err)
+		return "", errs.Wrap(errs.ErrMinioGeneratePresigned, err)
 	}
 
 	return presignedURL.String(), nil
@@ -71,7 +71,7 @@ func GetPresignedURL(bucketName, objectName string, expires time.Duration) (stri
 	ctx := context.Background()
 	presignedURL, err := MinioClient.PresignedGetObject(ctx, bucketName, objectName, expires, nil)
 	if err != nil {
-		return "", fmt.Errorf("generate presigned url failed: %w", err)
+		return "", errs.Wrap(errs.ErrMinioGeneratePresigned, err)
 	}
 	return presignedURL.String(), nil
 }

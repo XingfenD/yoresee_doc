@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/pkg/errs"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 )
 
@@ -29,7 +30,7 @@ func (dl *DistributedLock) Lock(ctx context.Context) error {
 		return err
 	}
 	if !success {
-		return fmt.Errorf("failed to acquire lock: %s", dl.key)
+		return errs.Detail(errs.ErrLockAcquireFailed, dl.key)
 	}
 	return nil
 }
@@ -51,7 +52,7 @@ func (dl *DistributedLock) Unlock(ctx context.Context) error {
 		return err
 	}
 	if result.(int64) == 0 {
-		return fmt.Errorf("lock not held or expired: %s", dl.key)
+		return errs.Detail(errs.ErrLockNotHeld, dl.key)
 	}
 	return nil
 }
