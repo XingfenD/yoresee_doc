@@ -158,7 +158,8 @@ func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 	}
 
 	if op.titleKeyword != nil && *op.titleKeyword != "" {
-		dbQuery = dbQuery.Where("title LIKE ?", "%"+*op.titleKeyword+"%")
+		like := "%" + *op.titleKeyword + "%"
+		dbQuery = dbQuery.Where("(title LIKE ? OR content LIKE ?)", like, like)
 	}
 
 	if op.docType != nil && *op.docType != "" {

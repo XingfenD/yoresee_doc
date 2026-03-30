@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/search"
 	internal_dto "github.com/XingfenD/yoresee_doc/internal/service/dto"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
@@ -18,7 +19,12 @@ func (s *DocumentService) applyElasticsearchKeywordFilter(ctx context.Context, r
 	if keyword == "" {
 		return
 	}
+	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
+		logrus.Warnf("[Service layer: DocumentService] elasticsearch is disabled, degrade to db keyword search, keyword=%s", keyword)
+		return
+	}
 	if storage.ES == nil {
+		logrus.Warnf("[Service layer: DocumentService] elasticsearch client is nil, degrade to db keyword search, keyword=%s", keyword)
 		return
 	}
 
@@ -42,6 +48,10 @@ func (s *DocumentService) applyElasticsearchKeywordFilter(ctx context.Context, r
 	ids, err := search.SearchDocumentIDs(ctx, searchReq)
 	if err != nil {
 		logrus.Warnf("[Service layer: DocumentService] elasticsearch keyword search failed, keyword=%s, err=%+v", keyword, err)
+		return
+	}
+	if len(ids) == 0 {
+		logrus.Warnf("[Service layer: DocumentService] elasticsearch keyword search no hit, degrade to db keyword search, keyword=%s", keyword)
 		return
 	}
 	req.SearchDocIDs = ids

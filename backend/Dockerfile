@@ -15,4 +15,4 @@ EXPOSE 8080
 EXPOSE 9090
 EXPOSE 2345
 
-CMD ["sh", "-c", "go mod download && go run ./cmd/migrate && go run ./cmd/db_init && dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient --continue --log ./cmd/main.go"]
+CMD ["sh", "-c", "go mod download && go run ./cmd/migrate && go run ./cmd/db_init && go run ./cmd/es_init && dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient --continue --log ./cmd/main.go"]

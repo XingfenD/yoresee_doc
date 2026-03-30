@@ -203,6 +203,95 @@ func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searc
 	return nil, lastErr
 }
 
+func (c *ElasticsearchClient) IndexExists(ctx context.Context, index string) (bool, error) {
+	if c == nil {
+		return false, fmt.Errorf("elasticsearch client is nil")
+	}
+	index = strings.TrimSpace(index)
+	if index == "" {
+		return false, fmt.Errorf("index is empty")
+	}
+
+	var lastErr error
+	for _, address := range c.addresses {
+		url := fmt.Sprintf("%s/%s", address, index)
+		req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if c.username != "" {
+			req.SetBasicAuth(c.username, c.password)
+		}
+		resp, err := c.client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+
+		if resp.StatusCode == http.StatusNotFound {
+			return false, nil
+		}
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			return true, nil
+		}
+		lastErr = fmt.Errorf("status=%d", resp.StatusCode)
+	}
+	return false, lastErr
+}
+
+func (c *ElasticsearchClient) CreateIndex(ctx context.Context, index string, body map[string]interface{}) error {
+	if c == nil {
+		return fmt.Errorf("elasticsearch client is nil")
+	}
+	index = strings.TrimSpace(index)
+	if index == "" {
+		return fmt.Errorf("index is empty")
+	}
+
+	payload := []byte("{}")
+	if body != nil {
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		payload = encoded
+	}
+
+	var lastErr error
+	for _, address := range c.addresses {
+		url := fmt.Sprintf("%s/%s", address, index)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(payload))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
+		if c.username != "" {
+			req.SetBasicAuth(c.username, c.password)
+		}
+
+		resp, err := c.client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if readErr != nil {
+			lastErr = readErr
+			continue
+		}
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			return nil
+		}
+		lastErr = fmt.Errorf("status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+	}
+	return lastErr
+}
+
 func CloseElasticsearch() error {
 	ES = nil
 	return nil

@@ -177,3 +177,48 @@ func BuildDocumentIndexBody(doc *model.Document) map[string]interface{} {
 	}
 	return payload
 }
+
+func BuildDocumentIndexMapping() map[string]interface{} {
+	return map[string]interface{}{
+		"mappings": map[string]interface{}{
+			"properties": map[string]interface{}{
+				"id": map[string]interface{}{
+					"type": "long",
+				},
+				"external_id": map[string]interface{}{
+					"type": "keyword",
+				},
+				"title": map[string]interface{}{
+					"type": "text",
+				},
+				"summary": map[string]interface{}{
+					"type": "text",
+				},
+				"content": map[string]interface{}{
+					"type": "text",
+				},
+				"type": map[string]interface{}{
+					"type": "keyword",
+				},
+				"user_id": map[string]interface{}{
+					"type": "long",
+				},
+				"knowledge_id": map[string]interface{}{
+					"type": "long",
+				},
+				"status": map[string]interface{}{
+					"type": "integer",
+				},
+				"tags": map[string]interface{}{
+					"type": "keyword",
+				},
+				"created_at": map[string]interface{}{
+					"type": "date",
+				},
+				"updated_at": map[string]interface{}{
+					"type": "date",
+				},
+			},
+		},
+	}
+}

@@ -7,6 +7,7 @@ const (
 const (
 	ConfigKey_Second_Security string = "security"
 	ConfigKey_Second_Database string = "database"
+	ConfigKey_Second_ES       string = "elasticsearch"
 )
 
 const (
