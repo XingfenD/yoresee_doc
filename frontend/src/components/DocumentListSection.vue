@@ -66,9 +66,8 @@ const itemTitleMapper = (doc) => doc?.title || t('document.title');
 const itemDescriptionMapper = () => '';
 
 const metaMapper = (doc) => [
-  { label: t('user.name'), value: doc?.author || t('common.unknown') },
-  { label: t('common.updatedAt'), value: formatDate(doc?.updatedAt || doc?.updated_at) },
-  { label: t('document.views'), value: String(doc?.views || 0) }
+  { label: t('knowledgeBase.owner'), value: doc?.author || t('common.unknown') },
+  { label: t('common.updatedAt'), value: formatDate(doc?.updatedAt || doc?.updated_at) }
 ];
 
 const primaryAction = computed(() => {

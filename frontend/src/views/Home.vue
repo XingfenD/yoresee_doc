@@ -120,7 +120,6 @@ const mapRecentDocuments = (docs) => {
     title: doc.title || t('document.title'),
     author: doc.creator_name || doc.creatorName || t('common.unknown'),
     updatedAt: doc.updated_at || doc.updatedAt,
-    views: doc.view_count || doc.views || 0,
     status: doc.status === 0 ? 'draft' : 'published'
   }));
 };
