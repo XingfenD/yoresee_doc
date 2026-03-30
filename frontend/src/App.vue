@@ -180,7 +180,7 @@ body {
 
   .el-message-box__header {
     background-color: var(--bg-white) !important;
-    border-bottom: 1px solid var(--border-color) !important;
+    border-bottom: none !important;
   }
 
   .el-message-box__content {
@@ -190,7 +190,7 @@ body {
 
   .el-message-box__btns {
     background-color: var(--bg-white) !important;
-    border-top: 1px solid var(--border-color) !important;
+    border-top: none !important;
   }
 
   .el-message-box__title {
