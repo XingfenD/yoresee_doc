@@ -27,8 +27,15 @@ func (s *DocumentService) buildListDocumentsOperation(req *internal_dto.Document
 			WithListOwnDoc(req.ListOwnDoc).
 			WithDirectoryOnly(req.DirectoryOnly)
 	}
+	if req.SearchDocIDs != nil {
+		listOp = listOp.WithIDs(req.SearchDocIDs)
+	}
 	if req.FilterArgs != nil {
-		listOp = listOp.WithTitleKeyword(req.FilterArgs.TitleKeyword).
+		titleKeyword := req.FilterArgs.TitleKeyword
+		if req.SearchDocIDs != nil {
+			titleKeyword = nil
+		}
+		listOp = listOp.WithTitleKeyword(titleKeyword).
 			WithType(req.FilterArgs.DocType).
 			WithStatus(req.FilterArgs.Status).
 			WithTags(req.FilterArgs.Tags).

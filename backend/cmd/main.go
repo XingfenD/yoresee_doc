@@ -39,6 +39,11 @@ func main() {
 		panic("init minio failed")
 	}
 
+	if err := storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch); err != nil {
+		logrus.Fatalf("Init elasticsearch failed: %v", err)
+		panic("init elasticsearch failed")
+	}
+
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
 		logrus.Fatalf("Init message queue failed: %v", err)
 	}
@@ -50,6 +55,8 @@ func main() {
 	defer storage.ClosePostgres()
 
 	defer storage.CloseRedis()
+
+	defer storage.CloseElasticsearch()
 
 	if err := service.Init(config.GlobalConfig); err != nil {
 		logrus.Fatalf("Init services failed: %v", err)

@@ -101,6 +101,20 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: yoresee_doc_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - yoresee_doc_elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - yoresee_doc_network
+    restart: unless-stopped
+
   backend:
     build:
       context: ..
@@ -120,6 +134,7 @@ services:
       - consul
       - rabbitmq
       - minio
+      - elasticsearch
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -179,6 +194,7 @@ services:
     depends_on:
       - rabbitmq
       - redis
+      - elasticsearch
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -207,6 +223,7 @@ volumes:
   yoresee_doc_consul_data:
   yoresee_doc_rabbitmq_data:
   yoresee_doc_minio_data:
+  yoresee_doc_elasticsearch_data:
 
 networks:
   yoresee_doc_network:

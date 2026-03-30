@@ -38,6 +38,14 @@ bucket = "${MINIO_BUCKET}"
 use_ssl = false
 timeout = 30
 
+[elasticsearch]
+enabled = ${ELASTICSEARCH_ENABLED}
+addresses = ["http://${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}"]
+username = "${ELASTICSEARCH_USERNAME}"
+password = "${ELASTICSEARCH_PASSWORD}"
+index_prefix = "${ELASTICSEARCH_INDEX_PREFIX}"
+timeout = 5
+
 [mq_config]
 
 # [backend.mq_config.redis]

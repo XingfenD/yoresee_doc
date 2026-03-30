@@ -9,13 +9,14 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	Minio    MinioConfig    `mapstructure:"minio"`
-	MQConfig MQConfig       `mapstructure:"mq_config"`
-	Consul   ConsulConfig   `mapstructure:"consul"`
-	Backend  BackendConfig  `mapstructure:"backend"`
+	Server        ServerConfig        `mapstructure:"server"`
+	Database      DatabaseConfig      `mapstructure:"database"`
+	Redis         RedisConfig         `mapstructure:"redis"`
+	Minio         MinioConfig         `mapstructure:"minio"`
+	Elasticsearch ElasticsearchConfig `mapstructure:"elasticsearch"`
+	MQConfig      MQConfig            `mapstructure:"mq_config"`
+	Consul        ConsulConfig        `mapstructure:"consul"`
+	Backend       BackendConfig       `mapstructure:"backend"`
 }
 
 type ServerConfig struct {
@@ -55,6 +56,15 @@ type MinioConfig struct {
 	SecretKey string `mapstructure:"secret_key"`
 	Bucket    string `mapstructure:"bucket"`
 	UseSSL    bool   `mapstructure:"use_ssl"`
+}
+
+type ElasticsearchConfig struct {
+	Enabled     bool     `mapstructure:"enabled"`
+	Addresses   []string `mapstructure:"addresses"`
+	Username    string   `mapstructure:"username"`
+	Password    string   `mapstructure:"password"`
+	IndexPrefix string   `mapstructure:"index_prefix"`
+	Timeout     int      `mapstructure:"timeout"`
 }
 
 type ClusterRole string

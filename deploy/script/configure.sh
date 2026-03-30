@@ -81,6 +81,7 @@ prompt_value POSTGRES_HOST_PORT "Host port for Postgres (dev only)" "5432"
 prompt_value REDIS_HOST_PORT "Host port for Redis (dev only)" "6379"
 prompt_value RABBITMQ_AMQP_HOST_PORT "Host port for RabbitMQ AMQP (dev only)" "5672"
 prompt_value CONSUL_HOST_PORT "Host port for Consul UI/API" "8500"
+prompt_value ELASTICSEARCH_HOST_PORT "Host port for Elasticsearch (dev only)" "9200"
 
 # Credentials and app secrets
 prompt_value POSTGRES_USER "Postgres user" "root"
@@ -99,6 +100,10 @@ prompt_value JWT_SECRET "JWT secret" "yoresee_doc_jwt_secret_key"
 prompt_value VITE_GRPC_WEB_ENDPOINT "Frontend gRPC-web endpoint" "/grpc"
 prompt_value DIRTY_DOC_NOTIFY_THRESHOLD "Dirty doc notify threshold" "5"
 prompt_value MINIO_BROWSER_REDIRECT_URL "MinIO browser redirect URL" "http://localhost:${NGINX_HTTP_PORT}/minio"
+prompt_value ELASTICSEARCH_ENABLED "Enable Elasticsearch" "true"
+prompt_value ELASTICSEARCH_INDEX_PREFIX "Elasticsearch index prefix" "yoresee_doc"
+prompt_value ELASTICSEARCH_USERNAME "Elasticsearch username (optional)" ""
+prompt_value ELASTICSEARCH_PASSWORD "Elasticsearch password (optional)" ""
 
 echo "Written: $ENV_FILE"
 

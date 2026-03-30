@@ -125,6 +125,28 @@ services:
       - yoresee_doc_network
     restart: unless-stopped
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: yoresee_doc_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "${ELASTICSEARCH_HOST_PORT:-9200}:${ELASTICSEARCH_PORT:-9200}"
+    volumes:
+      - yoresee_doc_elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - yoresee_doc_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:${ELASTICSEARCH_PORT:-9200}/_cluster/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
   backend:
     build:
       context: ../backend
@@ -148,6 +170,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      elasticsearch:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://${BACKEND_HOST:-backend}:${BACKEND_GRPC_PORT:-9090}/health"]
       interval: 5s
@@ -224,6 +248,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     networks:
       - yoresee_doc_network
     restart: unless-stopped
@@ -257,6 +283,7 @@ volumes:
   yoresee_doc_consul_data:
   yoresee_doc_rabbitmq_data:
   yoresee_doc_minio_data:
+  yoresee_doc_elasticsearch_data:
 
 networks:
   yoresee_doc_network:

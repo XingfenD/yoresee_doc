@@ -13,6 +13,7 @@ type DocumentsListOperation struct {
 	parentID             *int64
 	knowledgeID          *int64
 	listOwnDoc           bool
+	ids                  []int64
 	titleKeyword         *string
 	docType              *string
 	status               *int
@@ -55,6 +56,11 @@ func (op *DocumentsListOperation) WithKnowledgeID(knowledgeID *int64) *Documents
 
 func (op *DocumentsListOperation) WithListOwnDoc(listOwnDoc bool) *DocumentsListOperation {
 	op.listOwnDoc = listOwnDoc
+	return op
+}
+
+func (op *DocumentsListOperation) WithIDs(ids []int64) *DocumentsListOperation {
+	op.ids = ids
 	return op
 }
 
@@ -137,6 +143,14 @@ func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 
 	if op.listOwnDoc {
 		dbQuery = dbQuery.Where("knowledge_id IS NULL")
+	}
+
+	if op.ids != nil {
+		if len(op.ids) == 0 {
+			dbQuery = dbQuery.Where("1 = 0")
+		} else {
+			dbQuery = dbQuery.Where("id IN ?", op.ids)
+		}
 	}
 
 	if op.knowledgeID != nil {
