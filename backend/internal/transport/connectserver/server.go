@@ -1,17 +1,13 @@
 package connectserver
 
 import (
-	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"sync/atomic"
-	"time"
 
 	"connectrpc.com/connect"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -38,12 +34,7 @@ func Start(grpcPort, grpcWebPort int) (*http.Server, *http.Server, error) {
 
 	mux := http.NewServeMux()
 	registerHandlers(mux, opts)
-
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		writeProbeResponse(w, http.StatusOK, "ok", "")
-	})
-	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) { handleReadinessProbe(w) })
-	mux.HandleFunc("/livez", func(w http.ResponseWriter, r *http.Request) { writeProbeResponse(w, http.StatusOK, "ok", "") })
+	registerProbeRoutes(mux)
 
 	handler := withCORS(mux)
 	h2cHandler := h2c.NewHandler(handler, &http2.Server{})
@@ -65,53 +56,6 @@ func Start(grpcPort, grpcWebPort int) (*http.Server, *http.Server, error) {
 	}()
 
 	return grpcServer, grpcWebServer, nil
-}
-
-func handleReadinessProbe(w http.ResponseWriter) {
-	if err := readinessErr(); err != nil {
-		writeProbeResponse(w, http.StatusServiceUnavailable, "not_ready", err.Error())
-		return
-	}
-	writeProbeResponse(w, http.StatusOK, "ok", "")
-}
-
-func readinessErr() error {
-	if draining.Load() {
-		return fmt.Errorf("server is draining")
-	}
-	if storage.DB == nil {
-		return fmt.Errorf("database is not initialized")
-	}
-	if storage.KVS == nil {
-		return fmt.Errorf("redis is not initialized")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
-	defer cancel()
-
-	sqlDB, err := storage.DB.DB()
-	if err != nil {
-		return fmt.Errorf("database handle unavailable: %w", err)
-	}
-	if err := sqlDB.PingContext(ctx); err != nil {
-		return fmt.Errorf("database ping failed: %w", err)
-	}
-	if err := storage.KVS.Ping(ctx).Err(); err != nil {
-		return fmt.Errorf("redis ping failed: %w", err)
-	}
-	return nil
-}
-
-func writeProbeResponse(w http.ResponseWriter, status int, state, detail string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(struct {
-		Status string `json:"status"`
-		Detail string `json:"detail,omitempty"`
-	}{
-		Status: state,
-		Detail: detail,
-	})
 }
 
 func withCORS(next http.Handler) http.Handler {

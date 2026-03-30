@@ -58,9 +58,7 @@ func main() {
 	healthChecker := health.NewHealthChecker(systemService)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", healthChecker.Check)
-	mux.HandleFunc("/readyz", healthChecker.Readiness)
-	mux.HandleFunc("/livez", healthChecker.Liveness)
+	healthChecker.RegisterProbeRoutes(mux)
 	mux.HandleFunc("/ws/doc/", func(w http.ResponseWriter, r *http.Request) {
 		handleWebSocket(w, r, authenticator, proxyHandler)
 	})

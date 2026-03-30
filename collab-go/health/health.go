@@ -3,6 +3,7 @@ package health
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -16,6 +17,12 @@ type HealthChecker struct {
 	draining      atomic.Bool
 }
 
+type probeResponse struct {
+	Status  string `json:"status"`
+	Detail  string `json:"detail,omitempty"`
+	Backend string `json:"backend,omitempty"`
+}
+
 func NewHealthChecker(systemService yoreseedocpb.SystemServiceClient) *HealthChecker {
 	return &HealthChecker{
 		systemService: systemService,
@@ -26,47 +33,59 @@ func (h *HealthChecker) SetDraining(v bool) {
 	h.draining.Store(v)
 }
 
-func (h *HealthChecker) Liveness(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status": "ok",
-	})
+func (h *HealthChecker) RegisterProbeRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/health", h.Health)
+	mux.HandleFunc("/readyz", h.Readiness)
+	mux.HandleFunc("/livez", h.Liveness)
 }
 
-func (h *HealthChecker) Readiness(w http.ResponseWriter, r *http.Request) {
+func (h *HealthChecker) Liveness(w http.ResponseWriter, _ *http.Request) {
+	writeProbeResponse(w, http.StatusOK, "ok", "", "")
+}
+
+func (h *HealthChecker) Readiness(w http.ResponseWriter, _ *http.Request) {
+	if err := h.readinessErr(); err != nil {
+		writeProbeResponse(w, http.StatusServiceUnavailable, "not_ready", err.Error(), probeBackendStatusFromErr(err))
+		return
+	}
+	writeProbeResponse(w, http.StatusOK, "ok", "", "ok")
+}
+
+func (h *HealthChecker) Health(w http.ResponseWriter, _ *http.Request) {
+	detail := ""
+	backend := "ok"
+	if err := h.readinessErr(); err != nil {
+		detail = err.Error()
+		backend = probeBackendStatusFromErr(err)
+	}
+	writeProbeResponse(w, http.StatusOK, "ok", detail, backend)
+}
+
+func (h *HealthChecker) readinessErr() error {
 	if h.draining.Load() {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"status":  "not_ready",
-			"backend": "unknown",
-			"detail":  "server is draining",
-		})
-		return
+		return fmt.Errorf("server is draining")
 	}
+	return h.checkBackend()
+}
 
-	if err := h.checkBackend(); err != nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"status":  "not_ready",
-			"backend": "unhealthy",
-			"detail":  err.Error(),
-		})
-		return
-	}
-
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status":  "ok",
-		"backend": "ok",
+func writeProbeResponse(w http.ResponseWriter, statusCode int, status, detail, backend string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(probeResponse{
+		Status:  status,
+		Detail:  detail,
+		Backend: backend,
 	})
 }
 
-func (h *HealthChecker) Check(w http.ResponseWriter, r *http.Request) {
-	backendStatus := "ok"
-	if err := h.checkBackend(); err != nil {
-		backendStatus = "unhealthy"
+func probeBackendStatusFromErr(err error) string {
+	if err == nil {
+		return "ok"
 	}
-
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status":  "ok",
-		"backend": backendStatus,
-	})
+	if err.Error() == "server is draining" {
+		return "unknown"
+	}
+	return "unhealthy"
 }
 
 func (h *HealthChecker) checkBackend() error {
@@ -82,10 +101,4 @@ func (h *HealthChecker) checkBackend() error {
 		return err
 	}
 	return nil
-}
-
-func writeJSON(w http.ResponseWriter, status int, body map[string]string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
 }
