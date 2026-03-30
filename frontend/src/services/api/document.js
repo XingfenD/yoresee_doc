@@ -131,6 +131,7 @@ export const listDocuments = async (params = {}) => {
   const req = new ListDocumentsRequest({
     userExternalId: params.user_external_id || undefined,
     rootDocumentExternalId: params.root_document_external_id || undefined,
+    knowledgeBaseExternalId: params.knowledge_base_external_id || undefined,
     titleKeyword: params.title_keyword || undefined,
     type: params.type || undefined,
     status: typeof params.status === 'number' ? params.status : undefined,
@@ -147,6 +148,7 @@ export const listDocuments = async (params = {}) => {
   const resp = await unaryCall(documentClient, 'listDocuments', req);
   const base = baseToObject(resp);
   return handleResponse(base, {
-    documents: (resp.documents || []).map(mapDocument)
+    documents: (resp.documents || []).map(mapDocument),
+    total_count: resp.totalCount ?? 0
   });
 };

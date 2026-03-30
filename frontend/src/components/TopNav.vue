@@ -5,6 +5,21 @@
         <h1 class="system-title">{{ systemName }}</h1>
       </router-link>
     </div>
+    <div class="nav-center">
+      <el-input
+        v-model="searchKeyword"
+        :placeholder="t('search.placeholder')"
+        clearable
+        class="top-search-input"
+        @keyup.enter="submitSearch"
+      >
+        <template #prefix>
+          <el-icon :size="16">
+            <Search />
+          </el-icon>
+        </template>
+      </el-input>
+    </div>
     <div class="nav-right">
       <el-dropdown trigger="click" @command="emit('change-language', $event)" class="nav-item">
         <span class="nav-link">
@@ -66,10 +81,10 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell } from '@element-plus/icons-vue';
+import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell, Search } from '@element-plus/icons-vue';
 import { queryTopNavDisplay } from '@/services/auth';
 import { listNotifications } from '@/services/api';
 import { useApiAction } from '@/composables/useApiAction';
@@ -100,10 +115,12 @@ const props = defineProps({
 const emit = defineEmits(['change-language', 'toggle-theme', 'logout']);
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const { runSilent } = useApiAction({ t });
 const showSystemManage = ref(false);
 const showUserCenter = ref(false);
 const hasUnread = ref(false);
+const searchKeyword = ref('');
 
 const goToUserCenter = () => {
   router.push('/user_info/example');
@@ -115,6 +132,14 @@ const handleSystemManage = () => {
 
 const goToNotifications = () => {
   router.push('/user_info/notifications');
+};
+
+const submitSearch = () => {
+  const q = `${searchKeyword.value || ''}`.trim();
+  router.push({
+    path: '/search',
+    query: q ? { q } : {}
+  });
 };
 
 const loadTopNavDisplay = async () => {
@@ -158,6 +183,7 @@ const handleUnreadEvent = (event) => {
 };
 
 onMounted(() => {
+  searchKeyword.value = `${route.query.q || ''}`.trim();
   loadTopNavDisplay();
   loadUnreadNotifications();
   window.addEventListener('notifications:unread', handleUnreadEvent);
@@ -166,6 +192,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('notifications:unread', handleUnreadEvent);
 });
+
+watch(
+  () => route.query.q,
+  (q) => {
+    searchKeyword.value = `${q || ''}`.trim();
+  }
+);
 </script>
 
 <style scoped>
@@ -176,6 +209,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-md);
   padding: 0 var(--spacing-xl);
   box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
@@ -203,6 +237,18 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.nav-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.top-search-input {
+  width: min(520px, 100%);
 }
 
 .nav-item {
@@ -276,6 +322,10 @@ onBeforeUnmount(() => {
 
   .system-title {
     font-size: 16px;
+  }
+
+  .nav-center {
+    display: none;
   }
 }
 </style>

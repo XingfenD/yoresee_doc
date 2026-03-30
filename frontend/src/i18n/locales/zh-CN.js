@@ -1,6 +1,7 @@
 export default {
   navigation: {
     home: '首页',
+    search: '搜索',
     myDocuments: '个人文档',
     documents: '文档',
     folders: '文件夹',
@@ -382,6 +383,12 @@ export default {
     knowledgeBaseTab: '知识库模板',
     previewTitle: '模板预览',
     contentEmpty: '模板内容为空'
+  },
+  search: {
+    title: '搜索',
+    placeholder: '按标题或正文搜索文档',
+    empty: '没有匹配的文档',
+    resultCount: '共 {count} 条结果'
   },
   theme: {
     light: '浅色模式',

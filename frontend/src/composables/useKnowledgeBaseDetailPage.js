@@ -1,9 +1,10 @@
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Document, Clock, User } from '@element-plus/icons-vue';
 import {
   getKnowledgeBaseDetail,
-  createDocument as createDocumentApi
+  createDocument as createDocumentApi,
+  listDocuments
 } from '@/services/api';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
@@ -59,6 +60,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   const currentPage = ref(1);
   const pageSize = ref(50);
   const totalDocumentsCount = ref(0);
+  let searchTimer = null;
 
   const showCreateDialog = ref(false);
   const creatingLoading = ref(false);
@@ -110,8 +112,8 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
       () =>
         getKnowledgeBaseDetail(knowledgeBaseExternalID, {
           record_recent_log: true,
-          page: currentPage.value,
-          page_size: pageSize.value
+          page: 1,
+          page_size: 1
         }),
       {
         context: 'loadKnowledgeBaseDetail',
@@ -124,9 +126,54 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
             knowledgeBaseDescription.value = data.knowledge_base.description;
             lastUpdated.value = data.knowledge_base.updated_at;
             totalDocuments.value = data.knowledge_base.documents_count || 0;
-            totalDocumentsCount.value = data.total_count || 0;
             ownerName.value = data.knowledge_base.creator_name || t('common.unknown');
           }
+        }
+      }
+    );
+  };
+
+  const getSortArgs = () => {
+    if (sortBy.value === 'name') {
+      return { order_by: 'title', order_desc: false };
+    }
+    if (sortBy.value === 'type') {
+      return { order_by: 'type', order_desc: false };
+    }
+    return { order_by: 'updated_at', order_desc: true };
+  };
+
+  const loadKnowledgeBaseDocuments = async () => {
+    const knowledgeBaseExternalID = route.params.id;
+    if (!knowledgeBaseExternalID) return;
+
+    const keyword = `${searchKeyword.value || ''}`.trim();
+    const sortArgs = getSortArgs();
+
+    await runWithLoading(
+      loading,
+      () =>
+        listDocuments({
+          knowledge_base_external_id: knowledgeBaseExternalID,
+          title_keyword: keyword || undefined,
+          page: currentPage.value,
+          page_size: pageSize.value,
+          ...sortArgs,
+          options: {
+            include_children: true,
+            recursive: true
+          }
+        }),
+      {
+        context: 'loadKnowledgeBaseDocuments',
+        errorMessage: t('message.loadKnowledgeBaseError'),
+        onSuccess: (data) => {
+          const previous = knowledgeBaseData.value || {};
+          knowledgeBaseData.value = {
+            ...previous,
+            documents: data.documents || []
+          };
+          totalDocumentsCount.value = data.total_count || 0;
         }
       }
     );
@@ -168,6 +215,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
         onSuccess: async () => {
           showCreateDialog.value = false;
           await loadKnowledgeBaseDetail();
+          await loadKnowledgeBaseDocuments();
         }
       }
     );
@@ -210,12 +258,12 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   const handleSizeChange = async (val) => {
     pageSize.value = val;
     currentPage.value = 1;
-    await loadKnowledgeBaseDetail();
+    await loadKnowledgeBaseDocuments();
   };
 
   const handleCurrentChange = async (val) => {
     currentPage.value = val;
-    await loadKnowledgeBaseDetail();
+    await loadKnowledgeBaseDocuments();
   };
 
   const goBackToKnowledgeBase = () => {
@@ -234,7 +282,25 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
 
   const init = async () => {
     await boot(loadKnowledgeBaseDetail, fetchKnowledgeBaseTemplates);
+    await loadKnowledgeBaseDocuments();
   };
+
+  watch([searchKeyword, sortBy], () => {
+    if (searchTimer) {
+      clearTimeout(searchTimer);
+    }
+    searchTimer = setTimeout(async () => {
+      currentPage.value = 1;
+      await loadKnowledgeBaseDocuments();
+    }, 300);
+  });
+
+  onBeforeUnmount(() => {
+    if (searchTimer) {
+      clearTimeout(searchTimer);
+      searchTimer = null;
+    }
+  });
 
   return {
     systemName,
