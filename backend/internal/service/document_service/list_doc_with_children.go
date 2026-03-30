@@ -83,24 +83,24 @@ func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.
 		knowledgeID = &id
 	}
 
-	return s.listDocuments(
-		ctx,
-		&internal_dto.DocumentsListReq{
-			MetaArgs: &internal_dto.DocumentsListMetaArgs{
-				UserID:      userID,
-				ParentID:    &parentID, // default to root
-				KnowledgeID: knowledgeID,
-			},
-			ListDocumentsBaseArgs: dto.ListDocumentsBaseArgs{
-				ListOwnDoc:    req.ListOwnDoc,
-				DirectoryOnly: req.DirectoryOnly,
-			},
-			FilterArgs: req.FilterArgs,
-			SortArgs:   req.SortArgs,
-			Pagination: req.Pagination,
-			Options:    req.Options,
+	internalReq := &internal_dto.DocumentsListReq{
+		MetaArgs: &internal_dto.DocumentsListMetaArgs{
+			UserID:      userID,
+			ParentID:    &parentID, // default to root
+			KnowledgeID: knowledgeID,
 		},
-	)
+		ListDocumentsBaseArgs: dto.ListDocumentsBaseArgs{
+			ListOwnDoc:    req.ListOwnDoc,
+			DirectoryOnly: req.DirectoryOnly,
+		},
+		FilterArgs: req.FilterArgs,
+		SortArgs:   req.SortArgs,
+		Pagination: req.Pagination,
+		Options:    req.Options,
+	}
+	s.applyElasticsearchKeywordFilter(ctx, internalReq)
+
+	return s.listDocuments(ctx, internalReq)
 }
 
 type GetDocumentsWithDescendantsOption struct {

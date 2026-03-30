@@ -16,6 +16,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
+	"github.com/XingfenD/yoresee_doc/internal/search"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
@@ -40,6 +41,9 @@ func main() {
 
 	if err := storage.InitRedis(&config.GlobalConfig.Redis); err != nil {
 		logrus.Fatalf("Init Redis failed: %v", err)
+	}
+	if err := storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch); err != nil {
+		logrus.Warnf("Init Elasticsearch failed, snapshot index sync disabled: %v", err)
 	}
 
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
@@ -101,6 +105,9 @@ func main() {
 	}
 	if err := storage.CloseRedis(); err != nil {
 		logrus.Errorf("Close Redis failed: %v", err)
+	}
+	if err := storage.CloseElasticsearch(); err != nil {
+		logrus.Errorf("Close Elasticsearch failed: %v", err)
 	}
 	if err := storage.ClosePostgres(); err != nil {
 		logrus.Errorf("Close Postgres failed: %v", err)
@@ -223,6 +230,7 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 		logrus.Errorf("Snapshot content update failed docId=%s err=%v", docID, err)
 		return err
 	}
+	syncDocumentSearchIndex(ctx, docID)
 
 	if storage.GetRedis() != nil {
 		key := fmt.Sprintf("collab:yjs:doc:updates:%s", docID)
@@ -245,6 +253,21 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 		logrus.Infof("Snapshot saved (scan) for %s", docID)
 	}
 	return nil
+}
+
+func syncDocumentSearchIndex(ctx context.Context, externalID string) {
+	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled || storage.ES == nil {
+		return
+	}
+
+	doc, err := document_repo.DocumentRepo.GetByExternalID(externalID).Exec(ctx)
+	if err != nil {
+		logrus.Warnf("Snapshot sync search index query doc failed docId=%s err=%v", externalID, err)
+		return
+	}
+	if err := search.UpsertDocument(ctx, doc); err != nil {
+		logrus.Warnf("Snapshot sync search index failed docId=%s err=%v", externalID, err)
+	}
 }
 
 func parseInt64(value string) (int64, error) {

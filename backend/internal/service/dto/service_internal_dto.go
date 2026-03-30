@@ -11,10 +11,11 @@ type DocumentsListMetaArgs struct {
 type DocumentsListReq struct {
 	MetaArgs *DocumentsListMetaArgs `json:"meta_args"`
 	dto.ListDocumentsBaseArgs
-	FilterArgs *dto.DocumentsListFilterArgs `json:"filter_args"`
-	SortArgs   dto.SortArgs                 `json:"sort_args"`
-	Pagination dto.Pagination               `json:"pagination"`
-	Options    *dto.RecursiveOptions        `json:"options"`
+	FilterArgs   *dto.DocumentsListFilterArgs `json:"filter_args"`
+	SearchDocIDs []int64                      `json:"search_doc_ids"`
+	SortArgs     dto.SortArgs                 `json:"sort_args"`
+	Pagination   dto.Pagination               `json:"pagination"`
+	Options      *dto.RecursiveOptions        `json:"options"`
 }
 
 type KnowledgeBaseListReq struct {

@@ -401,11 +401,13 @@ message ListDocumentsRequest {
   int32 page = 11;
   int32 page_size = 12;
   optional RecursiveOptions options = 13;
+  optional string knowledge_base_external_id = 14;
 }
 
 message ListDocumentsResponse {
   BaseResponse base = 1;
   repeated DocumentResponse documents = 2;
+  int64 total_count = 3;
 }
 
 message GetOwnDocumentsRequest {

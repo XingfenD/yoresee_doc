@@ -76,5 +76,7 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 		return false, status.GenErrWithCustomMsg(err, "update document meta failed")
 	}
 
+	s.syncDocumentSearchIndexByExternalID(ctx, req.ExternalID)
+
 	return true, nil
 }

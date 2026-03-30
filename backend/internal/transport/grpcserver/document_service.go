@@ -53,6 +53,7 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 		ExternalArgs: &dto.DocumentsListExternalArgs{
 			UserExternalID:         req.UserExternalId,
 			RootDocumentExternalID: req.RootDocumentExternalId,
+			KnowledgeExternalID:    req.KnowledgeBaseExternalId,
 		},
 		FilterArgs: filterArgs,
 		SortArgs:   sortArgs,
@@ -69,7 +70,7 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 		}
 	}
 
-	docs, _, err := document_service.DocumentSvc.ListDocumentsByExternal(ctx, serviceReq)
+	docs, total, err := document_service.DocumentSvc.ListDocumentsByExternal(ctx, serviceReq)
 	if err != nil {
 		return &pb.ListDocumentsResponse{Base: baseResponseFromErr(err)}, nil
 	}
@@ -82,6 +83,7 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 	return &pb.ListDocumentsResponse{
 		Base:      baseResponseFromErr(nil),
 		Documents: respDocs,
+		TotalCount: total,
 	}, nil
 }
 

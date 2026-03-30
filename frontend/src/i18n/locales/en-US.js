@@ -1,6 +1,7 @@
 export default {
   navigation: {
     home: 'Home',
+    search: 'Search',
     myDocuments: 'My Documents',
     documents: 'Documents',
     folders: 'Folders',
@@ -384,6 +385,12 @@ export default {
     knowledgeBaseTab: 'Knowledge Base Templates',
     previewTitle: 'Template Preview',
     contentEmpty: 'Template content is empty'
+  },
+  search: {
+    title: 'Search',
+    placeholder: 'Search documents by title or content',
+    empty: 'No matching documents',
+    resultCount: '{count} results'
   },
   theme: {
     light: 'Light Mode',

@@ -22,7 +22,7 @@
 import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { House, Collection, Document, Tickets, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
+import { House, Collection, Document, Tickets, Search, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
 import { querySideBarDisplay } from '@/services/auth';
 import { useApiAction } from '@/composables/useApiAction';
 
@@ -40,6 +40,7 @@ const toggleCollapse = () => {
 // 接收当前激活的菜单作为 props
 const defaultMenuItems = [
   { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
+  { key: 'search', labelKey: 'navigation.search', icon: Search, route: '/search' },
   { key: 'documents', labelKey: 'navigation.myDocuments', icon: Document, route: '/mydocuments' },
   { key: 'knowledge-base', labelKey: 'navigation.knowledgeBase', icon: Collection, route: '/knowledge-base' },
   { key: 'templates', labelKey: 'navigation.templates', icon: Tickets, route: '/templates' }
@@ -114,6 +115,14 @@ const getMenuLabel = (item) => {
   return item.key;
 };
 
+watch(
+  () => [props.scene, resolvedMenuItems.value.length],
+  () => {
+    loadDisplayTabs();
+  },
+  { immediate: true }
+);
+
 // 处理菜单选择
 const handleMenuSelect = (key) => {
   emit('menuSelect', key);
@@ -124,6 +133,8 @@ const handleMenuSelect = (key) => {
   }
   if (key === 'home') {
     router.push('/');
+  } else if (key === 'search') {
+    router.push('/search');
   } else if (key === 'documents') {
     router.push('/mydocuments');
   } else if (key === 'knowledge-base') {
@@ -133,13 +144,6 @@ const handleMenuSelect = (key) => {
   }
 };
 
-watch(
-  () => [props.scene, resolvedMenuItems.value.length],
-  () => {
-    loadDisplayTabs();
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped>
