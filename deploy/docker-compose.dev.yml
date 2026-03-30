@@ -139,12 +139,6 @@ services:
       - yoresee_doc_elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - yoresee_doc_network
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:${ELASTICSEARCH_PORT:-9200}/_cluster/health >/dev/null"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 20s
     restart: unless-stopped
 
   backend:
@@ -171,7 +165,7 @@ services:
       minio:
         condition: service_started
       elasticsearch:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://${BACKEND_HOST:-backend}:${BACKEND_GRPC_PORT:-9090}/health"]
       interval: 5s
@@ -249,7 +243,7 @@ services:
       redis:
         condition: service_healthy
       elasticsearch:
-        condition: service_healthy
+        condition: service_started
     networks:
       - yoresee_doc_network
     restart: unless-stopped

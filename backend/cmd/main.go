@@ -40,8 +40,7 @@ func main() {
 	}
 
 	if err := storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch); err != nil {
-		logrus.Fatalf("Init elasticsearch failed: %v", err)
-		panic("init elasticsearch failed")
+		logrus.Warnf("Init elasticsearch failed, fallback to DB search only: %v", err)
 	}
 
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {

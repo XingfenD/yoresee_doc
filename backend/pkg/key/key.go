@@ -73,3 +73,7 @@ func KeyJWTBlacklistToken(tokenHash string) string {
 func KeyJWTUserTokenSet(userExternalID string) string {
 	return fmt.Sprintf("dms:auth:jwt:user_tokens:%s", userExternalID)
 }
+
+func KeyESDocumentIndex(prefix string) string {
+	return fmt.Sprintf("%s_documents", prefix)
+}

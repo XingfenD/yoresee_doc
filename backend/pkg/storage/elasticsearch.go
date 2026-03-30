@@ -23,21 +23,6 @@ type ElasticsearchClient struct {
 
 var ES *ElasticsearchClient
 
-type SearchDocumentsRequest struct {
-	Keyword              string
-	UserID               *int64
-	KnowledgeID          *int64
-	ListOwnDoc           bool
-	DocType              *string
-	Status               *int
-	Tags                 []string
-	CreateTimeRangeStart *string
-	CreateTimeRangeEnd   *string
-	UpdateTimeRangeStart *string
-	UpdateTimeRangeEnd   *string
-	Size                 int
-}
-
 func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
 	if cfg == nil || !cfg.Enabled {
 		ES = nil
@@ -70,6 +55,7 @@ func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
 	}
 
 	if err := ES.Ping(context.Background()); err != nil {
+		ES = nil
 		return fmt.Errorf("ping elasticsearch failed: %w", err)
 	}
 	return nil
@@ -147,109 +133,11 @@ func (c *ElasticsearchClient) UpsertDocument(ctx context.Context, index string, 
 	return lastErr
 }
 
-func (c *ElasticsearchClient) SearchDocumentIDs(ctx context.Context, index string, req SearchDocumentsRequest) ([]int64, error) {
+func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searchBody map[string]interface{}) ([]int64, error) {
 	if c == nil {
 		return nil, fmt.Errorf("elasticsearch client is nil")
 	}
-	size := req.Size
-	if size <= 0 {
-		size = 5000
-	}
-	if size > 10000 {
-		size = 10000
-	}
-
-	must := []map[string]interface{}{}
-	if strings.TrimSpace(req.Keyword) != "" {
-		must = append(must, map[string]interface{}{
-			"multi_match": map[string]interface{}{
-				"query":     strings.TrimSpace(req.Keyword),
-				"fields":    []string{"title^3", "summary^2", "content"},
-				"type":      "best_fields",
-				"operator":  "and",
-				"fuzziness": "AUTO",
-			},
-		})
-	}
-
-	filter := []map[string]interface{}{}
-	mustNot := []map[string]interface{}{}
-	if req.UserID != nil {
-		filter = append(filter, map[string]interface{}{
-			"term": map[string]interface{}{"user_id": *req.UserID},
-		})
-	}
-	if req.ListOwnDoc {
-		mustNot = append(mustNot, map[string]interface{}{
-			"exists": map[string]interface{}{"field": "knowledge_id"},
-		})
-	}
-	if req.KnowledgeID != nil {
-		filter = append(filter, map[string]interface{}{
-			"term": map[string]interface{}{"knowledge_id": *req.KnowledgeID},
-		})
-	}
-	if req.DocType != nil && strings.TrimSpace(*req.DocType) != "" {
-		filter = append(filter, map[string]interface{}{
-			"term": map[string]interface{}{"type": strings.TrimSpace(*req.DocType)},
-		})
-	}
-	if req.Status != nil {
-		filter = append(filter, map[string]interface{}{
-			"term": map[string]interface{}{"status": *req.Status},
-		})
-	}
-	for _, tag := range req.Tags {
-		tag = strings.TrimSpace(tag)
-		if tag == "" {
-			continue
-		}
-		filter = append(filter, map[string]interface{}{
-			"term": map[string]interface{}{"tags.keyword": tag},
-		})
-	}
-
-	rangeCreated := map[string]interface{}{}
-	if req.CreateTimeRangeStart != nil && strings.TrimSpace(*req.CreateTimeRangeStart) != "" {
-		rangeCreated["gte"] = strings.TrimSpace(*req.CreateTimeRangeStart)
-	}
-	if req.CreateTimeRangeEnd != nil && strings.TrimSpace(*req.CreateTimeRangeEnd) != "" {
-		rangeCreated["lte"] = strings.TrimSpace(*req.CreateTimeRangeEnd)
-	}
-	if len(rangeCreated) > 0 {
-		filter = append(filter, map[string]interface{}{
-			"range": map[string]interface{}{"created_at": rangeCreated},
-		})
-	}
-
-	rangeUpdated := map[string]interface{}{}
-	if req.UpdateTimeRangeStart != nil && strings.TrimSpace(*req.UpdateTimeRangeStart) != "" {
-		rangeUpdated["gte"] = strings.TrimSpace(*req.UpdateTimeRangeStart)
-	}
-	if req.UpdateTimeRangeEnd != nil && strings.TrimSpace(*req.UpdateTimeRangeEnd) != "" {
-		rangeUpdated["lte"] = strings.TrimSpace(*req.UpdateTimeRangeEnd)
-	}
-	if len(rangeUpdated) > 0 {
-		filter = append(filter, map[string]interface{}{
-			"range": map[string]interface{}{"updated_at": rangeUpdated},
-		})
-	}
-
-	searchReq := map[string]interface{}{
-		"size": size,
-		"_source": []string{
-			"id",
-		},
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must":     must,
-				"filter":   filter,
-				"must_not": mustNot,
-			},
-		},
-	}
-
-	payload, err := json.Marshal(searchReq)
+	payload, err := json.Marshal(searchBody)
 	if err != nil {
 		return nil, err
 	}

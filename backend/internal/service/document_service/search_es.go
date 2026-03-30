@@ -2,16 +2,13 @@ package document_service
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/search"
 	internal_dto "github.com/XingfenD/yoresee_doc/internal/service/dto"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 )
-
-const defaultSearchIndexPrefix = "yoresee_doc"
 
 func (s *DocumentService) applyElasticsearchKeywordFilter(ctx context.Context, req *internal_dto.DocumentsListReq) {
 	if req == nil || req.FilterArgs == nil || req.FilterArgs.TitleKeyword == nil {
@@ -21,11 +18,11 @@ func (s *DocumentService) applyElasticsearchKeywordFilter(ctx context.Context, r
 	if keyword == "" {
 		return
 	}
-	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled || storage.ES == nil {
+	if storage.ES == nil {
 		return
 	}
 
-	searchReq := storage.SearchDocumentsRequest{
+	searchReq := search.DocumentSearchRequest{
 		Keyword:              keyword,
 		DocType:              req.FilterArgs.DocType,
 		Status:               req.FilterArgs.Status,
@@ -42,21 +39,10 @@ func (s *DocumentService) applyElasticsearchKeywordFilter(ctx context.Context, r
 		searchReq.KnowledgeID = req.MetaArgs.KnowledgeID
 	}
 
-	ids, err := storage.ES.SearchDocumentIDs(ctx, s.documentSearchIndexName(), searchReq)
+	ids, err := search.SearchDocumentIDs(ctx, searchReq)
 	if err != nil {
 		logrus.Warnf("[Service layer: DocumentService] elasticsearch keyword search failed, keyword=%s, err=%+v", keyword, err)
 		return
 	}
 	req.SearchDocIDs = ids
-}
-
-func (s *DocumentService) documentSearchIndexName() string {
-	prefix := defaultSearchIndexPrefix
-	if config.GlobalConfig != nil {
-		configPrefix := strings.TrimSpace(config.GlobalConfig.Elasticsearch.IndexPrefix)
-		if configPrefix != "" {
-			prefix = configPrefix
-		}
-	}
-	return fmt.Sprintf("%s_documents", prefix)
 }

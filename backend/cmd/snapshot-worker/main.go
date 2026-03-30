@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
-	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
+	"github.com/XingfenD/yoresee_doc/internal/search"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
@@ -43,7 +43,7 @@ func main() {
 		logrus.Fatalf("Init Redis failed: %v", err)
 	}
 	if err := storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch); err != nil {
-		logrus.Fatalf("Init Elasticsearch failed: %v", err)
+		logrus.Warnf("Init Elasticsearch failed, snapshot index sync disabled: %v", err)
 	}
 
 	if err := mq.Init(&config.GlobalConfig.MQConfig); err != nil {
@@ -265,34 +265,9 @@ func syncDocumentSearchIndex(ctx context.Context, externalID string) {
 		logrus.Warnf("Snapshot sync search index query doc failed docId=%s err=%v", externalID, err)
 		return
 	}
-	indexPrefix := strings.TrimSpace(config.GlobalConfig.Elasticsearch.IndexPrefix)
-	if indexPrefix == "" {
-		indexPrefix = "yoresee_doc"
-	}
-	indexName := fmt.Sprintf("%s_documents", indexPrefix)
-	if err := storage.ES.UpsertDocument(ctx, indexName, fmt.Sprintf("%d", doc.ID), buildSearchIndexDocument(doc)); err != nil {
+	if err := search.UpsertDocument(ctx, doc); err != nil {
 		logrus.Warnf("Snapshot sync search index failed docId=%s err=%v", externalID, err)
 	}
-}
-
-func buildSearchIndexDocument(doc *model.Document) map[string]interface{} {
-	payload := map[string]interface{}{
-		"id":          doc.ID,
-		"external_id": doc.ExternalID,
-		"title":       doc.Title,
-		"summary":     doc.Summary,
-		"content":     doc.Content,
-		"type":        doc.Type,
-		"user_id":     doc.UserID,
-		"status":      doc.Status,
-		"tags":        doc.Tags,
-		"created_at":  doc.CreatedAt.Format(time.RFC3339),
-		"updated_at":  doc.UpdatedAt.Format(time.RFC3339),
-	}
-	if doc.KnowledgeID != nil {
-		payload["knowledge_id"] = *doc.KnowledgeID
-	}
-	return payload
 }
 
 func parseInt64(value string) (int64, error) {
