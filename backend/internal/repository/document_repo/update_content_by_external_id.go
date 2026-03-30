@@ -5,6 +5,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -33,7 +34,7 @@ func (op *DocumentUpdateContentByExternalIDOperation) Exec(ctx context.Context) 
 	if op.tx == nil {
 		op.tx = storage.DB
 	}
-	docModelCacheKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_Doc, op.externalID)
+	docModelCacheKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_Doc, op.externalID)
 	return cache.DoubleDelete(
 		ctx,
 		func() error {

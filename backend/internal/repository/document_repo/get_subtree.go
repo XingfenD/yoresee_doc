@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -83,7 +83,7 @@ func (op *DocumentGetSubtreeOperation) Exec(ctx context.Context) ([]*model.Docum
 
 	version, err := getSubtreeVersion(ctx, root.Path)
 	if err == nil {
-		cacheKey := cache.KeyDocSubtree(root.Path, version, op.depth)
+		cacheKey := key.KeyDocSubtree(root.Path, version, op.depth)
 		if cachedIDs, ok, err := getCachedSubtreeIDs(ctx, cacheKey); err == nil && ok {
 			return fetchDocumentsByIDs(cachedIDs)
 		}

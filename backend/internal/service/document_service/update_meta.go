@@ -8,6 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -18,7 +19,7 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 		return false, status.GenErrWithCustomMsg(err, "invalid update document meta request")
 	}
 
-	cacheKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_Doc, req.ExternalID)
+	cacheKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_Doc, req.ExternalID)
 	err := cache.DoubleDelete(
 		ctx,
 		func() error {

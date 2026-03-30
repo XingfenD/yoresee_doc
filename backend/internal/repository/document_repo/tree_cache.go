@@ -8,6 +8,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
@@ -59,7 +60,7 @@ func getSubtreeVersion(ctx context.Context, path string) (int64, error) {
 	if storage.KVS == nil {
 		return 0, nil
 	}
-	val, err := storage.KVS.Get(ctx, cache.KeyDocSubtreeVersion(path)).Result()
+	val, err := storage.KVS.Get(ctx, key.KeyDocSubtreeVersion(path)).Result()
 	if err == redis.Nil {
 		return 0, nil
 	}
@@ -80,7 +81,7 @@ func (r *DocumentRepository) BumpSubtreeVersionsByPath(ctx context.Context, path
 	prefixes := splitPathPrefixes(path)
 	pipe := storage.KVS.Pipeline()
 	for _, prefix := range prefixes {
-		pipe.Incr(ctx, cache.KeyDocSubtreeVersion(prefix))
+		pipe.Incr(ctx, key.KeyDocSubtreeVersion(prefix))
 	}
 	_, err := pipe.Exec(ctx)
 	if err == redis.Nil {

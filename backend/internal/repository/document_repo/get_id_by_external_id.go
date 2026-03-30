@@ -5,7 +5,7 @@ import (
 
 	cache_loader "github.com/XingfenD/yoresee_doc/internal/cache"
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -42,8 +42,8 @@ func (op *DocumentGetIDByExternalIDOperation) Exec(ctx context.Context) (int64, 
 		return op.query(op.tx)
 	}
 
-	extidKey := cache.KeyIDByExternalID(cache.KeyObjectTypeEnum_Doc, op.externalID)
-	modelKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_Doc, op.externalID)
+	extidKey := key.KeyIDByExternalID(key.KeyObjectTypeEnum_Doc, op.externalID)
+	modelKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_Doc, op.externalID)
 
 	id, err := cache_loader.NewCacheLoadOperation[int64](&op.repo.Loader).
 		WithDefaultKeyAndParser(extidKey, cache_loader.ParseInt64).

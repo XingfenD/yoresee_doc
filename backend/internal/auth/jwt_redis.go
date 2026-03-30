@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/status"
-	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/redis/go-redis/v9"
 )
@@ -29,9 +29,9 @@ func StoreJWTToken(userExternalID, token string, ttl time.Duration) error {
 	ctx := context.Background()
 	tokenHash := hashToken(token)
 	pipe := storage.KVS.TxPipeline()
-	pipe.Set(ctx, cache.KeyJWTActiveToken(tokenHash), userExternalID, ttl)
-	pipe.SAdd(ctx, cache.KeyJWTUserTokenSet(userExternalID), tokenHash)
-	pipe.Expire(ctx, cache.KeyJWTUserTokenSet(userExternalID), ttl)
+	pipe.Set(ctx, key.KeyJWTActiveToken(tokenHash), userExternalID, ttl)
+	pipe.SAdd(ctx, key.KeyJWTUserTokenSet(userExternalID), tokenHash)
+	pipe.Expire(ctx, key.KeyJWTUserTokenSet(userExternalID), ttl)
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("persist jwt token failed: %w", err)
 	}
@@ -45,7 +45,7 @@ func ValidateJWTTokenInRedis(userExternalID, token string) error {
 
 	ctx := context.Background()
 	tokenHash := hashToken(token)
-	blacklisted, err := storage.KVS.Exists(ctx, cache.KeyJWTBlacklistToken(tokenHash)).Result()
+	blacklisted, err := storage.KVS.Exists(ctx, key.KeyJWTBlacklistToken(tokenHash)).Result()
 	if err != nil {
 		return fmt.Errorf("query jwt blacklist failed: %w", err)
 	}
@@ -53,7 +53,7 @@ func ValidateJWTTokenInRedis(userExternalID, token string) error {
 		return status.GenErrWithCustomMsg(status.StatusTokenInvalid, "token is blacklisted")
 	}
 
-	storedUserExternalID, err := storage.KVS.Get(ctx, cache.KeyJWTActiveToken(tokenHash)).Result()
+	storedUserExternalID, err := storage.KVS.Get(ctx, key.KeyJWTActiveToken(tokenHash)).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return status.GenErrWithCustomMsg(status.StatusTokenInvalid, "token is invalid")
@@ -72,7 +72,7 @@ func BlacklistUserJWTs(userExternalID string) error {
 	}
 
 	ctx := context.Background()
-	tokenHashes, err := storage.KVS.SMembers(ctx, cache.KeyJWTUserTokenSet(userExternalID)).Result()
+	tokenHashes, err := storage.KVS.SMembers(ctx, key.KeyJWTUserTokenSet(userExternalID)).Result()
 	if err != nil {
 		return fmt.Errorf("list user jwt tokens failed: %w", err)
 	}
@@ -82,7 +82,7 @@ func BlacklistUserJWTs(userExternalID string) error {
 
 	pipe := storage.KVS.TxPipeline()
 	for _, tokenHash := range tokenHashes {
-		activeKey := cache.KeyJWTActiveToken(tokenHash)
+		activeKey := key.KeyJWTActiveToken(tokenHash)
 		ttlCmd := storage.KVS.TTL(ctx, activeKey)
 		ttl, ttlErr := ttlCmd.Result()
 		if ttlErr != nil && ttlErr != redis.Nil {
@@ -91,10 +91,10 @@ func BlacklistUserJWTs(userExternalID string) error {
 		if ttl <= 0 {
 			ttl = 24 * time.Hour
 		}
-		pipe.Set(ctx, cache.KeyJWTBlacklistToken(tokenHash), "1", ttl)
+		pipe.Set(ctx, key.KeyJWTBlacklistToken(tokenHash), "1", ttl)
 		pipe.Del(ctx, activeKey)
 	}
-	pipe.Del(ctx, cache.KeyJWTUserTokenSet(userExternalID))
+	pipe.Del(ctx, key.KeyJWTUserTokenSet(userExternalID))
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("blacklist user jwt tokens failed: %w", err)
 	}

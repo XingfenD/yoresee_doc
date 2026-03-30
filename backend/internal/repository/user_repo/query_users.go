@@ -11,6 +11,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -107,7 +108,7 @@ func (op *QueryUsersOperation) ExecWithTotal() ([]model.User, int64, error) {
 func (op *QueryUsersOperation) tryCache(ctx context.Context) ([]model.User, int64, bool) {
 	version := getUserQueryVersion(ctx)
 	queryHash := buildUserQueryHash(op.keyword, op.userIDs)
-	cacheKey := cache.KeyUserQueryList(fmt.Sprintf("%d:%s", version, queryHash), op.page, op.pageSize)
+	cacheKey := key.KeyUserQueryList(fmt.Sprintf("%d:%s", version, queryHash), op.page, op.pageSize)
 
 	var cached userQueryCache
 	ok, err := cache.GetJSON(ctx, cacheKey, &cached)
@@ -146,7 +147,7 @@ func (op *QueryUsersOperation) storeCache(ctx context.Context, users []model.Use
 
 	version := getUserQueryVersion(ctx)
 	queryHash := buildUserQueryHash(op.keyword, op.userIDs)
-	cacheKey := cache.KeyUserQueryList(fmt.Sprintf("%d:%s", version, queryHash), op.page, op.pageSize)
+	cacheKey := key.KeyUserQueryList(fmt.Sprintf("%d:%s", version, queryHash), op.page, op.pageSize)
 	if err := cache.SetJSON(ctx, cacheKey, &userQueryCache{UserIDs: userIDs, Total: total}, userQueryCacheTTL); err != nil {
 		logrus.Warnf("user query cache set failed: %v", err)
 	}
@@ -176,7 +177,7 @@ func buildUserQueryHash(keyword *string, userIDs []int64) string {
 }
 
 func getUserQueryVersion(ctx context.Context) int64 {
-	val, err := storage.KVS.Get(ctx, cache.KeyUserQueryVersion()).Int64()
+	val, err := storage.KVS.Get(ctx, key.KeyUserQueryVersion()).Int64()
 	if err != nil {
 		return 1
 	}

@@ -5,7 +5,7 @@ import (
 
 	cache_loader "github.com/XingfenD/yoresee_doc/internal/cache"
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -40,7 +40,7 @@ func (op *GetKnowledgeBaseByExternalIDOperation) Exec() (*model.KnowledgeBase, e
 		return op.query(op.tx)
 	}
 
-	knowledgeBaseCacheKey := cache.KeyModelByExternalID(cache.KeyObjectTypeEnum_KnowledgeBase, op.externalID)
+	knowledgeBaseCacheKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_KnowledgeBase, op.externalID)
 	knowledgeBase, err := cache_loader.NewCacheLoadOperation[model.KnowledgeBase](&op.repo.Loader).
 		WithDBLoader(func() (*model.KnowledgeBase, error) {
 			return op.query(storage.DB)

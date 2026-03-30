@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/cache"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
@@ -41,6 +41,6 @@ func (op *UserCreateOperation) Exec() error {
 }
 
 func (op *UserCreateOperation) clearQueryCache() error {
-	_, _ = storage.KVS.Incr(context.Background(), cache.KeyUserQueryVersion()).Result()
+	_, _ = storage.KVS.Incr(context.Background(), key.KeyUserQueryVersion()).Result()
 	return nil
 }
