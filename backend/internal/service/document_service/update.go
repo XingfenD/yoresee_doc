@@ -3,6 +3,7 @@ package document_service
 import (
 	"context"
 
+	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -120,7 +121,9 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 		}
 	}
 
-	s.publishDocumentSearchSyncUpsertEvent(ctx, req.ExternalID)
+	if err := domain_event.PublishDocumentUpsertEvent(ctx, req.ExternalID); err != nil {
+		logrus.Warnf("[Service layer: DocumentService] publish search sync event failed, external_id=%s, err=%+v", req.ExternalID, err)
+	}
 
 	return true, nil
 }

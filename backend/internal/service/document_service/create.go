@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -115,7 +116,9 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 			AccessTime:     time.Now(),
 		})
 	}
-	s.publishDocumentSearchSyncUpsertEvent(ctx, docExternalID)
+	if err := domain_event.PublishDocumentUpsertEvent(ctx, docExternalID); err != nil {
+		logrus.Warnf("[Service layer: DocumentService] publish search sync event failed, external_id=%s, err=%+v", docExternalID, err)
+	}
 
 	return &dto.CreateDocumentResponse{
 		ExternalID: docExternalID,

@@ -256,9 +256,6 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 }
 
 func publishDocumentSearchSyncUpsertEvent(ctx context.Context, externalID string) {
-	if config.GlobalConfig == nil || !config.GlobalConfig.Elasticsearch.Enabled {
-		return
-	}
 	if err := domain_event.PublishDocumentUpsertEvent(ctx, externalID); err != nil {
 		logrus.Warnf("Snapshot publish search sync event failed docId=%s err=%v", externalID, err)
 	}
