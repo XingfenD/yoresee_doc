@@ -362,5 +362,18 @@ body {
     background-color: var(--input-bg) !important;
     color: var(--text-light) !important;
   }
+
+  /* 加载遮罩 */
+  .el-loading-mask {
+    background-color: rgba(16, 18, 22, 0.72) !important;
+  }
+
+  .el-loading-spinner .path {
+    stroke: var(--primary-color) !important;
+  }
+
+  .el-loading-spinner .el-loading-text {
+    color: var(--text-medium) !important;
+  }
 }
 </style>
