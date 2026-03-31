@@ -21,7 +21,7 @@
       </el-input>
     </div>
     <div class="nav-right">
-      <el-dropdown trigger="click" @command="emit('change-language', $event)" class="nav-item">
+      <AppDropdown trigger="click" @command="emit('change-language', $event)" class="nav-item">
         <span class="nav-link">
           <el-icon :size="18">
             <Flag v-if="currentLanguage === 'en'" />
@@ -38,7 +38,7 @@
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
-      </el-dropdown>
+      </AppDropdown>
 
       <div class="nav-item theme-switch">
         <span class="nav-link" @click="emit('toggle-theme')">
@@ -58,7 +58,7 @@
         </span>
       </div>
 
-      <el-dropdown trigger="click" class="nav-item">
+      <AppDropdown trigger="click" class="nav-item">
         <span class="user-info">
           <el-avatar v-if="userAvatar" size="small" :src="userAvatar"></el-avatar>
           <span class="username">{{ username }}</span>
@@ -75,7 +75,7 @@
             <el-dropdown-item divided @click="emit('logout')">{{ t('button.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
-      </el-dropdown>
+      </AppDropdown>
     </div>
   </header>
 </template>
@@ -88,6 +88,7 @@ import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell, Search } from '@elem
 import { queryTopNavDisplay } from '@/services/auth';
 import { listNotifications } from '@/services/api';
 import { useApiAction } from '@/composables/useApiAction';
+import AppDropdown from '@/components/AppDropdown.vue';
 
 const props = defineProps({
   systemName: {

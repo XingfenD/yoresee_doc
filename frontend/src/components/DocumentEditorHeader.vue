@@ -40,7 +40,7 @@
       >
         <el-icon><ChatLineRound /></el-icon>
       </el-button>
-      <el-dropdown trigger="click" @command="$emit('header-command', $event)">
+      <AppDropdown trigger="click" @command="$emit('header-command', $event)">
         <el-button class="editor-action-button" text>
           <el-icon><MoreFilled /></el-icon>
         </el-button>
@@ -57,7 +57,7 @@
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
-      </el-dropdown>
+      </AppDropdown>
     </div>
   </div>
 </template>
@@ -65,6 +65,7 @@
 <script setup>
 import { nextTick, ref, watch } from 'vue';
 import { Expand, Fold, MoreFilled, ChatLineRound } from '@element-plus/icons-vue';
+import AppDropdown from '@/components/AppDropdown.vue';
 
 const props = defineProps({
   isEditingTitle: { type: Boolean, default: false },

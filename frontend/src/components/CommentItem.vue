@@ -6,7 +6,7 @@
         <span class="comment-author">{{ author }}</span>
         <div class="comment-meta-actions">
           <span class="comment-time">{{ time }}</span>
-          <el-dropdown v-if="hasActions" trigger="click">
+          <AppDropdown v-if="hasActions" trigger="click" @command="emitAction">
             <el-button text class="comment-more">
               <el-icon><MoreFilled /></el-icon>
             </el-button>
@@ -15,16 +15,16 @@
                 <el-dropdown-item
                   v-for="action in actions"
                   :key="action.key"
+                  :command="action.key"
                   :divided="action.divided"
                   :disabled="action.disabled"
                   :class="{ 'comment-action-danger': action.danger }"
-                  @click="emitAction(action.key)"
                 >
                   {{ action.label }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
-          </el-dropdown>
+          </AppDropdown>
         </div>
       </div>
       <div v-if="replyText" class="comment-reply">{{ replyText }}</div>
@@ -53,6 +53,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MoreFilled } from '@element-plus/icons-vue';
+import AppDropdown from '@/components/AppDropdown.vue';
 
 const props = defineProps({
   avatar: {

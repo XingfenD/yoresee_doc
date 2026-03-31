@@ -257,8 +257,11 @@ body {
   }
 
   .el-dropdown-item:hover,
-  .el-dropdown-menu__item:hover {
-    background-color: var(--bg-medium) !important;
+  .el-dropdown-item:focus,
+  .el-dropdown-menu__item:hover,
+  .el-dropdown-menu__item:focus,
+  .el-dropdown-menu__item.is-hovering {
+    background-color: var(--select-option-hover) !important;
     color: var(--text-dark) !important;
   }
 

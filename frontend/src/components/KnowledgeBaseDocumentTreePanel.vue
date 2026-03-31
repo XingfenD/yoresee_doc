@@ -45,7 +45,7 @@
             {{ openLabel }}
           </el-button>
 
-          <el-dropdown trigger="click" @command="(command) => emit('node-action', command, data)">
+          <AppDropdown trigger="click" @command="(command) => emit('node-action', command, data)">
             <el-button size="small" text @click.stop>
               <el-icon>
                 <MoreFilled />
@@ -64,7 +64,7 @@
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
-          </el-dropdown>
+          </AppDropdown>
         </template>
       </DocumentTree>
 
@@ -92,6 +92,7 @@ import { computed } from 'vue';
 import { MoreFilled } from '@element-plus/icons-vue';
 import DocumentTree from '@/components/DocumentTree.vue';
 import AppTag from '@/components/AppTag.vue';
+import AppDropdown from '@/components/AppDropdown.vue';
 
 const props = defineProps({
   title: { type: String, default: '' },

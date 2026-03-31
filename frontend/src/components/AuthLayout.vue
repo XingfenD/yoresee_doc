@@ -2,7 +2,7 @@
   <div class="auth-container">
     <header class="auth-nav">
       <div class="nav-right">
-        <el-dropdown trigger="click" class="nav-item" @command="$emit('change-language', $event)">
+        <AppDropdown trigger="click" class="nav-item" @command="$emit('change-language', $event)">
           <span class="nav-link">
             <el-icon :size="18"><Flag v-if="currentLanguage === 'en'" /><ChatLineRound v-else /></el-icon>
           </span>
@@ -16,7 +16,7 @@
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
-        </el-dropdown>
+        </AppDropdown>
 
         <div class="nav-item theme-switch">
           <span class="nav-link" @click="$emit('toggle-theme')">
@@ -39,6 +39,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
 import { Flag, ChatLineRound, Moon, Sunny } from '@element-plus/icons-vue';
+import AppDropdown from '@/components/AppDropdown.vue';
 
 defineProps({
   currentLanguage: { type: String, default: 'en' },
