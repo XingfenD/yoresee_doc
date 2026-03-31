@@ -116,6 +116,7 @@ export default {
       open: 'Open',
       download: 'Download File',
       empty: 'No attachments',
+      fileTooLarge: 'Attachment size cannot exceed 5MB',
       loadFailed: 'Failed to load attachments',
       contentLoadFailed: 'Failed to load attachment content',
       previewUnsupported: 'This file type is not supported for inline preview',

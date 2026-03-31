@@ -114,6 +114,7 @@ export default {
       open: '打开',
       download: '下载文件',
       empty: '暂无附件',
+      fileTooLarge: '附件大小不能超过 5MB',
       loadFailed: '加载附件失败',
       contentLoadFailed: '加载附件内容失败',
       previewUnsupported: '当前文件类型暂不支持内嵌预览',

@@ -108,6 +108,7 @@ const {
 const attachments = ref([]);
 const uploading = ref(false);
 const loading = ref(false);
+const maxAttachmentSizeBytes = 5 * 1024 * 1024;
 
 const columns = computed(() => ([
   { key: 'name', label: t('document.attachments.name'), minWidth: '220px' },
@@ -137,6 +138,10 @@ const fetchAttachments = async () => {
 const handleChooseFile = async (uploadFile) => {
   const rawFile = uploadFile?.raw;
   if (!rawFile || !docId.value) return;
+  if (rawFile.size > maxAttachmentSizeBytes) {
+    ElMessage.error(t('document.attachments.fileTooLarge'));
+    return;
+  }
 
   uploading.value = true;
   try {
