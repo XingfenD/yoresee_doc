@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/pkg/errs"
 )
 
@@ -30,9 +29,8 @@ type ConsulKVClient struct {
 
 var Consul *ConsulKVClient
 
-func InitConsul(cfg *config.ConsulConfig) error {
+func NewConsulClient(cfg *ConsulOptions) *ConsulKVClient {
 	if cfg == nil || !cfg.Enabled {
-		Consul = nil
 		return nil
 	}
 
@@ -45,7 +43,7 @@ func InitConsul(cfg *config.ConsulConfig) error {
 		address = "127.0.0.1:8500"
 	}
 
-	Consul = &ConsulKVClient{
+	return &ConsulKVClient{
 		baseURL:    fmt.Sprintf("%s://%s", scheme, address),
 		token:      cfg.Token,
 		datacenter: cfg.Datacenter,
@@ -53,7 +51,6 @@ func InitConsul(cfg *config.ConsulConfig) error {
 		httpClient: &http.Client{Timeout: 5 * time.Second},
 		cacheTTL:   5 * time.Second,
 	}
-	return nil
 }
 
 func ConsulEnabled() bool {

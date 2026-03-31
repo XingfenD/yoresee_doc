@@ -34,7 +34,11 @@ func (srvc *MQService) Init(cfg *config.MQConfig) error {
 		return status.StatusMQNotInitialized
 	}
 
-	queues, err := mq.NewMessageQueues(cfg)
+	var options *mq.Options
+	if cfg != nil {
+		options = &mq.Options{RabbitMQURL: cfg.RabbitMQ.URL}
+	}
+	queues, err := mq.NewMessageQueues(options)
 	if err != nil {
 		logrus.Errorf("[Service layer: MQService] Init failed, err=%+v", err)
 		return status.GenErrWithCustomMsg(status.StatusServiceInternalError, "init message queue failed")

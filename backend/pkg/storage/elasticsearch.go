@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/pkg/errs"
 )
 
@@ -24,11 +23,11 @@ type ElasticsearchClient struct {
 
 var ES *ElasticsearchClient
 
-func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
+func NewElasticsearchClient(cfg *ElasticsearchOptions) (*ElasticsearchClient, error) {
 	if cfg == nil || !cfg.Enabled {
-		ES = nil
-		return nil
+		return nil, nil
 	}
+
 	addresses := make([]string, 0, len(cfg.Addresses))
 	for _, addr := range cfg.Addresses {
 		trimmed := strings.TrimSpace(addr)
@@ -38,7 +37,7 @@ func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
 		addresses = append(addresses, strings.TrimRight(trimmed, "/"))
 	}
 	if len(addresses) == 0 {
-		return errs.ErrElasticAddressesEmpty
+		return nil, errs.ErrElasticAddressesEmpty
 	}
 
 	timeout := time.Duration(cfg.Timeout) * time.Second
@@ -46,7 +45,7 @@ func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
 		timeout = 5 * time.Second
 	}
 
-	ES = &ElasticsearchClient{
+	client := &ElasticsearchClient{
 		addresses: addresses,
 		username:  cfg.Username,
 		password:  cfg.Password,
@@ -54,12 +53,10 @@ func InitElasticsearch(cfg *config.ElasticsearchConfig) error {
 			Timeout: timeout,
 		},
 	}
-
-	if err := ES.Ping(context.Background()); err != nil {
-		ES = nil
-		return errs.Wrap(errs.ErrElasticPingFailed, err)
+	if err := client.Ping(context.Background()); err != nil {
+		return nil, errs.Wrap(errs.ErrElasticPingFailed, err)
 	}
-	return nil
+	return client, nil
 }
 
 func (c *ElasticsearchClient) Ping(ctx context.Context) error {
@@ -124,8 +121,8 @@ func (c *ElasticsearchClient) UpsertDocument(ctx context.Context, index string, 
 			lastErr = err
 			continue
 		}
-		io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			return nil
 		}
@@ -162,7 +159,7 @@ func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searc
 			continue
 		}
 		bodyBytes, readErr := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if readErr != nil {
 			lastErr = readErr
 			continue
@@ -182,7 +179,7 @@ func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searc
 				} `json:"hits"`
 			} `json:"hits"`
 		}
-		if err := json.Unmarshal(bodyBytes, &parsed); err != nil {
+		if err = json.Unmarshal(bodyBytes, &parsed); err != nil {
 			lastErr = err
 			continue
 		}
@@ -193,8 +190,8 @@ func (c *ElasticsearchClient) SearchIDs(ctx context.Context, index string, searc
 				ids = append(ids, hit.Source.ID)
 				continue
 			}
-			id, err := strconv.ParseInt(hit.ID, 10, 64)
-			if err != nil || id <= 0 {
+			id, parseErr := strconv.ParseInt(hit.ID, 10, 64)
+			if parseErr != nil || id <= 0 {
 				continue
 			}
 			ids = append(ids, id)
@@ -229,9 +226,8 @@ func (c *ElasticsearchClient) IndexExists(ctx context.Context, index string) (bo
 			lastErr = err
 			continue
 		}
-		io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
-
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
 		if resp.StatusCode == http.StatusNotFound {
 			return false, nil
 		}
@@ -280,7 +276,7 @@ func (c *ElasticsearchClient) CreateIndex(ctx context.Context, index string, bod
 			continue
 		}
 		bodyBytes, readErr := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if readErr != nil {
 			lastErr = readErr
 			continue

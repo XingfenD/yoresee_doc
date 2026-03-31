@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -51,22 +52,82 @@ func (i *Initializer) InitConfig() *Initializer {
 }
 
 func (i *Initializer) InitPostgres() *Initializer {
-	i.Check("storage.InitPostgres", func() error {
-		return storage.InitPostgres(&config.GlobalConfig.Database)
+	i.Check("storage.OpenPostgres", func() error {
+		dbCfg := config.GlobalConfig.Database
+		logCfg := config.GlobalConfig.Backend.Log
+		gormLogLevel := logCfg.GormLogLevel
+		if gormLogLevel == "" {
+			gormLogLevel = logCfg.Level
+		}
+
+		db, err := storage.OpenPostgres(&storage.PostgresOptions{
+			Host:         dbCfg.Host,
+			Port:         dbCfg.Port,
+			User:         dbCfg.User,
+			Password:     dbCfg.Password,
+			Name:         dbCfg.Name,
+			MaxIdleConns: dbCfg.MaxIdleConns,
+			MaxOpenConns: dbCfg.MaxOpenConns,
+			GormLogLevel: gormLogLevel,
+		})
+		if err != nil {
+			return err
+		}
+		storage.DB = db
+		return nil
 	})
-	return i.addShutdownHook("Postgres", storage.ClosePostgres)
+
+	return i.addShutdownHook("Postgres", func() error {
+		if storage.DB == nil {
+			return nil
+		}
+		sqlDB, err := storage.DB.DB()
+		if err != nil {
+			return err
+		}
+		storage.DB = nil
+		return sqlDB.Close()
+	})
 }
 
 func (i *Initializer) InitRedis() *Initializer {
-	i.Check("storage.InitRedis", func() error {
-		return storage.InitRedis(&config.GlobalConfig.Redis)
+	i.Check("storage.NewRedisClient", func() error {
+		cfg := config.GlobalConfig.Redis
+		client, err := storage.NewRedisClient(&storage.RedisOptions{
+			Host:     cfg.Host,
+			Port:     cfg.Port,
+			Password: cfg.Password,
+			DB:       cfg.DB,
+		})
+		if err != nil {
+			return err
+		}
+		storage.KVS = client
+		return nil
 	})
-	return i.addShutdownHook("Redis", storage.CloseRedis)
+
+	return i.addShutdownHook("Redis", func() error {
+		if storage.KVS == nil {
+			return nil
+		}
+		client := storage.KVS
+		storage.KVS = nil
+		return client.Close()
+	})
 }
 
 func (i *Initializer) InitConsul() *Initializer {
-	return i.Check("storage.InitConsul", func() error {
-		return storage.InitConsul(&config.GlobalConfig.Consul)
+	return i.Check("storage.NewConsulClient", func() error {
+		cfg := config.GlobalConfig.Consul
+		storage.Consul = storage.NewConsulClient(&storage.ConsulOptions{
+			Enabled:    cfg.Enabled,
+			Address:    cfg.Address,
+			Scheme:     cfg.Scheme,
+			Token:      cfg.Token,
+			Datacenter: cfg.Datacenter,
+			Prefix:     cfg.Prefix,
+		})
+		return nil
 	})
 }
 
@@ -80,24 +141,69 @@ func (i *Initializer) RequireConsulEnabled() *Initializer {
 }
 
 func (i *Initializer) InitMinio() *Initializer {
-	return i.Check("storage.InitMinio", func() error {
-		return storage.InitMinio(&config.GlobalConfig.Minio)
+	return i.Check("storage.NewMinioClient", func() error {
+		cfg := config.GlobalConfig.Minio
+		client, err := storage.NewMinioClient(&storage.MinioOptions{
+			Endpoint:  cfg.Endpoint,
+			AccessKey: cfg.AccessKey,
+			SecretKey: cfg.SecretKey,
+			UseSSL:    cfg.UseSSL,
+		})
+		if err != nil {
+			return err
+		}
+		if err = storage.EnsureBucket(context.Background(), client, cfg.Bucket); err != nil {
+			return err
+		}
+		storage.MinioClient = client
+		return nil
 	})
 }
 
 func (i *Initializer) InitElasticsearch() *Initializer {
-	i.Check("storage.InitElasticsearch", func() error {
-		return storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch)
+	i.Check("storage.NewElasticsearchClient", func() error {
+		cfg := config.GlobalConfig.Elasticsearch
+		client, err := storage.NewElasticsearchClient(&storage.ElasticsearchOptions{
+			Enabled:   cfg.Enabled,
+			Addresses: cfg.Addresses,
+			Username:  cfg.Username,
+			Password:  cfg.Password,
+			Timeout:   cfg.Timeout,
+		})
+		if err != nil {
+			return err
+		}
+		storage.ES = client
+		return nil
 	})
-	return i.addShutdownHook("Elasticsearch", storage.CloseElasticsearch)
+
+	return i.addShutdownHook("Elasticsearch", func() error {
+		storage.ES = nil
+		return nil
+	})
 }
 
 func (i *Initializer) InitElasticsearchAllowFail() *Initializer {
-	i.CheckAllowFail("storage.InitElasticsearch", func() error {
-		return storage.InitElasticsearch(&config.GlobalConfig.Elasticsearch)
+	i.CheckAllowFail("storage.NewElasticsearchClient", func() error {
+		cfg := config.GlobalConfig.Elasticsearch
+		client, err := storage.NewElasticsearchClient(&storage.ElasticsearchOptions{
+			Enabled:   cfg.Enabled,
+			Addresses: cfg.Addresses,
+			Username:  cfg.Username,
+			Password:  cfg.Password,
+			Timeout:   cfg.Timeout,
+		})
+		if err != nil {
+			return err
+		}
+		storage.ES = client
+		return nil
 	})
 	if storage.ES != nil {
-		i.addShutdownHook("Elasticsearch", storage.CloseElasticsearch)
+		i.addShutdownHook("Elasticsearch", func() error {
+			storage.ES = nil
+			return nil
+		})
 	}
 	return i
 }

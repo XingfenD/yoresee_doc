@@ -49,6 +49,7 @@ var (
 	ErrConsulUnsupportedType   = errors.New("unsupported type")
 
 	ErrInvalidGormLogLevel = errors.New("invalid gorm log level")
+	ErrPostgresOptionsNil  = errors.New("postgres options is nil")
 
 	ErrLockAcquireFailed = errors.New("failed to acquire lock")
 	ErrLockNotHeld       = errors.New("lock not held or expired")

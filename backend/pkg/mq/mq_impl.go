@@ -1,10 +1,6 @@
 package mq
 
-import (
-	"strings"
-
-	"github.com/XingfenD/yoresee_doc/internal/config"
-)
+import "strings"
 
 type Backend string
 
@@ -13,13 +9,16 @@ const (
 	BackendRabbitMQ Backend = "rabbitmq"
 )
 
-func NewMessageQueues(cfg *config.MQConfig) (map[Backend]MessageQueue, error) {
-	mqs := map[Backend]MessageQueue{}
+type Options struct {
+	RabbitMQURL string
+}
 
+func NewMessageQueues(cfg *Options) (map[Backend]MessageQueue, error) {
+	mqs := map[Backend]MessageQueue{}
 	mqs[BackendRedis] = NewRedisMQ()
 
-	if cfg != nil && strings.TrimSpace(cfg.RabbitMQ.URL) != "" {
-		rmq, err := NewRabbitMQ(RabbitMQConfig{URL: cfg.RabbitMQ.URL})
+	if cfg != nil && strings.TrimSpace(cfg.RabbitMQURL) != "" {
+		rmq, err := NewRabbitMQ(RabbitMQConfig{URL: cfg.RabbitMQURL})
 		if err != nil {
 			return mqs, err
 		}

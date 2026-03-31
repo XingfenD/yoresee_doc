@@ -5,7 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/pkg/errs"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -13,34 +12,38 @@ import (
 
 var MinioClient *minio.Client
 
-func InitMinio(cfg *config.MinioConfig) error {
-	var err error
-	MinioClient, err = minio.New(cfg.Endpoint, &minio.Options{
+func NewMinioClient(cfg *MinioOptions) (*minio.Client, error) {
+	if cfg == nil {
+		return nil, errs.Detail(errs.ErrMinioInitClient, "minio options is nil")
+	}
+	client, err := minio.New(cfg.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
 		Secure: cfg.UseSSL,
 	})
 	if err != nil {
-		return errs.Wrap(errs.ErrMinioInitClient, err)
+		return nil, errs.Wrap(errs.ErrMinioInitClient, err)
 	}
+	return client, nil
+}
 
-	// 检查并创建存储桶
-	exists, err := MinioClient.BucketExists(context.Background(), cfg.Bucket)
+func EnsureBucket(ctx context.Context, client *minio.Client, bucketName string) error {
+	if client == nil {
+		return errs.Detail(errs.ErrMinioInitClient, "minio client is nil")
+	}
+	exists, err := client.BucketExists(ctx, bucketName)
 	if err != nil {
 		return errs.Wrap(errs.ErrMinioCheckBucketExists, err)
 	}
 	if !exists {
-		err = MinioClient.MakeBucket(context.Background(), cfg.Bucket, minio.MakeBucketOptions{})
-		if err != nil {
+		if err = client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
 			return errs.Wrap(errs.ErrMinioCreateBucket, err)
 		}
 	}
-
 	return nil
 }
 
 func UploadFile(bucketName, objectName string, reader io.Reader, objectSize int64, contentType string) (string, error) {
 	ctx := context.Background()
-
 	_, err := MinioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
@@ -66,7 +69,6 @@ func DeleteFile(bucketName, objectName string) error {
 	return MinioClient.RemoveObject(ctx, bucketName, objectName, minio.RemoveObjectOptions{})
 }
 
-// GetPresignedURL 获取文件的预签名URL
 func GetPresignedURL(bucketName, objectName string, expires time.Duration) (string, error) {
 	ctx := context.Background()
 	presignedURL, err := MinioClient.PresignedGetObject(ctx, bucketName, objectName, expires, nil)

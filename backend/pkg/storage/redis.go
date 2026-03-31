@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/pkg/errs"
-	"github.com/redis/go-redis/v9"
+	redis "github.com/redis/go-redis/v9"
 )
 
 var KVS *redis.Client
 
-func InitRedis(cfg *config.RedisConfig) error {
-	KVS = redis.NewClient(&redis.Options{
+func NewRedisClient(cfg *RedisOptions) (*redis.Client, error) {
+	if cfg == nil {
+		return nil, errs.Detail(errs.ErrInitRedisClient, "redis options is nil")
+	}
+
+	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Password: cfg.Password,
 		DB:       cfg.DB,
@@ -22,12 +25,11 @@ func InitRedis(cfg *config.RedisConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := KVS.Ping(ctx).Result()
-	if err != nil {
-		return errs.Wrap(errs.ErrInitRedisClient, err)
+	if _, err := client.Ping(ctx).Result(); err != nil {
+		_ = client.Close()
+		return nil, errs.Wrap(errs.ErrInitRedisClient, err)
 	}
-
-	return nil
+	return client, nil
 }
 
 func GetRedis() *redis.Client {
@@ -35,10 +37,10 @@ func GetRedis() *redis.Client {
 }
 
 func CloseRedis() error {
-	if KVS != nil {
-		return KVS.Close()
+	if KVS == nil {
+		return nil
 	}
-	return nil
+	return KVS.Close()
 }
 
 func SetCache(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
@@ -58,11 +60,9 @@ func ClearCacheByPattern(ctx context.Context, pattern string) error {
 	if err != nil {
 		return err
 	}
-
 	if len(keys) > 0 {
 		return KVS.Del(ctx, keys...).Err()
 	}
-
 	return nil
 }
 
