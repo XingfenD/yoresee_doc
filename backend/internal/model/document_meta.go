@@ -26,6 +26,7 @@ type Document struct {
 	KnowledgeID   *int64         `gorm:"index" json:"knowledge_id"`
 	ContainerType ContainerType  `gorm:"not null;index" json:"containter_type"`
 	Status        int            `gorm:"default:1" json:"status"`
+	IsPublic      bool           `gorm:"default:false;index" json:"is_public"`
 	Tags          []string       `gorm:"serializer:json" json:"tags"`
 	Path          string         `gorm:"type:ltree;not null;index:idx_path_gist,using:gist"`
 	Depth         int            `gorm:"not null;index"`

@@ -83,6 +83,7 @@ func toDocumentResponse(doc *dto.DocumentMetaResponse) *pb.DocumentResponse {
 		CreatedAt:   timeToString(doc.CreatedAt),
 		UpdatedAt:   timeToString(doc.UpdatedAt),
 		HasChildren: doc.HasChildren,
+		IsPublic:    doc.IsPublic,
 	}
 	if len(doc.Children) > 0 {
 		resp.Children = make([]*pb.DocumentResponse, 0, len(doc.Children))

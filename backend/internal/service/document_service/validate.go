@@ -51,7 +51,7 @@ func validateUpdateDocumentMetaReq(req *dto.UpdateDocumentMetaRequest) error {
 	if req.ExternalID == "" {
 		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "external_id is zero value")
 	}
-	if req.Title == nil && req.Summary == nil && req.Tags == nil && req.Status == nil {
+	if req.Title == nil && req.Summary == nil && req.Tags == nil && req.Status == nil && req.IsPublic == nil {
 		return status.GenErrWithCustomMsg(status.StatusParamError, "no update field")
 	}
 	return nil

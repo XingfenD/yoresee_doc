@@ -49,6 +49,10 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 					docModel.Status = *req.Status
 					op.UpdateStatus()
 				}
+				if req.IsPublic != nil {
+					docModel.IsPublic = *req.IsPublic
+					op.UpdateIsPublic()
+				}
 
 				if err := op.Exec(); err != nil {
 					logrus.Errorf("[Service layer: DocumentService] update document meta failed, external_id=%s, err=%+v", req.ExternalID, err)

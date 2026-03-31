@@ -256,6 +256,7 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 	dtoReq := &dto.CreateDocumentReq{
 		Title:             req.Title,
 		Type:              fromDocumentType(req.Type),
+		IsPublic:          req.GetIsPublic(),
 		CreatorExternalID: utils.Of(userExternalID),
 		ParentExternalID:  req.ParentExternalId,
 	}
@@ -336,7 +337,7 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 	if req == nil || req.ExternalId == "" {
 		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
-	if req.Title == nil && req.Summary == nil && req.Status == nil && req.Tags == nil {
+	if req.Title == nil && req.Summary == nil && req.Status == nil && req.Tags == nil && req.IsPublic == nil {
 		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
@@ -352,6 +353,9 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 	if req.Tags != nil {
 		tags := req.Tags
 		serviceReq.Tags = &tags
+	}
+	if req.IsPublic != nil {
+		serviceReq.IsPublic = req.IsPublic
 	}
 
 	if _, err := document_service.DocumentSvc.UpdateDocumentMeta(ctx, serviceReq); err != nil {

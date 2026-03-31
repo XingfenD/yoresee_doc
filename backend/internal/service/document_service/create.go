@@ -27,6 +27,7 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 			Title:      req.Title,
 			Type:       model.DocumentType(req.Type),
 			Summary:    "",
+			IsPublic:   req.IsPublic,
 			Content:    "",
 			Path:       "0",
 			Depth:      0,

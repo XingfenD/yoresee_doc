@@ -51,6 +51,11 @@ func (op *DocumentUpdateOperation) UpdateStatus() *DocumentUpdateOperation {
 	return op
 }
 
+func (op *DocumentUpdateOperation) UpdateIsPublic() *DocumentUpdateOperation {
+	op.updateFields["is_public"] = true
+	return op
+}
+
 func (op *DocumentUpdateOperation) UpdateTags() *DocumentUpdateOperation {
 	op.updateFields["tags"] = true
 	return op

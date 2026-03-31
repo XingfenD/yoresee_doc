@@ -343,6 +343,7 @@ message DocumentResponse {
   string updated_at = 10;
   repeated DocumentResponse children = 11;
   bool has_children = 12;
+  bool is_public = 13;
 }
 
 message GetDocumentContentRequest {
@@ -435,6 +436,7 @@ message CreateDocumentRequest {
   optional string knowledge_base_external_id = 4;
   optional string parent_external_id = 5;
   optional int64 template_id = 6;
+  optional bool is_public = 7;
 }
 
 message CreateDocumentResponse {
@@ -725,6 +727,7 @@ message UpdateDocumentMetaRequest {
   optional string summary = 3;
   repeated string tags = 4;
   optional int32 status = 5;
+  optional bool is_public = 6;
 }
 
 message UpdateDocumentMetaResponse {

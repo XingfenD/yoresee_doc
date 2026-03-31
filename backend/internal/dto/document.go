@@ -16,6 +16,7 @@ type DocumentBase struct {
 	Type       DocumentType `json:"type"`
 	Summary    string       `json:"summary"`
 	Status     int          `json:"status"`
+	IsPublic   bool         `json:"is_public"`
 	Tags       []string     `json:"tags"`
 	ViewCount  int          `json:"view_count"`
 	EditCount  int          `json:"edit_count"`
@@ -42,6 +43,7 @@ func NewDocumentMetaResponseFromModel(doc *model.Document) *DocumentMetaResponse
 			Type:       DocumentType(doc.Type),
 			Summary:    doc.Summary,
 			Status:     doc.Status,
+			IsPublic:   doc.IsPublic,
 			Tags:       doc.Tags,
 			ViewCount:  doc.ViewCount,
 			EditCount:  doc.EditCount,
@@ -65,6 +67,7 @@ func NewDocumentResponseFromModel(doc *model.Document) *DocumentResponse {
 				Type:       DocumentType(doc.Type),
 				Summary:    doc.Summary,
 				Status:     doc.Status,
+				IsPublic:   doc.IsPublic,
 				Tags:       doc.Tags,
 				ViewCount:  doc.ViewCount,
 				EditCount:  doc.EditCount,
@@ -131,6 +134,7 @@ type ListDocumentsByExternalReq struct {
 type CreateDocumentReq struct {
 	Title             string       `json:"title"`
 	Type              DocumentType `json:"type"`
+	IsPublic          bool         `json:"is_public"`
 	CreatorExternalID *string      `json:"creator_external_id"`
 	TemplateID        *int64       `json:"template_id"`
 
@@ -161,4 +165,5 @@ type UpdateDocumentMetaRequest struct {
 	Summary    *string   `json:"summary,omitempty"`
 	Tags       *[]string `json:"tags,omitempty"`
 	Status     *int      `json:"status,omitempty"`
+	IsPublic   *bool     `json:"is_public,omitempty"`
 }
