@@ -178,7 +178,9 @@ export function useDocumentEditorActions({
   const handleHeaderCommand = (command) => {
     if (command === 'create_template') {
       openCreateTemplateDialog();
+      return true;
     }
+    return false;
   };
 
   const submitCreateTemplate = async (payload) => {

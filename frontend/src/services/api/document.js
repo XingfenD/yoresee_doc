@@ -5,6 +5,7 @@ import {
   baseToObject,
   handleResponse,
   mapDocument,
+  mapAttachment,
   toTimeRange
 } from './shared';
 
@@ -16,6 +17,9 @@ const {
   GetDocumentContentRequest,
   GetOwnDocumentsRequest,
   ListDocumentsRequest,
+  UploadDocumentAttachmentRequest,
+  ListDocumentAttachmentsRequest,
+  DeleteDocumentAttachmentRequest,
   RecursiveOptions,
   CreateDocumentContainerType,
   DocumentType
@@ -151,4 +155,43 @@ export const listDocuments = async (params = {}) => {
     documents: (resp.documents || []).map(mapDocument),
     total_count: resp.totalCount ?? 0
   });
+};
+
+export const uploadDocumentAttachment = async (params = {}) => {
+  const fileBytes = params.file_bytes instanceof Uint8Array ? params.file_bytes : new Uint8Array([]);
+  const req = new UploadDocumentAttachmentRequest({
+    documentExternalId: params.document_external_id || '',
+    fileContent: fileBytes,
+    fileName: params.file_name || '',
+    contentType: params.content_type || undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'uploadDocumentAttachment', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {
+    attachment: mapAttachment(resp.attachment)
+  });
+};
+
+export const listDocumentAttachments = async (documentExternalID) => {
+  const req = new ListDocumentAttachmentsRequest({
+    documentExternalId: documentExternalID || ''
+  });
+
+  const resp = await unaryCall(documentClient, 'listDocumentAttachments', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {
+    attachments: (resp.attachments || []).map(mapAttachment)
+  });
+};
+
+export const deleteDocumentAttachment = async (documentExternalID, attachmentExternalID) => {
+  const req = new DeleteDocumentAttachmentRequest({
+    documentExternalId: documentExternalID || '',
+    attachmentExternalId: attachmentExternalID || ''
+  });
+
+  const resp = await unaryCall(documentClient, 'deleteDocumentAttachment', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
 };

@@ -39,6 +39,18 @@ const router = createRouter({
       props: (route) => ({ kbId: 'personal', docId: route.params.docId })
     },
     {
+      path: '/mydocument/:docId/attachments',
+      name: 'MyDocumentAttachments',
+      component: () => import('../views/DocumentAttachments.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/mydocument/:docId/attachment/:attachmentId',
+      name: 'MyDocumentAttachmentOpen',
+      component: () => import('../views/DocumentAttachmentOpen.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/knowledge-base',
       name: 'KnowledgeBase',
       component: () => import('../views/KnowledgeBase.vue'),
@@ -75,6 +87,18 @@ const router = createRouter({
       component: () => import('../views/DocumentEditor.vue'),
       meta: { requiresAuth: true },
       props: true
+    },
+    {
+      path: '/knowledge-base/:kbId/document/:docId/attachments',
+      name: 'KnowledgeBaseDocumentAttachments',
+      component: () => import('../views/DocumentAttachments.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/knowledge-base/:kbId/document/:docId/attachment/:attachmentId',
+      name: 'KnowledgeBaseDocumentAttachmentOpen',
+      component: () => import('../views/DocumentAttachmentOpen.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/user_info/example',

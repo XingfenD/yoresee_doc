@@ -100,7 +100,30 @@ export default {
     inlineCommentEmpty: '暂无行内评论',
     inlineCommentContentRequired: '请输入评论内容',
     inlineCommentAnchorMissing: '未找到行内锚点',
-    inlineCommentInputPlaceholder: '输入评论内容...'
+    inlineCommentInputPlaceholder: '输入评论内容...',
+    attachments: {
+      title: '附件',
+      previewTitle: '附件预览',
+      backToDocument: '返回文档',
+      upload: '上传附件',
+      name: '名称',
+      type: '类型',
+      size: '大小',
+      createdAt: '创建时间',
+      actions: '操作',
+      open: '打开',
+      download: '下载文件',
+      empty: '暂无附件',
+      loadFailed: '加载附件失败',
+      contentLoadFailed: '加载附件内容失败',
+      previewUnsupported: '当前文件类型暂不支持内嵌预览',
+      uploadSuccess: '附件上传成功',
+      uploadFailed: '附件上传失败',
+      deleteConfirm: '确定删除该附件吗？',
+      deleteSuccess: '附件删除成功',
+      deleteFailed: '附件删除失败',
+      urlMissing: '附件地址不可用'
+    }
   },
   system: {
     name: 'Yoresee',

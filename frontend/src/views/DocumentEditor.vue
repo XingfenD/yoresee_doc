@@ -47,13 +47,15 @@
           :expand-title="t('common.expand')"
           :comments-title="t('document.comments')"
           :save-as-label="t('templates.saveAs')"
+          :attachments-label="t('document.attachments.title')"
+          :can-manage-attachments="!!docId && docId !== 'example'"
           @update:pending-title="pendingTitle = $event"
           @start-edit-title="startEditTitle"
           @commit-title="commitTitle"
           @cancel-edit-title="cancelEditTitle"
           @toggle-sidebar="toggleSidebar"
           @toggle-comment-sidebar="toggleCommentSidebar"
-          @header-command="handleHeaderCommand"
+          @header-command="onHeaderCommand"
         />
         <div class="editor-content">
           <div class="editor-wrapper">
@@ -270,6 +272,19 @@ const {
   updateTreeNodeTitle,
   fetchDocuments
 });
+
+const onHeaderCommand = (command) => {
+  if (handleHeaderCommand(command)) {
+    return;
+  }
+  if (command === 'manage_attachments') {
+    if (kbId.value === 'personal') {
+      router.push(`/mydocument/${docId.value}/attachments`);
+      return;
+    }
+    router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/attachments`);
+  }
+};
 const {
   handleInlineCommentAdd,
   handleInlineCommentRemove,

@@ -46,6 +46,9 @@
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
+            <el-dropdown-item command="manage_attachments" :disabled="!canManageAttachments">
+              {{ attachmentsLabel }}
+            </el-dropdown-item>
             <el-dropdown-item command="create_template">
               {{ saveAsLabel }}
             </el-dropdown-item>
@@ -69,7 +72,9 @@ const props = defineProps({
   collapseTitle: { type: String, default: '' },
   expandTitle: { type: String, default: '' },
   commentsTitle: { type: String, default: '' },
-  saveAsLabel: { type: String, default: '' }
+  saveAsLabel: { type: String, default: '' },
+  attachmentsLabel: { type: String, default: '' },
+  canManageAttachments: { type: Boolean, default: false }
 });
 
 defineEmits([

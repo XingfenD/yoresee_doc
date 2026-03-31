@@ -102,7 +102,30 @@ export default {
     inlineCommentEmpty: 'No inline comments yet',
     inlineCommentContentRequired: 'Please enter comment content',
     inlineCommentAnchorMissing: 'Inline anchor was not found',
-    inlineCommentInputPlaceholder: 'Enter comment content...'
+    inlineCommentInputPlaceholder: 'Enter comment content...',
+    attachments: {
+      title: 'Attachments',
+      previewTitle: 'Attachment Preview',
+      backToDocument: 'Back to Document',
+      upload: 'Upload Attachment',
+      name: 'Name',
+      type: 'Type',
+      size: 'Size',
+      createdAt: 'Created At',
+      actions: 'Actions',
+      open: 'Open',
+      download: 'Download File',
+      empty: 'No attachments',
+      loadFailed: 'Failed to load attachments',
+      contentLoadFailed: 'Failed to load attachment content',
+      previewUnsupported: 'This file type is not supported for inline preview',
+      uploadSuccess: 'Attachment uploaded',
+      uploadFailed: 'Failed to upload attachment',
+      deleteConfirm: 'Delete this attachment?',
+      deleteSuccess: 'Attachment deleted',
+      deleteFailed: 'Failed to delete attachment',
+      urlMissing: 'Attachment URL is unavailable'
+    }
   },
   system: {
     name: 'Yoresee',

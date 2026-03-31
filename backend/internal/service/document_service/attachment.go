@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const maxAttachmentSize = 20 * 1024 * 1024
+const maxAttachmentSize = 5 * 1024 * 1024
 
 func (s *DocumentService) UploadAttachment(
 	ctx context.Context,

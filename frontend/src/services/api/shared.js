@@ -194,3 +194,18 @@ export function mapComment(item) {
     created_at: item.createdAt
   };
 }
+
+export function mapAttachment(item) {
+  if (!item) return null;
+  return {
+    external_id: item.externalId,
+    document_external_id: item.documentExternalId,
+    name: item.name,
+    size: item.size,
+    mime_type: item.mimeType,
+    path: item.path,
+    url: item.url,
+    created_at: item.createdAt,
+    updated_at: item.updatedAt
+  };
+}
