@@ -126,6 +126,22 @@ export default {
       deleteSuccess: 'Attachment deleted',
       deleteFailed: 'Failed to delete attachment',
       urlMissing: 'Attachment URL is unavailable'
+    },
+    settings: {
+      title: 'Document Settings',
+      sampleSectionTitle: 'Document Settings (Sample)',
+      sampleSectionHint: 'This is a frontend demo page. Save is UI-only and not persisted to backend.',
+      docIdLabel: 'Document ID',
+      defaultPermission: 'Default Permission',
+      permissionPrivate: 'Private',
+      permissionTeam: 'Team Visible',
+      autoSaveInterval: 'Auto-save Interval',
+      autoSave10s: '10 seconds',
+      autoSave30s: '30 seconds',
+      autoSave60s: '60 seconds',
+      enableAttachments: 'Allow attachment uploads',
+      enableInlineComments: 'Allow inline comments',
+      sampleSaved: 'Document settings saved (sample)'
     }
   },
   system: {

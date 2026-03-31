@@ -48,7 +48,9 @@
           :comments-title="t('document.comments')"
           :save-as-label="t('templates.saveAs')"
           :attachments-label="t('document.attachments.title')"
+          :settings-label="t('document.settings.title')"
           :can-manage-attachments="!!docId && docId !== 'example'"
+          :can-manage-settings="!!docId && docId !== 'example'"
           @update:pending-title="pendingTitle = $event"
           @start-edit-title="startEditTitle"
           @commit-title="commitTitle"
@@ -275,6 +277,14 @@ const {
 
 const onHeaderCommand = (command) => {
   if (handleHeaderCommand(command)) {
+    return;
+  }
+  if (command === 'document_settings') {
+    if (kbId.value === 'personal') {
+      router.push(`/mydocument/${docId.value}/setting`);
+      return;
+    }
+    router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/setting`);
     return;
   }
   if (command === 'manage_attachments') {

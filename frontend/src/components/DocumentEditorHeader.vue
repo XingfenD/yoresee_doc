@@ -49,6 +49,9 @@
             <el-dropdown-item command="manage_attachments" :disabled="!canManageAttachments">
               {{ attachmentsLabel }}
             </el-dropdown-item>
+            <el-dropdown-item command="document_settings" :disabled="!canManageSettings">
+              {{ settingsLabel }}
+            </el-dropdown-item>
             <el-dropdown-item command="create_template">
               {{ saveAsLabel }}
             </el-dropdown-item>
@@ -74,7 +77,9 @@ const props = defineProps({
   commentsTitle: { type: String, default: '' },
   saveAsLabel: { type: String, default: '' },
   attachmentsLabel: { type: String, default: '' },
-  canManageAttachments: { type: Boolean, default: false }
+  settingsLabel: { type: String, default: '' },
+  canManageAttachments: { type: Boolean, default: false },
+  canManageSettings: { type: Boolean, default: false }
 });
 
 defineEmits([
