@@ -149,6 +149,23 @@ func toTemplateResponse(tpl *dto.TemplateResponse) *pb.TemplateResponse {
 	}
 }
 
+func toAttachmentResponse(attachment *dto.AttachmentResponse) *pb.AttachmentResponse {
+	if attachment == nil {
+		return nil
+	}
+	return &pb.AttachmentResponse{
+		ExternalId:         attachment.ExternalID,
+		DocumentExternalId: attachment.DocumentExternalID,
+		Name:               attachment.Name,
+		Size:               attachment.Size,
+		MimeType:           attachment.MimeType,
+		Path:               attachment.Path,
+		Url:                attachment.URL,
+		CreatedAt:          timeToString(attachment.CreatedAt),
+		UpdatedAt:          timeToString(attachment.UpdatedAt),
+	}
+}
+
 func toUserGroupResponse(group *dto.UserGroupResponse) *pb.UserGroupResponse {
 	if group == nil {
 		return nil

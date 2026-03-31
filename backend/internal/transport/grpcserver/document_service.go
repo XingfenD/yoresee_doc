@@ -81,8 +81,8 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 	}
 
 	return &pb.ListDocumentsResponse{
-		Base:      baseResponseFromErr(nil),
-		Documents: respDocs,
+		Base:       baseResponseFromErr(nil),
+		Documents:  respDocs,
 		TotalCount: total,
 	}, nil
 }
@@ -359,6 +359,75 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 	}
 
 	return &pb.UpdateDocumentMetaResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}
+
+func (s *DocumentServiceServer) UploadDocumentAttachment(ctx context.Context, req *pb.UploadDocumentAttachmentRequest) (*pb.UploadDocumentAttachmentResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.UploadDocumentAttachmentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.DocumentExternalId == "" || len(req.FileContent) == 0 {
+		return &pb.UploadDocumentAttachmentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	attachment, err := document_service.DocumentSvc.UploadAttachment(
+		ctx,
+		userExternalID,
+		req.DocumentExternalId,
+		req.FileContent,
+		req.FileName,
+		req.GetContentType(),
+	)
+	if err != nil {
+		return &pb.UploadDocumentAttachmentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.UploadDocumentAttachmentResponse{
+		Base:       baseResponseFromErr(nil),
+		Attachment: toAttachmentResponse(attachment),
+	}, nil
+}
+
+func (s *DocumentServiceServer) ListDocumentAttachments(ctx context.Context, req *pb.ListDocumentAttachmentsRequest) (*pb.ListDocumentAttachmentsResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.ListDocumentAttachmentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.DocumentExternalId == "" {
+		return &pb.ListDocumentAttachmentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	attachments, err := document_service.DocumentSvc.ListAttachments(ctx, req.DocumentExternalId)
+	if err != nil {
+		return &pb.ListDocumentAttachmentsResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	respAttachments := make([]*pb.AttachmentResponse, 0, len(attachments))
+	for _, attachment := range attachments {
+		respAttachments = append(respAttachments, toAttachmentResponse(attachment))
+	}
+
+	return &pb.ListDocumentAttachmentsResponse{
+		Base:        baseResponseFromErr(nil),
+		Attachments: respAttachments,
+	}, nil
+}
+
+func (s *DocumentServiceServer) DeleteDocumentAttachment(ctx context.Context, req *pb.DeleteDocumentAttachmentRequest) (*pb.DeleteDocumentAttachmentResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.DeleteDocumentAttachmentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.DocumentExternalId == "" || req.AttachmentExternalId == "" {
+		return &pb.DeleteDocumentAttachmentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	if err := document_service.DocumentSvc.DeleteAttachment(ctx, req.DocumentExternalId, req.AttachmentExternalId); err != nil {
+		return &pb.DeleteDocumentAttachmentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.DeleteDocumentAttachmentResponse{
 		Base: baseResponseFromErr(nil),
 	}, nil
 }

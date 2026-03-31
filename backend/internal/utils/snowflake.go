@@ -24,6 +24,7 @@ const (
 	ExternalIDContextOrgNode      ExternalIDContext = "org_node"
 	ExternalIDContextComment      ExternalIDContext = "comment"
 	ExternalIDContextNotification ExternalIDContext = "notification"
+	ExternalIDContextAttachment   ExternalIDContext = "attachment"
 )
 
 func GenerateExternalID(context ExternalIDContext) string {

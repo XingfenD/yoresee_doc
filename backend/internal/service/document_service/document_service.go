@@ -1,6 +1,7 @@
 package document_service
 
 import (
+	"github.com/XingfenD/yoresee_doc/internal/repository/attachment_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_version_repo"
 	doc_yjs_snapshot_repo "github.com/XingfenD/yoresee_doc/internal/repository/document_yjs_snapshot_repo"
@@ -16,15 +17,17 @@ type DocumentService struct {
 	docVersionRepo *document_version_repo.DocumentVersionRepository
 	snapshotRepo   *doc_yjs_snapshot_repo.DocumentYjsSnapshotRepository
 	templateRepo   *template_repo.TemplateRepository
+	attachmentRepo *attachment_repo.AttachmentRepository
 }
 
 func NewDocumentService() *DocumentService {
 	return &DocumentService{
-		documentRepo: &document_repo.DocumentRepo,
-		userRepo:     user_repo.UserRepo,
-		kbRepo:       knowledge_base_repo.KnowledgeBaseRepo,
-		snapshotRepo: doc_yjs_snapshot_repo.DocumentYjsSnapshotRepo,
-		templateRepo: template_repo.TemplateRepo,
+		documentRepo:   &document_repo.DocumentRepo,
+		userRepo:       user_repo.UserRepo,
+		kbRepo:         knowledge_base_repo.KnowledgeBaseRepo,
+		snapshotRepo:   doc_yjs_snapshot_repo.DocumentYjsSnapshotRepo,
+		templateRepo:   template_repo.TemplateRepo,
+		attachmentRepo: attachment_repo.AttachmentRepo,
 	}
 }
 

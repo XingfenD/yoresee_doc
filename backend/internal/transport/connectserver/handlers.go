@@ -184,6 +184,39 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		},
 		opts...,
 	))
+	mux.Handle(pb.DocumentService_UploadDocumentAttachment_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_UploadDocumentAttachment_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UploadDocumentAttachmentRequest]) (*connect.Response[pb.UploadDocumentAttachmentResponse], error) {
+			resp, err := docSvc.UploadDocumentAttachment(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+	mux.Handle(pb.DocumentService_ListDocumentAttachments_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_ListDocumentAttachments_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListDocumentAttachmentsRequest]) (*connect.Response[pb.ListDocumentAttachmentsResponse], error) {
+			resp, err := docSvc.ListDocumentAttachments(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+	mux.Handle(pb.DocumentService_DeleteDocumentAttachment_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_DeleteDocumentAttachment_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.DeleteDocumentAttachmentRequest]) (*connect.Response[pb.DeleteDocumentAttachmentResponse], error) {
+			resp, err := docSvc.DeleteDocumentAttachment(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
 
 	mux.Handle(pb.KnowledgeBaseService_ListKnowledgeBases_FullMethodName, connect.NewUnaryHandler(
 		pb.KnowledgeBaseService_ListKnowledgeBases_FullMethodName,

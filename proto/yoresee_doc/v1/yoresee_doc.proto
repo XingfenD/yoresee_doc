@@ -731,6 +731,48 @@ message UpdateDocumentMetaResponse {
   BaseResponse base = 1;
 }
 
+message AttachmentResponse {
+  string external_id = 1;
+  string document_external_id = 2;
+  string name = 3;
+  int64 size = 4;
+  string mime_type = 5;
+  string path = 6;
+  string url = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message UploadDocumentAttachmentRequest {
+  string document_external_id = 1;
+  bytes file_content = 2;
+  string file_name = 3;
+  optional string content_type = 4;
+}
+
+message UploadDocumentAttachmentResponse {
+  BaseResponse base = 1;
+  AttachmentResponse attachment = 2;
+}
+
+message ListDocumentAttachmentsRequest {
+  string document_external_id = 1;
+}
+
+message ListDocumentAttachmentsResponse {
+  BaseResponse base = 1;
+  repeated AttachmentResponse attachments = 2;
+}
+
+message DeleteDocumentAttachmentRequest {
+  string document_external_id = 1;
+  string attachment_external_id = 2;
+}
+
+message DeleteDocumentAttachmentResponse {
+  BaseResponse base = 1;
+}
+
 message GetDocumentYjsSnapshotRequest {
   string document_external_id = 1;
 }
@@ -874,6 +916,12 @@ service DocumentService {
   rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
   // updateDocumentMeta updates document metadata without changing content.
   rpc UpdateDocumentMeta(UpdateDocumentMetaRequest) returns (UpdateDocumentMetaResponse);
+  // upload attachment and bind to document.
+  rpc UploadDocumentAttachment(UploadDocumentAttachmentRequest) returns (UploadDocumentAttachmentResponse);
+  // list attachments by document.
+  rpc ListDocumentAttachments(ListDocumentAttachmentsRequest) returns (ListDocumentAttachmentsResponse);
+  // delete an attachment from document.
+  rpc DeleteDocumentAttachment(DeleteDocumentAttachmentRequest) returns (DeleteDocumentAttachmentResponse);
   // save document as template
   rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
   // list templates with filters and pagination.
