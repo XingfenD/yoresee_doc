@@ -7,6 +7,10 @@
           show-word-limit />
       </el-form-item>
 
+      <el-form-item :label="t('document.settings.publicLabel')">
+        <el-switch v-model="formState.isPublic" />
+      </el-form-item>
+
       <el-form-item v-if="showTemplateSelector" :label="t('knowledgeBase.template')">
         <el-tabs v-model="activeTab" class="template-tabs">
           <el-tab-pane :label="t('templates.recent')" name="recent">
@@ -118,7 +122,8 @@ const formState = reactive({
   title: '',
   template: '',
   parentExternalId: '',
-  templateMeta: null
+  templateMeta: null,
+  isPublic: false
 });
 
 const activeTab = ref('recent');
@@ -147,6 +152,7 @@ const resetForm = () => {
   formState.template = props.initialTemplateId ? String(props.initialTemplateId) : '';
   formState.templateMeta = props.initialTemplateMeta || null;
   formState.parentExternalId = props.parentExternalId || '';
+  formState.isPublic = false;
 };
 
 const handleCancel = () => {
@@ -163,7 +169,8 @@ const handleCreate = () => {
     title: formState.title.trim(),
     template: formState.template,
     template_meta: formState.templateMeta,
-    parent_external_id: formState.parentExternalId || undefined
+    parent_external_id: formState.parentExternalId || undefined,
+    is_public: Boolean(formState.isPublic)
   });
 };
 

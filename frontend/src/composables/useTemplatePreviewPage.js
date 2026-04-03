@@ -108,7 +108,8 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
         const requestBody = {
           title: payload.title,
           type: payload.type || 'markdown',
-          container_type: isKnowledgeBase ? 'knowledge_base' : 'own'
+          container_type: isKnowledgeBase ? 'knowledge_base' : 'own',
+          is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
         };
         if (isKnowledgeBase) {
           requestBody.knowledge_base_external_id = kbExternalId;

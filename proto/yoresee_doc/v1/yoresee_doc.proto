@@ -335,7 +335,7 @@ message DocumentResponse {
   string title = 2;
   DocumentType type = 3;
   string summary = 4;
-  int32 status = 5;
+  reserved 5;
   repeated string tags = 6;
   int32 view_count = 7;
   int32 edit_count = 8;
@@ -354,6 +354,15 @@ message GetDocumentContentResponse {
   BaseResponse base = 1;
   DocumentResponse document = 2;
   string content = 3;
+}
+
+message GetDocumentSettingsRequest {
+  string document_external_id = 1;
+}
+
+message GetDocumentSettingsResponse {
+  BaseResponse base = 1;
+  optional bool is_public = 2;
 }
 
 message ListRecentDocumentsRequest {
@@ -393,7 +402,7 @@ message ListDocumentsRequest {
   optional string root_document_external_id = 2;
   optional string title_keyword = 3;
   optional string type = 4;
-  optional int32 status = 5;
+  reserved 5;
   repeated string tags = 6;
   optional TimeRange create_time_range = 7;
   optional TimeRange update_time_range = 8;
@@ -726,12 +735,21 @@ message UpdateDocumentMetaRequest {
   optional string title = 2;
   optional string summary = 3;
   repeated string tags = 4;
-  optional int32 status = 5;
-  optional bool is_public = 6;
+  reserved 5, 6;
 }
 
 message UpdateDocumentMetaResponse {
   BaseResponse base = 1;
+}
+
+message UpdateDocumentSettingsRequest {
+  string external_id = 1;
+  optional bool is_public = 2;
+}
+
+message UpdateDocumentSettingsResponse {
+  BaseResponse base = 1;
+  optional bool is_public = 2;
 }
 
 message AttachmentResponse {
@@ -903,6 +921,8 @@ service DocumentService {
   rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
   // getDocumentContent fetches a document with its content.
   rpc GetDocumentContent(GetDocumentContentRequest) returns (GetDocumentContentResponse);
+  // getDocumentSettings fetches document metadata for settings page.
+  rpc GetDocumentSettings(GetDocumentSettingsRequest) returns (GetDocumentSettingsResponse);
   // list recent documents for caller.
   rpc ListRecentDocuments(ListRecentDocumentsRequest) returns (ListRecentDocumentsResponse);
   // record recent document for caller.
@@ -919,6 +939,8 @@ service DocumentService {
   rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
   // updateDocumentMeta updates document metadata without changing content.
   rpc UpdateDocumentMeta(UpdateDocumentMetaRequest) returns (UpdateDocumentMetaResponse);
+  // updateDocumentSettings updates settings fields for document.
+  rpc UpdateDocumentSettings(UpdateDocumentSettingsRequest) returns (UpdateDocumentSettingsResponse);
   // upload attachment and bind to document.
   rpc UploadDocumentAttachment(UploadDocumentAttachmentRequest) returns (UploadDocumentAttachmentResponse);
   // list attachments by document.

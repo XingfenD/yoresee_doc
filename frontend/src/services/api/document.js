@@ -11,10 +11,12 @@ import {
 
 const {
   UpdateDocumentMetaRequest,
+  UpdateDocumentSettingsRequest,
   CreateDocumentRequest,
   ListRecentDocumentsRequest,
   RecordRecentDocumentRequest,
   GetDocumentContentRequest,
+  GetDocumentSettingsRequest,
   GetOwnDocumentsRequest,
   ListDocumentsRequest,
   UploadDocumentAttachmentRequest,
@@ -30,8 +32,7 @@ export const updateDocumentMeta = async (documentExternalID, data = {}) => {
     externalId: documentExternalID,
     title: data.title ?? undefined,
     summary: data.summary ?? undefined,
-    tags: Array.isArray(data.tags) ? data.tags : undefined,
-    status: typeof data.status === 'number' ? data.status : undefined
+    tags: Array.isArray(data.tags) ? data.tags : undefined
   });
 
   const resp = await unaryCall(documentClient, 'updateDocumentMeta', req);
@@ -39,10 +40,24 @@ export const updateDocumentMeta = async (documentExternalID, data = {}) => {
   return handleResponse(base, {});
 };
 
+export const updateDocumentSettings = async (documentExternalID, data = {}) => {
+  const req = new UpdateDocumentSettingsRequest({
+    externalId: documentExternalID,
+    isPublic: typeof data.is_public === 'boolean' ? data.is_public : undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'updateDocumentSettings', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {
+    is_public: typeof resp.isPublic === 'boolean' ? resp.isPublic : undefined
+  });
+};
+
 export const createDocument = async (data) => {
   const req = new CreateDocumentRequest({
     title: data.title || '',
-    type: DocumentType.MARKDOWN
+    type: DocumentType.MARKDOWN,
+    isPublic: typeof data.is_public === 'boolean' ? data.is_public : undefined
   });
   if (data.type === 'markdown') {
     req.type = DocumentType.MARKDOWN;
@@ -79,6 +94,18 @@ export const getDocumentContent = async (documentExternalID) => {
   return handleResponse(base, {
     document: mapDocument(resp.document),
     content: resp.content
+  });
+};
+
+export const getDocumentSettings = async (documentExternalID) => {
+  const req = new GetDocumentSettingsRequest({
+    documentExternalId: documentExternalID
+  });
+
+  const resp = await unaryCall(documentClient, 'getDocumentSettings', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {
+    is_public: typeof resp.isPublic === 'boolean' ? resp.isPublic : undefined
   });
 };
 
@@ -138,7 +165,6 @@ export const listDocuments = async (params = {}) => {
     knowledgeBaseExternalId: params.knowledge_base_external_id || undefined,
     titleKeyword: params.title_keyword || undefined,
     type: params.type || undefined,
-    status: typeof params.status === 'number' ? params.status : undefined,
     tags: Array.isArray(params.tags) ? params.tags : undefined,
     createTimeRange: params.create_time_range ? toTimeRange(params.create_time_range) : undefined,
     updateTimeRange: params.update_time_range ? toTimeRange(params.update_time_range) : undefined,

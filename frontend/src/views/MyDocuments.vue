@@ -105,8 +105,7 @@ const mapMyDocuments = (docs) => {
     id: doc.external_id || doc.id,
     title: doc.title || t('document.title'),
     author: userInfo.value?.username || t('common.unknown'),
-    updatedAt: doc.updated_at || doc.updatedAt,
-    status: doc.status === 0 ? 'draft' : 'published'
+    updatedAt: doc.updated_at || doc.updatedAt
   }));
 };
 
@@ -148,7 +147,8 @@ const createDocument = async (payload) => {
     const requestBody = {
       title: payload.title,
       type: payload.type || 'markdown',
-      container_type: 'own'
+      container_type: 'own',
+      is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
     };
     if (payload?.parent_external_id) {
       requestBody.parent_external_id = payload.parent_external_id;

@@ -129,19 +129,12 @@ export default {
     },
     settings: {
       title: 'Document Settings',
-      sampleSectionTitle: 'Document Settings (Sample)',
-      sampleSectionHint: 'This is a frontend demo page. Save is UI-only and not persisted to backend.',
+      publicSectionHint: 'Control whether this document is publicly visible.',
       docIdLabel: 'Document ID',
-      defaultPermission: 'Default Permission',
-      permissionPrivate: 'Private',
-      permissionTeam: 'Team Visible',
-      autoSaveInterval: 'Auto-save Interval',
-      autoSave10s: '10 seconds',
-      autoSave30s: '30 seconds',
-      autoSave60s: '60 seconds',
-      enableAttachments: 'Allow attachment uploads',
-      enableInlineComments: 'Allow inline comments',
-      sampleSaved: 'Document settings saved (sample)'
+      publicLabel: 'Public',
+      publicEnabledDesc: 'This document will be shown as public.',
+      publicDisabledDesc: 'This document is visible to authorized users only.',
+      saved: 'Document settings saved'
     }
   },
   system: {

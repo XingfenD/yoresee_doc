@@ -127,19 +127,12 @@ export default {
     },
     settings: {
       title: '文档设置',
-      sampleSectionTitle: '文档设置样例',
-      sampleSectionHint: '当前为前端样例页面，保存仅展示交互，不会写入后端。',
+      publicSectionHint: '用于控制该文档是否对外公开。',
       docIdLabel: '文档 ID',
-      defaultPermission: '默认权限',
-      permissionPrivate: '仅自己可见',
-      permissionTeam: '团队可见',
-      autoSaveInterval: '自动保存间隔',
-      autoSave10s: '10 秒',
-      autoSave30s: '30 秒',
-      autoSave60s: '60 秒',
-      enableAttachments: '允许上传附件',
-      enableInlineComments: '允许行内评论',
-      sampleSaved: '文档设置已保存（样例）'
+      publicLabel: '是否公开',
+      publicEnabledDesc: '该文档将显示为公开文档。',
+      publicDisabledDesc: '该文档仅对授权用户可见。',
+      saved: '文档设置保存成功'
     }
   },
   system: {

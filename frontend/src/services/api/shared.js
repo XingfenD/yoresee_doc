@@ -55,7 +55,7 @@ export function mapDocument(doc) {
     title: doc.title,
     type: doc.type === DocumentType.MARKDOWN ? 'markdown' : '',
     summary: doc.summary,
-    status: doc.status,
+    is_public: doc.isPublic,
     tags: doc.tags,
     view_count: doc.viewCount,
     edit_count: doc.editCount,

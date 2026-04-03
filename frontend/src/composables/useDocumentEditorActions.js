@@ -59,7 +59,8 @@ export function useDocumentEditorActions({
         const requestBody = {
           title: payload.title,
           type: payload.type || 'markdown',
-          container_type: isPersonal ? 'own' : 'knowledge_base'
+          container_type: isPersonal ? 'own' : 'knowledge_base',
+          is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
         };
         if (!isPersonal) {
           requestBody.knowledge_base_external_id = kbId.value;

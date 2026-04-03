@@ -205,6 +205,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
           title: payload.title,
           type: payload.type || 'markdown',
           container_type: 'knowledge_base',
+          is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false,
           knowledge_base_external_id: knowledgeBaseExternalID,
           parent_external_id: payload.parent_external_id || undefined,
           template_id: payload.template || undefined

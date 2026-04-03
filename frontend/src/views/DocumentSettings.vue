@@ -18,16 +18,15 @@
         {{ t('document.settings.title') }}
       </template>
       <template #actions>
-        <el-button type="primary" @click="saveSettingsSample">
+        <el-button type="primary" :loading="saving" @click="saveSettings">
           {{ t('common.save') }}
         </el-button>
       </template>
     </TitleBar>
 
-    <section class="settings-panel">
+    <section class="settings-panel" v-loading="loading">
       <div class="settings-header">
-        <h3>{{ t('document.settings.sampleSectionTitle') }}</h3>
-        <p>{{ t('document.settings.sampleSectionHint') }}</p>
+        <p>{{ t('document.settings.publicSectionHint') }}</p>
       </div>
 
       <el-form label-position="top" class="settings-form">
@@ -35,30 +34,17 @@
           <el-input :model-value="docId" disabled />
         </el-form-item>
 
-        <el-form-item :label="t('document.settings.defaultPermission')">
-          <el-radio-group v-model="settings.defaultPermission">
-            <el-radio value="private">{{ t('document.settings.permissionPrivate') }}</el-radio>
-            <el-radio value="team">{{ t('document.settings.permissionTeam') }}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-
-        <el-form-item :label="t('document.settings.autoSaveInterval')">
-          <el-select v-model="settings.autoSaveInterval" style="width: 100%">
-            <el-option
-              v-for="option in autoSaveOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item :label="t('document.settings.enableAttachments')">
-          <el-switch v-model="settings.enableAttachments" />
-        </el-form-item>
-
-        <el-form-item :label="t('document.settings.enableInlineComments')">
-          <el-switch v-model="settings.enableInlineComments" />
+        <el-form-item :label="t('document.settings.publicLabel')">
+          <div class="settings-switch-row">
+            <el-switch v-model="settings.isPublic" />
+            <p class="settings-help">
+              {{
+                settings.isPublic
+                  ? t('document.settings.publicEnabledDesc')
+                  : t('document.settings.publicDisabledDesc')
+              }}
+            </p>
+          </div>
         </el-form-item>
       </el-form>
     </section>
@@ -66,14 +52,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ElMessage } from 'element-plus';
 import PageLayout from '@/components/PageLayout.vue';
 import TitleBar from '@/components/TitleBar.vue';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
+import { useApiAction } from '@/composables/useApiAction';
 import { useUserStore } from '@/store/user';
+import { getDocumentSettings, updateDocumentSettings } from '@/services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -102,19 +89,13 @@ const {
   userStore,
   defaultActiveMenu: kbId.value === 'personal' ? 'documents' : 'knowledge-base'
 });
+const { runWithLoading } = useApiAction({ t });
+const loading = ref(false);
+const saving = ref(false);
 
 const settings = reactive({
-  defaultPermission: 'private',
-  autoSaveInterval: '30s',
-  enableAttachments: true,
-  enableInlineComments: true
+  isPublic: false
 });
-
-const autoSaveOptions = computed(() => [
-  { value: '10s', label: t('document.settings.autoSave10s') },
-  { value: '30s', label: t('document.settings.autoSave30s') },
-  { value: '60s', label: t('document.settings.autoSave60s') }
-]);
 
 const goBackToDocument = () => {
   if (kbId.value === 'personal') {
@@ -124,13 +105,45 @@ const goBackToDocument = () => {
   router.push(`/knowledge-base/${kbId.value}/document/${docId.value}`);
 };
 
-const saveSettingsSample = () => {
-  ElMessage.success(t('document.settings.sampleSaved'));
+const loadSettings = async () => {
+  if (!docId.value) {
+    settings.isPublic = false;
+    return;
+  }
+  await runWithLoading(
+    loading,
+    () => getDocumentSettings(docId.value),
+    {
+      context: 'loadDocumentSettings',
+      errorMessage: t('common.requestFailed'),
+      onSuccess: (resp) => {
+        if (typeof resp?.is_public === 'boolean') {
+          settings.isPublic = resp.is_public;
+        }
+      }
+    }
+  );
+};
+
+const saveSettings = async () => {
+  if (!docId.value) {
+    return;
+  }
+  await runWithLoading(
+    saving,
+    () => updateDocumentSettings(docId.value, { is_public: Boolean(settings.isPublic) }),
+    {
+      context: 'saveDocumentSettings',
+      successMessage: t('document.settings.saved'),
+      errorMessage: t('common.requestFailed')
+    }
+  );
 };
 
 onMounted(async () => {
   await initLanguage();
   await fetchSystemInfo();
+  await loadSettings();
 });
 </script>
 
@@ -146,12 +159,6 @@ onMounted(async () => {
   margin-bottom: var(--spacing-lg);
 }
 
-.settings-header h3 {
-  margin: 0 0 6px;
-  font-size: 18px;
-  color: var(--text-dark);
-}
-
 .settings-header p {
   margin: 0;
   color: var(--text-light);
@@ -160,5 +167,18 @@ onMounted(async () => {
 
 .settings-form {
   max-width: 640px;
+}
+
+.settings-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1;
 }
 </style>

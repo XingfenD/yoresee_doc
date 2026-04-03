@@ -119,8 +119,7 @@ const mapRecentDocuments = (docs) => {
     id: doc.external_id || doc.id,
     title: doc.title || t('document.title'),
     author: doc.creator_name || doc.creatorName || userInfo.value?.username || t('common.unknown'),
-    updatedAt: doc.updated_at || doc.updatedAt,
-    status: doc.status === 0 ? 'draft' : 'published'
+    updatedAt: doc.updated_at || doc.updatedAt
   }));
 };
 
