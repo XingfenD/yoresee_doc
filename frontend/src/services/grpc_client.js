@@ -12,11 +12,10 @@ import {
   InvitationService
 } from '@/gen/yoresee_doc/v1/yoresee_doc_connect.js';
 import * as messages from '@/gen/yoresee_doc/v1/yoresee_doc_pb.js';
-
-const CONNECT_ENDPOINT = import.meta.env.VITE_GRPC_WEB_ENDPOINT || '/grpc';
+import { GRPC_WEB_ENDPOINT } from '@/config/baseUrl';
 
 const transport = createConnectTransport({
-  baseUrl: CONNECT_ENDPOINT,
+  baseUrl: GRPC_WEB_ENDPOINT,
   useBinaryFormat: false
 });
 
