@@ -12,6 +12,7 @@ const {
   ListTemplatesRequest,
   GetTemplateRequest,
   ListRecentTemplatesRequest,
+  UpdateTemplateSettingsRequest,
   CreateTemplateContainer
 } = messages;
 
@@ -80,4 +81,17 @@ export const listRecentTemplates = async (params = {}) => {
     templates: (resp.templates || []).map(mapTemplate),
     total: resp.total ?? 0
   });
+};
+
+export const updateTemplateSettings = async (data = {}) => {
+  const req = new UpdateTemplateSettingsRequest({
+    templateId: Number(data.template_id) || 0,
+    name: data.name ?? undefined,
+    description: data.description ?? undefined,
+    isPublic: typeof data.is_public === 'boolean' ? data.is_public : undefined
+  });
+
+  const resp = await unaryCall(documentClient, 'updateTemplateSettings', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
 };

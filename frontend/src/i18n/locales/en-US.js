@@ -448,6 +448,8 @@ export default {
     unknown: 'Unknown',
     refresh: 'Refresh',
     open: 'Open',
+    preview: 'Preview',
+    settings: 'Settings',
     loadMore: 'Load More',
     loading: 'Loading...',
     rename: 'Rename',

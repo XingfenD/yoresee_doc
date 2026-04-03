@@ -446,6 +446,8 @@ export default {
     unknown: '未知',
     refresh: '刷新',
     open: '打开',
+    preview: '预览',
+    settings: '设置',
     loadMore: '加载更多',
     loading: '加载中...',
     rename: '重命名',
