@@ -1,7 +1,7 @@
 <template>
   <el-dropdown
     :trigger="trigger"
-    :placement="placement"
+    :placement="resolvedPlacement"
     :disabled="disabled"
     :hide-on-click="hideOnClick"
     :teleported="teleported"
@@ -26,7 +26,7 @@ const props = defineProps({
   },
   placement: {
     type: String,
-    default: ''
+    default: undefined
   },
   disabled: {
     type: Boolean,
@@ -47,6 +47,29 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['command', 'visible-change']);
+
+const validPlacements = new Set([
+  'top',
+  'top-start',
+  'top-end',
+  'bottom',
+  'bottom-start',
+  'bottom-end',
+  'left',
+  'left-start',
+  'left-end',
+  'right',
+  'right-start',
+  'right-end'
+]);
+
+const resolvedPlacement = computed(() => {
+  const placement = (props.placement || '').trim();
+  if (!placement) {
+    return undefined;
+  }
+  return validPlacements.has(placement) ? placement : undefined;
+});
 
 const resolvedPopperClass = computed(() =>
   ['app-dropdown-popper', props.popperClass].filter(Boolean).join(' ')
