@@ -25,6 +25,10 @@ import { useI18n } from 'vue-i18n';
 import { House, Collection, Document, Tickets, Search, DArrowRight, DArrowLeft } from '@element-plus/icons-vue';
 import { querySideBarDisplay } from '@/services/auth';
 import { useApiAction } from '@/composables/useApiAction';
+import {
+  getSideBarDisplayTabsCache,
+  setSideBarDisplayTabsCache
+} from '@/composables/useSideBarDisplayCache';
 
 const router = useRouter();
 const { t } = useI18n();
@@ -69,11 +73,12 @@ const currentActiveMenu = computed(() => props.activeMenu);
 const resolvedMenuItems = computed(() => (
   Array.isArray(props.menuItems) && props.menuItems.length ? props.menuItems : defaultMenuItems
 ));
-const displayTabs = ref(null);
 const filterLoading = ref(false);
+const sceneKey = computed(() => (props.scene || '').trim());
+const displayTabs = ref(getSideBarDisplayTabsCache(sceneKey.value) || []);
 
 const filteredMenuItems = computed(() => {
-  if (displayTabs.value === null) {
+  if (!sceneKey.value) {
     return resolvedMenuItems.value;
   }
   const tabsSet = new Set(displayTabs.value);
@@ -81,11 +86,19 @@ const filteredMenuItems = computed(() => {
 });
 
 const loadDisplayTabs = async () => {
-  const scene = (props.scene || '').trim();
+  const scene = sceneKey.value;
   if (!scene) {
-    displayTabs.value = null;
+    displayTabs.value = [];
     return;
   }
+
+  const cachedTabs = getSideBarDisplayTabsCache(scene);
+  if (Array.isArray(cachedTabs)) {
+    displayTabs.value = cachedTabs;
+    return;
+  }
+
+  displayTabs.value = [];
   await runWithLoading(
     filterLoading,
     () =>
@@ -94,7 +107,9 @@ const loadDisplayTabs = async () => {
         {
           context: 'loadSideBarDisplay',
           onSuccess: (resp) => {
-            displayTabs.value = resp.display_tabs || [];
+            const tabs = resp.display_tabs || [];
+            setSideBarDisplayTabsCache(scene, tabs);
+            displayTabs.value = tabs;
           },
           onError: () => {
             // fail closed so privileged menu is not exposed by client fallback.
@@ -116,7 +131,7 @@ const getMenuLabel = (item) => {
 };
 
 watch(
-  () => [props.scene, resolvedMenuItems.value.length],
+  () => sceneKey.value,
   () => {
     loadDisplayTabs();
   },
@@ -152,7 +167,7 @@ const handleMenuSelect = (key) => {
   background-color: var(--bg-white);
   border-right: 1px solid var(--border-color);
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: width 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
   position: relative;
 }
 
@@ -170,7 +185,7 @@ const handleMenuSelect = (key) => {
   margin: 0;
   border-radius: 0;
   color: var(--text-medium);
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);

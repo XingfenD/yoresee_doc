@@ -62,7 +62,7 @@ import TitleBar from '@/components/TitleBar.vue';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { useUserStore } from '@/store/user';
 import { listDocumentAttachments } from '@/services/api';
-import { resolveAttachmentUrl } from '@/utils/attachmentUrl';
+import { resolveFileUrl } from '@/utils/fileUrl';
 
 const route = useRoute();
 const router = useRouter();
@@ -148,7 +148,7 @@ const loadAttachment = async () => {
   try {
     const response = await listDocumentAttachments(docId.value);
     const current = (response.attachments || []).find((item) => item?.external_id === attachmentId.value);
-    const targetUrl = resolveAttachmentUrl(current?.url);
+    const targetUrl = resolveFileUrl(current?.url);
 
     if (!targetUrl) {
       errorText.value = t('document.attachments.urlMissing');

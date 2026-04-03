@@ -5,6 +5,7 @@ const { authClient, systemClient } = clients;
 const {
   AuthLoginRequest,
   AuthRegisterRequest,
+  UpdateProfileRequest,
   QuerySideBarDisplayRequest,
   QueryTopNavDisplayRequest,
   SystemInfoRequest
@@ -35,6 +36,30 @@ export const register = async (username, password, email, invitationCode) => {
   const resp = await unaryCall(authClient, 'register', req);
   const base = baseToObject(resp);
   return handleResponse(base, {});
+};
+
+// 更新个人资料
+export const updateProfile = async (params = {}) => {
+  const avatarFile = params.avatar_file instanceof Uint8Array && params.avatar_file.length > 0
+    ? params.avatar_file
+    : undefined;
+
+  const req = new UpdateProfileRequest({
+    username: params.username ?? undefined,
+    email: params.email ?? undefined,
+    nickname: params.nickname ?? undefined,
+    password: params.password ?? undefined,
+    avatarFile,
+    avatarFilename: params.avatar_filename ?? undefined,
+    avatarContentType: params.avatar_content_type ?? undefined
+  });
+
+  const resp = await unaryCall(authClient, 'updateProfile', req);
+  const base = baseToObject(resp);
+  const data = {
+    user: mapUser(resp.user)
+  };
+  return handleResponse(base, data);
 };
 
 // 获取系统信息

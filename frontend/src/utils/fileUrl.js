@@ -16,7 +16,7 @@ function isInternalMinioHost(hostname, currentHostname) {
   return false;
 }
 
-export function resolveAttachmentUrl(rawUrl) {
+export function resolveFileUrl(rawUrl) {
   if (!rawUrl) return '';
 
   try {

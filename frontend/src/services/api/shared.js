@@ -1,4 +1,5 @@
 import { clients, messages, unaryCall } from '../grpc_client';
+import { resolveFileUrl } from '@/utils/fileUrl';
 
 const {
   documentClient,
@@ -105,7 +106,7 @@ export function mapUser(user) {
     username: user.username,
     email: user.email,
     nickname: user.nickname,
-    avatar: user.avatar,
+    avatar: resolveFileUrl(user.avatar),
     status: user.status,
     created_at: user.createdAt,
     updated_at: user.updatedAt,
@@ -190,7 +191,7 @@ export function mapComment(item) {
     anchor_id: item.anchorId || '',
     creator_user_external_id: item.creatorUserExternalId,
     creator_name: item.creatorName,
-    creator_avatar: item.creatorAvatar,
+    creator_avatar: resolveFileUrl(item.creatorAvatar),
     created_at: item.createdAt
   };
 }
@@ -204,7 +205,7 @@ export function mapAttachment(item) {
     size: item.size,
     mime_type: item.mimeType,
     path: item.path,
-    url: item.url,
+    url: resolveFileUrl(item.url),
     created_at: item.createdAt,
     updated_at: item.updatedAt
   };

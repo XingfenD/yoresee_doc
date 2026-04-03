@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { login, register, getSystemInfo } from '../services/auth';
+import { login, register, getSystemInfo, updateProfile as updateProfileApi } from '../services/auth';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -68,6 +68,22 @@ export const useUserStore = defineStore('user', {
       } catch (error) {
         console.error('获取系统信息失败:', error);
         return { system_name: 'Yoresee', system_register_mode: 'invite' };
+      }
+    },
+
+    async updateProfile(data = {}) {
+      this.loading = true;
+      this.error = '';
+      try {
+        const response = await updateProfileApi(data);
+        this.userInfo = response.user;
+        localStorage.setItem('userInfo', JSON.stringify(response.user));
+        return response.user;
+      } catch (error) {
+        this.error = 'request_failed';
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
     

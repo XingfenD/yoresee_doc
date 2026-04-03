@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue';
+import { resolveFileUrl } from '@/utils/fileUrl';
 
 const DEFAULT_AVATAR = 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png';
 
@@ -7,7 +8,7 @@ export function useAppShellBase({ locale, router, userStore, defaultActiveMenu, 
   const activeMenu = ref(defaultActiveMenu);
   const isDarkMode = computed(() => userStore.darkMode);
   const userInfo = computed(() => userStore.userInfo);
-  const userAvatar = computed(() => userInfo.value?.avatar || DEFAULT_AVATAR);
+  const userAvatar = computed(() => resolveFileUrl(userInfo.value?.avatar) || DEFAULT_AVATAR);
 
   const currentLanguage = computed({
     get: () => locale.value,

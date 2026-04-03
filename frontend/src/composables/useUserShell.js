@@ -5,10 +5,10 @@ export function useUserShell({ locale, router, userStore, defaultActiveMenu = 'u
   const userMenuItems = [
     { key: 'home', labelKey: 'navigation.home', icon: House, route: '/' },
     { key: 'search', labelKey: 'navigation.search', icon: Search, route: '/search' },
-    { key: 'user-center', labelKey: 'user.menu.center', icon: User, route: '/user_info/example' },
+    { key: 'user-center', labelKey: 'user.menu.center', icon: User, route: '/user_info/profile' },
     { key: 'user-notifications', labelKey: 'user.menu.notifications', icon: Bell, route: '/user_info/notifications' },
     { key: 'user-invite', labelKey: 'user.menu.invite', icon: Ticket, route: '/user_info/invitations' },
-    { key: 'user-security', labelKey: 'user.menu.security', icon: Setting, route: '/user_info/example' }
+    { key: 'user-security', labelKey: 'user.menu.security', icon: Setting, route: '/user_info/setting' }
   ];
 
   const shell = useAppShellBase({

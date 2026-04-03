@@ -89,6 +89,10 @@ import { queryTopNavDisplay } from '@/services/auth';
 import { listNotifications } from '@/services/api';
 import { useApiAction } from '@/composables/useApiAction';
 import AppDropdown from '@/components/AppDropdown.vue';
+import {
+  getTopNavDisplayMenusCache,
+  setTopNavDisplayMenusCache
+} from '@/composables/useTopNavDisplayCache';
 
 const props = defineProps({
   systemName: {
@@ -124,7 +128,7 @@ const hasUnread = ref(false);
 const searchKeyword = ref('');
 
 const goToUserCenter = () => {
-  router.push('/user_info/example');
+  router.push('/user_info/profile');
 };
 
 const handleSystemManage = () => {
@@ -143,15 +147,26 @@ const submitSearch = () => {
   });
 };
 
+const applyTopNavDisplay = (menus = []) => {
+  showUserCenter.value = menus.includes('user-center');
+  showSystemManage.value = menus.includes('system-manage');
+};
+
 const loadTopNavDisplay = async () => {
+  const cachedMenus = getTopNavDisplayMenusCache();
+  if (Array.isArray(cachedMenus)) {
+    applyTopNavDisplay(cachedMenus);
+    return;
+  }
+
   await runSilent(
     () => queryTopNavDisplay(),
     {
       context: 'loadTopNavDisplay',
       onSuccess: (resp) => {
         const menus = resp.display_menus || [];
-        showUserCenter.value = menus.includes('user-center');
-        showSystemManage.value = menus.includes('system-manage');
+        setTopNavDisplayMenusCache(menus);
+        applyTopNavDisplay(menus);
       },
       onError: () => {
         showUserCenter.value = false;

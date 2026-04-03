@@ -5,6 +5,7 @@ import {
   deleteDocumentComment,
   updateDocumentComment
 } from '@/services/api';
+import { resolveFileUrl } from '@/utils/fileUrl';
 
 export function useInlineCommentCrud({
   t,
@@ -28,7 +29,7 @@ export function useInlineCommentCrud({
       created_at: '',
       creator_name: userDisplayName.value,
       creator_user_external_id: userInfo?.external_id || '',
-      creator_avatar: userInfo?.avatar || '',
+      creator_avatar: resolveFileUrl(userInfo?.avatar || ''),
       anchor_id: `${anchorId || parent?.anchor_id || ''}`.trim(),
       editing: true,
       draft: '',
