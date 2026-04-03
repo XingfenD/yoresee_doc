@@ -5,6 +5,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -75,19 +76,24 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 					return status.GenErrWithCustomMsg(status.StatusWriteDBError, "create document version failed")
 				}
 
-				// update kb relation
-				if req.KnowledgeBaseExternalID != nil && !req.MoveAsOwn {
-					kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeBaseExternalID).Exec()
-					if err != nil {
-						return status.StatusKnowledgeBaseNotFound
+				// update container relation
+				if req.MoveToContainer != nil {
+					switch *req.MoveToContainer {
+					case dto.ContainerType_KnowledgeBase:
+						kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeBaseExternalID).Exec()
+						if err != nil {
+							return status.StatusKnowledgeBaseNotFound
+						}
+						docModel.KnowledgeID = &kbID
+						docModel.ContainerType = doc_container_mapper.ToModelType(*req.MoveToContainer)
+						op = op.UpdateKnowledgeID().UpdateContainerType()
+					case dto.ContainerType_Own:
+						docModel.KnowledgeID = nil
+						docModel.ContainerType = doc_container_mapper.ToModelType(*req.MoveToContainer)
+						op = op.UpdateKnowledgeID().UpdateContainerType()
+					default:
+						return status.GenErrWithCustomMsg(status.StatusParamError, "invalid move_to_container")
 					}
-					docModel.KnowledgeID = &kbID
-					op = op.UpdateKnowledgeID()
-				}
-
-				if req.MoveAsOwn {
-					docModel.KnowledgeID = nil
-					op = op.UpdateKnowledgeID()
 				}
 
 				if err := op.Exec(); err != nil {

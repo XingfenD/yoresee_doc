@@ -10,6 +10,11 @@ type DocumentType string
 
 const DocumentType_Markdown DocumentType = "markdown"
 
+type ContainerType string
+
+const ContainerType_Own ContainerType = "own"
+const ContainerType_KnowledgeBase ContainerType = "knowledge_base"
+
 type DocumentBase struct {
 	ExternalID string       `json:"external_id"`
 	Title      string       `json:"title"`
@@ -128,14 +133,12 @@ type ListDocumentsByExternalReq struct {
 }
 
 type CreateDocumentReq struct {
-	Title             string       `json:"title"`
-	Type              DocumentType `json:"type"`
-	IsPublic          bool         `json:"is_public"`
-	CreatorExternalID *string      `json:"creator_external_id"`
-	TemplateID        *int64       `json:"template_id"`
-
-	// own doc or in knowledge_base
-	CreateAsOwnDoc bool `json:"create_as_own_doc"`
+	Title             string        `json:"title"`
+	Type              DocumentType  `json:"type"`
+	ContainerType     ContainerType `json:"container_type"`
+	IsPublic          bool          `json:"is_public"`
+	CreatorExternalID *string       `json:"creator_external_id"`
+	TemplateID        *int64        `json:"template_id"`
 
 	// optional
 	ParentExternalID    *string `json:"parent_external_id"`
@@ -147,12 +150,12 @@ type CreateDocumentResponse struct {
 }
 
 type UpdateDocumentRequest struct {
-	ExternalID              string  `json:"external_id"`
-	Title                   *string `json:"title,omitempty"`
-	KnowledgeBaseExternalID *string `json:"knowledge_base_external_id,omitempty"`
-	ParentExternalID        *string `json:"parent_external_id,omitempty"`
-	MoveAsOwn               bool    `json:"move_as_own"`
-	Content                 *string `json:"content,omitempty"`
+	ExternalID              string         `json:"external_id"`
+	Title                   *string        `json:"title,omitempty"`
+	KnowledgeBaseExternalID *string        `json:"knowledge_base_external_id,omitempty"`
+	ParentExternalID        *string        `json:"parent_external_id,omitempty"`
+	MoveToContainer         *ContainerType `json:"move_to_container,omitempty"`
+	Content                 *string        `json:"content,omitempty"`
 }
 
 type UpdateDocumentMetaRequest struct {

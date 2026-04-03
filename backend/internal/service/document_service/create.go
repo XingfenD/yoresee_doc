@@ -6,6 +6,8 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_container_mapper"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -23,14 +25,15 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 	docExternalID := utils.GenerateExternalID(utils.ExternalIDContextDocument)
 	err := utils.WithTransaction(func(tx *gorm.DB) error {
 		docModel := &model.Document{
-			ExternalID: docExternalID,
-			Title:      req.Title,
-			Type:       model.DocumentType(req.Type),
-			Summary:    "",
-			IsPublic:   req.IsPublic,
-			Content:    "",
-			Path:       "0",
-			Depth:      0,
+			ExternalID:    docExternalID,
+			Title:         req.Title,
+			Type:          doc_type_mapper.ToModelType(req.Type),
+			ContainerType: doc_container_mapper.ToModelType(req.ContainerType),
+			Summary:       "",
+			IsPublic:      req.IsPublic,
+			Content:       "",
+			Path:          "0",
+			Depth:         0,
 		}
 
 		// query user_id
@@ -42,15 +45,12 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 		docModel.UserID = userID
 
 		// query knowledge_id
-		if !req.CreateAsOwnDoc {
+		if req.ContainerType == dto.ContainerType_KnowledgeBase {
 			kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeExternalID).WithTx(tx).Exec()
 			if err != nil {
 				return status.StatusKnowledgeBaseNotFound
 			}
 			docModel.KnowledgeID = &kbID
-			docModel.ContainerType = model.ContainerType_KnowledgeBase
-		} else {
-			docModel.ContainerType = model.ContainerType_Own
 		}
 
 		// TODO: permission check for knowledgebase

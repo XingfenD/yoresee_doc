@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	doc_container_mapper "github.com/XingfenD/yoresee_doc/internal/mapper/doc_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -279,14 +280,13 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 		dtoReq.TemplateID = req.TemplateId
 	}
 
-	switch req.ContainerType {
-	case pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE:
-		dtoReq.CreateAsOwnDoc = false
-		dtoReq.KnowledgeExternalID = req.KnowledgeBaseExternalId
-	case pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN:
-		dtoReq.CreateAsOwnDoc = true
-	default:
+	containerType, ok := doc_container_mapper.FromProtoType(req.ContainerType)
+	if !ok {
 		return &pb.CreateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	dtoReq.ContainerType = containerType
+	if containerType == dto.ContainerType_KnowledgeBase {
+		dtoReq.KnowledgeExternalID = req.KnowledgeBaseExternalId
 	}
 
 	resp, err := document_service.DocumentSvc.Create(ctx, dtoReq)
@@ -304,17 +304,23 @@ func validateUpdateDocumentRequest(req *pb.UpdateDocumentRequest) error {
 	if req == nil {
 		return status.StatusParamError
 	}
-	if req.Content == nil && req.KnowledgeBaseExternalId == nil && req.ParentExternalId == nil && req.Title == nil {
+	if req.Content == nil && req.KnowledgeBaseExternalId == nil && req.ParentExternalId == nil && req.Title == nil && req.MoveToContainer == nil {
 		return status.GenErrWithCustomMsg(status.StatusParamError, "no update fields")
 	}
-	if req.MoveToContainer == nil || *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN {
-		if req.KnowledgeBaseExternalId != nil {
+	if req.MoveToContainer != nil {
+		if !doc_container_mapper.IsSupportedProtoType(*req.MoveToContainer) {
+			return status.GenErrWithCustomMsg(status.StatusParamError, "invalid move_to_container")
+		}
+		if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN && req.KnowledgeBaseExternalId != nil {
 			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId not nil")
 		}
+		if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE &&
+			req.KnowledgeBaseExternalId == nil {
+			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId is nil")
+		}
 	}
-	if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE &&
-		req.KnowledgeBaseExternalId == nil {
-		return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId is nil")
+	if req.MoveToContainer == nil && req.KnowledgeBaseExternalId != nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "MoveToContainer is nil")
 	}
 	return nil
 }
@@ -335,8 +341,12 @@ func (s *DocumentServiceServer) UpdateDocument(ctx context.Context, req *pb.Upda
 		KnowledgeBaseExternalID: req.KnowledgeBaseExternalId,
 	}
 
-	if req.GetMoveToContainer() == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN {
-		serviceReq.MoveAsOwn = true
+	if req.MoveToContainer != nil {
+		moveToContainer, ok := doc_container_mapper.FromProtoType(*req.MoveToContainer)
+		if !ok {
+			return &pb.UpdateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+		}
+		serviceReq.MoveToContainer = utils.Of(moveToContainer)
 	}
 
 	return &pb.UpdateDocumentResponse{

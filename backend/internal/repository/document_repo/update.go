@@ -46,6 +46,11 @@ func (op *DocumentUpdateOperation) UpdateKnowledgeID() *DocumentUpdateOperation 
 	return op
 }
 
+func (op *DocumentUpdateOperation) UpdateContainerType() *DocumentUpdateOperation {
+	op.updateFields["container_type"] = true
+	return op
+}
+
 func (op *DocumentUpdateOperation) UpdateIsPublic() *DocumentUpdateOperation {
 	op.updateFields["is_public"] = true
 	return op

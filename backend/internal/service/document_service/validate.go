@@ -2,23 +2,26 @@ package document_service
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	doc_container_mapper "github.com/XingfenD/yoresee_doc/internal/mapper/doc_container_mapper"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/status"
-	"github.com/bytedance/gg/gslice"
 )
 
 func validateCreateDocumentReq(req *dto.CreateDocumentReq) error {
 	if req == nil {
 		return status.StatusInternalParamsError
 	}
-	if req.CreateAsOwnDoc && req.KnowledgeExternalID != nil {
-		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID not nil when CreateAsOwnDoc")
+	if !doc_container_mapper.IsSupportedDTOType(req.ContainerType) {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid document container type")
 	}
-	if !req.CreateAsOwnDoc && req.KnowledgeExternalID == nil {
-		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID is nil when not CreateAsOwnDoc")
+	if req.ContainerType == dto.ContainerType_Own && req.KnowledgeExternalID != nil {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID not nil when container_type is own")
+	}
+	if req.ContainerType == dto.ContainerType_KnowledgeBase && req.KnowledgeExternalID == nil {
+		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "KnowledgeExternalID is nil when container_type is knowledge_base")
 	}
 
-	availableTypes := []dto.DocumentType{dto.DocumentType_Markdown}
-	if !gslice.Contains(availableTypes, req.Type) {
+	if !doc_type_mapper.IsSupportedDTOType(req.Type) {
 		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid document type")
 	}
 
@@ -33,12 +36,27 @@ func validateUpdateDocumentReq(req *dto.UpdateDocumentRequest) error {
 		return status.GenErrWithCustomMsg(status.StatusInternalParamsError, "external_id is zero value")
 	}
 
-	if req.Content == nil && req.KnowledgeBaseExternalID == nil && req.ParentExternalID == nil {
+	if req.Content == nil && req.KnowledgeBaseExternalID == nil && req.ParentExternalID == nil && req.Title == nil && req.MoveToContainer == nil {
 		return status.GenErrWithCustomMsg(status.StatusParamError, "no update field")
 	}
 
-	if req.MoveAsOwn && req.ParentExternalID != nil {
-		return status.GenErrWithCustomMsg(status.StatusParamError, "ParentExternalID not nil when moving as own")
+	if req.MoveToContainer != nil {
+		if !doc_container_mapper.IsSupportedDTOType(*req.MoveToContainer) {
+			return status.GenErrWithCustomMsg(status.StatusParamError, "invalid move_to_container")
+		}
+		if *req.MoveToContainer == dto.ContainerType_Own && req.KnowledgeBaseExternalID != nil {
+			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalID not nil when moving to own")
+		}
+		if *req.MoveToContainer == dto.ContainerType_KnowledgeBase && req.KnowledgeBaseExternalID == nil {
+			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalID is nil when moving to knowledge_base")
+		}
+	}
+	if req.MoveToContainer == nil && req.KnowledgeBaseExternalID != nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "MoveToContainer is nil when KnowledgeBaseExternalID provided")
+	}
+
+	if req.MoveToContainer != nil && *req.MoveToContainer == dto.ContainerType_Own && req.ParentExternalID != nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "ParentExternalID not nil when moving to own")
 	}
 
 	return nil

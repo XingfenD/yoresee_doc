@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/media"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -15,10 +16,6 @@ func baseResponseFromErr(err error) *pb.BaseResponse {
 		return baseResponseFromStatus(status.StatusSuccess)
 	}
 	return baseResponseFromStatus(err)
-}
-
-func baseResponceFromStatusWithCustomMsg(err error, msg string) *pb.BaseResponse {
-	return baseResponseFromStatus(status.GenErrWithCustomMsg(err, msg))
 }
 
 func baseResponseFromStatus(err error) *pb.BaseResponse {
@@ -40,21 +37,11 @@ func timeToString(t time.Time) string {
 }
 
 func toDocumentType(t dto.DocumentType) pb.DocumentType {
-	switch t {
-	case dto.DocumentType_Markdown:
-		return pb.DocumentType_DOCUMENT_TYPE_MARKDOWN
-	default:
-		return pb.DocumentType_DOCUMENT_TYPE_UNSPECIFIED
-	}
+	return doc_type_mapper.ToProtoType(t)
 }
 
 func fromDocumentType(t pb.DocumentType) dto.DocumentType {
-	switch t {
-	case pb.DocumentType_DOCUMENT_TYPE_MARKDOWN:
-		return dto.DocumentType_Markdown
-	default:
-		return dto.DocumentType_Markdown
-	}
+	return doc_type_mapper.FromProtoType(t)
 }
 
 func fromCreateTemplateContainer(t pb.CreateTemplateContainer) dto.TemplateContainer {
