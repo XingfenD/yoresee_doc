@@ -6,6 +6,7 @@ import {
   handleResponse,
   mapDocument,
   mapAttachment,
+  mapDocumentVersion,
   toTimeRange
 } from './shared';
 
@@ -22,6 +23,8 @@ const {
   UploadDocumentAttachmentRequest,
   ListDocumentAttachmentsRequest,
   DeleteDocumentAttachmentRequest,
+  ListDocumentVersionsRequest,
+  GetDocumentVersionContentRequest,
   RecursiveOptions,
   CreateDocumentContainerType,
   DocumentType
@@ -220,4 +223,30 @@ export const deleteDocumentAttachment = async (documentExternalID, attachmentExt
   const resp = await unaryCall(documentClient, 'deleteDocumentAttachment', req);
   const base = baseToObject(resp);
   return handleResponse(base, {});
+};
+
+export const listDocumentVersions = async (params = {}) => {
+  const req = new ListDocumentVersionsRequest({
+    documentExternalId: params.document_external_id || '',
+    page: params.page || undefined,
+    pageSize: params.page_size || undefined
+  });
+  const resp = await unaryCall(documentClient, 'listDocumentVersions', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {
+    versions: (resp.versions || []).map(mapDocumentVersion),
+    total: resp.total ?? 0
+  });
+};
+
+export const getDocumentVersionContent = async (documentExternalID, version) => {
+  const req = new GetDocumentVersionContentRequest({
+    documentExternalId: documentExternalID || '',
+    version: typeof version === 'number' ? version : 0
+  });
+  const resp = await unaryCall(documentClient, 'getDocumentVersionContent', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {
+    version: mapDocumentVersion(resp.version)
+  });
 };

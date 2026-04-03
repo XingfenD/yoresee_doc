@@ -141,6 +141,28 @@ export default {
       saved: 'Document settings saved'
     }
   },
+  history: {
+    title: 'History',
+    versionList: 'Version List',
+    compare: 'Compare Versions',
+    compareDialogTitle: 'Version Comparison',
+    empty: 'No history versions',
+    loadFailed: 'Failed to load history versions',
+    version: 'Version',
+    versionPrefix: 'Version',
+    titleColumn: 'Title',
+    changeSummary: 'Change Summary',
+    createdAt: 'Created At',
+    actions: 'Actions',
+    rollback: 'Rollback',
+    rollbackPending: 'Rollback is not available yet',
+    setLeft: 'Set Left',
+    setRight: 'Set Right',
+    leftVersion: 'Left Version',
+    rightVersion: 'Right Version',
+    selectHint: 'Select versions to compare',
+    vs: 'vs'
+  },
   system: {
     name: 'Yoresee',
     version: 'Version',

@@ -139,6 +139,28 @@ export default {
       saved: '文档设置保存成功'
     }
   },
+  history: {
+    title: '历史记录',
+    versionList: '版本列表',
+    compare: '版本对比',
+    compareDialogTitle: '版本对比',
+    empty: '暂无历史版本',
+    loadFailed: '加载历史版本失败',
+    version: '版本号',
+    versionPrefix: '版本',
+    titleColumn: '标题',
+    changeSummary: '变更说明',
+    createdAt: '创建时间',
+    actions: '操作',
+    rollback: '回滚',
+    rollbackPending: '回滚功能暂未开放',
+    setLeft: '设为左侧',
+    setRight: '设为右侧',
+    leftVersion: '左侧版本',
+    rightVersion: '右侧版本',
+    selectHint: '请选择版本进行对比',
+    vs: '对比'
+  },
   system: {
     name: 'Yoresee',
     version: '版本',

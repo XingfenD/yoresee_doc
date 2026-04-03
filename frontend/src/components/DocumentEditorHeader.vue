@@ -46,6 +46,9 @@
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
+            <el-dropdown-item command="show_history" :disabled="!canManageAttachments">
+              {{ historyLabel }}
+            </el-dropdown-item>
             <el-dropdown-item command="manage_attachments" :disabled="!canManageAttachments">
               {{ attachmentsLabel }}
             </el-dropdown-item>
@@ -76,6 +79,7 @@ const props = defineProps({
   collapseTitle: { type: String, default: '' },
   expandTitle: { type: String, default: '' },
   commentsTitle: { type: String, default: '' },
+  historyLabel: { type: String, default: '' },
   saveAsLabel: { type: String, default: '' },
   attachmentsLabel: { type: String, default: '' },
   settingsLabel: { type: String, default: '' },

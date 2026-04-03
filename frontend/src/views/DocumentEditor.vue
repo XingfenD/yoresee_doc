@@ -46,6 +46,7 @@
           :collapse-title="t('common.collapse')"
           :expand-title="t('common.expand')"
           :comments-title="t('document.comments')"
+          :history-label="t('document.history')"
           :save-as-label="t('templates.saveAs')"
           :attachments-label="t('document.attachments.title')"
           :settings-label="t('document.settings.title')"
@@ -293,6 +294,14 @@ const onHeaderCommand = (command) => {
       return;
     }
     router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/attachments`);
+    return;
+  }
+  if (command === 'show_history') {
+    if (kbId.value === 'personal') {
+      router.push(`/mydocument/${docId.value}/history`);
+      return;
+    }
+    router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/history`);
   }
 };
 const {

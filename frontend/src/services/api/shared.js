@@ -210,3 +210,14 @@ export function mapAttachment(item) {
     updated_at: item.updatedAt
   };
 }
+
+export function mapDocumentVersion(item) {
+  if (!item) return null;
+  return {
+    version: item.version ?? 0,
+    title: item.title || '',
+    content: item.content || '',
+    change_summary: item.changeSummary || '',
+    created_at: item.createdAt || ''
+  };
+}

@@ -45,6 +45,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/mydocument/:docId/history',
+      name: 'MyDocumentHistory',
+      component: () => import('../views/DocumentHistory.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/mydocument/:docId/setting',
       name: 'MyDocumentSettings',
       component: () => import('../views/DocumentSettings.vue'),
@@ -98,6 +104,12 @@ const router = createRouter({
       path: '/knowledge-base/:kbId/document/:docId/attachments',
       name: 'KnowledgeBaseDocumentAttachments',
       component: () => import('../views/DocumentAttachments.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/knowledge-base/:kbId/document/:docId/history',
+      name: 'KnowledgeBaseDocumentHistory',
+      component: () => import('../views/DocumentHistory.vue'),
       meta: { requiresAuth: true }
     },
     {
