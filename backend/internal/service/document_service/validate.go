@@ -79,3 +79,19 @@ func validateCreateTemplateReq(req *dto.CreateTemplateRequest) error {
 		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid template container")
 	}
 }
+
+func validateUpdateTemplateSettingsReq(req *dto.UpdateTemplateSettingsRequest) error {
+	if req == nil {
+		return status.StatusInternalParamsError
+	}
+	if req.UserExternalID == "" {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "user external id is empty")
+	}
+	if req.TemplateID <= 0 {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "template id is invalid")
+	}
+	if req.Name == nil && req.Description == nil && req.IsPublic == nil {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "no update field")
+	}
+	return nil
+}

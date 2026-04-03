@@ -888,6 +888,17 @@ message GetTemplateResponse {
   TemplateResponse template = 2;
 }
 
+message UpdateTemplateSettingsRequest {
+  int64 template_id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional bool is_public = 4;
+}
+
+message UpdateTemplateSettingsResponse {
+  BaseResponse base = 1;
+}
+
 message ListRecentTemplatesRequest {
   optional string start_time = 1;
   optional string end_time = 2;
@@ -955,6 +966,8 @@ service DocumentService {
   rpc ListRecentTemplates(ListRecentTemplatesRequest) returns (ListRecentTemplatesResponse);
   // get template by id.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
+  // update template settings.
+  rpc UpdateTemplateSettings(UpdateTemplateSettingsRequest) returns (UpdateTemplateSettingsResponse);
 }
 
 // commentService provides document comment APIs.

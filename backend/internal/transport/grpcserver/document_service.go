@@ -627,3 +627,29 @@ func (s *DocumentServiceServer) ListTemplates(ctx context.Context, req *pb.ListT
 		Total:     total,
 	}, nil
 }
+
+func (s *DocumentServiceServer) UpdateTemplateSettings(ctx context.Context, req *pb.UpdateTemplateSettingsRequest) (*pb.UpdateTemplateSettingsResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.UpdateTemplateSettingsResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+	}
+	if req == nil || req.TemplateId <= 0 {
+		return &pb.UpdateTemplateSettingsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	serviceReq := &dto.UpdateTemplateSettingsRequest{
+		UserExternalID: userExternalID,
+		TemplateID:     req.TemplateId,
+		Name:           req.Name,
+		Description:    req.Description,
+		IsPublic:       req.IsPublic,
+	}
+
+	if err := document_service.DocumentSvc.UpdateTemplateSettings(ctx, serviceReq); err != nil {
+		return &pb.UpdateTemplateSettingsResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.UpdateTemplateSettingsResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}

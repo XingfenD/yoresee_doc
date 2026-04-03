@@ -731,4 +731,16 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		},
 		opts...,
 	))
+
+	mux.Handle(pb.DocumentService_UpdateTemplateSettings_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_UpdateTemplateSettings_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.UpdateTemplateSettingsRequest]) (*connect.Response[pb.UpdateTemplateSettingsResponse], error) {
+			resp, err := docSvc.UpdateTemplateSettings(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
 }

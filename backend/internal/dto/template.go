@@ -17,6 +17,14 @@ type CreateTemplateRequest struct {
 	TemplateContent         string
 }
 
+type UpdateTemplateSettingsRequest struct {
+	UserExternalID string
+	TemplateID     int64
+	Name           *string
+	Description    *string
+	IsPublic       *bool
+}
+
 type TemplateResponse struct {
 	ID                      int64     `json:"id"`
 	Name                    string    `json:"name"`
