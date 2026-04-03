@@ -3,6 +3,7 @@
     v-model="visible"
     :title="title"
     width="840px"
+    append-to-body
     @closed="emit('closed')"
   >
     <div class="template-preview-dialog-body">

@@ -275,6 +275,7 @@ watch(activeScope, (scope) => {
   border-radius: 12px;
   overflow: hidden;
   height: 460px;
+  width: 100%;
   background: var(--bg-white);
 }
 

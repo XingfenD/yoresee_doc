@@ -292,6 +292,10 @@ watch(
   margin-bottom: 0;
 }
 
+.template-picker-field :deep(.el-form-item__content) {
+  width: 100%;
+}
+
 .location-segment {
   display: flex;
   width: 100%;
