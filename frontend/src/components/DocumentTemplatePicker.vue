@@ -44,7 +44,7 @@
 
 <script setup>
 import { Search } from '@element-plus/icons-vue';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import TemplatePickerPane from '@/components/TemplatePickerPane.vue';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
@@ -53,6 +53,10 @@ const props = defineProps({
   visible: {
     type: Boolean,
     default: false
+  },
+  preferredScope: {
+    type: String,
+    default: ''
   },
   selectedTemplateId: {
     type: String,
@@ -70,6 +74,19 @@ const { t } = useI18n();
 const activeScope = ref('recent');
 const keyword = ref('');
 const showKnowledgeBaseTemplates = computed(() => Boolean(props.knowledgeBaseId));
+
+const normalizeScopeToTab = (scope) => {
+  if (scope === 'system') {
+    return 'public';
+  }
+  if (scope === 'private') {
+    return 'my';
+  }
+  if (scope === 'knowledge_base') {
+    return 'knowledge_base';
+  }
+  return 'recent';
+};
 
 const {
   recentTemplates,
@@ -173,6 +190,14 @@ const filteredTemplates = computed(() => {
 
 const selectedTemplateIdForPane = computed(() => props.selectedTemplateId || '__blank__');
 
+const initialScope = computed(() => {
+  const mapped = normalizeScopeToTab(props.preferredScope);
+  if (mapped === 'knowledge_base' && !showKnowledgeBaseTemplates.value) {
+    return 'recent';
+  }
+  return mapped;
+});
+
 const fetchTemplates = async (scope) => {
   if (!props.visible) {
     return;
@@ -185,13 +210,36 @@ const fetchTemplates = async (scope) => {
 
 watch(
   () => props.visible,
-  (nextVisible) => {
+  async (nextVisible) => {
     if (!nextVisible) {
       return;
     }
-    activeScope.value = 'recent';
+    // Wait one tick so parent dialog can finish resetForm and propagate preferredScope/template id.
+    await nextTick();
+    activeScope.value = initialScope.value;
     keyword.value = '';
-    fetchTemplates('recent');
+    fetchTemplates(activeScope.value);
+  }
+);
+
+watch(
+  () => [props.visible, props.preferredScope, props.selectedTemplateId],
+  ([visible]) => {
+    if (!visible) {
+      return;
+    }
+    if (!props.selectedTemplateId) {
+      return;
+    }
+    const preferred = initialScope.value;
+    if (preferred === 'recent') {
+      return;
+    }
+    // If scope arrives late, auto-correct only when user still stays on default tab.
+    if (activeScope.value === 'recent') {
+      activeScope.value = preferred;
+      fetchTemplates(preferred);
+    }
   }
 );
 

@@ -51,6 +51,13 @@
   <DocumentCreateDialog
     v-model="showCreateDialog"
     :loading="creatingLoading"
+    :show-template-picker="false"
+    :show-title-input="true"
+    :show-public-switch="true"
+    :show-location-selector="true"
+    :initial-title="t('document.untitledDefaultTitle')"
+    :initial-container-type="template?.knowledge_base_external_id ? 'knowledge_base' : 'own'"
+    :initial-target-knowledge-base-id="template?.knowledge_base_external_id || ''"
     :initial-template-id="template?.id"
     :initial-template-meta="template || null"
     :knowledge-base-id="template?.knowledge_base_external_id || ''"

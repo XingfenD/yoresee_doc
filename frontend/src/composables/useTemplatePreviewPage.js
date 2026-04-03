@@ -1,4 +1,5 @@
 import { computed, nextTick, ref, watch } from 'vue';
+import { ElMessage } from 'element-plus';
 import Vditor from 'vditor';
 import { createDocument as createDocumentApi, getTemplate } from '@/services/api';
 import { useApiAction } from '@/composables/useApiAction';
@@ -96,19 +97,25 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
 
   const createDocument = async (payload) => {
     const title = payload?.title?.trim() || t('document.untitledDefaultTitle');
+    const containerType = payload?.container_type === 'knowledge_base' ? 'knowledge_base' : 'own';
+    const selectedKBExternalID =
+      payload?.knowledge_base_external_id || template.value?.knowledge_base_external_id || '';
+    if (containerType === 'knowledge_base' && !selectedKBExternalID) {
+      ElMessage.error(t('knowledgeBase.selectKnowledgeBase'));
+      return;
+    }
+
     await runWithLoading(
       creatingLoading,
       async () => {
-        const kbExternalId = template.value?.knowledge_base_external_id || '';
-        const isKnowledgeBase = template.value?.scope === 'knowledge_base' && !!kbExternalId;
         const requestBody = {
           title,
           type: payload.type || 'markdown',
-          container_type: isKnowledgeBase ? 'knowledge_base' : 'own',
-          is_public: false
+          container_type: containerType,
+          is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
         };
-        if (isKnowledgeBase) {
-          requestBody.knowledge_base_external_id = kbExternalId;
+        if (containerType === 'knowledge_base') {
+          requestBody.knowledge_base_external_id = selectedKBExternalID;
         }
         if (payload?.parent_external_id) {
           requestBody.parent_external_id = payload.parent_external_id;
@@ -117,16 +124,16 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
           requestBody.template_id = payload.template;
         }
         const response = await createDocumentApi(requestBody);
-        return { response, isKnowledgeBase, kbExternalId };
+        return { response, containerType, selectedKBExternalID };
       },
       {
         context: 'createDocumentFromTemplate',
         errorMessage: t('knowledgeBase.createDocumentError'),
-        onSuccess: ({ response, isKnowledgeBase, kbExternalId }) => {
+        onSuccess: ({ response, containerType, selectedKBExternalID }) => {
           showCreateDialog.value = false;
           if (response?.external_id) {
-            if (isKnowledgeBase) {
-              router.push(`/knowledge-base/${kbExternalId}/document/${response.external_id}`);
+            if (containerType === 'knowledge_base') {
+              router.push(`/knowledge-base/${selectedKBExternalID}/document/${response.external_id}`);
             } else {
               router.push(`/mydocument/${response.external_id}`);
             }
