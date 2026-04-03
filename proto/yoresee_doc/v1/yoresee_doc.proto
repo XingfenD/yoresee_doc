@@ -794,6 +794,36 @@ message DeleteDocumentAttachmentResponse {
   BaseResponse base = 1;
 }
 
+message DocumentVersionResponse {
+  int32 version = 1;
+  string title = 2;
+  string content = 3;
+  string change_summary = 4;
+  string created_at = 5;
+}
+
+message ListDocumentVersionsRequest {
+  string document_external_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListDocumentVersionsResponse {
+  BaseResponse base = 1;
+  repeated DocumentVersionResponse versions = 2;
+  int64 total = 3;
+}
+
+message GetDocumentVersionContentRequest {
+  string document_external_id = 1;
+  int32 version = 2;
+}
+
+message GetDocumentVersionContentResponse {
+  BaseResponse base = 1;
+  DocumentVersionResponse version = 2;
+}
+
 message GetDocumentYjsSnapshotRequest {
   string document_external_id = 1;
 }
@@ -958,6 +988,10 @@ service DocumentService {
   rpc ListDocumentAttachments(ListDocumentAttachmentsRequest) returns (ListDocumentAttachmentsResponse);
   // delete an attachment from document.
   rpc DeleteDocumentAttachment(DeleteDocumentAttachmentRequest) returns (DeleteDocumentAttachmentResponse);
+  // list document history versions.
+  rpc ListDocumentVersions(ListDocumentVersionsRequest) returns (ListDocumentVersionsResponse);
+  // get document history version content.
+  rpc GetDocumentVersionContent(GetDocumentVersionContentRequest) returns (GetDocumentVersionContentResponse);
   // save document as template
   rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
   // list templates with filters and pagination.

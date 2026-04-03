@@ -167,6 +167,19 @@ func toAttachmentResponse(attachment *dto.AttachmentResponse) *pb.AttachmentResp
 	}
 }
 
+func toDocumentVersionResponse(item *dto.DocumentVersionResponse) *pb.DocumentVersionResponse {
+	if item == nil {
+		return nil
+	}
+	return &pb.DocumentVersionResponse{
+		Version:       int32(item.Version),
+		Title:         item.Title,
+		Content:       item.Content,
+		ChangeSummary: item.ChangeSummary,
+		CreatedAt:     timeToString(item.CreatedAt),
+	}
+}
+
 func toUserGroupResponse(group *dto.UserGroupResponse) *pb.UserGroupResponse {
 	if group == nil {
 		return nil

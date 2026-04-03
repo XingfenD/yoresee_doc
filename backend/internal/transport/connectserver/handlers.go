@@ -239,6 +239,28 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		},
 		opts...,
 	))
+	mux.Handle(pb.DocumentService_ListDocumentVersions_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_ListDocumentVersions_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.ListDocumentVersionsRequest]) (*connect.Response[pb.ListDocumentVersionsResponse], error) {
+			resp, err := docSvc.ListDocumentVersions(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
+	mux.Handle(pb.DocumentService_GetDocumentVersionContent_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_GetDocumentVersionContent_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.GetDocumentVersionContentRequest]) (*connect.Response[pb.GetDocumentVersionContentResponse], error) {
+			resp, err := docSvc.GetDocumentVersionContent(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
 
 	mux.Handle(pb.KnowledgeBaseService_ListKnowledgeBases_FullMethodName, connect.NewUnaryHandler(
 		pb.KnowledgeBaseService_ListKnowledgeBases_FullMethodName,

@@ -468,6 +468,49 @@ func (s *DocumentServiceServer) DeleteDocumentAttachment(ctx context.Context, re
 	}, nil
 }
 
+func (s *DocumentServiceServer) ListDocumentVersions(ctx context.Context, req *pb.ListDocumentVersionsRequest) (*pb.ListDocumentVersionsResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.ListDocumentVersionsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.DocumentExternalId == "" {
+		return &pb.ListDocumentVersionsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	items, total, err := document_service.DocumentSvc.ListDocumentVersions(ctx, req.DocumentExternalId, req.Page, req.PageSize)
+	if err != nil {
+		return &pb.ListDocumentVersionsResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	respItems := make([]*pb.DocumentVersionResponse, 0, len(items))
+	for _, item := range items {
+		respItems = append(respItems, toDocumentVersionResponse(item))
+	}
+	return &pb.ListDocumentVersionsResponse{
+		Base:     baseResponseFromErr(nil),
+		Versions: respItems,
+		Total:    total,
+	}, nil
+}
+
+func (s *DocumentServiceServer) GetDocumentVersionContent(ctx context.Context, req *pb.GetDocumentVersionContentRequest) (*pb.GetDocumentVersionContentResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.GetDocumentVersionContentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.DocumentExternalId == "" || req.Version <= 0 {
+		return &pb.GetDocumentVersionContentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	item, err := document_service.DocumentSvc.GetDocumentVersionContent(ctx, req.DocumentExternalId, req.Version)
+	if err != nil {
+		return &pb.GetDocumentVersionContentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+	return &pb.GetDocumentVersionContentResponse{
+		Base:    baseResponseFromErr(nil),
+		Version: toDocumentVersionResponse(item),
+	}, nil
+}
+
 func (s *DocumentServiceServer) CreateTemplate(ctx context.Context, req *pb.CreateTemplateRequest) (*pb.CreateTemplateResponse, error) {
 	userExternalID, ok := ctx.Value("user_external_id").(string)
 	if !ok || userExternalID == "" {
