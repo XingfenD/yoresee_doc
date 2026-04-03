@@ -11,7 +11,6 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
-	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -204,16 +203,14 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 	}
 	logrus.Infof("Snapshot fetched docId=%s bytes=%d", docID, len(state))
 
-	if err := document_service.DocumentSvc.SaveDocumentYjsSnapshot(ctx, docID, state); err != nil {
+	contentChanged, err := document_service.DocumentSvc.SaveDocumentSnapshotAndContent(ctx, docID, state, content)
+	if err != nil {
 		logrus.Errorf("Snapshot save failed docId=%s err=%v", docID, err)
 		return err
 	}
-
-	if err := document_repo.DocumentRepo.UpdateContentByExternalID(docID, content).Exec(ctx); err != nil {
-		logrus.Errorf("Snapshot content update failed docId=%s err=%v", docID, err)
-		return err
+	if contentChanged {
+		publishDocumentSearchSyncUpsertEvent(ctx, docID)
 	}
-	publishDocumentSearchSyncUpsertEvent(ctx, docID)
 
 	if storage.GetRedis() != nil {
 		key := fmt.Sprintf("collab:yjs:doc:updates:%s", docID)

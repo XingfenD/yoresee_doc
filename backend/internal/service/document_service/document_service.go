@@ -25,6 +25,7 @@ func NewDocumentService() *DocumentService {
 		documentRepo:   &document_repo.DocumentRepo,
 		userRepo:       user_repo.UserRepo,
 		kbRepo:         knowledge_base_repo.KnowledgeBaseRepo,
+		docVersionRepo: document_version_repo.DocumentVersionRepo,
 		snapshotRepo:   doc_yjs_snapshot_repo.DocumentYjsSnapshotRepo,
 		templateRepo:   template_repo.TemplateRepo,
 		attachmentRepo: attachment_repo.AttachmentRepo,
