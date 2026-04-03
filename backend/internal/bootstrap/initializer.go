@@ -155,6 +155,9 @@ func (i *Initializer) InitMinio() *Initializer {
 		if err = storage.EnsureBucket(context.Background(), client, cfg.Bucket); err != nil {
 			return err
 		}
+		if err = storage.EnsureBucketPublicRead(context.Background(), client, cfg.Bucket); err != nil {
+			return err
+		}
 		storage.MinioClient = client
 		return nil
 	})

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"path"
 	"strings"
@@ -40,6 +41,22 @@ func EnsureBucket(ctx context.Context, client *minio.Client, bucketName string) 
 		if err = client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
 			return errs.Wrap(errs.ErrMinioCreateBucket, err)
 		}
+	}
+	return nil
+}
+
+func EnsureBucketPublicRead(ctx context.Context, client *minio.Client, bucketName string) error {
+	if client == nil {
+		return errs.Detail(errs.ErrMinioInitClient, "minio client is nil")
+	}
+	cleanBucketName := strings.TrimSpace(bucketName)
+	if cleanBucketName == "" {
+		return errs.Detail(errs.ErrMinioCreateBucket, "bucket name is empty")
+	}
+
+	policy := fmt.Sprintf(`{"Version":"2012-10-17","Statement":[{"Sid":"PublicReadObjects","Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::%s/*"]}]}`, cleanBucketName)
+	if err := client.SetBucketPolicy(ctx, cleanBucketName, policy); err != nil {
+		return errs.Wrap(errs.ErrMinioCreateBucket, err)
 	}
 	return nil
 }
@@ -91,5 +108,11 @@ func BuildPublicObjectPath(objectName string) string {
 		return ""
 	}
 	cleanObjectName = strings.TrimLeft(cleanObjectName, "/")
+	if strings.HasPrefix(cleanObjectName, "storage/") {
+		cleanObjectName = strings.TrimPrefix(cleanObjectName, "storage/")
+	}
+	if cleanObjectName == "" {
+		return ""
+	}
 	return path.Join("/storage", cleanObjectName)
 }
