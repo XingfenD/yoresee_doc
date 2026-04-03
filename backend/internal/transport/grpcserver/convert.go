@@ -76,7 +76,6 @@ func toDocumentResponse(doc *dto.DocumentMetaResponse) *pb.DocumentResponse {
 		Title:       doc.Title,
 		Type:        toDocumentType(doc.Type),
 		Summary:     doc.Summary,
-		Status:      int32(doc.Status),
 		Tags:        doc.Tags,
 		ViewCount:   int32(doc.ViewCount),
 		EditCount:   int32(doc.EditCount),

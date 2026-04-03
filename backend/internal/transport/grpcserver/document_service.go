@@ -29,9 +29,6 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 		DocType:      req.Type,
 		Tags:         req.Tags,
 	}
-	if req.Status != nil {
-		filterArgs.Status = utils.Of(int(req.GetStatus()))
-	}
 	if req.CreateTimeRange != nil {
 		filterArgs.CreateTimeRangeStart = req.CreateTimeRange.Start
 		filterArgs.CreateTimeRangeEnd = req.CreateTimeRange.End
@@ -101,6 +98,24 @@ func (s *DocumentServiceServer) GetDocumentContent(ctx context.Context, req *pb.
 		Base:     baseResponseFromErr(nil),
 		Document: toDocumentResponse(&document.DocumentMetaResponse),
 		Content:  document.Content,
+	}, nil
+}
+
+func (s *DocumentServiceServer) GetDocumentSettings(ctx context.Context, req *pb.GetDocumentSettingsRequest) (*pb.GetDocumentSettingsResponse, error) {
+	if req == nil || req.DocumentExternalId == "" {
+		return &pb.GetDocumentSettingsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	settings, err := document_service.DocumentSvc.GetDocumentSettings(ctx, &dto.GetDocumentSettingsRequest{
+		ExternalID: req.DocumentExternalId,
+	})
+	if err != nil {
+		return &pb.GetDocumentSettingsResponse{Base: baseResponseFromErr(status.StatusDocumentNotFound)}, nil
+	}
+
+	return &pb.GetDocumentSettingsResponse{
+		Base:     baseResponseFromErr(nil),
+		IsPublic: utils.Of(settings.IsPublic),
 	}, nil
 }
 
@@ -337,7 +352,7 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 	if req == nil || req.ExternalId == "" {
 		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
-	if req.Title == nil && req.Summary == nil && req.Status == nil && req.Tags == nil && req.IsPublic == nil {
+	if req.Title == nil && req.Summary == nil && req.Tags == nil {
 		return &pb.UpdateDocumentMetaResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
@@ -346,16 +361,9 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 		Title:      req.Title,
 		Summary:    req.Summary,
 	}
-	if req.Status != nil {
-		statusVal := int(req.GetStatus())
-		serviceReq.Status = &statusVal
-	}
 	if req.Tags != nil {
 		tags := req.Tags
 		serviceReq.Tags = &tags
-	}
-	if req.IsPublic != nil {
-		serviceReq.IsPublic = req.IsPublic
 	}
 
 	if _, err := document_service.DocumentSvc.UpdateDocumentMeta(ctx, serviceReq); err != nil {
@@ -364,6 +372,30 @@ func (s *DocumentServiceServer) UpdateDocumentMeta(ctx context.Context, req *pb.
 
 	return &pb.UpdateDocumentMetaResponse{
 		Base: baseResponseFromErr(nil),
+	}, nil
+}
+
+func (s *DocumentServiceServer) UpdateDocumentSettings(ctx context.Context, req *pb.UpdateDocumentSettingsRequest) (*pb.UpdateDocumentSettingsResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.UpdateDocumentSettingsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+	if req == nil || req.ExternalId == "" || req.IsPublic == nil {
+		return &pb.UpdateDocumentSettingsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	serviceReq := &dto.UpdateDocumentSettingsRequest{
+		ExternalID: req.ExternalId,
+		IsPublic:   req.GetIsPublic(),
+	}
+	updated, err := document_service.DocumentSvc.UpdateDocumentSettings(ctx, serviceReq)
+	if err != nil {
+		return &pb.UpdateDocumentSettingsResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.UpdateDocumentSettingsResponse{
+		Base:     baseResponseFromErr(nil),
+		IsPublic: utils.Of(updated.IsPublic),
 	}, nil
 }
 

@@ -16,7 +16,6 @@ type DocumentsListOperation struct {
 	ids                  []int64
 	titleKeyword         *string
 	docType              *string
-	status               *int
 	tags                 []string
 	createTimeRangeStart *string
 	createTimeRangeEnd   *string
@@ -71,11 +70,6 @@ func (op *DocumentsListOperation) WithTitleKeyword(titleKeyword *string) *Docume
 
 func (op *DocumentsListOperation) WithType(docType *string) *DocumentsListOperation {
 	op.docType = docType
-	return op
-}
-
-func (op *DocumentsListOperation) WithStatus(status *int) *DocumentsListOperation {
-	op.status = status
 	return op
 }
 
@@ -164,10 +158,6 @@ func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 
 	if op.docType != nil && *op.docType != "" {
 		dbQuery = dbQuery.Where("type = ?", *op.docType)
-	}
-
-	if op.status != nil {
-		dbQuery = dbQuery.Where("status = ?", *op.status)
 	}
 
 	if len(op.tags) > 0 {

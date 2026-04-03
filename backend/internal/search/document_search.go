@@ -21,7 +21,6 @@ type DocumentSearchRequest struct {
 	KnowledgeID          *int64
 	ListOwnDoc           bool
 	DocType              *string
-	Status               *int
 	Tags                 []string
 	CreateTimeRangeStart *string
 	CreateTimeRangeEnd   *string
@@ -102,11 +101,6 @@ func BuildDocumentSearchBody(req DocumentSearchRequest) map[string]interface{} {
 			"term": map[string]interface{}{"type": strings.TrimSpace(*req.DocType)},
 		})
 	}
-	if req.Status != nil {
-		filter = append(filter, map[string]interface{}{
-			"term": map[string]interface{}{"status": *req.Status},
-		})
-	}
 	for _, tag := range req.Tags {
 		tag = strings.TrimSpace(tag)
 		if tag == "" {
@@ -167,7 +161,6 @@ func BuildDocumentIndexBody(doc *model.Document) map[string]interface{} {
 		"content":     doc.Content,
 		"type":        doc.Type,
 		"user_id":     doc.UserID,
-		"status":      doc.Status,
 		"tags":        doc.Tags,
 		"created_at":  doc.CreatedAt.Format(time.RFC3339),
 		"updated_at":  doc.UpdatedAt.Format(time.RFC3339),
@@ -205,9 +198,6 @@ func BuildDocumentIndexMapping() map[string]interface{} {
 				},
 				"knowledge_id": map[string]interface{}{
 					"type": "long",
-				},
-				"status": map[string]interface{}{
-					"type": "integer",
 				},
 				"tags": map[string]interface{}{
 					"type": "keyword",

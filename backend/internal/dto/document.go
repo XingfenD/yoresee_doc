@@ -15,7 +15,6 @@ type DocumentBase struct {
 	Title      string       `json:"title"`
 	Type       DocumentType `json:"type"`
 	Summary    string       `json:"summary"`
-	Status     int          `json:"status"`
 	IsPublic   bool         `json:"is_public"`
 	Tags       []string     `json:"tags"`
 	ViewCount  int          `json:"view_count"`
@@ -42,7 +41,6 @@ func NewDocumentMetaResponseFromModel(doc *model.Document) *DocumentMetaResponse
 			Title:      doc.Title,
 			Type:       DocumentType(doc.Type),
 			Summary:    doc.Summary,
-			Status:     doc.Status,
 			IsPublic:   doc.IsPublic,
 			Tags:       doc.Tags,
 			ViewCount:  doc.ViewCount,
@@ -66,7 +64,6 @@ func NewDocumentResponseFromModel(doc *model.Document) *DocumentResponse {
 				Title:      doc.Title,
 				Type:       DocumentType(doc.Type),
 				Summary:    doc.Summary,
-				Status:     doc.Status,
 				IsPublic:   doc.IsPublic,
 				Tags:       doc.Tags,
 				ViewCount:  doc.ViewCount,
@@ -97,7 +94,6 @@ type DocumentsListExternalArgs struct {
 type DocumentsListFilterArgs struct {
 	TitleKeyword         *string  `json:"title_keyword"`
 	DocType              *string  `json:"doc_type"`
-	Status               *int     `json:"status"`
 	Tags                 []string `json:"tags"`
 	CreateTimeRangeStart *string  `json:"create_time_range_start"`
 	CreateTimeRangeEnd   *string  `json:"create_time_range_end"`
@@ -164,6 +160,4 @@ type UpdateDocumentMetaRequest struct {
 	Title      *string   `json:"title,omitempty"`
 	Summary    *string   `json:"summary,omitempty"`
 	Tags       *[]string `json:"tags,omitempty"`
-	Status     *int      `json:"status,omitempty"`
-	IsPublic   *bool     `json:"is_public,omitempty"`
 }

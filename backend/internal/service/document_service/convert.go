@@ -37,7 +37,6 @@ func (s *DocumentService) buildListDocumentsOperation(req *internal_dto.Document
 		}
 		listOp = listOp.WithTitleKeyword(titleKeyword).
 			WithType(req.FilterArgs.DocType).
-			WithStatus(req.FilterArgs.Status).
 			WithTags(req.FilterArgs.Tags).
 			WithCreateTimeRange(req.FilterArgs.CreateTimeRangeStart, req.FilterArgs.CreateTimeRangeEnd).
 			WithUpdateTimeRange(req.FilterArgs.UpdateTimeRangeStart, req.FilterArgs.UpdateTimeRangeEnd)

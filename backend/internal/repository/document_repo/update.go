@@ -46,11 +46,6 @@ func (op *DocumentUpdateOperation) UpdateKnowledgeID() *DocumentUpdateOperation 
 	return op
 }
 
-func (op *DocumentUpdateOperation) UpdateStatus() *DocumentUpdateOperation {
-	op.updateFields["status"] = true
-	return op
-}
-
 func (op *DocumentUpdateOperation) UpdateIsPublic() *DocumentUpdateOperation {
 	op.updateFields["is_public"] = true
 	return op

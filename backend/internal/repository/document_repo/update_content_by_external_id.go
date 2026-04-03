@@ -36,9 +36,9 @@ func (op *DocumentUpdateContentByExternalIDOperation) Exec(ctx context.Context) 
 	}
 	docModelCacheKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_Doc, op.externalID)
 	return cache.DoubleDelete(
-		ctx,
+		context.Background(),
 		func() error {
-			return op.tx.Model(&model.Document{}).
+			return op.tx.WithContext(ctx).Model(&model.Document{}).
 				Where("external_id = ?", op.externalID).
 				Select("content").
 				Updates(map[string]interface{}{"content": op.content}).Error

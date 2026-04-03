@@ -22,7 +22,7 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 
 	cacheKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_Doc, req.ExternalID)
 	err := cache.DoubleDelete(
-		ctx,
+		context.Background(),
 		func() error {
 			return utils.WithTransaction(func(tx *gorm.DB) error {
 				oldDoc, err := s.documentRepo.GetByExternalID(req.ExternalID).WithTx(tx).Exec(ctx)
@@ -44,14 +44,6 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 				if req.Tags != nil {
 					docModel.Tags = *req.Tags
 					op.UpdateTags()
-				}
-				if req.Status != nil {
-					docModel.Status = *req.Status
-					op.UpdateStatus()
-				}
-				if req.IsPublic != nil {
-					docModel.IsPublic = *req.IsPublic
-					op.UpdateIsPublic()
 				}
 
 				if err := op.Exec(); err != nil {

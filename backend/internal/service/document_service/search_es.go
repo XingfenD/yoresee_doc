@@ -31,7 +31,6 @@ func (s *DocumentService) applyElasticsearchKeywordFilter(ctx context.Context, r
 	searchReq := search.DocumentSearchRequest{
 		Keyword:              keyword,
 		DocType:              req.FilterArgs.DocType,
-		Status:               req.FilterArgs.Status,
 		Tags:                 req.FilterArgs.Tags,
 		CreateTimeRangeStart: req.FilterArgs.CreateTimeRangeStart,
 		CreateTimeRangeEnd:   req.FilterArgs.CreateTimeRangeEnd,
