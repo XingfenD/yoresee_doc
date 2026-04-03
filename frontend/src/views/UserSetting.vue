@@ -15,7 +15,10 @@
     @menu-select="handleMenuSelect"
   >
     <template #actions>
-      <el-button :loading="saving" type="primary" @click="handleSave">
+      <el-button class="page-action-btn" size="small" @click="resetForm">
+        {{ t('button.cancel') }}
+      </el-button>
+      <el-button class="page-action-btn" size="small" :loading="saving" type="primary" @click="handleSave">
         {{ t('common.save') }}
       </el-button>
     </template>
@@ -37,7 +40,9 @@
               :before-upload="() => false"
               :on-change="handleAvatarFileChange"
             >
-              <el-button size="small" :loading="avatarProcessing">{{ t('user.uploadAvatar') }}</el-button>
+              <el-button class="avatar-upload-btn" size="small" :loading="avatarProcessing">
+                {{ t('user.uploadAvatar') }}
+              </el-button>
             </el-upload>
           </div>
         </div>
@@ -88,10 +93,6 @@
           />
         </div>
 
-        <div class="setting-actions">
-          <el-button @click="resetForm">{{ t('button.cancel') }}</el-button>
-          <el-button :loading="saving" type="primary" @click="handleSave">{{ t('common.save') }}</el-button>
-        </div>
       </div>
     </div>
   </PageLayout>
@@ -336,11 +337,17 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-.setting-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-sm);
+.avatar-upload-btn {
+  border-color: var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-medium);
+}
+
+.avatar-upload-btn:hover,
+.avatar-upload-btn:focus {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--primary-light);
 }
 
 @media (max-width: 768px) {
