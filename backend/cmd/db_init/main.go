@@ -74,6 +74,10 @@ func initializeDatabaseInTransaction() error {
 			return err
 		}
 
+		if err := initializeTemplatesInTx(tx); err != nil {
+			return err
+		}
+
 		if err := createNormalUserInTx(tx); err != nil {
 			return err
 		}
