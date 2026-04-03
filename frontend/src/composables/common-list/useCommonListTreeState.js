@@ -73,14 +73,23 @@ export function useCommonListTreeState(props, emit, resolveRowKey) {
     emit('tree-toggle', { key, expanded: next.has(keyString), row: row.raw });
   };
 
-  const isTreeColumn = (column, index, treeToggleColumnKey) => {
+  const isTreeColumn = (column, index, treeToggleColumnKey, columns = []) => {
     if (column.key === treeToggleColumnKey) {
+      return false;
+    }
+    if (column.isIndexColumn) {
       return false;
     }
     if (props.treeColumnKey) {
       return column.key === props.treeColumnKey;
     }
-    return index === 0;
+    const firstContentColumnIndex = columns.findIndex(
+      (item) => item?.key !== treeToggleColumnKey && !item?.isIndexColumn
+    );
+    if (firstContentColumnIndex < 0) {
+      return index === 0;
+    }
+    return index === firstContentColumnIndex;
   };
 
   const treeFlatRows = computed(() => {

@@ -34,6 +34,8 @@
         :columns="columns"
         :display-columns="displayColumns"
         :grid-template-columns="gridTemplateColumns"
+        :current-page="paginationPage"
+        :page-size="paginationPageSize"
         :tree-toggle-column-key="treeToggleColumnKey"
         :resolve-row-key="resolveRowKey"
         :align-class="alignClass"
@@ -48,6 +50,8 @@
         :tree-toggle-width="treeToggleWidth"
         :tree-data-columns="treeDataColumns"
         :tree-data-grid-template="treeDataGridTemplate"
+        :current-page="paginationPage"
+        :page-size="paginationPageSize"
         :tree-loading="treeLoading"
         :tree-flat-rows="treeFlatRows"
         :max-tree-indent-width="maxTreeIndentWidth"
@@ -158,6 +162,22 @@ const props = defineProps({
   searchPlaceholder: {
     type: String,
     default: ''
+  },
+  showIndexColumn: {
+    type: Boolean,
+    default: false
+  },
+  indexColumnLabel: {
+    type: String,
+    default: '序号'
+  },
+  indexColumnWidth: {
+    type: [String, Number],
+    default: 72
+  },
+  indexColumnAlign: {
+    type: String,
+    default: 'center'
   },
   treeLoading: {
     type: Boolean,

@@ -10,7 +10,8 @@ export function useCommonListState(props, emit) {
     toggleScrollLeft: tree.toggleScrollLeft,
     setToggleScrollLeft: tree.setToggleScrollLeft,
     toggleTreeNode: tree.toggleTreeNode,
-    isTreeColumn: (column, index) => tree.isTreeColumn(column, index, shared.treeToggleColumnKey),
+    isTreeColumn: (column, index) =>
+      tree.isTreeColumn(column, index, shared.treeToggleColumnKey, shared.treeDataColumns.value),
     treeFlatRows: tree.treeFlatRows,
     maxTreeIndentWidth: tree.maxTreeIndentWidth
   };

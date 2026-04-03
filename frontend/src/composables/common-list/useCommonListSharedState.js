@@ -10,15 +10,31 @@ export function useCommonListSharedState(props, emit) {
 
   const treeToggleColumnKey = '__tree_toggle__';
   const treeToggleWidth = 81;
+  const indexColumnKey = '__list_index__';
+  const indexColumn = computed(() => {
+    if (!props.showIndexColumn) {
+      return null;
+    }
+    return {
+      key: indexColumnKey,
+      label: props.indexColumnLabel,
+      width: props.indexColumnWidth,
+      align: props.indexColumnAlign,
+      headerAlign: props.indexColumnAlign,
+      className: 'list-index-column',
+      isIndexColumn: true
+    };
+  });
 
   const displayColumns = computed(() => {
     if (props.mode === 'tree') {
       return [
         { key: treeToggleColumnKey, width: treeToggleWidth, align: 'center', className: 'tree-toggle-column' },
+        ...(indexColumn.value ? [indexColumn.value] : []),
         ...props.columns
       ];
     }
-    return props.columns;
+    return [...(indexColumn.value ? [indexColumn.value] : []), ...props.columns];
   });
 
   const buildGridTemplate = (columns) => {
@@ -39,7 +55,12 @@ export function useCommonListSharedState(props, emit) {
   };
 
   const gridTemplateColumns = computed(() => buildGridTemplate(displayColumns.value));
-  const treeDataColumns = computed(() => props.columns || []);
+  const treeDataColumns = computed(() => {
+    if (props.mode !== 'tree') {
+      return props.columns || [];
+    }
+    return [...(indexColumn.value ? [indexColumn.value] : []), ...(props.columns || [])];
+  });
   const treeDataGridTemplate = computed(() => buildGridTemplate(treeDataColumns.value));
 
   const resolveRowKey = (row, rowIndex) => {
@@ -108,6 +129,7 @@ export function useCommonListSharedState(props, emit) {
   return {
     treeToggleColumnKey,
     treeToggleWidth,
+    indexColumnKey,
     displayColumns,
     gridTemplateColumns,
     treeDataColumns,

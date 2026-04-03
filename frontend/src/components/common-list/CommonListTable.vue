@@ -20,7 +20,7 @@
         :style="{ gridTemplateColumns }"
       >
         <div
-          v-for="column in columns"
+          v-for="column in displayColumns"
           :key="`${resolveRowKey(row, rowIndex)}-${column.key}`"
           class="list-cell"
           :class="[column.className, alignClass(column.align)]"
@@ -32,7 +32,12 @@
             :column="column"
             :value="row?.[column.key]"
           >
-            {{ row?.[column.key] ?? '-' }}
+            <template v-if="column.isIndexColumn">
+              {{ resolveSerialNumber(rowIndex, currentPage, pageSize) }}
+            </template>
+            <template v-else>
+              {{ row?.[column.key] ?? '-' }}
+            </template>
           </slot>
         </div>
       </div>
@@ -46,10 +51,21 @@ defineProps({
   columns: { type: Array, default: () => [] },
   displayColumns: { type: Array, default: () => [] },
   gridTemplateColumns: { type: String, default: '1fr' },
+  currentPage: { type: Number, default: 1 },
+  pageSize: { type: Number, default: 10 },
   treeToggleColumnKey: { type: String, default: '__tree_toggle__' },
   resolveRowKey: { type: Function, required: true },
   alignClass: { type: Function, required: true }
 });
+
+const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
+  const page = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
+  const size = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 0;
+  if (size <= 0) {
+    return rowIndex + 1;
+  }
+  return (Math.max(page, 1) - 1) * size + rowIndex + 1;
+};
 </script>
 
 <style scoped>

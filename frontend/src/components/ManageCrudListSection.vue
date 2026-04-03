@@ -17,6 +17,10 @@
         :show-search="showSearch"
         :search-query="searchQuery"
         :search-placeholder="searchPlaceholder"
+        :show-index-column="showIndexColumn"
+        :index-column-label="indexColumnLabel"
+        :index-column-width="indexColumnWidth"
+        :index-column-align="indexColumnAlign"
         :show-title-bar="showTitleBar"
         :title="title"
         :tree-loading="treeLoading"
@@ -115,6 +119,22 @@ defineProps({
   searchPlaceholder: {
     type: String,
     default: ''
+  },
+  showIndexColumn: {
+    type: Boolean,
+    default: false
+  },
+  indexColumnLabel: {
+    type: String,
+    default: '序号'
+  },
+  indexColumnWidth: {
+    type: [String, Number],
+    default: 72
+  },
+  indexColumnAlign: {
+    type: String,
+    default: 'center'
   },
   showTitleBar: {
     type: Boolean,

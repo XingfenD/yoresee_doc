@@ -32,6 +32,7 @@
         row-key="id"
         :is-dark="isDarkMode"
         :empty-text="currentEmptyText"
+        :show-index-column="true"
         :show-pagination="true"
         :total="paginationTotal"
         v-model:current-page="currentPage"

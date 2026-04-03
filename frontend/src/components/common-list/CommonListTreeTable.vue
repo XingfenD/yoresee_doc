@@ -59,6 +59,17 @@
                 </slot>
               </div>
             </template>
+            <template v-else-if="column.isIndexColumn">
+              <slot
+                :name="`cell-${column.key}`"
+                :row="row.raw"
+                :row-index="rowIndex"
+                :column="column"
+                :value="row.raw?.[column.key]"
+              >
+                {{ resolveSerialNumber(rowIndex, currentPage, pageSize) }}
+              </slot>
+            </template>
             <template v-else>
               <slot
                 :name="`cell-${column.key}`"
@@ -87,6 +98,8 @@ defineProps({
   treeToggleWidth: { type: Number, default: 81 },
   treeDataColumns: { type: Array, default: () => [] },
   treeDataGridTemplate: { type: String, default: '1fr' },
+  currentPage: { type: Number, default: 1 },
+  pageSize: { type: Number, default: 10 },
   treeLoading: { type: Boolean, default: false },
   treeFlatRows: { type: Array, default: () => [] },
   maxTreeIndentWidth: { type: Number, default: 0 },
@@ -99,6 +112,15 @@ defineProps({
   toggleTreeNode: { type: Function, required: true },
   isTreeColumn: { type: Function, required: true }
 });
+
+const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
+  const page = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
+  const size = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 0;
+  if (size <= 0) {
+    return rowIndex + 1;
+  }
+  return (Math.max(page, 1) - 1) * size + rowIndex + 1;
+};
 
 defineEmits(['toggle-scroll']);
 </script>
