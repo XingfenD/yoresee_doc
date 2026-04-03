@@ -7,14 +7,16 @@ import (
 )
 
 type UserBase struct {
-	ExternalID string    `json:"external_id"`
-	Username   string    `json:"username"`
-	Email      string    `json:"email"`
-	Nickname   string    `json:"nickname"`
-	Avatar     string    `json:"avatar"`
-	Status     int       `json:"status"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ExternalID      string    `json:"external_id"`
+	Username        string    `json:"username"`
+	Email           string    `json:"email"`
+	Nickname        string    `json:"nickname"`
+	Avatar          string    `json:"avatar"`
+	AvatarObjectKey string    `json:"-"`
+	AvatarVersion   int64     `json:"-"`
+	Status          int       `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 type UserCreate struct {
@@ -39,7 +41,6 @@ type UpdateProfileRequest struct {
 	Email             *string `json:"email"`
 	Nickname          *string `json:"nickname"`
 	Password          *string `json:"password"`
-	Avatar            *string `json:"avatar"`
 	AvatarFile        []byte  `json:"avatar_file"`
 	AvatarFilename    *string `json:"avatar_filename"`
 	AvatarContentType *string `json:"avatar_content_type"`
@@ -53,14 +54,16 @@ type UserResponse struct {
 func NewUserResponseFromModel(user *model.User) *UserResponse {
 	return &UserResponse{
 		UserBase: UserBase{
-			ExternalID: user.ExternalID,
-			Username:   user.Username,
-			Email:      user.Email,
-			Nickname:   user.Nickname,
-			Avatar:     user.Avatar,
-			Status:     user.Status,
-			CreatedAt:  user.CreatedAt,
-			UpdatedAt:  user.UpdatedAt,
+			ExternalID:      user.ExternalID,
+			Username:        user.Username,
+			Email:           user.Email,
+			Nickname:        user.Nickname,
+			Avatar:          "",
+			AvatarObjectKey: user.AvatarObjectKey,
+			AvatarVersion:   user.AvatarVersion,
+			Status:          user.Status,
+			CreatedAt:       user.CreatedAt,
+			UpdatedAt:       user.UpdatedAt,
 		},
 		InvitationCode: user.InvitationCode,
 	}

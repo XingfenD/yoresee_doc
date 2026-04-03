@@ -97,9 +97,15 @@ prompt_value BACKEND_INTERNAL_RPC_KEY "Internal RPC key" "yoresee_doc_internal_k
 prompt_value JWT_SECRET "JWT secret" "yoresee_doc_jwt_secret_key"
 
 # App behavior
+prompt_value VITE_API_BASE_URL "Frontend API base URL" "http://localhost:${NGINX_HTTP_PORT}"
 prompt_value VITE_GRPC_WEB_ENDPOINT "Frontend gRPC-web endpoint" "/grpc"
 prompt_value DIRTY_DOC_NOTIFY_THRESHOLD "Dirty doc notify threshold" "5"
-prompt_value MINIO_BROWSER_REDIRECT_URL "MinIO browser redirect URL" "http://localhost:${NGINX_HTTP_PORT}/minio"
+
+# Keep MinIO browser redirect bound to API base URL to avoid host drift in deployments.
+MINIO_BROWSER_REDIRECT_URL="${VITE_API_BASE_URL%/}/minio"
+update_env_key MINIO_BROWSER_REDIRECT_URL "$MINIO_BROWSER_REDIRECT_URL"
+echo "MinIO browser redirect URL (derived): $MINIO_BROWSER_REDIRECT_URL"
+
 prompt_value ELASTICSEARCH_ENABLED "Enable Elasticsearch" "true"
 prompt_value ELASTICSEARCH_INDEX_PREFIX "Elasticsearch index prefix" "yoresee_doc"
 prompt_value ELASTICSEARCH_USERNAME "Elasticsearch username (optional)" ""

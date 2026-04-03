@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/media"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
@@ -176,7 +177,7 @@ func toCommentResponse(comment *model.DocumentComment, docExternalID, parentExte
 		} else {
 			resp.CreatorName = creator.Username
 		}
-		resp.CreatorAvatar = creator.Avatar
+		resp.CreatorAvatar = media.BuildAvatarURL(creator.ExternalID, creator.AvatarObjectKey, creator.AvatarVersion)
 	}
 	return resp
 }

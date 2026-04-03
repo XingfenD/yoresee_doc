@@ -70,7 +70,6 @@ func (s *AuthServiceServer) UpdateProfile(ctx context.Context, req *pb.UpdatePro
 		Email:             req.Email,
 		Nickname:          req.Nickname,
 		Password:          req.Password,
-		Avatar:            req.Avatar,
 		AvatarFile:        req.AvatarFile,
 		AvatarFilename:    req.AvatarFilename,
 		AvatarContentType: req.AvatarContentType,

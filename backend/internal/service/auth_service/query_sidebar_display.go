@@ -22,7 +22,6 @@ var (
 	}
 	userInfoTabs = []string{
 		"home",
-		"search",
 		"user-center",
 		"user-notifications",
 		"user-invite",
@@ -30,7 +29,6 @@ var (
 	}
 	manageTabsForAdmin = []string{
 		"home",
-		"search",
 		"manage-user",
 		"manage-user-group",
 		"manage-organization",
@@ -39,7 +37,6 @@ var (
 	}
 	manageTabsForNormalUser = []string{
 		"home",
-		"search",
 	}
 )
 

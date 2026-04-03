@@ -27,6 +27,7 @@ services:
     container_name: yoresee_doc_frontend
     environment:
       - NODE_ENV=production
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8080}
       - VITE_GRPC_WEB_ENDPOINT=${VITE_GRPC_WEB_ENDPOINT:-/grpc}
     networks:
       - yoresee_doc_network

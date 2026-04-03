@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/media"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
@@ -121,7 +122,7 @@ func toUserResponse(user *dto.UserResponse) *pb.UserResponse {
 		Username:   user.Username,
 		Email:      user.Email,
 		Nickname:   user.Nickname,
-		Avatar:     user.Avatar,
+		Avatar:     media.BuildAvatarURL(user.ExternalID, user.AvatarObjectKey, user.AvatarVersion),
 		Status:     int32(user.Status),
 		CreatedAt:  timeToString(user.CreatedAt),
 		UpdatedAt:  timeToString(user.UpdatedAt),

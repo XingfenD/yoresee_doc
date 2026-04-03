@@ -72,7 +72,7 @@ func (s *DocumentService) UploadAttachment(
 		resolveAttachmentExt(safeName, contentType),
 	)
 
-	url, err := storage.UploadFile(
+	err = storage.PutFile(
 		config.GlobalConfig.Minio.Bucket,
 		objectName,
 		bytes.NewReader(file),
@@ -105,7 +105,7 @@ func (s *DocumentService) UploadAttachment(
 		Size:               attachment.Size,
 		MimeType:           attachment.MimeType,
 		Path:               attachment.Path,
-		URL:                url,
+		URL:                storage.BuildPublicObjectPath(attachment.Path),
 		CreatedAt:          attachment.CreatedAt,
 		UpdatedAt:          attachment.UpdatedAt,
 	}, nil
@@ -136,10 +136,6 @@ func (s *DocumentService) ListAttachments(ctx context.Context, documentExternalI
 
 	resp := make([]*dto.AttachmentResponse, 0, len(attachments))
 	for _, attachment := range attachments {
-		url, presignErr := storage.GetPresignedURL(config.GlobalConfig.Minio.Bucket, attachment.Path, 7*24*time.Hour)
-		if presignErr != nil {
-			logrus.Warnf("[Service layer: DocumentService] generate attachment presigned url failed, attachment_external_id=%s, err=%+v", attachment.ExternalID, presignErr)
-		}
 		resp = append(resp, &dto.AttachmentResponse{
 			ExternalID:         attachment.ExternalID,
 			DocumentExternalID: documentExternalID,
@@ -147,7 +143,7 @@ func (s *DocumentService) ListAttachments(ctx context.Context, documentExternalI
 			Size:               attachment.Size,
 			MimeType:           attachment.MimeType,
 			Path:               attachment.Path,
-			URL:                url,
+			URL:                storage.BuildPublicObjectPath(attachment.Path),
 			CreatedAt:          attachment.CreatedAt,
 			UpdatedAt:          attachment.UpdatedAt,
 		})

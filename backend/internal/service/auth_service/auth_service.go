@@ -7,6 +7,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/auth"
 	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/media"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
@@ -106,6 +107,7 @@ func (s *AuthService) Login(email string, password string) (string, *dto.UserRes
 	}
 
 	userResponse := dto.NewUserResponseFromModel(user)
+	userResponse.Avatar = media.BuildAvatarURL(userResponse.ExternalID, userResponse.AvatarObjectKey, userResponse.AvatarVersion)
 
 	return token, userResponse, nil
 }

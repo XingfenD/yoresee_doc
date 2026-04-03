@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"io"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/pkg/errs"
@@ -43,20 +45,25 @@ func EnsureBucket(ctx context.Context, client *minio.Client, bucketName string) 
 }
 
 func UploadFile(bucketName, objectName string, reader io.Reader, objectSize int64, contentType string) (string, error) {
-	ctx := context.Background()
-	_, err := MinioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, minio.PutObjectOptions{
-		ContentType: contentType,
-	})
-	if err != nil {
+	if err := PutFile(bucketName, objectName, reader, objectSize, contentType); err != nil {
 		return "", errs.Wrap(errs.ErrMinioUploadFile, err)
 	}
 
+	ctx := context.Background()
 	presignedURL, err := MinioClient.PresignedGetObject(ctx, bucketName, objectName, 7*24*time.Hour, nil)
 	if err != nil {
 		return "", errs.Wrap(errs.ErrMinioGeneratePresigned, err)
 	}
 
 	return presignedURL.String(), nil
+}
+
+func PutFile(bucketName, objectName string, reader io.Reader, objectSize int64, contentType string) error {
+	ctx := context.Background()
+	_, err := MinioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+	return err
 }
 
 func GetFile(bucketName, objectName string) (*minio.Object, error) {
@@ -76,4 +83,13 @@ func GetPresignedURL(bucketName, objectName string, expires time.Duration) (stri
 		return "", errs.Wrap(errs.ErrMinioGeneratePresigned, err)
 	}
 	return presignedURL.String(), nil
+}
+
+func BuildPublicObjectPath(objectName string) string {
+	cleanObjectName := strings.TrimSpace(objectName)
+	if cleanObjectName == "" {
+		return ""
+	}
+	cleanObjectName = strings.TrimLeft(cleanObjectName, "/")
+	return path.Join("/storage", cleanObjectName)
 }
