@@ -48,19 +48,16 @@ export function useDocumentEditorActions({
   };
 
   const createDocument = async (payload) => {
-    if (!payload?.title?.trim()) {
-      ElMessage.error(t('knowledgeBase.titleRequired'));
-      return;
-    }
+    const title = payload?.title?.trim() || t('document.untitledDefaultTitle');
     await runWithLoading(
       creatingLoading,
       async () => {
         const isPersonal = kbId.value === 'personal';
         const requestBody = {
-          title: payload.title,
+          title,
           type: payload.type || 'markdown',
           container_type: isPersonal ? 'own' : 'knowledge_base',
-          is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
+          is_public: false
         };
         if (!isPersonal) {
           requestBody.knowledge_base_external_id = kbId.value;

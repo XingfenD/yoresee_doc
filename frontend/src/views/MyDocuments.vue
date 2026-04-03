@@ -139,16 +139,14 @@ const cancelCreateDocument = () => {
 };
 
 const createDocument = async (payload) => {
-  if (!payload?.title?.trim()) {
-    return;
-  }
+  const title = payload?.title?.trim() || t('document.untitledDefaultTitle');
   try {
     creatingLoading.value = true;
     const requestBody = {
-      title: payload.title,
+      title,
       type: payload.type || 'markdown',
       container_type: 'own',
-      is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
+      is_public: false
     };
     if (payload?.parent_external_id) {
       requestBody.parent_external_id = payload.parent_external_id;

@@ -89,6 +89,7 @@ export default {
     renameDocument: 'Rename Document',
     renameNotSupported: 'Document rename is not available yet',
     enterDocumentTitle: 'Please enter document title',
+    untitledDefaultTitle: 'Untitled Document',
     commentPlaceholder: 'Write a comment...',
     commentSend: 'Send',
     commentEmpty: 'No comments yet',
@@ -415,6 +416,9 @@ export default {
     nameRequired: 'Template name is required',
     contentLabel: 'Template Content',
     contentPlaceholder: 'Enter template content',
+    searchPlaceholder: 'Search templates',
+    blankDocument: 'Create Blank Document',
+    blankDocumentDesc: 'Create a document without using a template',
     knowledgeBaseTab: 'Knowledge Base Templates',
     previewTitle: 'Template Preview',
     contentEmpty: 'Template content is empty'

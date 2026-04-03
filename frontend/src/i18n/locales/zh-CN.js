@@ -87,6 +87,7 @@ export default {
     renameDocument: '重命名文档',
     renameNotSupported: '当前版本暂不支持重命名文档',
     enterDocumentTitle: '请输入文档标题',
+    untitledDefaultTitle: '未命名文档',
     commentPlaceholder: '写下你的评论...',
     commentSend: '发送',
     commentEmpty: '暂无评论',
@@ -413,6 +414,9 @@ export default {
     nameRequired: '模板名称不能为空',
     contentLabel: '模板内容',
     contentPlaceholder: '请输入模板内容',
+    searchPlaceholder: '搜索模板',
+    blankDocument: '新建空白文档',
+    blankDocumentDesc: '不使用模板，直接创建文档',
     knowledgeBaseTab: '知识库模板',
     previewTitle: '模板预览',
     contentEmpty: '模板内容为空'

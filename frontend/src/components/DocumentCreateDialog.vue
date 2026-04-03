@@ -1,61 +1,18 @@
 <template>
-  <el-dialog v-model="visible" :title="t('knowledgeBase.createDocument')" width="560px" :close-on-click-modal="false"
-    @keydown.esc.prevent="handleCancel">
-    <el-form :model="formState" label-position="top" @submit.prevent @keydown.enter.prevent="handleCreate">
-      <el-form-item :label="t('knowledgeBase.documentTitle')" required>
-        <el-input v-model="formState.title" :placeholder="t('knowledgeBase.enterDocumentTitle')" maxlength="100"
-          show-word-limit />
-      </el-form-item>
-
-      <el-form-item :label="t('document.settings.publicLabel')">
-        <el-switch v-model="formState.isPublic" />
-      </el-form-item>
-
-      <el-form-item v-if="showTemplateSelector" :label="t('knowledgeBase.template')">
-        <el-tabs v-model="activeTab" class="template-tabs">
-          <el-tab-pane :label="t('templates.recent')" name="recent">
-            <TemplatePickerPane
-              :loading="loadingRecent"
-              :items="recentTemplates"
-              :selected-template-id="formState.template"
-              :empty-text="t('templates.noRecent')"
-              :fallback-description="t('templates.noDescription')"
-              @select="selectTemplate"
-            />
-          </el-tab-pane>
-          <el-tab-pane :label="t('templates.my')" name="my">
-            <TemplatePickerPane
-              :loading="loadingMy"
-              :items="myTemplates"
-              :selected-template-id="formState.template"
-              :empty-text="t('templates.noMy')"
-              :fallback-description="t('templates.noDescription')"
-              @select="selectTemplate"
-            />
-          </el-tab-pane>
-          <el-tab-pane :label="t('templates.public')" name="public">
-            <TemplatePickerPane
-              :loading="loadingPublic"
-              :items="publicTemplates"
-              :selected-template-id="formState.template"
-              :empty-text="t('templates.noPublic')"
-              :fallback-description="t('templates.noDescription')"
-              @select="selectTemplate"
-            />
-          </el-tab-pane>
-          <el-tab-pane v-if="showKnowledgeBaseTemplates" :label="t('templates.knowledgeBaseTab')" name="knowledge_base">
-            <TemplatePickerPane
-              :loading="loadingKb"
-              :items="kbTemplates"
-              :selected-template-id="formState.template"
-              :empty-text="t('templates.noKb')"
-              :fallback-description="t('templates.noDescription')"
-              @select="selectTemplate"
-            />
-          </el-tab-pane>
-        </el-tabs>
-      </el-form-item>
-    </el-form>
+  <el-dialog
+    v-model="visible"
+    :title="t('knowledgeBase.createDocument')"
+    width="980px"
+    class="document-create-dialog"
+    :close-on-click-modal="false"
+    @keydown.esc.prevent="handleCancel"
+  >
+    <DocumentTemplatePicker
+      :visible="visible"
+      :selected-template-id="formState.template"
+      :knowledge-base-id="knowledgeBaseId"
+      @select="selectTemplate"
+    />
 
     <template #footer>
       <span class="dialog-footer">
@@ -69,11 +26,9 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
-import { ElMessage } from 'element-plus';
+import { computed, reactive, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import TemplatePickerPane from '@/components/TemplatePickerPane.vue';
-import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
+import DocumentTemplatePicker from '@/components/DocumentTemplatePicker.vue';
 
 const props = defineProps({
   modelValue: {
@@ -83,10 +38,6 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
-  },
-  initialTitle: {
-    type: String,
-    default: ''
   },
   parentExternalId: {
     type: String,
@@ -103,10 +54,6 @@ const props = defineProps({
   initialTemplateMeta: {
     type: Object,
     default: null
-  },
-  showTemplateSelector: {
-    type: Boolean,
-    default: true
   }
 });
 
@@ -119,40 +66,15 @@ const visible = computed({
 });
 
 const formState = reactive({
-  title: '',
   template: '',
   parentExternalId: '',
-  templateMeta: null,
-  isPublic: false
-});
-
-const activeTab = ref('recent');
-const showKnowledgeBaseTemplates = computed(() => !!props.knowledgeBaseId);
-const {
-  recentTemplates,
-  myTemplates,
-  publicTemplates,
-  kbTemplates,
-  loadingRecent,
-  loadingMy,
-  loadingPublic,
-  loadingKb,
-  ensureLoaded: ensureTemplateLoaded,
-  invalidateScope: invalidateTemplateScope
-} = useTemplateCatalog({
-  includeKnowledgeBase: true,
-  knowledgeBaseId: computed(() => props.knowledgeBaseId || ''),
-  onError: (error, scope) => {
-    console.error(`[DocumentCreateDialog] load ${scope} templates failed`, error);
-  }
+  templateMeta: null
 });
 
 const resetForm = () => {
-  formState.title = props.initialTitle || '';
   formState.template = props.initialTemplateId ? String(props.initialTemplateId) : '';
   formState.templateMeta = props.initialTemplateMeta || null;
   formState.parentExternalId = props.parentExternalId || '';
-  formState.isPublic = false;
 };
 
 const handleCancel = () => {
@@ -161,20 +83,21 @@ const handleCancel = () => {
 };
 
 const handleCreate = () => {
-  if (!formState.title.trim()) {
-    ElMessage.error(t('knowledgeBase.titleRequired'));
-    return;
-  }
   emit('submit', {
-    title: formState.title.trim(),
+    title: t('document.untitledDefaultTitle'),
     template: formState.template,
     template_meta: formState.templateMeta,
     parent_external_id: formState.parentExternalId || undefined,
-    is_public: Boolean(formState.isPublic)
+    is_public: false
   });
 };
 
 const selectTemplate = (tpl) => {
+  if (tpl?.is_blank) {
+    formState.template = '';
+    formState.templateMeta = null;
+    return;
+  }
   const templateId = String(tpl.id);
   if (formState.template === templateId) {
     formState.template = '';
@@ -185,95 +108,18 @@ const selectTemplate = (tpl) => {
   formState.templateMeta = tpl;
 };
 
-const fetchTemplates = async (tab) => {
-  if (!props.showTemplateSelector) {
-    return;
-  }
-  if (tab === 'knowledge_base' && !showKnowledgeBaseTemplates.value) {
-    return;
-  }
-  await ensureTemplateLoaded(tab);
-};
-
 watch(
   () => props.modelValue,
   (nextVisible) => {
     if (nextVisible) {
       resetForm();
-      activeTab.value = 'recent';
-      fetchTemplates('recent');
     }
   }
 );
-
-watch(
-  () => props.knowledgeBaseId,
-  (next, prev) => {
-    if (next !== prev) {
-      invalidateTemplateScope('knowledge_base');
-      if (activeTab.value === 'knowledge_base' && props.modelValue) {
-        fetchTemplates('knowledge_base');
-      }
-    }
-  }
-);
-
-watch(activeTab, (tab) => {
-  fetchTemplates(tab);
-});
 </script>
 
 <style scoped>
-.template-tabs {
-  --tab-active: #3370ff;
-  --tab-text: #4b5563;
-  --tab-border: #e5e7eb;
-}
-
-.template-tabs :deep(.el-tabs__header) {
-  margin: 0 0 var(--spacing-md);
-  border-bottom: 1px solid var(--tab-border);
-}
-
-.template-tabs :deep(.el-tabs__nav-wrap) {
-  padding: 0;
-  margin-bottom: 0;
-  border-bottom: none;
-}
-
-.template-tabs :deep(.el-tabs__nav) {
-  gap: 24px;
-}
-
-.template-tabs :deep(.el-tabs__item) {
-  height: 36px;
-  line-height: 36px;
-  padding: 0 2px;
-  font-weight: 500;
-  color: var(--tab-text);
-}
-
-.template-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--tab-active);
-  font-weight: 600;
-}
-
-.template-tabs :deep(.el-tabs__active-bar) {
-  height: 2px;
-  background: var(--tab-active);
-}
-
-.dark-mode .template-tabs {
-  --tab-active: #4c8dff;
-  --tab-text: #9ca3af;
-  --tab-border: #1f2937;
-}
-
-.dark-mode .template-tabs :deep(.el-tabs__item) {
-  color: var(--tab-text);
-}
-
-.dark-mode .template-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--tab-active);
+.document-create-dialog :deep(.el-dialog__body) {
+  padding-top: 10px;
 }
 </style>

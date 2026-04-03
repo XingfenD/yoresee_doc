@@ -51,11 +51,9 @@
   <DocumentCreateDialog
     v-model="showCreateDialog"
     :loading="creatingLoading"
-    :initial-title="template?.name || ''"
     :initial-template-id="template?.id"
     :initial-template-meta="template || null"
     :knowledge-base-id="template?.knowledge_base_external_id || ''"
-    :show-template-selector="false"
     @submit="createDocument"
     @cancel="cancelCreateDocument"
   />

@@ -1,5 +1,4 @@
 import { computed, nextTick, ref, watch } from 'vue';
-import { ElMessage } from 'element-plus';
 import Vditor from 'vditor';
 import { createDocument as createDocumentApi, getTemplate } from '@/services/api';
 import { useApiAction } from '@/composables/useApiAction';
@@ -96,20 +95,17 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
   };
 
   const createDocument = async (payload) => {
-    if (!payload?.title?.trim()) {
-      ElMessage.error(t('knowledgeBase.titleRequired'));
-      return;
-    }
+    const title = payload?.title?.trim() || t('document.untitledDefaultTitle');
     await runWithLoading(
       creatingLoading,
       async () => {
         const kbExternalId = template.value?.knowledge_base_external_id || '';
         const isKnowledgeBase = template.value?.scope === 'knowledge_base' && !!kbExternalId;
         const requestBody = {
-          title: payload.title,
+          title,
           type: payload.type || 'markdown',
           container_type: isKnowledgeBase ? 'knowledge_base' : 'own',
-          is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
+          is_public: false
         };
         if (isKnowledgeBase) {
           requestBody.knowledge_base_external_id = kbExternalId;

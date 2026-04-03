@@ -188,24 +188,21 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
   };
 
   const createDocument = async (payload) => {
-    if (!payload?.title?.trim()) {
-      ElMessage.error(t('knowledgeBase.titleRequired'));
-      return;
-    }
     const knowledgeBaseExternalID = route.params.id;
     if (!knowledgeBaseExternalID) {
       ElMessage.error(t('message.knowledgeBaseNotFound'));
       return;
     }
+    const title = payload?.title?.trim() || t('document.untitledDefaultTitle');
 
     await runWithLoading(
       creatingLoading,
       () =>
         createDocumentApi({
-          title: payload.title,
+          title,
           type: payload.type || 'markdown',
           container_type: 'knowledge_base',
-          is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false,
+          is_public: false,
           knowledge_base_external_id: knowledgeBaseExternalID,
           parent_external_id: payload.parent_external_id || undefined,
           template_id: payload.template || undefined
