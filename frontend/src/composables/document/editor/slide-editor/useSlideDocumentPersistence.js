@@ -1,11 +1,11 @@
 import { useTypedDocumentPersistence } from '@/composables/document/editor/shared/useTypedDocumentPersistence';
 
-export function useTableDocumentPersistence(options = {}) {
+export function useSlideDocumentPersistence(options = {}) {
   const {
     docId,
     currentDocType,
     editorContent,
-    tableEditorRef,
+    slideEditorRef,
     t,
     getDocumentContent,
     updateDocument
@@ -16,21 +16,21 @@ export function useTableDocumentPersistence(options = {}) {
     flushSave,
     rerenderEditor
   } = useTypedDocumentPersistence({
-    type: '2',
+    type: '3',
     docId,
     currentDocType,
     editorContent,
     t,
     getDocumentContent,
     updateDocument,
-    saveContext: 'saveTableDocument',
-    loadContext: 'loadTableDocument',
-    rerender: () => tableEditorRef.value?.reRender?.()
+    saveContext: 'saveSlideDocument',
+    loadContext: 'loadSlideDocument',
+    rerender: () => slideEditorRef.value?.reRender?.()
   });
 
   return {
-    isTableDocument: isCurrentType,
-    flushTableSave: flushSave,
-    rerenderTableEditor: rerenderEditor
+    isSlideDocument: isCurrentType,
+    flushSlideSave: flushSave,
+    rerenderSlideEditor: rerenderEditor
   };
 }

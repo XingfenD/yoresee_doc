@@ -48,7 +48,10 @@
                 <FolderOpened v-if="node.expanded" />
                 <Folder v-else />
               </el-icon>
-              <el-icon v-else :class="{ 'node-icon--table': isTableDocument(data) }">
+              <el-icon
+                v-else
+                :class="{ 'node-icon--table': isTableDocument(data), 'node-icon--slide': isSlideDocument(data) }"
+              >
                 <component :is="resolveDocumentIcon(data)" />
               </el-icon>
             </div>
@@ -137,7 +140,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Folder, FolderOpened, Document, Grid, Plus, Delete, Edit, MoreFilled } from '@element-plus/icons-vue';
+import { Folder, FolderOpened, Document, Grid, Postcard, Plus, Delete, Edit, MoreFilled } from '@element-plus/icons-vue';
 import AppMenu from '@/components/base/AppMenu.vue';
 import AppMenuItem from '@/components/base/AppMenuItem.vue';
 import DocumentTypeMenu from '@/components/document/DocumentTypeMenu.vue';
@@ -224,7 +227,16 @@ const treeProps = {
 
 const isSelected = (data) => String(data?.id) === String(props.currentId);
 const isTableDocument = (data) => normalizeDocumentType(data?.type, '1') === '2';
-const resolveDocumentIcon = (data) => (isTableDocument(data) ? Grid : Document);
+const isSlideDocument = (data) => normalizeDocumentType(data?.type, '1') === '3';
+const resolveDocumentIcon = (data) => {
+  if (isTableDocument(data)) {
+    return Grid;
+  }
+  if (isSlideDocument(data)) {
+    return Postcard;
+  }
+  return Document;
+};
 
 const handleNodeClick = (data) => {
   if (data?.isRenaming) {
@@ -385,6 +397,14 @@ defineExpose({ treeRef, closeContextMenu });
 
 .dark-mode .node-icon--table {
   color: #8fb2ff;
+}
+
+.node-icon--slide {
+  color: #f59e0b;
+}
+
+.dark-mode .node-icon--slide {
+  color: #fbbf24;
 }
 
 .node-info {

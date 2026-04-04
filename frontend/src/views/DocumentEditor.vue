@@ -96,10 +96,16 @@
               @comment-changed="handleRemoteCommentChanged"
             />
             <TableEditor
-              v-else
+              v-else-if="isTableDocument"
               ref="tableEditorRef"
               v-model="editorContent"
               @commit="flushTableSave"
+            />
+            <SlideEditor
+              v-else-if="isSlideDocument"
+              ref="slideEditorRef"
+              v-model="editorContent"
+              @commit="flushSlideSave"
             />
           </div>
         </div>
@@ -148,7 +154,7 @@ export default {
 </script>
 
 <script setup>
-import { ref } from 'vue';
+import { defineAsyncComponent, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
@@ -171,6 +177,7 @@ import { useEditorPanelConstraints } from '@/composables/document/editor/useEdit
 import { useDocumentEditorPolicy } from '@/composables/document/editor/useDocumentEditorPolicy';
 import { useDocumentHeaderRouting } from '@/composables/document/editor/useDocumentHeaderRouting';
 import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
+import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
 import { useUserStore } from '@/store/user';
 import {
   getKnowledgeBaseDocuments,
@@ -179,6 +186,8 @@ import {
   updateDocument,
   recordRecentDocument
 } from '@/services/api';
+
+const SlideEditor = defineAsyncComponent(() => import('@/components/document/SlideEditor.vue'));
 
 const props = defineProps({
   kbId: {
@@ -256,6 +265,7 @@ const editorLayoutRef = ref(null);
 const isCommentCollapsed = ref(false);
 const markdownEditorRef = ref(null);
 const tableEditorRef = ref(null);
+const slideEditorRef = ref(null);
 const commentSidebarRef = ref(null);
 const {
   flushTableSave,
@@ -265,6 +275,18 @@ const {
   currentDocType,
   editorContent,
   tableEditorRef,
+  t,
+  getDocumentContent,
+  updateDocument
+});
+const {
+  flushSlideSave,
+  rerenderSlideEditor
+} = useSlideDocumentPersistence({
+  docId,
+  currentDocType,
+  editorContent,
+  slideEditorRef,
   t,
   getDocumentContent,
   updateDocument
@@ -282,10 +304,13 @@ const {
   isCommentCollapsed,
   onLayoutChange: () => {
     rerenderTableEditor();
+    rerenderSlideEditor();
   }
 });
 const {
   isMarkdownDocument,
+  isTableDocument,
+  isSlideDocument,
   canManageAttachments,
   canManageSettings,
   collabEnabled,
@@ -345,6 +370,7 @@ const {
   docId,
   onChange: () => {
     rerenderTableEditor();
+    rerenderSlideEditor();
     clampSidebarWidth();
   }
 });

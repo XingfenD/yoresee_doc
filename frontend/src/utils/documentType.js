@@ -4,7 +4,10 @@ const LEGACY_ALIAS_MAP = {
   markdown: '1',
   document_type_markdown: '1',
   table: '2',
-  document_type_table: '2'
+  document_type_table: '2',
+  slide: '3',
+  slides: '3',
+  document_type_slide: '3'
 };
 
 const normalizeRawType = (value) => {
@@ -54,5 +57,6 @@ export const matchDocumentType = (candidate, expected) => {
 
 export const buildDocumentTypeOptions = (t) => [
   { value: '1', label: t('document.typeMarkdown') },
-  { value: '2', label: t('document.typeTablePlaceholder') }
+  { value: '2', label: t('document.typeTablePlaceholder') },
+  { value: '3', label: t('document.typeSlide') }
 ];

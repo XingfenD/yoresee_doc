@@ -11,7 +11,10 @@ export function useDocumentEditorPolicy(options = {}) {
   const isPersonalDocument = computed(() => kbId.value === 'personal');
   const isExampleDocument = computed(() => docId.value === 'example');
   const hasDocument = computed(() => Boolean(docId.value));
-  const isMarkdownDocument = computed(() => normalizeDocumentType(currentDocType.value, '1') === '1');
+  const normalizedDocType = computed(() => normalizeDocumentType(currentDocType.value, '1'));
+  const isMarkdownDocument = computed(() => normalizedDocType.value === '1');
+  const isTableDocument = computed(() => normalizedDocType.value === '2');
+  const isSlideDocument = computed(() => normalizedDocType.value === '3');
 
   const canManageAttachments = computed(() => hasDocument.value && !isExampleDocument.value);
   const canManageSettings = computed(() => hasDocument.value && !isExampleDocument.value);
@@ -24,7 +27,10 @@ export function useDocumentEditorPolicy(options = {}) {
     isPersonalDocument,
     isExampleDocument,
     hasDocument,
+    normalizedDocType,
     isMarkdownDocument,
+    isTableDocument,
+    isSlideDocument,
     canManageAttachments,
     canManageSettings,
     collabEnabled,

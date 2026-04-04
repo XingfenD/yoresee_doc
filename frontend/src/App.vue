@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useUserStore } from './store/user';
 import { ElConfigProvider } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
@@ -20,25 +20,43 @@ import { useI18n } from 'vue-i18n';
 const userStore = useUserStore();
 const { locale } = useI18n();
 
-// 初始化暗黑模式
-const initDarkMode = () => {
-  if (userStore.darkMode) {
-    document.documentElement.classList.add('dark-mode');
-  } else {
-    document.documentElement.classList.remove('dark-mode');
-  }
+let darkModeObserver = null;
+
+const applyDarkModeClass = () => {
+  const enabled = Boolean(userStore.darkMode);
+  document.documentElement.classList.toggle('dark-mode', enabled);
+  document.body.classList.toggle('dark-mode', enabled);
 };
 
-// 监听暗黑模式变化
 watch(
   () => userStore.darkMode,
-  (newValue) => {
-    initDarkMode();
-  }
+  () => {
+    applyDarkModeClass();
+  },
+  { immediate: true }
 );
 
 onMounted(() => {
-  initDarkMode();
+  applyDarkModeClass();
+  darkModeObserver = new MutationObserver(() => {
+    const enabled = Boolean(userStore.darkMode);
+    const rootMatches = document.documentElement.classList.contains('dark-mode') === enabled;
+    const bodyMatches = document.body.classList.contains('dark-mode') === enabled;
+    if (rootMatches && bodyMatches) {
+      return;
+    }
+    applyDarkModeClass();
+  });
+  darkModeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  darkModeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+});
+
+onBeforeUnmount(() => {
+  if (!darkModeObserver) {
+    return;
+  }
+  darkModeObserver.disconnect();
+  darkModeObserver = null;
 });
 
 const elementLocale = computed(() => (locale.value === 'zh' ? zhCn : en));

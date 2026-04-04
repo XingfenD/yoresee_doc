@@ -56,6 +56,7 @@ export function useEditorPanelConstraints(options = {}) {
     width: sidebarWidth,
     collapsed: isSidebarCollapsed,
     resizing: isSidebarResizing,
+    setCollapsed: setSidebarCollapsed,
     toggleCollapsed: toggleSidebar,
     startResize
   } = usePanelSidebar({
@@ -116,6 +117,8 @@ export function useEditorPanelConstraints(options = {}) {
   );
 
   onMounted(() => {
+    // Always start with directory sidebar expanded when entering editor.
+    setSidebarCollapsed(false);
     window.addEventListener('resize', clampSidebarWidth);
     clampSidebarWidth();
     emitLayoutChange(0);

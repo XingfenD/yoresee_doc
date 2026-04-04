@@ -25,6 +25,7 @@
       </div>
       <DocumentTree
         ref="treeComponentRef"
+        class="directory-tree-panel"
         :nodes="nodes"
         :loading="loading"
         :current-id="currentId"
@@ -77,6 +78,14 @@ defineExpose({
 .directory-sidebar {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.directory-tree-panel {
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar-header {

@@ -93,6 +93,7 @@ export default {
     createLocationKnowledgeBase: '知识库',
     typeMarkdown: 'Markdown',
     typeTablePlaceholder: '表格（占位）',
+    typeSlide: '幻灯片',
     commentPlaceholder: '写下你的评论...',
     commentSend: '发送',
     commentEmpty: '暂无评论',
@@ -107,6 +108,15 @@ export default {
     inlineCommentContentRequired: '请输入评论内容',
     inlineCommentAnchorMissing: '未找到行内锚点',
     inlineCommentInputPlaceholder: '输入评论内容...',
+    slide: {
+      sourceTitle: '幻灯片内容',
+      sourceTip: '使用 `---` 分隔每一页',
+      placeholder: '# 标题\n\n内容\n\n---\n\n# 下一页',
+      previewTitle: '预览',
+      count: '共 {count} 页',
+      previewHint: '可用左右箭头、分页点或键盘方向键切换页面',
+      emptySlide: '空白幻灯片'
+    },
     attachments: {
       title: '附件',
       previewTitle: '附件预览',

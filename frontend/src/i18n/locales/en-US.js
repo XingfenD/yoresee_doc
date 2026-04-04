@@ -95,6 +95,7 @@ export default {
     createLocationKnowledgeBase: 'Knowledge Base',
     typeMarkdown: 'Markdown',
     typeTablePlaceholder: 'Table (Placeholder)',
+    typeSlide: 'Slides',
     commentPlaceholder: 'Write a comment...',
     commentSend: 'Send',
     commentEmpty: 'No comments yet',
@@ -109,6 +110,15 @@ export default {
     inlineCommentContentRequired: 'Please enter comment content',
     inlineCommentAnchorMissing: 'Inline anchor was not found',
     inlineCommentInputPlaceholder: 'Enter comment content...',
+    slide: {
+      sourceTitle: 'Slide Content',
+      sourceTip: 'Use `---` to split slides',
+      placeholder: '# Title\n\nContent\n\n---\n\n# Next Slide',
+      previewTitle: 'Preview',
+      count: '{count} slides',
+      previewHint: 'Use arrows, bullets, or keyboard arrows to switch slides',
+      emptySlide: 'Empty Slide'
+    },
     attachments: {
       title: 'Attachments',
       previewTitle: 'Attachment Preview',
