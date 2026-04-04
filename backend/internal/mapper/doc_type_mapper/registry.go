@@ -111,7 +111,13 @@ func (r *registry) defaultMapper() Mapper {
 }
 
 func normalizeName(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
+	normalized := strings.ToLower(strings.TrimSpace(name))
+	switch normalized {
+	case "slide":
+		return "markdown_slide"
+	default:
+		return normalized
+	}
 }
 
 func DefaultDTOType() dto.DocumentType {

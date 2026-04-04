@@ -10,7 +10,7 @@ type DocumentType string
 
 const DocumentType_Markdown DocumentType = "markdown"
 const DocumentType_Table DocumentType = "table"
-const DocumentType_Slide DocumentType = "slide"
+const DocumentType_MarkdownSlide DocumentType = "markdown_slide"
 
 type ContainerType string
 
