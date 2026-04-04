@@ -41,7 +41,11 @@
       >
         <el-icon><ChatLineRound /></el-icon>
       </el-button>
-      <AppDropdown trigger="click" @command="$emit('header-command', $event)">
+      <AppDropdown
+        trigger="click"
+        :teleported="!isFullscreen"
+        @command="$emit('header-command', $event)"
+      >
         <el-button class="editor-action-button" text>
           <el-icon><MoreFilled /></el-icon>
         </el-button>
@@ -84,6 +88,7 @@ const props = defineProps({
   saveAsLabel: { type: String, default: '' },
   attachmentsLabel: { type: String, default: '' },
   settingsLabel: { type: String, default: '' },
+  isFullscreen: { type: Boolean, default: false },
   canManageAttachments: { type: Boolean, default: false },
   canManageSettings: { type: Boolean, default: false }
 });

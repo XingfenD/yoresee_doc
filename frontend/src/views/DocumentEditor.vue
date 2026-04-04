@@ -50,6 +50,7 @@
           :save-as-label="t('templates.saveAs')"
           :attachments-label="t('document.attachments.title')"
           :settings-label="t('document.settings.title')"
+          :is-fullscreen="isEditorFullscreen"
           :can-manage-attachments="canManageAttachments"
           :can-manage-settings="canManageSettings"
           @update:pending-title="pendingTitle = $event"
