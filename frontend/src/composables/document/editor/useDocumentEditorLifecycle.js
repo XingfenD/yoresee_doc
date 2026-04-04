@@ -69,11 +69,11 @@ export function useDocumentEditorLifecycle({
       if (docId.value && docId.value !== 'example') {
         recordRecentDocument(docId.value).catch(() => {});
       }
+      await expandToCurrentDoc();
+      updateCurrentDocTitle();
       if (lastSyncedDocId.value !== docId.value) {
         collabReady.value = !collabEnabled.value;
       }
-      await expandToCurrentDoc();
-      updateCurrentDocTitle();
     }
   );
 

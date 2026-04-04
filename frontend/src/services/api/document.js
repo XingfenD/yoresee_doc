@@ -12,6 +12,7 @@ import {
 import { toDocumentTypeNumber } from '@/utils/documentType';
 
 const {
+  UpdateDocumentRequest,
   UpdateDocumentMetaRequest,
   UpdateDocumentSettingsRequest,
   CreateDocumentRequest,
@@ -29,6 +30,26 @@ const {
   RecursiveOptions,
   CreateDocumentContainerType
 } = messages;
+
+export const updateDocument = async (documentExternalID, data = {}) => {
+  const req = new UpdateDocumentRequest({
+    externalId: documentExternalID,
+    title: data.title ?? undefined,
+    knowledgeBaseExternalId: data.knowledge_base_external_id ?? undefined,
+    parentExternalId: data.parent_external_id ?? undefined,
+    content: data.content ?? undefined
+  });
+
+  if (data.move_to_container === 'knowledge_base') {
+    req.moveToContainer = CreateDocumentContainerType.KNOWLEDGE_BASE;
+  } else if (data.move_to_container === 'own') {
+    req.moveToContainer = CreateDocumentContainerType.OWN;
+  }
+
+  const resp = await unaryCall(documentClient, 'updateDocument', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
+};
 
 export const updateDocumentMeta = async (documentExternalID, data = {}) => {
   const req = new UpdateDocumentMetaRequest({

@@ -512,6 +512,8 @@ export default {
     collapseAll: '收起全部',
     expand: '展开',
     expandAll: '展开全部',
+    fullscreen: '全屏',
+    exitFullscreen: '退出全屏',
     create: '创建',
     cancel: '取消',
     confirm: '确认',

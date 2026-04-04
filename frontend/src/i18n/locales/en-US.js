@@ -514,6 +514,8 @@ export default {
     collapseAll: 'Collapse All',
     expand: 'Expand',
     expandAll: 'Expand All',
+    fullscreen: 'Fullscreen',
+    exitFullscreen: 'Exit Fullscreen',
     create: 'Create',
     cancel: 'Cancel',
     confirm: 'Confirm',

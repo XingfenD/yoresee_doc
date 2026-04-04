@@ -24,6 +24,7 @@
     "vue": "^3.5.25",
     "vue-i18n": "^9.10.2",
     "vue-router": "^5.0.3",
+    "x-data-spreadsheet": "^1.1.9",
     "y-websocket": "^1.5.4",
     "yjs": "^13.6.16"
   },
@@ -32,6 +33,7 @@
     "@connectrpc/protoc-gen-connect-es": "^1.7.0",
     "@vitejs/plugin-vue": "^6.0.2",
     "esbuild": "^0.24.0",
+    "less": "^4.6.4",
     "vite": "^7.3.1"
   }
 }

@@ -13,7 +13,7 @@
     @logout="handleLogout"
     @menu-select="handleMenuSelect"
   >
-    <div class="editor-layout">
+    <div ref="editorLayoutRef" class="editor-layout" :class="{ 'is-fullscreen': isEditorFullscreen }">
       <DirectorySidebar
         ref="treeComponentRef"
         :collapsed="isSidebarCollapsed"
@@ -59,13 +59,29 @@
           @toggle-sidebar="toggleSidebar"
           @toggle-comment-sidebar="toggleCommentSidebar"
           @header-command="onHeaderCommand"
-        />
+        >
+          <template #title-action>
+            <el-button
+              v-if="canToggleEditorFullscreen"
+              class="editor-fullscreen-header-btn"
+              text
+              :title="isEditorFullscreen ? t('common.exitFullscreen') : t('common.fullscreen')"
+              @click="toggleEditorFullscreen"
+            >
+              <el-icon>
+                <ScaleToOriginal v-if="isEditorFullscreen" />
+                <FullScreen v-else />
+              </el-icon>
+            </el-button>
+          </template>
+        </DocumentEditorHeader>
         <div class="editor-content">
           <div class="editor-wrapper">
             <div v-if="collabEnabled && !collabReady" class="editor-loading">
               {{ t('document.loading') }}
             </div>
             <MarkdownEditor
+              v-if="isMarkdownDocument"
               ref="markdownEditorRef"
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
@@ -78,6 +94,12 @@
               @comment-add="handleInlineCommentAdd"
               @comment-remove="handleInlineCommentRemove"
               @comment-changed="handleRemoteCommentChanged"
+            />
+            <TableEditor
+              v-else
+              ref="tableEditorRef"
+              v-model="editorContent"
+              @commit="flushTableSave"
             />
           </div>
         </div>
@@ -95,6 +117,7 @@
         :on-anchor-hover="handleAnchorHover"
         :on-anchor-remove="handleAnchorRemove"
         :on-comment-mutated="handleCommentMutated"
+        @width-change="handleCommentWidthChange"
         @toggle="toggleCommentSidebar"
       />
     </div>
@@ -128,26 +151,33 @@ export default {
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
 import DirectorySidebar from '@/components/document/DirectorySidebar.vue';
 import MarkdownEditor from '@/components/document/MarkdownEditor.vue';
+import TableEditor from '@/components/document/TableEditor.vue';
 import CommentSidebar from '@/components/comment/CommentSidebar.vue';
 import DocumentCreateDialog from '@/components/document/DocumentCreateDialog.vue';
 import DocumentEditorHeader from '@/components/document/DocumentEditorHeader.vue';
 import PageLayout from '@/components/layout/PageLayout.vue';
 import TemplateCreateDialog from '@/components/template/TemplateCreateDialog.vue';
-import { usePanelSidebar } from '@/composables/layout/usePanelSidebar';
 import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
 import { useDocumentRouteContext } from '@/composables/document/editor/useDocumentRouteContext';
 import { useDirectoryTreeState } from '@/composables/document/tree/useDirectoryTreeState';
 import { useEditorCommentBridge } from '@/composables/document/editor/useEditorCommentBridge';
 import { useDocumentEditorActions } from '@/composables/document/editor/useDocumentEditorActions';
 import { useDocumentEditorLifecycle } from '@/composables/document/editor/useDocumentEditorLifecycle';
+import { useEditorFullscreen } from '@/composables/document/editor/useEditorFullscreen';
+import { useEditorPanelConstraints } from '@/composables/document/editor/useEditorPanelConstraints';
+import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
 import { useUserStore } from '@/store/user';
 import {
   getKnowledgeBaseDocuments,
   getMyDocuments,
+  getDocumentContent,
+  updateDocument,
   recordRecentDocument
 } from '@/services/api';
+import { normalizeDocumentType } from '@/utils/documentType';
 
 const props = defineProps({
   kbId: {
@@ -168,7 +198,6 @@ const {
   kbId,
   docId,
   resolveActiveMenu,
-  collabEnabled,
   collabRoom,
   collabUrl,
   collabToken,
@@ -202,6 +231,7 @@ const {
   directoryTree,
   knowledgeBaseName,
   currentDocTitle,
+  currentDocType,
   isAllExpanded,
   fetchDocuments,
   updateCurrentDocTitle,
@@ -221,31 +251,38 @@ const {
 });
 
 const editorContent = ref('');
-const {
-  collapsed: isSidebarCollapsed,
-  resizing: isSidebarResizing,
-  toggleCollapsed: toggleSidebar,
-  startResize
-} = usePanelSidebar({
-  defaultWidth: 280,
-  minWidth: 220,
-  maxWidth: 520,
-  resizeEdge: 'right',
-  collapsedStorageKey: 'sidebarCollapsed',
-  widthStorageKey: 'docSidebarWidth',
-  getMaxWidth: () => {
-    const layoutRect = document.querySelector('.editor-layout')?.getBoundingClientRect();
-    if (!layoutRect) return 520;
-    return Math.min(520, layoutRect.width - 320);
-  },
-  onWidthChange: (value) => {
-    document.documentElement.style.setProperty('--sidebar-width', `${value}px`);
-  }
-});
+const editorLayoutRef = ref(null);
 const isCommentCollapsed = ref(false);
 const markdownEditorRef = ref(null);
+const tableEditorRef = ref(null);
 const commentSidebarRef = ref(null);
-const inlineCommentEnabled = computed(() => !!docId.value && docId.value !== 'example');
+const {
+  isSidebarCollapsed,
+  isSidebarResizing,
+  toggleSidebar,
+  startResize,
+  handleCommentWidthChange,
+  clampSidebarWidth
+} = useEditorPanelConstraints({
+  editorLayoutRef,
+  commentSidebarRef,
+  isCommentCollapsed
+});
+const {
+  flushTableSave,
+  rerenderTableEditor
+} = useTableDocumentPersistence({
+  docId,
+  currentDocType,
+  editorContent,
+  tableEditorRef,
+  t,
+  getDocumentContent,
+  updateDocument
+});
+const isMarkdownDocument = computed(() => normalizeDocumentType(currentDocType.value, '1') === '1');
+const collabEnabled = computed(() => !!docId.value && docId.value !== 'example' && isMarkdownDocument.value);
+const inlineCommentEnabled = computed(() => collabEnabled.value);
 const {
   isEditingTitle,
   pendingTitle,
@@ -306,6 +343,19 @@ const onHeaderCommand = (command) => {
     router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/history`);
   }
 };
+
+const {
+  isEditorFullscreen,
+  canToggleEditorFullscreen,
+  toggleEditorFullscreen
+} = useEditorFullscreen({
+  editorLayoutRef,
+  docId,
+  onChange: () => {
+    rerenderTableEditor();
+    clampSidebarWidth();
+  }
+});
 const {
   handleInlineCommentAdd,
   handleInlineCommentRemove,
@@ -350,6 +400,9 @@ const {
 <style scoped>
 .editor-layout {
   display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 100%;
   min-height: 0;
   background-color: var(--bg-white);
@@ -359,11 +412,20 @@ const {
   transition: all 0.3s ease-in-out;
 }
 
+.editor-layout.is-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .editor-main {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   background-color: var(--bg-white);
   transition: all 0.3s ease-in-out;
 }
@@ -376,6 +438,7 @@ const {
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-width: 0;
   min-height: 0;
   transition: all 0.3s ease-in-out;
 }
@@ -384,6 +447,7 @@ const {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
   position: relative;
 }
@@ -417,5 +481,13 @@ const {
 .dark-mode .editor-footer {
   border-color: var(--border-color);
   color: var(--text-light);
+}
+
+.editor-fullscreen-header-btn {
+  color: var(--text-medium);
+}
+
+.editor-fullscreen-header-btn:hover {
+  color: var(--primary-color);
 }
 </style>

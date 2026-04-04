@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ArrowRight } from '@element-plus/icons-vue';
 import CommentList from '@/components/comment/CommentList.vue';
@@ -92,7 +92,7 @@ const props = defineProps({
   onCommentMutated: { type: Function, default: null }
 });
 
-defineEmits(['toggle']);
+const emit = defineEmits(['toggle', 'width-change']);
 
 const { t } = useI18n();
 
@@ -148,7 +148,15 @@ const displayTitle = computed(() => {
   return titleWithCount.value ? `${props.title} (${titleWithCount.value})` : props.title;
 });
 
+watch(
+  () => commentWidth.value,
+  (value) => {
+    emit('width-change', value);
+  }
+);
+
 defineExpose({
+  getCurrentWidth: () => commentWidth.value,
   handleInlineAnchorAdd,
   handleInlineAnchorRemove,
   reload

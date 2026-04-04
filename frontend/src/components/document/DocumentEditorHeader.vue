@@ -22,6 +22,7 @@
       />
     </div>
     <div class="editor-actions">
+      <slot name="title-action" />
       <el-button
         class="editor-action-button"
         text
@@ -114,6 +115,7 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-width: 0;
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
 }
@@ -121,12 +123,16 @@ watch(
 .editor-title {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
   min-height: 28px;
 }
 
 .editor-actions {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: var(--spacing-sm);
 }
 
@@ -143,6 +149,10 @@ watch(
   font-weight: 600;
   color: var(--text-dark);
   cursor: text;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .doc-title-input :deep(.el-input__wrapper) {
@@ -150,6 +160,10 @@ watch(
   border-radius: 0;
   background-color: transparent;
   padding: 0;
+}
+
+.doc-title-input {
+  width: min(100%, 560px);
 }
 
 .doc-title-input :deep(.el-input__inner) {

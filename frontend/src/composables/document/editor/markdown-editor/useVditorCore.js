@@ -18,8 +18,7 @@ const DEFAULT_TOOLBAR = [
   'edit-mode',
   'undo',
   'redo',
-  'outline',
-  'fullscreen'
+  'outline'
 ];
 
 export function useVditorCore({

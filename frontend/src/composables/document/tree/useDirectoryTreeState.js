@@ -1,5 +1,6 @@
 import { computed, nextTick, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import { normalizeDocumentType } from '@/utils/documentType';
 
 export function useDirectoryTreeState({
   t,
@@ -14,6 +15,7 @@ export function useDirectoryTreeState({
   const directoryTree = ref([]);
   const knowledgeBaseName = ref('示例知识库');
   const currentDocTitle = ref('示例文档');
+  const currentDocType = ref('1');
   const isAllExpanded = ref(true);
 
   const treeRef = computed(() => treeComponentRef.value?.getTreeRef());
@@ -26,7 +28,7 @@ export function useDirectoryTreeState({
         label: doc.title,
         isFolder: !!doc.has_children,
         isLeaf: !doc.has_children,
-        type: doc.type,
+        type: normalizeDocumentType(doc.type, '1'),
         parentId,
         children: []
       };
@@ -55,12 +57,16 @@ export function useDirectoryTreeState({
 
   const updateCurrentDocTitle = () => {
     if (!docId.value || docId.value === 'example') {
+      currentDocType.value = '1';
       return;
     }
     const node = findNodeById(directoryTree.value, docId.value);
     if (node) {
       currentDocTitle.value = node.label;
+      currentDocType.value = normalizeDocumentType(node.type, '1');
+      return;
     }
+    currentDocType.value = '1';
   };
 
   const updateTreeNodeTitle = (nodes, targetId, title) => {
@@ -178,6 +184,7 @@ export function useDirectoryTreeState({
     directoryTree,
     knowledgeBaseName,
     currentDocTitle,
+    currentDocType,
     isAllExpanded,
     fetchDocuments,
     updateCurrentDocTitle,
