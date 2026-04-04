@@ -31,6 +31,30 @@ const resizeHandler = ref(null);
 const rafIdRef = ref(0);
 const transitionContainerRef = ref(null);
 const transitionEndHandlerRef = ref(null);
+const themeObserverRef = ref(null);
+const setBodyTableEditorOpen = (enabled) => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  document.body.classList.toggle('table-editor-open', Boolean(enabled));
+};
+
+const buildSheetStyle = () => ({
+  bgcolor: '#ffffff',
+  color: '#0a0a0a',
+  align: 'left',
+  valign: 'middle',
+  textwrap: false,
+  strike: false,
+  underline: false,
+  font: {
+    name: 'Arial',
+    size: 10,
+    bold: false,
+    italic: false
+  },
+  format: 'normal'
+});
 
 const createEmptyRows = (rowCount = DEFAULT_ROW_COUNT, colCount = DEFAULT_COLUMN_COUNT) =>
   Array.from({ length: rowCount }, () => Array.from({ length: colCount }, () => ''));
@@ -193,6 +217,24 @@ const applyModelValue = async (value) => {
   applyingData.value = false;
 };
 
+const applyThemeToSheet = () => {
+  const instance = sheetRef.value;
+  if (!instance?.data?.settings) {
+    return;
+  }
+  const nextStyle = buildSheetStyle();
+  const currentStyle = instance.data.settings.style || {};
+  instance.data.settings.style = {
+    ...currentStyle,
+    ...nextStyle,
+    font: {
+      ...(currentStyle.font || {}),
+      ...nextStyle.font
+    }
+  };
+  scheduleRerender();
+};
+
 const initSpreadsheet = () => {
   if (!editorRef.value || sheetRef.value) {
     return;
@@ -216,7 +258,8 @@ const initSpreadsheet = () => {
     view: {
       height: () => editorRef.value?.clientHeight || 640,
       width: () => editorRef.value?.clientWidth || 960
-    }
+    },
+    style: buildSheetStyle()
   });
   sheetRef.value = instance;
   instance.change((data) => {
@@ -235,6 +278,7 @@ defineExpose({
 });
 
 onMounted(async () => {
+  setBodyTableEditorOpen(true);
   initSpreadsheet();
   const handler = (event) => {
     const container = editorRef.value;
@@ -262,11 +306,23 @@ onMounted(async () => {
     transitionContainerRef.value = transitionContainer;
     transitionEndHandlerRef.value = onTransitionEnd;
   }
+  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+    const observer = new MutationObserver(() => {
+      applyThemeToSheet();
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    themeObserverRef.value = observer;
+  }
+  applyThemeToSheet();
   await applyModelValue(props.modelValue);
   scheduleRerender();
 });
 
 onBeforeUnmount(() => {
+  setBodyTableEditorOpen(false);
+  if (themeObserverRef.value) {
+    themeObserverRef.value.disconnect();
+  }
   if (wheelBlocker.value) {
     window.removeEventListener('wheel', wheelBlocker.value, true);
     window.removeEventListener('mousewheel', wheelBlocker.value, true);
@@ -285,6 +341,7 @@ onBeforeUnmount(() => {
     cancelAnimationFrame(rafIdRef.value);
   }
   rafIdRef.value = 0;
+  themeObserverRef.value = null;
   transitionContainerRef.value = null;
   transitionEndHandlerRef.value = null;
   resizeHandler.value = null;
@@ -330,17 +387,108 @@ watch(
   border: none;
   font-family: inherit;
   box-shadow: none;
+  background: var(--bg-white);
 }
 
 .table-editor :deep(.x-spreadsheet-toolbar),
 .table-editor :deep(.x-spreadsheet-bottombar) {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--bg-white);
 }
+</style>
 
-.dark-mode .table-editor :deep(.x-spreadsheet-toolbar),
-.dark-mode .table-editor :deep(.x-spreadsheet-bottombar),
-.dark-mode .table-editor :deep(.x-spreadsheet-sheet) {
-  filter: invert(0.92) hue-rotate(180deg);
+<style>
+body.table-editor-open > .x-spreadsheet-dimmer {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  background: transparent !important;
 }
 
+body.dark-mode .table-editor {
+  background: #0f172a;
+}
+
+body.dark-mode .table-editor .x-spreadsheet {
+  background: #0f172a;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-toolbar,
+body.dark-mode .table-editor .x-spreadsheet-bottombar {
+  background: #111827;
+  border-color: #374151;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-toolbar .x-spreadsheet-toolbar-btn:hover,
+body.dark-mode .table-editor .x-spreadsheet-toolbar .x-spreadsheet-toolbar-btn.active {
+  background: rgba(148, 163, 184, 0.18);
+}
+
+body.dark-mode .table-editor .x-spreadsheet-toolbar .x-spreadsheet-icon .x-spreadsheet-icon-img,
+body.dark-mode .table-editor .x-spreadsheet-dropdown-header .x-spreadsheet-icon .x-spreadsheet-icon-img {
+  filter: invert(0.9);
+  opacity: 0.92;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-toolbar-divider {
+  border-right-color: #374151;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-menu > li,
+body.dark-mode .table-editor .x-spreadsheet-item {
+  color: #cbd5e1;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-menu > li.active,
+body.dark-mode .table-editor .x-spreadsheet-item:hover,
+body.dark-mode .table-editor .x-spreadsheet-item.active {
+  background: rgba(148, 163, 184, 0.18);
+  color: #f8fafc;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-sheet,
+body.dark-mode .table-editor .x-spreadsheet-table {
+  background: #0b1220;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-overlayer,
+body.dark-mode .table-editor .x-spreadsheet-overlayer-content {
+  background: transparent;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-table {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+body.dark-mode .table-editor .x-spreadsheet-editor .x-spreadsheet-editor-area,
+body.dark-mode .table-editor .x-spreadsheet-selector .x-spreadsheet-selector-area {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+body.dark-mode .table-editor .x-spreadsheet-editor .x-spreadsheet-editor-area textarea {
+  background: #111827;
+  color: #f8fafc;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-scrollbar {
+  background-color: #111827;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-scrollbar.horizontal > div,
+body.dark-mode .table-editor .x-spreadsheet-scrollbar.vertical > div {
+  background: #4b5563;
+}
+
+body.dark-mode .table-editor .x-spreadsheet-dropdown .x-spreadsheet-dropdown-content,
+body.dark-mode .table-editor .x-spreadsheet-contextmenu,
+body.dark-mode .table-editor .x-spreadsheet-suggest,
+body.dark-mode .table-editor .x-spreadsheet-sort-filter,
+body.dark-mode .table-editor .x-spreadsheet-calendar,
+body.dark-mode .table-editor .x-spreadsheet-modal,
+body.dark-mode .table-editor .x-spreadsheet-toast {
+  border-color: #374151;
+  background: #111827;
+  color: #e5e7eb;
+}
 </style>
