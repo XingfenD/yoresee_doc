@@ -50,8 +50,8 @@
           :save-as-label="t('templates.saveAs')"
           :attachments-label="t('document.attachments.title')"
           :settings-label="t('document.settings.title')"
-          :can-manage-attachments="!!docId && docId !== 'example'"
-          :can-manage-settings="!!docId && docId !== 'example'"
+          :can-manage-attachments="canManageAttachments"
+          :can-manage-settings="canManageSettings"
           @update:pending-title="pendingTitle = $event"
           @start-edit-title="startEditTitle"
           @commit-title="commitTitle"
@@ -124,14 +124,14 @@
   </PageLayout>
   <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
     :parent-external-id="pendingParentId" :initial-document-type="selectedDocumentType"
-    :knowledge-base-id="kbId !== 'personal' ? kbId : ''"
+    :knowledge-base-id="createDialogKnowledgeBaseId"
     @submit="createDocument" @cancel="cancelCreateDocument" />
   <TemplateCreateDialog
     v-model="showTemplateDialog"
     :loading="savingTemplate"
     :title="t('templates.createDialogTitle')"
     :show-content="false"
-    :show-kb-scope="kbId !== 'personal'"
+    :show-kb-scope="showTemplateDialogKbScope"
     :initial-name="templateDialogInit.name"
     :initial-description="templateDialogInit.description"
     :initial-scope="templateDialogInit.scope"
@@ -148,7 +148,7 @@ export default {
 </script>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
@@ -168,6 +168,8 @@ import { useDocumentEditorActions } from '@/composables/document/editor/useDocum
 import { useDocumentEditorLifecycle } from '@/composables/document/editor/useDocumentEditorLifecycle';
 import { useEditorFullscreen } from '@/composables/document/editor/useEditorFullscreen';
 import { useEditorPanelConstraints } from '@/composables/document/editor/useEditorPanelConstraints';
+import { useDocumentEditorPolicy } from '@/composables/document/editor/useDocumentEditorPolicy';
+import { useDocumentHeaderRouting } from '@/composables/document/editor/useDocumentHeaderRouting';
 import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
 import { useUserStore } from '@/store/user';
 import {
@@ -177,7 +179,6 @@ import {
   updateDocument,
   recordRecentDocument
 } from '@/services/api';
-import { normalizeDocumentType } from '@/utils/documentType';
 
 const props = defineProps({
   kbId: {
@@ -280,9 +281,19 @@ const {
   getDocumentContent,
   updateDocument
 });
-const isMarkdownDocument = computed(() => normalizeDocumentType(currentDocType.value, '1') === '1');
-const collabEnabled = computed(() => !!docId.value && docId.value !== 'example' && isMarkdownDocument.value);
-const inlineCommentEnabled = computed(() => collabEnabled.value);
+const {
+  isMarkdownDocument,
+  canManageAttachments,
+  canManageSettings,
+  collabEnabled,
+  inlineCommentEnabled,
+  createDialogKnowledgeBaseId,
+  showTemplateDialogKbScope
+} = useDocumentEditorPolicy({
+  kbId,
+  docId,
+  currentDocType
+});
 const {
   isEditingTitle,
   pendingTitle,
@@ -315,34 +326,12 @@ const {
   fetchDocuments
 });
 
-const onHeaderCommand = (command) => {
-  if (handleHeaderCommand(command)) {
-    return;
-  }
-  if (command === 'document_settings') {
-    if (kbId.value === 'personal') {
-      router.push(`/mydocument/${docId.value}/setting`);
-      return;
-    }
-    router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/setting`);
-    return;
-  }
-  if (command === 'manage_attachments') {
-    if (kbId.value === 'personal') {
-      router.push(`/mydocument/${docId.value}/attachments`);
-      return;
-    }
-    router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/attachments`);
-    return;
-  }
-  if (command === 'show_history') {
-    if (kbId.value === 'personal') {
-      router.push(`/mydocument/${docId.value}/history`);
-      return;
-    }
-    router.push(`/knowledge-base/${kbId.value}/document/${docId.value}/history`);
-  }
-};
+const { handleHeaderCommand: onHeaderCommand } = useDocumentHeaderRouting({
+  router,
+  kbId,
+  docId,
+  onCommand: handleHeaderCommand
+});
 
 const {
   isEditorFullscreen,
