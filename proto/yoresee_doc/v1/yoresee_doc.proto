@@ -875,6 +875,7 @@ message CreateTemplateRequest {
   CreateTemplateContainer target_container = 1;
   string knowledge_base_id = 2;
   string template_content = 3;
+  DocumentType type = 4;
 }
 
 message CreateTemplateResponse {

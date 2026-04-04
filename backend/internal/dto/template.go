@@ -15,6 +15,7 @@ type CreateTemplateRequest struct {
 	TargetContainer         TemplateContainer
 	KnowledgeBaseExternalID *string
 	TemplateContent         string
+	Type                    DocumentType
 }
 
 type UpdateTemplateSettingsRequest struct {

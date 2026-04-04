@@ -24,4 +24,8 @@ func (knowledgeBaseAdapter) ModelType() model.ContainerType {
 	return model.ContainerType_KnowledgeBase
 }
 
+func (knowledgeBaseAdapter) RequiresKnowledgeBaseID() bool {
+	return true
+}
+
 func init() { RegisterMapper(knowledgeBaseAdapter{}) }

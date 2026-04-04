@@ -6,6 +6,8 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	doc_container_mapper "github.com/XingfenD/yoresee_doc/internal/mapper/doc_container_mapper"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/template_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -271,7 +273,7 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 
 	dtoReq := &dto.CreateDocumentReq{
 		Title:             req.Title,
-		Type:              fromDocumentType(req.Type),
+		Type:              doc_type_mapper.FromProtoType(req.Type),
 		IsPublic:          req.GetIsPublic(),
 		CreatorExternalID: utils.Of(userExternalID),
 		ParentExternalID:  req.ParentExternalId,
@@ -512,8 +514,9 @@ func (s *DocumentServiceServer) CreateTemplate(ctx context.Context, req *pb.Crea
 
 	serviceReq := &dto.CreateTemplateRequest{
 		UserExternalID:  userExternalID,
-		TargetContainer: fromCreateTemplateContainer(req.TargetContainer),
+		TargetContainer: template_container_mapper.FromProtoType(req.TargetContainer),
 		TemplateContent: req.TemplateContent,
+		Type:            doc_type_mapper.FromProtoType(req.Type),
 	}
 	if req.KnowledgeBaseId != "" {
 		serviceReq.KnowledgeBaseExternalID = utils.Of(req.KnowledgeBaseId)
@@ -617,11 +620,11 @@ func (s *DocumentServiceServer) ListTemplates(ctx context.Context, req *pb.ListT
 		KnowledgeBaseID: req.KnowledgeBaseId,
 	}
 	if req.TargetContainer != nil {
-		container := fromCreateTemplateContainer(req.GetTargetContainer())
+		container := template_container_mapper.FromProtoType(req.GetTargetContainer())
 		filterArgs.TargetContainer = utils.Of(container)
 	}
 	if req.Type != nil {
-		filterArgs.Type = utils.Of(fromDocumentType(req.GetType()))
+		filterArgs.Type = utils.Of(doc_type_mapper.FromProtoType(req.GetType()))
 	}
 
 	sortArgs := dto.SortArgs{Field: "created_at", Desc: true}
@@ -643,7 +646,7 @@ func (s *DocumentServiceServer) ListTemplates(ctx context.Context, req *pb.ListT
 	if req.OnlyMine {
 		serviceReq.CreatorExternalID = userExternalID
 	}
-	if req.TargetContainer != nil && req.GetTargetContainer() == pb.CreateTemplateContainer_OWN_TEMPLATE {
+	if req.TargetContainer != nil && template_container_mapper.FromProtoType(req.GetTargetContainer()) == dto.TemplateContainerOwn {
 		serviceReq.CreatorExternalID = userExternalID
 	}
 

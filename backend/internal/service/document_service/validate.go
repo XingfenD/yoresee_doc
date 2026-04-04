@@ -4,6 +4,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	doc_container_mapper "github.com/XingfenD/yoresee_doc/internal/mapper/doc_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/template_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 )
 
@@ -85,17 +86,18 @@ func validateCreateTemplateReq(req *dto.CreateTemplateRequest) error {
 	if req.TemplateContent == "" {
 		return status.GenErrWithCustomMsg(status.StatusParamError, "template content is empty")
 	}
-	switch req.TargetContainer {
-	case dto.TemplateContainerOwn, dto.TemplateContainerPublic:
-		return nil
-	case dto.TemplateContainerKnowledgeBase:
+	if req.Type != "" && !doc_type_mapper.IsSupportedDTOType(req.Type) {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid template type")
+	}
+	if !template_container_mapper.IsSupportedDTOType(req.TargetContainer) {
+		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid template container")
+	}
+	if template_container_mapper.RequiresKnowledgeBaseID(req.TargetContainer) {
 		if req.KnowledgeBaseExternalID == nil || *req.KnowledgeBaseExternalID == "" {
 			return status.GenErrWithCustomMsg(status.StatusParamError, "knowledge_base_id is empty")
 		}
-		return nil
-	default:
-		return status.GenErrWithCustomMsg(status.StatusParamError, "invalid template container")
 	}
+	return nil
 }
 
 func validateUpdateTemplateSettingsReq(req *dto.UpdateTemplateSettingsRequest) error {

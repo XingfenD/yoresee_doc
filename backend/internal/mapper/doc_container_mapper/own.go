@@ -24,4 +24,8 @@ func (ownAdapter) ModelType() model.ContainerType {
 	return model.ContainerType_Own
 }
 
+func (ownAdapter) RequiresKnowledgeBaseID() bool {
+	return false
+}
+
 func init() { RegisterMapper(ownAdapter{}) }

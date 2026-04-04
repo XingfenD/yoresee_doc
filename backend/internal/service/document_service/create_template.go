@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/template_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/sirupsen/logrus"
@@ -31,8 +33,7 @@ func (s *DocumentService) CreateTemplate(ctx context.Context, req *dto.CreateTem
 	}
 
 	var kbID *int64
-	switch req.TargetContainer {
-	case dto.TemplateContainerKnowledgeBase:
+	if template_container_mapper.RequiresKnowledgeBaseID(req.TargetContainer) {
 		id, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeBaseExternalID).Exec()
 		if err != nil {
 			return status.StatusKnowledgeBaseNotFound
@@ -45,11 +46,17 @@ func (s *DocumentService) CreateTemplate(ctx context.Context, req *dto.CreateTem
 		return status.GenErrWithCustomMsg(status.StatusParamError, "template content is empty")
 	}
 
-	scope, isPublic := scopeFromContainer(req.TargetContainer)
+	templateType := req.Type
+	if !doc_type_mapper.IsSupportedDTOType(templateType) {
+		templateType = doc_type_mapper.DefaultDTOType()
+	}
+
+	scope := template_container_mapper.ToScope(req.TargetContainer)
+	isPublic := template_container_mapper.ToIsPublic(req.TargetContainer)
 	templateModel := &model.Template{
 		Name:            name,
 		Description:     description,
-		DocumentType:    model.DocumentType_Markdown,
+		DocumentType:    doc_type_mapper.ToModelType(templateType),
 		Content:         content,
 		UserID:          userID,
 		Scope:           scope,
@@ -63,17 +70,6 @@ func (s *DocumentService) CreateTemplate(ctx context.Context, req *dto.CreateTem
 	}
 
 	return nil
-}
-
-func scopeFromContainer(container dto.TemplateContainer) (string, bool) {
-	switch container {
-	case dto.TemplateContainerPublic:
-		return "system", true
-	case dto.TemplateContainerKnowledgeBase:
-		return "knowledge_base", false
-	default:
-		return "private", false
-	}
 }
 
 func parseTemplateContent(raw string) (name, description, content string, tags []string) {

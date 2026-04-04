@@ -36,25 +36,6 @@ func timeToString(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
-func toDocumentType(t dto.DocumentType) pb.DocumentType {
-	return doc_type_mapper.ToProtoType(t)
-}
-
-func fromDocumentType(t pb.DocumentType) dto.DocumentType {
-	return doc_type_mapper.FromProtoType(t)
-}
-
-func fromCreateTemplateContainer(t pb.CreateTemplateContainer) dto.TemplateContainer {
-	switch t {
-	case pb.CreateTemplateContainer_KNOWLEDGEBASE_TEMPLATE:
-		return dto.TemplateContainerKnowledgeBase
-	case pb.CreateTemplateContainer_PUBLIC_TEMPLATE:
-		return dto.TemplateContainerPublic
-	default:
-		return dto.TemplateContainerOwn
-	}
-}
-
 func toDocumentResponse(doc *dto.DocumentMetaResponse) *pb.DocumentResponse {
 	if doc == nil {
 		return nil
@@ -62,7 +43,7 @@ func toDocumentResponse(doc *dto.DocumentMetaResponse) *pb.DocumentResponse {
 	resp := &pb.DocumentResponse{
 		ExternalId:  doc.ExternalID,
 		Title:       doc.Title,
-		Type:        toDocumentType(doc.Type),
+		Type:        doc_type_mapper.ToProtoType(doc.Type),
 		Summary:     doc.Summary,
 		Tags:        doc.Tags,
 		ViewCount:   int32(doc.ViewCount),
@@ -129,7 +110,7 @@ func toTemplateResponse(tpl *dto.TemplateResponse) *pb.TemplateResponse {
 		Name:                    tpl.Name,
 		Description:             tpl.Description,
 		Content:                 tpl.Content,
-		Type:                    toDocumentType(tpl.Type),
+		Type:                    doc_type_mapper.ToProtoType(tpl.Type),
 		Scope:                   tpl.Scope,
 		KnowledgeBaseExternalId: tpl.KnowledgeBaseExternalID,
 		Tags:                    tpl.Tags,

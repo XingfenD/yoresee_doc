@@ -17,6 +17,7 @@ type Mapper interface {
 	ProtoType() pb.CreateDocumentContainerType
 	DTOType() dto.ContainerType
 	ModelType() model.ContainerType
+	RequiresKnowledgeBaseID() bool
 }
 
 type registry struct {
@@ -157,4 +158,11 @@ func FromModelType(t model.ContainerType) dto.ContainerType {
 		return dto.ContainerType(normalized)
 	}
 	return DefaultDTOType()
+}
+
+func RequiresKnowledgeBaseID(t dto.ContainerType) bool {
+	if mapper := globalRegistry.findByDTO(t); mapper != nil {
+		return mapper.RequiresKnowledgeBaseID()
+	}
+	return false
 }

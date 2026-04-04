@@ -78,22 +78,20 @@ func (s *DocumentService) Update(ctx context.Context, req *dto.UpdateDocumentReq
 
 				// update container relation
 				if req.MoveToContainer != nil {
-					switch *req.MoveToContainer {
-					case dto.ContainerType_KnowledgeBase:
+					if !doc_container_mapper.IsSupportedDTOType(*req.MoveToContainer) {
+						return status.GenErrWithCustomMsg(status.StatusParamError, "invalid move_to_container")
+					}
+					if doc_container_mapper.RequiresKnowledgeBaseID(*req.MoveToContainer) {
 						kbID, err := s.kbRepo.GetIDByExternalID(*req.KnowledgeBaseExternalID).Exec()
 						if err != nil {
 							return status.StatusKnowledgeBaseNotFound
 						}
 						docModel.KnowledgeID = &kbID
-						docModel.ContainerType = doc_container_mapper.ToModelType(*req.MoveToContainer)
-						op = op.UpdateKnowledgeID().UpdateContainerType()
-					case dto.ContainerType_Own:
+					} else {
 						docModel.KnowledgeID = nil
-						docModel.ContainerType = doc_container_mapper.ToModelType(*req.MoveToContainer)
-						op = op.UpdateKnowledgeID().UpdateContainerType()
-					default:
-						return status.GenErrWithCustomMsg(status.StatusParamError, "invalid move_to_container")
 					}
+					docModel.ContainerType = doc_container_mapper.ToModelType(*req.MoveToContainer)
+					op = op.UpdateKnowledgeID().UpdateContainerType()
 				}
 
 				if err := op.Exec(); err != nil {

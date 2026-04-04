@@ -14,14 +14,15 @@ func validateUpdateDocumentRequest(req *pb.UpdateDocumentRequest) error {
 		return status.GenErrWithCustomMsg(status.StatusParamError, "no update fields")
 	}
 	if req.MoveToContainer != nil {
-		if !doc_container_mapper.IsSupportedProtoType(*req.MoveToContainer) {
+		containerType, ok := doc_container_mapper.FromProtoType(*req.MoveToContainer)
+		if !ok {
 			return status.GenErrWithCustomMsg(status.StatusParamError, "invalid move_to_container")
 		}
-		if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN && req.KnowledgeBaseExternalId != nil {
+		requiresKnowledgeBaseID := doc_container_mapper.RequiresKnowledgeBaseID(containerType)
+		if !requiresKnowledgeBaseID && req.KnowledgeBaseExternalId != nil {
 			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId not nil")
 		}
-		if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE &&
-			req.KnowledgeBaseExternalId == nil {
+		if requiresKnowledgeBaseID && req.KnowledgeBaseExternalId == nil {
 			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId is nil")
 		}
 	}

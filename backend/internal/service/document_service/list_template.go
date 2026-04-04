@@ -3,6 +3,7 @@ package document_service
 import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/template_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	internal_dto "github.com/XingfenD/yoresee_doc/internal/service/dto"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -136,11 +137,11 @@ func (b *templateListOperationBuilder) ExecWithTotal() ([]*model.Template, int64
 
 	if b.req.FilterArgs != nil {
 		if b.req.FilterArgs.TargetContainer != nil {
-			if *b.req.FilterArgs.TargetContainer == dto.TemplateContainerKnowledgeBase &&
+			if template_container_mapper.RequiresKnowledgeBaseID(*b.req.FilterArgs.TargetContainer) &&
 				(b.req.FilterArgs.KnowledgeBaseID == nil || *b.req.FilterArgs.KnowledgeBaseID == "") {
 				return nil, 0, status.StatusParamError
 			}
-			scope, _ := scopeFromContainer(*b.req.FilterArgs.TargetContainer)
+			scope := template_container_mapper.ToScope(*b.req.FilterArgs.TargetContainer)
 			op = op.WithScope(&scope)
 		}
 		if b.req.FilterArgs.KnowledgeBaseID != nil && *b.req.FilterArgs.KnowledgeBaseID != "" {
