@@ -29,10 +29,10 @@ import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
-import PageLayout from '@/components/PageLayout.vue';
-import InvitationCenter from '@/components/InvitationCenter.vue';
-import { useUserShell } from '@/composables/useUserShell';
-import { usePageBoot } from '@/composables/usePageBoot';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import InvitationCenter from '@/components/manage/InvitationCenter.vue';
+import { useUserShell } from '@/composables/shell/useUserShell';
+import { usePageBoot } from '@/composables/shell/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();

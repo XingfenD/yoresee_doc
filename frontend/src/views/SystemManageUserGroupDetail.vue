@@ -3,5 +3,5 @@
 </template>
 
 <script setup>
-import ManageEntityDetailPage from '@/components/ManageEntityDetailPage.vue';
+import ManageEntityDetailPage from '@/components/manage/ManageEntityDetailPage.vue';
 </script>

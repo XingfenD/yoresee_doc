@@ -55,10 +55,10 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import PageLayout from '@/components/PageLayout.vue';
-import TitleBar from '@/components/TitleBar.vue';
-import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
-import { useApiAction } from '@/composables/useApiAction';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import TitleBar from '@/components/layout/TitleBar.vue';
+import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
+import { useApiAction } from '@/composables/actions/useApiAction';
 import { useUserStore } from '@/store/user';
 import { getDocumentSettings, updateDocumentSettings } from '@/services/api';
 

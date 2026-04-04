@@ -91,11 +91,11 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
-import PageLayout from '@/components/PageLayout.vue';
-import TitleBar from '@/components/TitleBar.vue';
-import CommonList from '@/components/CommonList.vue';
-import TextDiffViewer from '@/components/TextDiffViewer.vue';
-import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import TitleBar from '@/components/layout/TitleBar.vue';
+import CommonList from '@/components/list/CommonList.vue';
+import TextDiffViewer from '@/components/document/TextDiffViewer.vue';
+import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
 import { useUserStore } from '@/store/user';
 import { listDocumentVersions, getDocumentVersionContent } from '@/services/api';
 

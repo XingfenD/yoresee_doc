@@ -65,12 +65,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { Search } from '@element-plus/icons-vue';
-import PageLayout from '@/components/PageLayout.vue';
-import DocumentListSection from '@/components/DocumentListSection.vue';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import DocumentListSection from '@/components/list/DocumentListSection.vue';
 import { listDocuments } from '@/services/api';
 import { useUserStore } from '@/store/user';
-import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
-import { usePageBoot } from '@/composables/usePageBoot';
+import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
+import { usePageBoot } from '@/composables/shell/usePageBoot';
 
 const route = useRoute();
 const router = useRouter();

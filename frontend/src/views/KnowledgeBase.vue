@@ -81,11 +81,11 @@ import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/store/user";
 import { useI18n } from "vue-i18n";
-import PageLayout from "@/components/PageLayout.vue";
-import KnowledgeBaseListSection from "@/components/KnowledgeBaseListSection.vue";
-import { useWorkspaceShell } from "@/composables/useWorkspaceShell";
-import { useKnowledgeBaseListPage } from "@/composables/useKnowledgeBaseListPage";
-import { usePageBoot } from "@/composables/usePageBoot";
+import PageLayout from "@/components/layout/PageLayout.vue";
+import KnowledgeBaseListSection from "@/components/knowledge-base/KnowledgeBaseListSection.vue";
+import { useWorkspaceShell } from "@/composables/shell/useWorkspaceShell";
+import { useKnowledgeBaseListPage } from "@/composables/knowledge-base/useKnowledgeBaseListPage";
+import { usePageBoot } from "@/composables/shell/usePageBoot";
 
 const { locale, t } = useI18n();
 const router = useRouter();

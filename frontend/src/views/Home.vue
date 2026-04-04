@@ -46,12 +46,12 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
-import PageLayout from '@/components/PageLayout.vue';
-import DocumentListSection from '@/components/DocumentListSection.vue';
-import KnowledgeBaseListSection from '@/components/KnowledgeBaseListSection.vue';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import DocumentListSection from '@/components/list/DocumentListSection.vue';
+import KnowledgeBaseListSection from '@/components/knowledge-base/KnowledgeBaseListSection.vue';
 import { getRecentKnowledgeBases, getRecentDocuments } from '@/services/api';
-import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
-import { usePageBoot } from '@/composables/usePageBoot';
+import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
+import { usePageBoot } from '@/composables/shell/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();

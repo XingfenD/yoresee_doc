@@ -128,20 +128,20 @@ export default {
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import DirectorySidebar from '@/components/DirectorySidebar.vue';
-import MarkdownEditor from '@/components/MarkdownEditor.vue';
-import CommentSidebar from '@/components/CommentSidebar.vue';
-import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
-import DocumentEditorHeader from '@/components/DocumentEditorHeader.vue';
-import PageLayout from '@/components/PageLayout.vue';
-import TemplateCreateDialog from '@/components/TemplateCreateDialog.vue';
-import { usePanelSidebar } from '@/composables/usePanelSidebar';
-import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
-import { useDocumentRouteContext } from '@/composables/useDocumentRouteContext';
-import { useDirectoryTreeState } from '@/composables/useDirectoryTreeState';
-import { useEditorCommentBridge } from '@/composables/useEditorCommentBridge';
-import { useDocumentEditorActions } from '@/composables/useDocumentEditorActions';
-import { useDocumentEditorLifecycle } from '@/composables/useDocumentEditorLifecycle';
+import DirectorySidebar from '@/components/document/DirectorySidebar.vue';
+import MarkdownEditor from '@/components/document/MarkdownEditor.vue';
+import CommentSidebar from '@/components/comment/CommentSidebar.vue';
+import DocumentCreateDialog from '@/components/document/DocumentCreateDialog.vue';
+import DocumentEditorHeader from '@/components/document/DocumentEditorHeader.vue';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import TemplateCreateDialog from '@/components/template/TemplateCreateDialog.vue';
+import { usePanelSidebar } from '@/composables/layout/usePanelSidebar';
+import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
+import { useDocumentRouteContext } from '@/composables/document/editor/useDocumentRouteContext';
+import { useDirectoryTreeState } from '@/composables/document/tree/useDirectoryTreeState';
+import { useEditorCommentBridge } from '@/composables/document/editor/useEditorCommentBridge';
+import { useDocumentEditorActions } from '@/composables/document/editor/useDocumentEditorActions';
+import { useDocumentEditorLifecycle } from '@/composables/document/editor/useDocumentEditorLifecycle';
 import { useUserStore } from '@/store/user';
 import {
   getKnowledgeBaseDocuments,

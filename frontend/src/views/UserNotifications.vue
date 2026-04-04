@@ -87,12 +87,12 @@ import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
-import PageLayout from '@/components/PageLayout.vue';
-import CommonList from '@/components/CommonList.vue';
-import AppTag from '@/components/AppTag.vue';
-import { useUserShell } from '@/composables/useUserShell';
-import { useNotificationCenter } from '@/composables/useNotificationCenter';
-import { usePageBoot } from '@/composables/usePageBoot';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import CommonList from '@/components/list/CommonList.vue';
+import AppTag from '@/components/base/AppTag.vue';
+import { useUserShell } from '@/composables/shell/useUserShell';
+import { useNotificationCenter } from '@/composables/notification/useNotificationCenter';
+import { usePageBoot } from '@/composables/shell/usePageBoot';
 
 const router = useRouter();
 const userStore = useUserStore();

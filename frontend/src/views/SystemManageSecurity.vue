@@ -84,12 +84,12 @@ import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
-import PageLayout from '@/components/PageLayout.vue';
-import ManageLayout from '@/components/ManageLayout.vue';
-import ManageSection from '@/components/ManageSection.vue';
-import { useManageShell } from '@/composables/useManageShell';
-import { usePageBoot } from '@/composables/usePageBoot';
-import { useApiAction } from '@/composables/useApiAction';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import ManageLayout from '@/components/manage/ManageLayout.vue';
+import ManageSection from '@/components/manage/ManageSection.vue';
+import { useManageShell } from '@/composables/shell/useManageShell';
+import { usePageBoot } from '@/composables/shell/usePageBoot';
+import { useApiAction } from '@/composables/actions/useApiAction';
 import { getSettings, updateSettings } from '@/services/api';
 
 const router = useRouter();
