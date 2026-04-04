@@ -6,10 +6,27 @@ export function useEditorPanelConstraints(options = {}) {
     editorLayoutRef,
     commentSidebarRef,
     isCommentCollapsed,
+    onLayoutChange = null,
     sidebarWidthStorageKey = 'docSidebarWidth',
     sidebarCollapsedStorageKey = 'sidebarCollapsed',
-    minEditorMainWidth = 420
+    minEditorMainWidth = 520
   } = options;
+  const COLLAPSE_ANIMATION_MS = 320;
+  const COMMENT_RESIZE_DEBOUNCE_MS = 140;
+  let layoutSettleTimer = null;
+
+  const emitLayoutChange = (delay = 0) => {
+    if (layoutSettleTimer) {
+      clearTimeout(layoutSettleTimer);
+      layoutSettleTimer = null;
+    }
+    layoutSettleTimer = window.setTimeout(() => {
+      layoutSettleTimer = null;
+      if (typeof onLayoutChange === 'function') {
+        onLayoutChange();
+      }
+    }, Math.max(0, delay));
+  };
 
   const getVisibleCommentWidth = () => {
     if (isCommentCollapsed.value) {
@@ -43,7 +60,7 @@ export function useEditorPanelConstraints(options = {}) {
     startResize
   } = usePanelSidebar({
     defaultWidth: 280,
-    minWidth: 220,
+    minWidth: 180,
     maxWidth: 520,
     resizeEdge: 'right',
     collapsedStorageKey: sidebarCollapsedStorageKey,
@@ -51,6 +68,9 @@ export function useEditorPanelConstraints(options = {}) {
     getMaxWidth: computeSidebarMaxWidth,
     onWidthChange: (value) => {
       document.documentElement.style.setProperty('--sidebar-width', `${value}px`);
+      if (!isSidebarResizing.value) {
+        emitLayoutChange(0);
+      }
     }
   });
 
@@ -63,13 +83,34 @@ export function useEditorPanelConstraints(options = {}) {
 
   const handleCommentWidthChange = () => {
     clampSidebarWidth();
+    emitLayoutChange(COMMENT_RESIZE_DEBOUNCE_MS);
   };
+
+  watch(
+    () => isSidebarCollapsed.value,
+    () => {
+      requestAnimationFrame(() => {
+        clampSidebarWidth();
+        emitLayoutChange(COLLAPSE_ANIMATION_MS);
+      });
+    }
+  );
+
+  watch(
+    () => isSidebarResizing.value,
+    (resizing) => {
+      if (!resizing) {
+        emitLayoutChange(0);
+      }
+    }
+  );
 
   watch(
     () => isCommentCollapsed.value,
     () => {
       requestAnimationFrame(() => {
         clampSidebarWidth();
+        emitLayoutChange(COLLAPSE_ANIMATION_MS);
       });
     }
   );
@@ -77,10 +118,15 @@ export function useEditorPanelConstraints(options = {}) {
   onMounted(() => {
     window.addEventListener('resize', clampSidebarWidth);
     clampSidebarWidth();
+    emitLayoutChange(0);
   });
 
   onBeforeUnmount(() => {
     window.removeEventListener('resize', clampSidebarWidth);
+    if (layoutSettleTimer) {
+      clearTimeout(layoutSettleTimer);
+      layoutSettleTimer = null;
+    }
   });
 
   return {

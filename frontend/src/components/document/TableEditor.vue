@@ -28,8 +28,9 @@ const lastSerialized = ref('');
 const applyingData = ref(false);
 const wheelBlocker = ref(null);
 const resizeHandler = ref(null);
-const resizeObserverRef = ref(null);
 const rafIdRef = ref(0);
+const transitionContainerRef = ref(null);
+const transitionEndHandlerRef = ref(null);
 
 const createEmptyRows = (rowCount = DEFAULT_ROW_COUNT, colCount = DEFAULT_COLUMN_COUNT) =>
   Array.from({ length: rowCount }, () => Array.from({ length: colCount }, () => ''));
@@ -162,7 +163,12 @@ const emitModelValueFromSheet = (sheetData) => {
 };
 
 const rerenderSheet = () => {
-  sheetRef.value?.reRender?.();
+  const instance = sheetRef.value;
+  if (!instance) {
+    return;
+  }
+  instance.sheet?.reload?.();
+  instance.reRender?.();
 };
 
 const scheduleRerender = () => {
@@ -247,12 +253,14 @@ onMounted(async () => {
   const onResize = () => rerenderSheet();
   window.addEventListener('resize', onResize);
   resizeHandler.value = onResize;
-  if (typeof ResizeObserver !== 'undefined' && editorRef.value) {
-    const observer = new ResizeObserver(() => {
+  const transitionContainer = editorRef.value?.closest('.editor-layout');
+  if (transitionContainer) {
+    const onTransitionEnd = () => {
       scheduleRerender();
-    });
-    observer.observe(editorRef.value);
-    resizeObserverRef.value = observer;
+    };
+    transitionContainer.addEventListener('transitionend', onTransitionEnd);
+    transitionContainerRef.value = transitionContainer;
+    transitionEndHandlerRef.value = onTransitionEnd;
   }
   await applyModelValue(props.modelValue);
   scheduleRerender();
@@ -270,14 +278,15 @@ onBeforeUnmount(() => {
   if (resizeHandler.value) {
     window.removeEventListener('resize', resizeHandler.value);
   }
-  if (resizeObserverRef.value) {
-    resizeObserverRef.value.disconnect();
+  if (transitionContainerRef.value && transitionEndHandlerRef.value) {
+    transitionContainerRef.value.removeEventListener('transitionend', transitionEndHandlerRef.value);
   }
   if (rafIdRef.value) {
     cancelAnimationFrame(rafIdRef.value);
   }
-  resizeObserverRef.value = null;
   rafIdRef.value = 0;
+  transitionContainerRef.value = null;
+  transitionEndHandlerRef.value = null;
   resizeHandler.value = null;
   wheelBlocker.value = null;
   sheetRef.value = null;

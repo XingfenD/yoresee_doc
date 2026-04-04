@@ -258,18 +258,6 @@ const markdownEditorRef = ref(null);
 const tableEditorRef = ref(null);
 const commentSidebarRef = ref(null);
 const {
-  isSidebarCollapsed,
-  isSidebarResizing,
-  toggleSidebar,
-  startResize,
-  handleCommentWidthChange,
-  clampSidebarWidth
-} = useEditorPanelConstraints({
-  editorLayoutRef,
-  commentSidebarRef,
-  isCommentCollapsed
-});
-const {
   flushTableSave,
   rerenderTableEditor
 } = useTableDocumentPersistence({
@@ -280,6 +268,21 @@ const {
   t,
   getDocumentContent,
   updateDocument
+});
+const {
+  isSidebarCollapsed,
+  isSidebarResizing,
+  toggleSidebar,
+  startResize,
+  handleCommentWidthChange,
+  clampSidebarWidth
+} = useEditorPanelConstraints({
+  editorLayoutRef,
+  commentSidebarRef,
+  isCommentCollapsed,
+  onLayoutChange: () => {
+    rerenderTableEditor();
+  }
 });
 const {
   isMarkdownDocument,
