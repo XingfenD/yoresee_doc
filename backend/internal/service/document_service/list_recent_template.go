@@ -2,6 +2,7 @@ package document_service
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 )
@@ -75,6 +76,7 @@ func (s *DocumentService) ListRecentTemplates(req *dto.ListRecentTemplatesReques
 			Name:                    tpl.Name,
 			Description:             tpl.Description,
 			Content:                 tpl.Content,
+			Type:                    doc_type_mapper.FromModelType(tpl.DocumentType),
 			Scope:                   tpl.Scope,
 			KnowledgeBaseExternalID: kbExternalID,
 			Tags:                    tpl.Tags,

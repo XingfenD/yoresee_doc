@@ -13,6 +13,7 @@ type ListTemplateOperation struct {
 	scope           *string
 	knowledgeBaseID *int64
 	nameKeyword     *string
+	documentType    *model.DocumentType
 	sortField       string
 	sortDesc        bool
 	page            int
@@ -52,6 +53,11 @@ func (op *ListTemplateOperation) WithNameKeyword(nameKeyword *string) *ListTempl
 	return op
 }
 
+func (op *ListTemplateOperation) WithDocumentType(documentType *model.DocumentType) *ListTemplateOperation {
+	op.documentType = documentType
+	return op
+}
+
 func (op *ListTemplateOperation) WithSort(field string, desc bool) *ListTemplateOperation {
 	op.sortField = field
 	op.sortDesc = desc
@@ -85,6 +91,9 @@ func (op *ListTemplateOperation) ExecWithTotal() (templates []*model.Template, t
 	}
 	if op.nameKeyword != nil && *op.nameKeyword != "" {
 		dbQuery = dbQuery.Where("name ILIKE ?", "%"+*op.nameKeyword+"%")
+	}
+	if op.documentType != nil && *op.documentType != "" {
+		dbQuery = dbQuery.Where("document_type = ?", *op.documentType)
 	}
 
 	if err = dbQuery.Count(&total).Error; err != nil {

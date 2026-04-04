@@ -129,6 +129,7 @@ func createTemplateIfNotExists(tx *gorm.DB, userID int64, seed templateSeed) err
 	template := model.Template{
 		Name:            seed.Name,
 		Description:     seed.Description,
+		DocumentType:    model.DocumentType_Markdown,
 		Content:         seed.Content,
 		UserID:          userID,
 		Scope:           seed.Scope,

@@ -129,6 +129,7 @@ func toTemplateResponse(tpl *dto.TemplateResponse) *pb.TemplateResponse {
 		Name:                    tpl.Name,
 		Description:             tpl.Description,
 		Content:                 tpl.Content,
+		Type:                    toDocumentType(tpl.Type),
 		Scope:                   tpl.Scope,
 		KnowledgeBaseExternalId: tpl.KnowledgeBaseExternalID,
 		Tags:                    tpl.Tags,

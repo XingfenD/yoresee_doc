@@ -9,6 +9,7 @@ import (
 type DocumentType string
 
 const DocumentType_Markdown DocumentType = "markdown"
+const DocumentType_Table DocumentType = "table"
 
 type ContainerType string
 

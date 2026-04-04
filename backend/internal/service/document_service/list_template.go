@@ -2,6 +2,7 @@ package document_service
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/mapper/doc_type_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	internal_dto "github.com/XingfenD/yoresee_doc/internal/service/dto"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -64,6 +65,7 @@ func (op *templateListOperation) ExecWithTotal() ([]*dto.TemplateResponse, int64
 			Name:                    tmpl.Name,
 			Description:             tmpl.Description,
 			Content:                 tmpl.Content,
+			Type:                    doc_type_mapper.FromModelType(tmpl.DocumentType),
 			Scope:                   tmpl.Scope,
 			KnowledgeBaseExternalID: kbExternalID,
 			Tags:                    tmpl.Tags,
@@ -151,6 +153,10 @@ func (b *templateListOperationBuilder) ExecWithTotal() ([]*model.Template, int64
 		}
 		if b.req.FilterArgs.NameKeyword != nil {
 			op = op.WithNameKeyword(b.req.FilterArgs.NameKeyword)
+		}
+		if b.req.FilterArgs.Type != nil {
+			modelType := model.DocumentType(doc_type_mapper.ToModelType(*b.req.FilterArgs.Type))
+			op = op.WithDocumentType(&modelType)
 		}
 	}
 

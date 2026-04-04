@@ -640,6 +640,9 @@ func (s *DocumentServiceServer) ListTemplates(ctx context.Context, req *pb.ListT
 		container := fromCreateTemplateContainer(req.GetTargetContainer())
 		filterArgs.TargetContainer = utils.Of(container)
 	}
+	if req.Type != nil {
+		filterArgs.Type = utils.Of(fromDocumentType(req.GetType()))
+	}
 
 	sortArgs := dto.SortArgs{Field: "created_at", Desc: true}
 	if req.OrderBy != nil {

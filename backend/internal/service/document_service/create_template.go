@@ -49,6 +49,7 @@ func (s *DocumentService) CreateTemplate(ctx context.Context, req *dto.CreateTem
 	templateModel := &model.Template{
 		Name:            name,
 		Description:     description,
+		DocumentType:    model.DocumentType_Markdown,
 		Content:         content,
 		UserID:          userID,
 		Scope:           scope,

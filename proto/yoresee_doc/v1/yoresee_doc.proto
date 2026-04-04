@@ -328,6 +328,7 @@ message QueryTopNavDisplayResponse {
 enum DocumentType {
   DOCUMENT_TYPE_UNSPECIFIED = 0;
   DOCUMENT_TYPE_MARKDOWN = 1;
+  DOCUMENT_TYPE_TABLE = 2;
 }
 
 message DocumentResponse {
@@ -889,6 +890,7 @@ message TemplateResponse {
   repeated string tags = 7;
   string created_at = 8;
   string updated_at = 9;
+  DocumentType type = 10;
 }
 
 message ListTemplatesRequest {
@@ -900,6 +902,7 @@ message ListTemplatesRequest {
   optional bool order_desc = 6;
   int32 page = 7;
   int32 page_size = 8;
+  optional DocumentType type = 9;
 }
 
 message ListTemplatesResponse {

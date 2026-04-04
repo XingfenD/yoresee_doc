@@ -26,21 +26,23 @@ type UpdateTemplateSettingsRequest struct {
 }
 
 type TemplateResponse struct {
-	ID                      int64     `json:"id"`
-	Name                    string    `json:"name"`
-	Description             string    `json:"description"`
-	Content                 string    `json:"content"`
-	Scope                   string    `json:"scope"`
-	KnowledgeBaseExternalID string    `json:"knowledge_base_external_id"`
-	Tags                    []string  `json:"tags"`
-	CreatedAt               time.Time `json:"created_at"`
-	UpdatedAt               time.Time `json:"updated_at"`
+	ID                      int64        `json:"id"`
+	Name                    string       `json:"name"`
+	Description             string       `json:"description"`
+	Content                 string       `json:"content"`
+	Type                    DocumentType `json:"type"`
+	Scope                   string       `json:"scope"`
+	KnowledgeBaseExternalID string       `json:"knowledge_base_external_id"`
+	Tags                    []string     `json:"tags"`
+	CreatedAt               time.Time    `json:"created_at"`
+	UpdatedAt               time.Time    `json:"updated_at"`
 }
 
 type TemplateListFilterArgs struct {
 	NameKeyword     *string            `json:"name_keyword"`
 	TargetContainer *TemplateContainer `json:"target_container"`
 	KnowledgeBaseID *string            `json:"knowledge_base_id"`
+	Type            *DocumentType      `json:"type"`
 }
 
 type TemplateListByExternalReq struct {
