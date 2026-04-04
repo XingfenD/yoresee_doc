@@ -59,6 +59,7 @@
           :visible="visible"
           :preferred-scope="formState.templateMeta?.scope || ''"
           :selected-template-id="formState.template"
+          :document-type="formState.documentType"
           :knowledge-base-id="knowledgeBaseId"
           @select="selectTemplate"
         />
@@ -82,6 +83,7 @@ import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import DocumentTemplatePicker from '@/components/DocumentTemplatePicker.vue';
 import { getKnowledgeBases } from '@/services/api';
+import { DEFAULT_DOCUMENT_TYPE, normalizeDocumentType } from '@/utils/documentType';
 
 const props = defineProps({
   modelValue: {
@@ -136,6 +138,10 @@ const props = defineProps({
     type: [String, Number, BigInt],
     default: ''
   },
+  initialDocumentType: {
+    type: [String, Number],
+    default: DEFAULT_DOCUMENT_TYPE
+  },
   initialTemplateMeta: {
     type: Object,
     default: null
@@ -172,7 +178,8 @@ const formState = reactive({
   targetKnowledgeBaseId: '',
   template: '',
   parentExternalId: '',
-  templateMeta: null
+  templateMeta: null,
+  documentType: DEFAULT_DOCUMENT_TYPE
 });
 
 const loadKnowledgeBaseOptions = async () => {
@@ -212,6 +219,10 @@ const resetForm = () => {
     props.initialTemplateId !== undefined;
   formState.template = hasInitialTemplateId ? String(props.initialTemplateId) : '';
   formState.templateMeta = props.initialTemplateMeta || null;
+  const inferredType = props.initialTemplateMeta?.type;
+  formState.documentType = normalizeDocumentType(
+    inferredType || props.initialDocumentType || DEFAULT_DOCUMENT_TYPE
+  );
   formState.parentExternalId = props.parentExternalId || '';
 };
 
@@ -238,6 +249,7 @@ const handleCreate = () => {
 
   emit('submit', {
     title,
+    type: formState.documentType,
     template: formState.template,
     template_meta: formState.templateMeta,
     parent_external_id: formState.parentExternalId || undefined,
@@ -264,6 +276,9 @@ const selectTemplate = (tpl) => {
   }
   formState.template = templateId;
   formState.templateMeta = tpl;
+  if (tpl?.type !== undefined && tpl?.type !== null && tpl?.type !== '') {
+    formState.documentType = normalizeDocumentType(tpl.type, formState.documentType);
+  }
 };
 
 watch(

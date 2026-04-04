@@ -15,9 +15,11 @@
   >
     <TitleBar :show-back="true" :compact="true" :back-text="t('common.back')" @back="goBackToKnowledgeBase">
       <template #actions>
-        <el-button type="primary" @click="openCreateDocumentDialog">
-          {{ t('knowledgeBase.createDocument') }}
-        </el-button>
+        <DocumentTypeMenu @select="openCreateDocumentDialog">
+          <el-button type="primary">
+            {{ t('knowledgeBase.createDocument') }}
+          </el-button>
+        </DocumentTypeMenu>
       </template>
     </TitleBar>
 
@@ -77,6 +79,7 @@
   <DocumentCreateDialog
     v-model="showCreateDialog"
     :loading="creatingLoading"
+    :initial-document-type="selectedDocumentType"
     :knowledge-base-id="route.params.id || ''"
     @submit="createDocument"
     @cancel="cancelCreateDocument"
@@ -91,6 +94,7 @@ import { useI18n } from 'vue-i18n';
 import PageLayout from '@/components/PageLayout.vue';
 import TitleBar from '@/components/TitleBar.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
+import DocumentTypeMenu from '@/components/DocumentTypeMenu.vue';
 import InfoStatsCard from '@/components/InfoStatsCard.vue';
 import KnowledgeBaseDocumentTreePanel from '@/components/KnowledgeBaseDocumentTreePanel.vue';
 import KnowledgeBaseTemplatesPanel from '@/components/KnowledgeBaseTemplatesPanel.vue';
@@ -123,6 +127,7 @@ const {
   totalDocumentsCount,
   showCreateDialog,
   creatingLoading,
+  selectedDocumentType,
   createDocument,
   cancelCreateDocument,
   openCreateDocumentDialog,

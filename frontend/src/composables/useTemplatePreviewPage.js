@@ -3,6 +3,7 @@ import { ElMessage } from 'element-plus';
 import Vditor from 'vditor';
 import { createDocument as createDocumentApi, getTemplate } from '@/services/api';
 import { useApiAction } from '@/composables/useApiAction';
+import { DEFAULT_DOCUMENT_TYPE, normalizeDocumentType } from '@/utils/documentType';
 
 export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
   const { runWithLoading } = useApiAction({ t });
@@ -110,7 +111,7 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
       async () => {
         const requestBody = {
           title,
-          type: payload.type || 'markdown',
+          type: normalizeDocumentType(payload?.type || template.value?.type || DEFAULT_DOCUMENT_TYPE),
           container_type: containerType,
           is_public: typeof payload?.is_public === 'boolean' ? payload.is_public : false
         };

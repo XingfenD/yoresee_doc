@@ -6,6 +6,7 @@ import {
   updateDocumentMeta
 } from '@/services/api';
 import { useApiAction } from '@/composables/useApiAction';
+import { DEFAULT_DOCUMENT_TYPE, normalizeDocumentType } from '@/utils/documentType';
 
 export function useDocumentEditorActions({
   t,
@@ -27,6 +28,7 @@ export function useDocumentEditorActions({
   const showCreateDialog = ref(false);
   const creatingLoading = ref(false);
   const pendingParentId = ref(null);
+  const selectedDocumentType = ref(DEFAULT_DOCUMENT_TYPE);
 
   const savingTemplate = ref(false);
   const showTemplateDialog = ref(false);
@@ -38,8 +40,9 @@ export function useDocumentEditorActions({
     content: ''
   });
 
-  const openCreateDocumentDialog = (parentId = null) => {
+  const openCreateDocumentDialog = (parentId = null, documentType = DEFAULT_DOCUMENT_TYPE) => {
     pendingParentId.value = parentId;
+    selectedDocumentType.value = normalizeDocumentType(documentType);
     showCreateDialog.value = true;
   };
 
@@ -55,7 +58,7 @@ export function useDocumentEditorActions({
         const isPersonal = kbId.value === 'personal';
         const requestBody = {
           title,
-          type: payload.type || 'markdown',
+          type: normalizeDocumentType(payload?.type || selectedDocumentType.value),
           container_type: isPersonal ? 'own' : 'knowledge_base',
           is_public: false
         };
@@ -92,8 +95,19 @@ export function useDocumentEditorActions({
     );
   };
 
-  const handleCreateFromTree = (target) => {
-    openCreateDocumentDialog(target?.id || null);
+  const handleCreateFromTree = (payload) => {
+    if (!payload) {
+      openCreateDocumentDialog(null, DEFAULT_DOCUMENT_TYPE);
+      return;
+    }
+    if (typeof payload === 'object' && ('target' in payload || 'type' in payload)) {
+      openCreateDocumentDialog(
+        payload?.target?.id || null,
+        payload?.type || DEFAULT_DOCUMENT_TYPE
+      );
+      return;
+    }
+    openCreateDocumentDialog(payload?.id || null, DEFAULT_DOCUMENT_TYPE);
   };
 
   const handleDeleteDocument = async () => {
@@ -221,6 +235,7 @@ export function useDocumentEditorActions({
     showCreateDialog,
     creatingLoading,
     pendingParentId,
+    selectedDocumentType,
     savingTemplate,
     showTemplateDialog,
     templateDialogInit,

@@ -11,12 +11,22 @@
         </el-button>
       </div>
       <div class="tree-toolbar-actions">
-        <el-button v-if="showCreate" text class="tree-action-btn" :title="t('knowledgeBase.createDocument')"
-          @click="emit('create', null)">
-          <el-icon :size="16">
-            <Plus />
-          </el-icon>
-        </el-button>
+        <DocumentTypeMenu
+          v-if="showCreate"
+          @open="closeContextMenu"
+          @select="(type) => emitCreate(type, null)"
+        >
+          <el-button
+            text
+            class="tree-action-btn"
+            :title="t('knowledgeBase.createDocument')"
+            @click.stop
+          >
+            <el-icon :size="16">
+              <Plus />
+            </el-icon>
+          </el-button>
+        </DocumentTypeMenu>
         <el-button v-if="showDelete" text class="tree-action-btn tree-action-btn--danger" :disabled="disableDelete"
           :title="t('document.deleteDocument')" @click="emit('delete', null)">
           <el-icon :size="16">
@@ -57,6 +67,32 @@
               <slot name="node-extra" :node="node" :data="data" />
             </div>
             <div class="node-actions">
+              <DocumentTypeMenu
+                class="node-action-dropdown"
+                @open="closeContextMenu"
+                @select="(type) => emitCreate(type, data)"
+              >
+                <button
+                  type="button"
+                  class="node-action-icon node-action-icon--hover"
+                  :title="t('knowledgeBase.createDocument')"
+                  @click.stop
+                >
+                  <el-icon :size="14">
+                    <Plus />
+                  </el-icon>
+                </button>
+              </DocumentTypeMenu>
+              <button
+                type="button"
+                class="node-action-icon node-action-icon--hover"
+                title="..."
+                @click.stop="openContextMenuFromAction($event, data)"
+              >
+                <el-icon :size="14">
+                  <MoreFilled />
+                </el-icon>
+              </button>
               <slot name="node-actions" :node="node" :data="data" />
             </div>
           </div>
@@ -64,33 +100,47 @@
       </el-tree>
     </div>
 
-    <div v-if="contextMenuEnabled" v-show="contextMenu.visible" class="tree-context-menu" :style="contextMenuStyle">
-      <button class="context-item" type="button" @click="handleContextCommand('create')">
-        <el-icon :size="14" class="context-icon">
-          <Plus />
-        </el-icon>
-        {{ t('document.createDocument') }}
-      </button>
-      <button v-if="showRename" class="context-item" type="button" @click="handleContextCommand('rename')">
-        <el-icon :size="14" class="context-icon">
-          <Edit />
-        </el-icon>
+    <AppMenu
+      v-if="contextMenuEnabled"
+      :visible="contextMenu.visible"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      @close="closeContextMenu"
+    >
+      <AppMenuItem
+        v-if="showRename"
+        @click="handleContextCommand('rename')"
+      >
+        <template #icon>
+          <el-icon :size="14">
+            <Edit />
+          </el-icon>
+        </template>
         {{ t('document.renameDocument') }}
-      </button>
-      <button v-if="showDelete" class="context-item is-danger" type="button" @click="handleContextCommand('delete')">
-        <el-icon :size="14" class="context-icon">
-          <Delete />
-        </el-icon>
+      </AppMenuItem>
+      <AppMenuItem
+        v-if="showDelete"
+        danger
+        @click="handleContextCommand('delete')"
+      >
+        <template #icon>
+          <el-icon :size="14">
+            <Delete />
+          </el-icon>
+        </template>
         {{ t('document.deleteDocument') }}
-      </button>
-    </div>
+      </AppMenuItem>
+    </AppMenu>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Folder, FolderOpened, Document, Plus, Delete, Edit } from '@element-plus/icons-vue';
+import { Folder, FolderOpened, Document, Plus, Delete, Edit, MoreFilled } from '@element-plus/icons-vue';
+import AppMenu from '@/components/AppMenu.vue';
+import AppMenuItem from '@/components/AppMenuItem.vue';
+import DocumentTypeMenu from '@/components/DocumentTypeMenu.vue';
 import { useDocumentTreeContextMenu } from '@/composables/useDocumentTreeContextMenu';
 import { useInlineRename } from '@/composables/useInlineRename';
 
@@ -148,7 +198,6 @@ const treeRef = ref(null);
 const contextMenuEnabled = computed(() => props.contextMenuEnabled);
 const {
   contextMenu,
-  contextMenuStyle,
   openContextMenu,
   closeContextMenu
 } = useDocumentTreeContextMenu({
@@ -185,16 +234,24 @@ const handleNodeContextMenu = (event, data) => {
   openContextMenu(event, data);
 };
 
+const emitCreate = (type, target) => {
+  emit('create', {
+    target: target || null,
+    type
+  });
+  closeContextMenu();
+};
+
+const openContextMenuFromAction = (event, data) => {
+  openContextMenu(event, data);
+};
+
 const handleContextCommand = (command) => {
   const target = contextMenu.value.data;
   if (!target) {
     return;
   }
   contextMenu.value.visible = false;
-  if (command === 'create') {
-    emit('create', target);
-    return;
-  }
   if (command === 'delete') {
     emit('delete', target);
     return;
@@ -342,58 +399,54 @@ defineExpose({ treeRef, closeContextMenu });
   gap: var(--spacing-xs);
 }
 
-.tree-context-menu {
-  position: fixed;
-  z-index: 3000;
-  min-width: 150px;
-  background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  box-shadow: var(--shadow-md);
-  padding: var(--spacing-xs) 0;
+.node-action-dropdown {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
 }
 
-.dark-mode .tree-context-menu {
-  background-color: var(--bg-white);
-  border-color: var(--border-color);
+.tree-node-content:hover .node-action-dropdown,
+.tree-node-content.is-selected .node-action-dropdown {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.context-item {
-  width: 100%;
-  padding: var(--spacing-xs) var(--spacing-md);
-  background: transparent;
+.node-action-icon--hover {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tree-node-content:hover .node-action-icon--hover,
+.tree-node-content.is-selected .node-action-icon--hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.node-action-icon {
+  width: 22px;
+  height: 22px;
   border: none;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  color: var(--text-medium);
-  cursor: pointer;
-}
-
-.context-item:hover {
-  background-color: var(--bg-light);
-  color: var(--primary-color);
-}
-
-.dark-mode .context-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-.context-item.is-danger:hover {
-  color: #f56c6c;
-}
-
-.context-icon {
+  border-radius: 4px;
+  background: transparent;
   color: var(--text-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
-.context-item:hover .context-icon {
+.node-action-icon:hover {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
   color: var(--primary-color);
 }
 
-.context-item.is-danger:hover .context-icon {
-  color: #f56c6c;
+.dark-mode .node-action-icon {
+  color: #9ca3af;
+}
+
+.dark-mode .node-action-icon:hover {
+  color: #8fb2ff;
 }
 
 .inline-rename-input {

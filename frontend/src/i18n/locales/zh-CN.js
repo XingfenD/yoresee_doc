@@ -91,6 +91,8 @@ export default {
     createLocationLabel: '创建位置',
     createLocationOwn: '个人文档',
     createLocationKnowledgeBase: '知识库',
+    typeMarkdown: 'Markdown',
+    typeTablePlaceholder: '表格（占位）',
     commentPlaceholder: '写下你的评论...',
     commentSend: '发送',
     commentEmpty: '暂无评论',

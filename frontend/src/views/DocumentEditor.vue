@@ -100,7 +100,8 @@
     </div>
   </PageLayout>
   <DocumentCreateDialog v-model="showCreateDialog" :loading="creatingLoading"
-    :parent-external-id="pendingParentId" :knowledge-base-id="kbId !== 'personal' ? kbId : ''"
+    :parent-external-id="pendingParentId" :initial-document-type="selectedDocumentType"
+    :knowledge-base-id="kbId !== 'personal' ? kbId : ''"
     @submit="createDocument" @cancel="cancelCreateDocument" />
   <TemplateCreateDialog
     v-model="showTemplateDialog"
@@ -251,6 +252,7 @@ const {
   showCreateDialog,
   creatingLoading,
   pendingParentId,
+  selectedDocumentType,
   savingTemplate,
   showTemplateDialog,
   templateDialogInit,

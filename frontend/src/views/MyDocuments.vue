@@ -14,9 +14,11 @@
     @menu-select="handleMenuSelect"
   >
     <template #actions>
-      <el-button class="page-action-btn" type="primary" size="small" @click="openCreateDocumentDialog">
-        {{ t('document.createDocument') }}
-      </el-button>
+      <DocumentTypeMenu @select="openCreateDocumentDialog">
+        <el-button class="page-action-btn" type="primary" size="small">
+          {{ t('document.createDocument') }}
+        </el-button>
+      </DocumentTypeMenu>
     </template>
 
     <div class="documents-content" v-loading="loading">
@@ -47,6 +49,7 @@
   <DocumentCreateDialog
     v-model="showCreateDialog"
     :loading="creatingLoading"
+    :initial-document-type="selectedDocumentType"
     :knowledge-base-id="''"
     @submit="createDocument"
     @cancel="cancelCreateDocument"
@@ -61,9 +64,11 @@ import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/PageLayout.vue';
 import DocumentListSection from '@/components/DocumentListSection.vue';
 import DocumentCreateDialog from '@/components/DocumentCreateDialog.vue';
+import DocumentTypeMenu from '@/components/DocumentTypeMenu.vue';
 import { getMyDocuments, createDocument as createDocumentApi } from '@/services/api';
 import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { usePageBoot } from '@/composables/usePageBoot';
+import { DEFAULT_DOCUMENT_TYPE, normalizeDocumentType } from '@/utils/documentType';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -72,6 +77,7 @@ const { locale, t } = useI18n();
 const loading = ref(false);
 const showCreateDialog = ref(false);
 const creatingLoading = ref(false);
+const selectedDocumentType = ref(DEFAULT_DOCUMENT_TYPE);
 
 const page = ref(1);
 const pageSize = ref(20);
@@ -130,7 +136,8 @@ const fetchMyDocuments = async () => {
   }
 };
 
-const openCreateDocumentDialog = () => {
+const openCreateDocumentDialog = (documentType = DEFAULT_DOCUMENT_TYPE) => {
+  selectedDocumentType.value = normalizeDocumentType(documentType);
   showCreateDialog.value = true;
 };
 
@@ -144,7 +151,7 @@ const createDocument = async (payload) => {
     creatingLoading.value = true;
     const requestBody = {
       title,
-      type: payload.type || 'markdown',
+      type: normalizeDocumentType(payload?.type || selectedDocumentType.value),
       container_type: 'own',
       is_public: false
     };

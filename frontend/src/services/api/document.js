@@ -9,6 +9,7 @@ import {
   mapDocumentVersion,
   toTimeRange
 } from './shared';
+import { toDocumentTypeNumber } from '@/utils/documentType';
 
 const {
   UpdateDocumentMetaRequest,
@@ -26,8 +27,7 @@ const {
   ListDocumentVersionsRequest,
   GetDocumentVersionContentRequest,
   RecursiveOptions,
-  CreateDocumentContainerType,
-  DocumentType
+  CreateDocumentContainerType
 } = messages;
 
 export const updateDocumentMeta = async (documentExternalID, data = {}) => {
@@ -59,12 +59,9 @@ export const updateDocumentSettings = async (documentExternalID, data = {}) => {
 export const createDocument = async (data) => {
   const req = new CreateDocumentRequest({
     title: data.title || '',
-    type: DocumentType.MARKDOWN,
+    type: toDocumentTypeNumber(data.type),
     isPublic: typeof data.is_public === 'boolean' ? data.is_public : undefined
   });
-  if (data.type === 'markdown') {
-    req.type = DocumentType.MARKDOWN;
-  }
   if (data.container_type === 'knowledge_base') {
     req.containerType = CreateDocumentContainerType.KNOWLEDGE_BASE;
     if (data.knowledge_base_external_id) {

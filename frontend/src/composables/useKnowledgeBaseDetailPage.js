@@ -10,6 +10,7 @@ import { useWorkspaceShell } from '@/composables/useWorkspaceShell';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
 import { usePageBoot } from '@/composables/usePageBoot';
 import { useApiAction } from '@/composables/useApiAction';
+import { DEFAULT_DOCUMENT_TYPE, normalizeDocumentType } from '@/utils/documentType';
 
 export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale }) {
   const { runWithLoading, createApiErrorHandler } = useApiAction({ t });
@@ -64,6 +65,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
 
   const showCreateDialog = ref(false);
   const creatingLoading = ref(false);
+  const selectedDocumentType = ref(DEFAULT_DOCUMENT_TYPE);
 
   const sortOptions = computed(() => [
     { value: 'name', label: t('knowledgeBase.sortByName') },
@@ -183,7 +185,8 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
     await ensureTemplateCatalogLoaded('knowledge_base');
   };
 
-  const openCreateDocumentDialog = () => {
+  const openCreateDocumentDialog = (documentType = DEFAULT_DOCUMENT_TYPE) => {
+    selectedDocumentType.value = normalizeDocumentType(documentType);
     showCreateDialog.value = true;
   };
 
@@ -200,7 +203,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
       () =>
         createDocumentApi({
           title,
-          type: payload.type || 'markdown',
+          type: normalizeDocumentType(payload?.type || selectedDocumentType.value),
           container_type: 'knowledge_base',
           is_public: false,
           knowledge_base_external_id: knowledgeBaseExternalID,
@@ -322,6 +325,7 @@ export function useKnowledgeBaseDetailPage({ t, router, route, userStore, locale
     totalDocumentsCount,
     showCreateDialog,
     creatingLoading,
+    selectedDocumentType,
     createDocument,
     cancelCreateDocument,
     openCreateDocumentDialog,

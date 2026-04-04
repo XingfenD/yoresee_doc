@@ -48,6 +48,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import TemplatePickerPane from '@/components/TemplatePickerPane.vue';
 import { useTemplateCatalog } from '@/composables/useTemplateCatalog';
+import { matchDocumentType, normalizeDocumentType } from '@/utils/documentType';
 
 const props = defineProps({
   visible: {
@@ -62,6 +63,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  documentType: {
+    type: [String, Number],
+    default: ''
+  },
   knowledgeBaseId: {
     type: String,
     default: ''
@@ -74,6 +79,7 @@ const { t } = useI18n();
 const activeScope = ref('recent');
 const keyword = ref('');
 const showKnowledgeBaseTemplates = computed(() => Boolean(props.knowledgeBaseId));
+const selectedDocumentType = computed(() => normalizeDocumentType(props.documentType, ''));
 
 const normalizeScopeToTab = (scope) => {
   if (scope === 'system') {
@@ -102,6 +108,7 @@ const {
 } = useTemplateCatalog({
   includeKnowledgeBase: true,
   knowledgeBaseId: computed(() => props.knowledgeBaseId || ''),
+  documentType: selectedDocumentType,
   onError: (error, scope) => {
     console.error(`[DocumentTemplatePicker] load ${scope} templates failed`, error);
   }
@@ -169,10 +176,13 @@ const currentEmptyText = computed(() => {
 const filteredTemplates = computed(() => {
   const text = keyword.value.trim().toLowerCase();
   const blank = blankTemplateOption.value;
+  const typedTemplates = currentTemplates.value.filter((item) =>
+    matchDocumentType(item?.type, selectedDocumentType.value)
+  );
   if (!text) {
-    return [blank, ...currentTemplates.value];
+    return [blank, ...typedTemplates];
   }
-  const list = currentTemplates.value.filter((item) => {
+  const list = typedTemplates.filter((item) => {
     const name = String(item?.name || '').toLowerCase();
     const description = String(item?.description || '').toLowerCase();
     const tags = Array.isArray(item?.tags) ? item.tags.join(' ').toLowerCase() : '';
@@ -218,8 +228,14 @@ watch(
     await nextTick();
     activeScope.value = initialScope.value;
     keyword.value = '';
+    if (activeScope.value === 'recent') {
+      fetchTemplates('recent');
+      return;
+    }
+    fetchTemplates('recent');
     fetchTemplates(activeScope.value);
-  }
+  },
+  { immediate: true }
 );
 
 watch(
@@ -265,6 +281,16 @@ watch(showKnowledgeBaseTemplates, (show) => {
 watch(activeScope, (scope) => {
   fetchTemplates(scope);
 });
+
+watch(
+  () => props.documentType,
+  () => {
+    if (!props.visible) {
+      return;
+    }
+    fetchTemplates(activeScope.value);
+  }
+);
 </script>
 
 <style scoped>

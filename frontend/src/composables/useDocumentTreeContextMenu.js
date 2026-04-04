@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { ref } from 'vue';
 
 const resolveBool = (valueOrGetterOrRef, fallback = false) => {
   if (typeof valueOrGetterOrRef === 'function') {
@@ -59,24 +59,8 @@ export function useDocumentTreeContextMenu(options = {}) {
     return true;
   };
 
-  const contextMenuStyle = computed(() => ({
-    left: `${contextMenu.value.x}px`,
-    top: `${contextMenu.value.y}px`
-  }));
-
-  onMounted(() => {
-    window.addEventListener('click', closeContextMenu);
-    window.addEventListener('scroll', closeContextMenu, true);
-  });
-
-  onBeforeUnmount(() => {
-    window.removeEventListener('click', closeContextMenu);
-    window.removeEventListener('scroll', closeContextMenu, true);
-  });
-
   return {
     contextMenu,
-    contextMenuStyle,
     openContextMenu,
     closeContextMenu
   };

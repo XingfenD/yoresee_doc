@@ -93,6 +93,8 @@ export default {
     createLocationLabel: 'Create In',
     createLocationOwn: 'My Documents',
     createLocationKnowledgeBase: 'Knowledge Base',
+    typeMarkdown: 'Markdown',
+    typeTablePlaceholder: 'Table (Placeholder)',
     commentPlaceholder: 'Write a comment...',
     commentSend: 'Send',
     commentEmpty: 'No comments yet',

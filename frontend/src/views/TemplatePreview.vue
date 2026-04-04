@@ -56,6 +56,7 @@
     :show-public-switch="true"
     :show-location-selector="true"
     :initial-title="t('document.untitledDefaultTitle')"
+    :initial-document-type="template?.type || '1'"
     :initial-container-type="template?.knowledge_base_external_id ? 'knowledge_base' : 'own'"
     :initial-target-knowledge-base-id="template?.knowledge_base_external_id || ''"
     :initial-template-id="template?.id"

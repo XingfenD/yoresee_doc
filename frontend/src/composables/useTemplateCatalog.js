@@ -19,6 +19,7 @@ export function useTemplateCatalog(options = {}) {
   const {
     includeKnowledgeBase = false,
     knowledgeBaseId = '',
+    documentType = '',
     pageSize = 50,
     onError
   } = options;
@@ -60,6 +61,7 @@ export function useTemplateCatalog(options = {}) {
   };
 
   const kbId = computed(() => `${resolveRefValue(knowledgeBaseId) || ''}`);
+  const normalizedDocType = computed(() => `${resolveRefValue(documentType) || ''}`.trim());
 
   const requestTemplates = async (scope) => {
     if (scope === 'recent') {
@@ -74,6 +76,7 @@ export function useTemplateCatalog(options = {}) {
       const resp = await listTemplates({
         only_mine: true,
         target_container: 'own',
+        type: normalizedDocType.value || undefined,
         order_by: 'updated_at',
         order_desc: true,
         page: 1,
@@ -85,6 +88,7 @@ export function useTemplateCatalog(options = {}) {
     if (scope === 'public') {
       const resp = await listTemplates({
         target_container: 'public',
+        type: normalizedDocType.value || undefined,
         order_by: 'updated_at',
         order_desc: true,
         page: 1,
@@ -100,6 +104,7 @@ export function useTemplateCatalog(options = {}) {
       const resp = await listTemplates({
         target_container: 'knowledge_base',
         knowledge_base_id: kbId.value,
+        type: normalizedDocType.value || undefined,
         order_by: 'updated_at',
         order_desc: true,
         page: 1,
@@ -173,6 +178,18 @@ export function useTemplateCatalog(options = {}) {
       if (next === prev) {
         return;
       }
+      invalidateScope('knowledge_base');
+    }
+  );
+
+  watch(
+    normalizedDocType,
+    (next, prev) => {
+      if (next === prev) {
+        return;
+      }
+      invalidateScope('my');
+      invalidateScope('public');
       invalidateScope('knowledge_base');
     }
   );

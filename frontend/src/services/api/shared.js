@@ -1,5 +1,6 @@
 import { clients, messages, unaryCall } from '../grpc_client';
 import { resolveFileUrl } from '@/utils/fileUrl';
+import { normalizeDocumentType } from '@/utils/documentType';
 
 const {
   documentClient,
@@ -22,8 +23,6 @@ export {
   invitationClient,
   settingClient
 };
-
-const { DocumentType } = messages;
 
 export function baseToObject(resp) {
   const base = resp.base;
@@ -54,7 +53,7 @@ export function mapDocument(doc) {
   return {
     external_id: doc.externalId,
     title: doc.title,
-    type: doc.type === DocumentType.MARKDOWN ? 'markdown' : '',
+    type: normalizeDocumentType(doc.type),
     summary: doc.summary,
     is_public: doc.isPublic,
     tags: doc.tags,
@@ -91,6 +90,7 @@ export function mapTemplate(tpl) {
     name: tpl.name,
     description: tpl.description,
     content: tpl.content,
+    type: normalizeDocumentType(tpl.type),
     scope: tpl.scope,
     knowledge_base_external_id: tpl.knowledgeBaseExternalId,
     tags: tpl.tags,

@@ -6,6 +6,7 @@ import {
   handleResponse,
   mapTemplate
 } from './shared';
+import { normalizeDocumentType } from '@/utils/documentType';
 
 const {
   CreateTemplateRequest,
@@ -20,6 +21,18 @@ const containerMap = {
   own: CreateTemplateContainer.OWN_TEMPLATE,
   knowledge_base: CreateTemplateContainer.KNOWLEDGEBASE_TEMPLATE,
   public: CreateTemplateContainer.PUBLIC_TEMPLATE
+};
+
+const resolveDocumentType = (type) => {
+  const normalized = normalizeDocumentType(type, '');
+  if (!normalized) {
+    return undefined;
+  }
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+  return parsed;
 };
 
 export const createTemplate = async (data = {}) => {
@@ -38,6 +51,7 @@ export const listTemplates = async (params = {}) => {
   const req = new ListTemplatesRequest({
     onlyMine: Boolean(params.only_mine),
     targetContainer: params.target_container ? containerMap[params.target_container] : undefined,
+    type: resolveDocumentType(params.type),
     knowledgeBaseId: params.knowledge_base_id || undefined,
     nameKeyword: params.name_keyword || undefined,
     orderBy: params.order_by || undefined,
