@@ -11,6 +11,7 @@ import 'x-data-spreadsheet/dist/xspreadsheet.css';
 
 const DEFAULT_ROW_COUNT = 8;
 const DEFAULT_COLUMN_COUNT = 4;
+const MIN_COLUMN_LEN = 26;
 
 const props = defineProps({
   modelValue: {
@@ -76,7 +77,12 @@ const serializeRows = (rows) =>
   });
 
 const rowsToSheetData = (rows) => {
-  const sheetRows = {};
+  const rowCount = Math.max(DEFAULT_ROW_COUNT, rows.length);
+  const colCount = Math.max(
+    MIN_COLUMN_LEN,
+    ...rows.map((row) => (Array.isArray(row) ? row.length : 0))
+  );
+  const sheetRows = { len: rowCount };
   rows.forEach((row, rowIndex) => {
     const cells = {};
     row.forEach((value, colIndex) => {
@@ -87,6 +93,7 @@ const rowsToSheetData = (rows) => {
   return {
     name: 'Sheet1',
     freeze: 'A1',
+    cols: { len: colCount },
     rows: sheetRows
   };
 };
