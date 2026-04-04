@@ -300,31 +300,6 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 	}, nil
 }
 
-func validateUpdateDocumentRequest(req *pb.UpdateDocumentRequest) error {
-	if req == nil {
-		return status.StatusParamError
-	}
-	if req.Content == nil && req.KnowledgeBaseExternalId == nil && req.ParentExternalId == nil && req.Title == nil && req.MoveToContainer == nil {
-		return status.GenErrWithCustomMsg(status.StatusParamError, "no update fields")
-	}
-	if req.MoveToContainer != nil {
-		if !doc_container_mapper.IsSupportedProtoType(*req.MoveToContainer) {
-			return status.GenErrWithCustomMsg(status.StatusParamError, "invalid move_to_container")
-		}
-		if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_OWN && req.KnowledgeBaseExternalId != nil {
-			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId not nil")
-		}
-		if *req.MoveToContainer == pb.CreateDocumentContainerType_CREATE_DOCUMENT_CONTAINER_TYPE_KNOWLEDGE_BASE &&
-			req.KnowledgeBaseExternalId == nil {
-			return status.GenErrWithCustomMsg(status.StatusParamError, "KnowledgeBaseExternalId is nil")
-		}
-	}
-	if req.MoveToContainer == nil && req.KnowledgeBaseExternalId != nil {
-		return status.GenErrWithCustomMsg(status.StatusParamError, "MoveToContainer is nil")
-	}
-	return nil
-}
-
 func (s *DocumentServiceServer) UpdateDocument(ctx context.Context, req *pb.UpdateDocumentRequest) (*pb.UpdateDocumentResponse, error) {
 	userExternalID, ok := ctx.Value("user_external_id").(string)
 	if !ok || userExternalID == "" {
@@ -339,6 +314,7 @@ func (s *DocumentServiceServer) UpdateDocument(ctx context.Context, req *pb.Upda
 		Title:                   req.Title,
 		ParentExternalID:        req.ParentExternalId,
 		KnowledgeBaseExternalID: req.KnowledgeBaseExternalId,
+		Content:                 req.Content,
 	}
 
 	if req.MoveToContainer != nil {
@@ -347,6 +323,10 @@ func (s *DocumentServiceServer) UpdateDocument(ctx context.Context, req *pb.Upda
 			return &pb.UpdateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 		}
 		serviceReq.MoveToContainer = utils.Of(moveToContainer)
+	}
+
+	if _, err := document_service.DocumentSvc.Update(ctx, serviceReq); err != nil {
+		return &pb.UpdateDocumentResponse{Base: baseResponseFromErr(err)}, nil
 	}
 
 	return &pb.UpdateDocumentResponse{
