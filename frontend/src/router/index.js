@@ -7,23 +7,23 @@ const router = createRouter({
     {
       path: '/login',
       name: 'Login',
-      component: () => import('../views/Login.vue')
+      component: () => import('../views/auth/Login.vue')
     },
     {
       path: '/register',
       name: 'Register',
-      component: () => import('../views/Register.vue')
+      component: () => import('../views/auth/Register.vue')
     },
     {
       path: '/',
       name: 'Home',
-      component: () => import('../views/Home.vue'),
+      component: () => import('../views/workspace/Home.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/mydocuments',
       name: 'MyDocuments',
-      component: () => import('../views/MyDocuments.vue'),
+      component: () => import('../views/workspace/MyDocuments.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -34,162 +34,162 @@ const router = createRouter({
     {
       path: '/mydocument/:docId',
       name: 'MyDocumentEditor',
-      component: () => import('../views/DocumentEditor.vue'),
+      component: () => import('../views/document/DocumentEditor.vue'),
       meta: { requiresAuth: true },
       props: (route) => ({ kbId: 'personal', docId: route.params.docId })
     },
     {
       path: '/mydocument/:docId/attachments',
       name: 'MyDocumentAttachments',
-      component: () => import('../views/DocumentAttachments.vue'),
+      component: () => import('../views/document/DocumentAttachments.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/mydocument/:docId/history',
       name: 'MyDocumentHistory',
-      component: () => import('../views/DocumentHistory.vue'),
+      component: () => import('../views/document/DocumentHistory.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/mydocument/:docId/setting',
       name: 'MyDocumentSettings',
-      component: () => import('../views/DocumentSettings.vue'),
+      component: () => import('../views/document/DocumentSettings.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/mydocument/:docId/attachment/:attachmentId',
       name: 'MyDocumentAttachmentOpen',
-      component: () => import('../views/DocumentAttachmentOpen.vue'),
+      component: () => import('../views/document/DocumentAttachmentOpen.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/knowledge-base',
       name: 'KnowledgeBase',
-      component: () => import('../views/KnowledgeBase.vue'),
+      component: () => import('../views/knowledge-base/KnowledgeBase.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/templates',
       name: 'Templates',
-      component: () => import('../views/Templates.vue'),
+      component: () => import('../views/template/Templates.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/search',
       name: 'Search',
-      component: () => import('../views/Search.vue'),
+      component: () => import('../views/workspace/Search.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/template/:templateId',
       name: 'TemplatePreview',
-      component: () => import('../views/TemplatePreview.vue'),
+      component: () => import('../views/template/TemplatePreview.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/knowledge-base/:id',
       name: 'KnowledgeBaseDetail',
-      component: () => import('../views/KnowledgeBaseDetail.vue'),
+      component: () => import('../views/knowledge-base/KnowledgeBaseDetail.vue'),
       meta: { requiresAuth: true },
       props: true
     },
     {
       path: '/knowledge-base/:kbId/document/:docId',
       name: 'KnowledgeBaseDocumentEditor',
-      component: () => import('../views/DocumentEditor.vue'),
+      component: () => import('../views/document/DocumentEditor.vue'),
       meta: { requiresAuth: true },
       props: true
     },
     {
       path: '/knowledge-base/:kbId/document/:docId/attachments',
       name: 'KnowledgeBaseDocumentAttachments',
-      component: () => import('../views/DocumentAttachments.vue'),
+      component: () => import('../views/document/DocumentAttachments.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/knowledge-base/:kbId/document/:docId/history',
       name: 'KnowledgeBaseDocumentHistory',
-      component: () => import('../views/DocumentHistory.vue'),
+      component: () => import('../views/document/DocumentHistory.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/knowledge-base/:kbId/document/:docId/setting',
       name: 'KnowledgeBaseDocumentSettings',
-      component: () => import('../views/DocumentSettings.vue'),
+      component: () => import('../views/document/DocumentSettings.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/knowledge-base/:kbId/document/:docId/attachment/:attachmentId',
       name: 'KnowledgeBaseDocumentAttachmentOpen',
-      component: () => import('../views/DocumentAttachmentOpen.vue'),
+      component: () => import('../views/document/DocumentAttachmentOpen.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/user_info/profile',
       name: 'UserProfile',
-      component: () => import('../views/UserProfile.vue'),
+      component: () => import('../views/user/UserProfile.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/user_info/setting',
       name: 'UserSetting',
-      component: () => import('../views/UserSetting.vue'),
+      component: () => import('../views/user/UserSetting.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/user_info/invitations',
       name: 'UserInvitations',
-      component: () => import('../views/UserInvitations.vue'),
+      component: () => import('../views/user/UserInvitations.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/user_info/notifications',
       name: 'UserNotifications',
-      component: () => import('../views/UserNotifications.vue'),
+      component: () => import('../views/user/UserNotifications.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/manage/security',
       name: 'SystemManageSecurity',
-      component: () => import('../views/SystemManageSecurity.vue'),
+      component: () => import('../views/manage/SystemManageSecurity.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/manage/user',
       name: 'SystemManageUser',
-      component: () => import('../views/SystemManageUser.vue'),
+      component: () => import('../views/manage/SystemManageUser.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/manage/user_group',
       name: 'SystemManageUserGroup',
-      component: () => import('../views/SystemManageUserGroup.vue'),
+      component: () => import('../views/manage/SystemManageUserGroup.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/manage/user_group/:externalID',
       name: 'SystemManageUserGroupDetail',
-      component: () => import('../views/SystemManageUserGroupDetail.vue'),
+      component: () => import('../views/manage/SystemManageUserGroupDetail.vue'),
       meta: { requiresAuth: true },
       props: true
     },
     {
       path: '/manage/organization',
       name: 'SystemManageOrganization',
-      component: () => import('../views/SystemManageOrganization.vue'),
+      component: () => import('../views/manage/SystemManageOrganization.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: '/manage/organization/:externalID',
       name: 'SystemManageOrganizationDetail',
-      component: () => import('../views/SystemManageOrganizationDetail.vue'),
+      component: () => import('../views/manage/SystemManageOrganizationDetail.vue'),
       meta: { requiresAuth: true },
       props: true
     },
     {
       path: '/manage/invitations',
       name: 'SystemManageInvitations',
-      component: () => import('../views/SystemManageInvitations.vue'),
+      component: () => import('../views/manage/SystemManageInvitations.vue'),
       meta: { requiresAuth: true }
     },
     {

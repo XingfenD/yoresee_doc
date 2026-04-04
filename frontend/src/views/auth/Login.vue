@@ -62,7 +62,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useUserStore } from '../store/user';
+import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
 import AuthLayout from '@/components/layout/AuthLayout.vue';
 import { useAuthShell } from '@/composables/shell/useAuthShell';
