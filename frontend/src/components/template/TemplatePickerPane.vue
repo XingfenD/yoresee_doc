@@ -21,6 +21,7 @@
     v-model="showPreviewDialog"
     :title="previewDialogTitle"
     :content="previewContent"
+    :document-type="previewingTemplate?.type || '1'"
     :is-dark-mode="isDarkMode"
     @closed="closePreviewDialog"
   />

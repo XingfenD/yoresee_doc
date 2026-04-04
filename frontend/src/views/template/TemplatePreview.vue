@@ -43,7 +43,14 @@
         <div v-if="!previewContent" class="template-preview-empty">
           <el-empty :description="t('templates.contentEmpty')" />
         </div>
-        <div v-else ref="previewRef" class="template-preview-content"></div>
+        <DocumentPreviewViewer
+          v-else
+          class="template-preview-content"
+          :content="previewContent"
+          :document-type="previewDocumentType"
+          :is-template="true"
+          :is-dark-mode="isDarkMode"
+        />
       </div>
     </div>
   </PageLayout>
@@ -71,12 +78,12 @@
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import 'vditor/dist/index.css';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/layout/PageLayout.vue';
 import TitleBar from '@/components/layout/TitleBar.vue';
 import DocumentCreateDialog from '@/components/document/DocumentCreateDialog.vue';
 import AppTag from '@/components/base/AppTag.vue';
+import DocumentPreviewViewer from '@/components/document/render/DocumentPreviewViewer.vue';
 import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
 import { usePageBoot } from '@/composables/shell/usePageBoot';
 import { useTemplatePreviewPage } from '@/composables/template/useTemplatePreviewPage';
@@ -110,10 +117,10 @@ const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 const {
   loading,
   template,
-  previewRef,
   showCreateDialog,
   creatingLoading,
   previewContent,
+  previewDocumentType,
   scopeLabel,
   scopeTagType,
   formatDate,
@@ -125,8 +132,7 @@ const {
 } = useTemplatePreviewPage({
   t,
   route,
-  router,
-  isDarkMode
+  router
 });
 
 onMounted(() => {
@@ -183,6 +189,7 @@ onMounted(() => {
 
 .template-preview-content {
   padding: 8px 0;
+  min-height: 300px;
   color: var(--text-primary);
 }
 
@@ -204,7 +211,4 @@ onMounted(() => {
   color: #cbd5e1;
 }
 
-.dark-mode .template-preview-content.vditor-reset {
-  color: #e5e7eb;
-}
 </style>

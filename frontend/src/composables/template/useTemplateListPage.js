@@ -160,23 +160,11 @@ export function useTemplateListPage({ t, router }) {
     currentPage.value = 1;
   };
 
-  const parseTemplateContent = (raw) => {
-    if (!raw) return '';
-    try {
-      const parsed = JSON.parse(raw);
-      if (typeof parsed?.content === 'string') {
-        return parsed.content;
-      }
-    } catch (error) {
-      // not json payload
-    }
-    return raw;
-  };
-
   const previewTitle = computed(
     () => previewTemplate.value?.name || t('templates.untitled')
   );
-  const previewContent = computed(() => parseTemplateContent(previewTemplate.value?.content || ''));
+  const previewContent = computed(() => String(previewTemplate.value?.content || ''));
+  const previewDocumentType = computed(() => previewTemplate.value?.type || '1');
 
   const openPreviewDialog = (tpl) => {
     if (!tpl?.id) {
@@ -279,6 +267,7 @@ export function useTemplateListPage({ t, router }) {
     showPreviewDialog,
     previewTitle,
     previewContent,
+    previewDocumentType,
     showSettingsDialog,
     savingTemplateSettings,
     templateSettingsForm,

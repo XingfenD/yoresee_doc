@@ -76,9 +76,10 @@
         </el-select>
       </div>
 
-      <TextDiffViewer
-        :left-text="leftContent ?? t('history.selectHint')"
-        :right-text="rightContent ?? t('history.selectHint')"
+      <DocumentDiffViewer
+        :left-content="leftContent ?? t('history.selectHint')"
+        :right-content="rightContent ?? t('history.selectHint')"
+        :document-type="documentType"
         :left-title="`${t('history.leftVersion')} ${leftVersion || '-'}`"
         :right-title="`${t('history.rightVersion')} ${rightVersion || '-'}`"
       />
@@ -94,10 +95,11 @@ import { ElMessage } from 'element-plus';
 import PageLayout from '@/components/layout/PageLayout.vue';
 import TitleBar from '@/components/layout/TitleBar.vue';
 import CommonList from '@/components/list/CommonList.vue';
-import TextDiffViewer from '@/components/document/TextDiffViewer.vue';
+import DocumentDiffViewer from '@/components/document/DocumentDiffViewer.vue';
 import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
 import { useUserStore } from '@/store/user';
-import { listDocumentVersions, getDocumentVersionContent } from '@/services/api';
+import { listDocumentVersions, getDocumentVersionContent, getDocumentContent } from '@/services/api';
+import { normalizeDocumentType } from '@/utils/documentType';
 
 const route = useRoute();
 const router = useRouter();
@@ -138,6 +140,7 @@ const leftContent = ref(null);
 const rightContent = ref(null);
 const contentCache = ref({});
 const compareDialogVisible = ref(false);
+const documentType = ref('1');
 
 const columns = computed(() => ([
   { key: 'version', label: t('history.version'), width: '110px' },
@@ -164,6 +167,18 @@ const fetchVersions = async () => {
     ElMessage.error(t('history.loadFailed'));
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchDocumentType = async () => {
+  if (!docId.value) {
+    return;
+  }
+  try {
+    const resp = await getDocumentContent(docId.value);
+    documentType.value = normalizeDocumentType(resp?.document?.type, '1');
+  } catch (_) {
+    documentType.value = '1';
   }
 };
 
@@ -244,7 +259,7 @@ const goBackToDocument = () => {
 onMounted(async () => {
   await initLanguage();
   await fetchSystemInfo();
-  await fetchVersions();
+  await Promise.all([fetchVersions(), fetchDocumentType()]);
 });
 </script>
 

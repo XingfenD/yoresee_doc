@@ -1,16 +1,14 @@
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import Vditor from 'vditor';
 import { createDocument as createDocumentApi, getTemplate } from '@/services/api';
 import { useApiAction } from '@/composables/actions/useApiAction';
 import { DEFAULT_DOCUMENT_TYPE, normalizeDocumentType } from '@/utils/documentType';
 
-export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
+export function useTemplatePreviewPage({ t, route, router }) {
   const { runWithLoading } = useApiAction({ t });
 
   const loading = ref(false);
   const template = ref(null);
-  const previewRef = ref(null);
   const showCreateDialog = ref(false);
   const creatingLoading = ref(false);
 
@@ -37,37 +35,8 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
     return 'info';
   });
 
-  const parseTemplateContent = (raw) => {
-    if (!raw) return '';
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed.content === 'string') {
-        return parsed.content;
-      }
-    } catch (error) {
-      // not json
-    }
-    return raw;
-  };
-
-  const previewContent = computed(() => parseTemplateContent(template.value?.content || ''));
-
-  const renderPreview = async () => {
-    if (!previewRef.value) return;
-    await nextTick();
-    const content = previewContent.value || '';
-    if (!content) {
-      previewRef.value.innerHTML = '';
-      return;
-    }
-    await Vditor.preview(previewRef.value, content, {
-      mode: isDarkMode.value ? 'dark' : 'light',
-      theme: {
-        current: isDarkMode.value ? 'dark' : 'light'
-      },
-      hljs: { style: isDarkMode.value ? 'monokai' : 'github' }
-    });
-  };
+  const previewContent = computed(() => String(template.value?.content || ''));
+  const previewDocumentType = computed(() => template.value?.type || DEFAULT_DOCUMENT_TYPE);
 
   const fetchTemplate = async () => {
     if (!templateId.value) return;
@@ -144,26 +113,17 @@ export function useTemplatePreviewPage({ t, route, router, isDarkMode }) {
     );
   };
 
-  watch(previewContent, () => {
-    renderPreview();
-  });
-
-  watch(isDarkMode, () => {
-    renderPreview();
-  });
-
   const init = async () => {
     await fetchTemplate();
-    await renderPreview();
   };
 
   return {
     loading,
     template,
-    previewRef,
     showCreateDialog,
     creatingLoading,
     previewContent,
+    previewDocumentType,
     scopeLabel,
     scopeTagType,
     formatDate,

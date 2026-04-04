@@ -10,7 +10,14 @@
       <div v-if="!content" class="template-preview-empty">
         <el-empty :description="t('templates.contentEmpty')" />
       </div>
-      <div v-else ref="previewRef" class="template-preview-render"></div>
+      <DocumentPreviewViewer
+        v-else
+        class="template-preview-render"
+        :content="content"
+        :document-type="documentType"
+        :is-template="true"
+        :is-dark-mode="isDarkMode"
+      />
     </div>
     <template #footer>
       <el-button @click="visible = false">{{ t('button.cancel') }}</el-button>
@@ -19,10 +26,9 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import Vditor from 'vditor';
-import 'vditor/dist/index.css';
+import DocumentPreviewViewer from '@/components/document/render/DocumentPreviewViewer.vue';
 
 const props = defineProps({
   modelValue: {
@@ -37,6 +43,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  documentType: {
+    type: [String, Number],
+    default: '1'
+  },
   isDarkMode: {
     type: Boolean,
     default: false
@@ -45,42 +55,11 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'closed']);
 const { t } = useI18n();
-const previewRef = ref(null);
 
 const visible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 });
-
-const renderPreviewContent = async () => {
-  if (!props.modelValue) {
-    return;
-  }
-  await nextTick();
-  if (!previewRef.value) {
-    return;
-  }
-  if (!props.content) {
-    previewRef.value.innerHTML = '';
-    return;
-  }
-  await Vditor.preview(previewRef.value, props.content, {
-    mode: props.isDarkMode ? 'dark' : 'light',
-    theme: {
-      current: props.isDarkMode ? 'dark' : 'light'
-    },
-    hljs: {
-      style: props.isDarkMode ? 'monokai' : 'github'
-    }
-  });
-};
-
-watch(
-  () => [props.modelValue, props.content, props.isDarkMode],
-  () => {
-    renderPreviewContent();
-  }
-);
 </script>
 
 <style scoped>
@@ -102,15 +81,11 @@ watch(
 }
 
 .template-preview-render {
-  color: var(--text-primary);
+  min-height: 360px;
 }
 
 .dark-mode .template-preview-dialog-body {
   background: #141a22;
   border-color: #2a313a;
-}
-
-.dark-mode .template-preview-render.vditor-reset {
-  color: #e5e7eb;
 }
 </style>

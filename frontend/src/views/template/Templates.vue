@@ -90,6 +90,7 @@
     v-model="showPreviewDialog"
     :title="`${t('templates.previewTitle')} · ${previewTitle}`"
     :content="previewContent"
+    :document-type="previewDocumentType"
     :is-dark-mode="isDarkMode"
     @closed="closePreviewDialog"
   />
@@ -153,6 +154,7 @@ const {
   showPreviewDialog,
   previewTitle,
   previewContent,
+  previewDocumentType,
   showSettingsDialog,
   savingTemplateSettings,
   templateSettingsForm,
