@@ -123,7 +123,7 @@ func (op *DocumentGetSubtreeOperation) queryWithRoot(db *gorm.DB, rootPath strin
 	`
 	if op.directoryOnly {
 		query = `
-		SELECT id, external_id, title, parent_id
+		SELECT id, external_id, title, parent_id, type
 		FROM document_metas
 		WHERE deleted_at IS NULL
 			AND id <> ?

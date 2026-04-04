@@ -16,6 +16,7 @@ func (s *DocumentService) ListRecentTemplates(req *dto.ListRecentTemplatesReques
 		return nil, 0, status.StatusUserNotFound
 	}
 
+	// TODO: filter the recent templates by kb
 	recentRecords, total, err := s.templateRepo.ListRecentTemplates(userID).
 		WithTimeRange(req.StartTime, req.EndTime).
 		WithPagination(req.Pagination.Page, req.Pagination.PageSize).

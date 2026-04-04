@@ -120,7 +120,7 @@ func (op *DocumentsListOperation) buildBaseQuery() *gorm.DB {
 
 	dbQuery := db.Model(&model.Document{})
 	if op.directoryOnly {
-		dbQuery = dbQuery.Select("id, external_id, title, parent_id")
+		dbQuery = dbQuery.Select("id, external_id, title, parent_id, type")
 	}
 
 	if op.model != nil {
