@@ -1,59 +1,109 @@
 # 远楒文档
 
-远楒文档是一个支持实时协作的文档系统，包含 Go 后端、Vue 前端和基于 Yjs 的协作栈。
+远楒文档是一个支持实时协作的文档平台，技术栈为 Go 后端、Vue 3 前端和基于 Yjs 的协作服务。
 
-## 项目特色
-- **实时协作**：基于 Yjs + WebSocket + Redis/MQ
-- **Connect RPC/gRPC**：强类型接口与统一协议
-- **模块化服务**：后端 + 协作网关 + 异步 worker
-- **配置驱动**：Consul KV 动态配置
-- **Docker 优先**：Nginx 反向代理 + 一键启停
+## 运行拓扑
 
-## 项目架构与链路
-**核心服务**
-- `frontend`（Vue）通过 Nginx 对外提供
-- `backend`（Connect RPC/gRPC）
-- `collab-core`（Node/Yjs）+ `collab-go` 网关（WebSocket）
-- `snapshot-worker`（异步消费者/后台任务）
-- 基础设施：Postgres / Redis / RabbitMQ / Consul
+核心业务服务：
+- `frontend`：Vue 3（Vite）
+- `backend`：Go Connect RPC/gRPC 服务
+- `collab-core`：Node.js Yjs 协作核心
+- `collab`：`collab-go` WebSocket 网关
+- `snapshot-worker`：文档快照同步 worker
+- `notification-worker`：通知事件消费 worker
+- `search-sync-worker`：搜索索引同步 worker
 
-**典型请求链路**
-1. 浏览器 -> Nginx（`/` 为 UI，`/grpc/` 为 gRPC‑web）
-2. Nginx -> Backend（Connect gRPC‑web）
-3. Backend -> Postgres / Redis / Consul / MQ
-4. 协作链路：浏览器 -> Nginx `/ws/doc/` -> `collab-go` -> `collab-core`（Yjs）-> Redis/MQ/Backend
-5. 异步消费：`snapshot-worker` 从 MQ 消费任务（如文档快照）
+基础设施服务：
+- `postgres`
+- `redis`
+- `rabbitmq`
+- `consul`
+- `minio`
+- `elasticsearch`
+- `nginx`（统一入口）
 
-## 项目结构
-- `backend`: Go 服务、数据迁移、Connect/gRPC 服务端、Worker。
-- `frontend`: Vue 3 前端（Vite + Element Plus）。
-- `proto`: Protobuf 定义与生成。
-- `collab`: Node.js 的 Yjs 协作核心。
-- `collab-go`: Go 协作网关。
-- `deploy`: Docker Compose、Nginx、脚本与基础设施配置。
-- `docs`: 文档。
+## 请求与事件链路
 
-## 启动方式（Docker Compose）
-先初始化配置，再启动服务。
+主请求链路：
+1. 浏览器 -> Nginx
+2. Nginx `/` -> Frontend
+3. Nginx `/grpc/` -> Backend gRPC-web
+4. Backend 按需访问 Postgres/Redis/MinIO/Consul/Elasticsearch/MQ
 
-开发环境：
+实时协作链路：
+1. 浏览器 -> Nginx `/ws/doc/{docId}`
+2. Nginx -> `collab-go`
+3. `collab-go` 校验 JWT 后代理到 `collab-core`
+4. `collab-core` 在内存和 Redis 中维护 Yjs 文档状态
+
+异步事件链路：
+1. `collab-core` 在 Redis 标记脏文档并发布脏文档事件
+2. `snapshot-worker` 消费 RabbitMQ 的 `collab.dirty_docs`（组消费模式），并周期扫描脏集合兜底
+3. `snapshot-worker` 调用 `collab-core` 的 `/internal/yjs/doc-snapshot/{docId}`，落库快照与正文；正文变化时发布搜索同步事件
+4. `search-sync-worker` 消费 `search.sync.document` 并写入 Elasticsearch（ES 启用时）
+5. `notification-worker` 消费 `notification.create` 并写入通知记录
+
+## 健康检查与优雅停机
+
+Backend 探针：
+- `/health`
+- `/readyz`
+- `/livez`
+
+协作服务探针：
+- `collab-core`：`/health`、`/readyz`、`/livez`
+- `collab-go`：`/health`、`/readyz`、`/livez`
+
+停机行为：
+- Backend 与协作服务支持 draining + 优雅停机。
+- draining 阶段 readiness 会返回 `not_ready`。
+
+## 部署模式
+
+`deploy/docker-compose.dev.yml`：
+- 源码挂载开发模式
+- 暴露 backend 调试端口（`2345`）
+- Postgres/Redis/RabbitMQ/Elasticsearch 端口对宿主机开放
+- `start.sh dev ...` 会自动执行 `deploy/script/gen_proto.sh`
+
+`deploy/docker-compose.yml`：
+- 偏生产形态镜像
+- 对外端口更少
+- backend 与 worker 在镜像构建阶段完成编译
+
+## 开发前置依赖
+
+`start.sh dev ...` 会在 docker compose 启动前，先在宿主机执行 `deploy/script/gen_proto.sh`。
+
+宿主机需要：
+- `docker` + `docker compose`
+- `go` + `protoc`（生成 Go 桩代码）
+- `frontend/node_modules` 中的插件（`protoc-gen-es`、`protoc-gen-connect-es`）
+- `PATH` 中可用的 `grpc_tools_node_protoc_plugin`（生成 `collab` 侧 Node gRPC 代码）
+
+## 配置工作流
+
+统一配置源：
+- `deploy/.env`
+- 模板：`deploy/.env.example`
+
+交互式初始化/更新：
 ```bash
-bash deploy/script/init_config.sh
-bash deploy/script/start.sh dev up
+bash deploy/script/configure.sh
 ```
 
-生产环境：
-```bash
-bash deploy/script/init_config.sh
-bash deploy/script/start.sh release up
-```
+`configure.sh` 的作用：
+- 交互式收集关键端口、密钥、环境变量
+- 写入/更新 `deploy/.env`
+- 由 `VITE_API_BASE_URL` 自动推导 `MINIO_BROWSER_REDIRECT_URL`
+- 自动调用 `prepare.sh`
 
-## Prepare 脚本
-`prepare.sh` 现在会基于 `deploy/.env` 渲染配置文件：
+渲染配置文件：
 ```bash
 bash deploy/script/prepare.sh
 ```
-会生成/覆盖：
+
+生成文件：
 - `backend/config.toml`
 - `frontend/nginx.conf`
 - `deploy/nginx/nginx.conf`
@@ -61,7 +111,7 @@ bash deploy/script/prepare.sh
 - `deploy/redis/redis.conf`
 - `deploy/rabbitmq/rabbitmq.conf`
 
-模板文件保留在：
+模板文件：
 - `backend/config.toml.tmpl`
 - `frontend/nginx.conf.tmpl`
 - `deploy/nginx/nginx.conf.tmpl`
@@ -69,60 +119,79 @@ bash deploy/script/prepare.sh
 - `deploy/redis/redis.conf.tmpl`
 - `deploy/rabbitmq/rabbitmq.conf.tmpl`
 
-## 交互式初始化脚本
-通过交互问答一次性初始化 `deploy/.env` 并渲染全部部署配置：
+## 快速启动
+
+推荐（交互式）：
 ```bash
-bash deploy/script/init_config.sh
+bash deploy/script/configure.sh
+bash deploy/script/start.sh dev up
 ```
-如果希望使用默认值非交互初始化：
+
+非交互：
 ```bash
 cp deploy/.env.example deploy/.env
 bash deploy/script/prepare.sh
+bash deploy/script/start.sh dev up
 ```
 
-## 启动参数与 Token
-这些值在 compose 和 `backend/config.toml` 中使用，**生产环境必须替换**。
+生产模式：
+```bash
+bash deploy/script/start.sh release up
+```
 
-统一配置源：`deploy/.env`（模板：`deploy/.env.example`）。
+backend 镜像启动行为：
+- backend 容器会先执行 `migrate`、`db_init`、`es_init`，再启动 `cmd/main`。
 
-### Docker Compose 环境变量
-- `CONSUL_ROOT_TOKEN`
-  Consul ACL 的 root token，默认值必须改。
-- `BACKEND_INTERNAL_RPC_KEY`
-  内部服务间通信的共享密钥。
-- `VITE_GRPC_WEB_ENDPOINT`（前端）
-  gRPC‑web 访问前缀（默认 `/grpc`）。
+其他常用动作：
+```bash
+bash deploy/script/start.sh dev rebuild
+bash deploy/script/start.sh dev restart
+bash deploy/script/start.sh dev clear
+```
 
-### 后端配置文件（`backend/config.toml`）
-通常由 `prepare.sh` 自动生成，重点字段包括：
-- **数据库**：`database.user` / `database.password` / `database.name`
-- **Redis**：`redis.password`
-- **Consul**：`consul.token` / `consul.address` / `consul.prefix`
-- **消息队列**：`mq_config.rabbitmq.url`
-- **JWT**：`backend.jwt.secret`
-- **安全配置**：`backend.security`
+## 对外入口
 
-### 其他服务凭据
-- **Postgres**：`POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`
-- **Redis**：`REDIS_PASSWORD`
-- **RabbitMQ**：`RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS`
+默认开发环境：
+- 主站：`http://localhost:8080`
+- gRPC-web：`http://localhost:8080/grpc/`
+- 协作 WS：`ws://localhost:8080/ws/doc/{docId}?token={jwt}`
+- MinIO 控制台（经 Nginx）：`http://localhost:8080/minio/`
+- 对象访问路径（经 Nginx）：`http://localhost:8080/storage/...`
+- RabbitMQ 管理页（经 Nginx）：`http://localhost:8080/rabbitmq/`
 
-## 生产环境注意事项
-1. 替换所有默认 token/密码。
-2. 将真实的 `backend/config.toml` 挂载到 backend 与 snapshot‑worker。
-3. 若对外提供服务，配置 Nginx TLS（`deploy/nginx/conf.d/default.conf`）。
-4. 为 Postgres / Redis / Consul / RabbitMQ 配置持久化卷。
+开发环境基础设施直连端口：
+- Postgres：`localhost:5432`
+- Redis：`localhost:6379`
+- RabbitMQ AMQP：`localhost:5672`
+- Consul：`localhost:8500`
+- Elasticsearch：`localhost:9200`
 
-## 服务与端口
-默认开发环境（`deploy/docker-compose.dev.yml`）：
-- **Nginx**：`http://localhost:8080`
-- **Backend gRPC**：`:9090`（内部网络）
-- **Backend gRPC‑web**：`http://localhost:8080/grpc/`
-- **协作 WS**：`http://localhost:8080/ws/doc/`
-- **Consul UI**：`http://localhost:8500`
-- **Postgres**：`localhost:5432`
-- **Redis**：`localhost:6379`
-- **RabbitMQ**：`localhost:5672`（AMQP），管理页面可通过 Nginx `/rabbitmq/` 访问
+## MQ 说明
 
-其他服务（开发环境无端口暴露）：
-- **snapshot-worker**：消费 MQ 任务（如文档快照）
+- 当前 worker 消费链路按 RabbitMQ 后端运行。
+- MQ 接口层支持 Redis 与 RabbitMQ 两种实现。
+- Redis Pub/Sub 不提供真正的组消费语义。
+- 脏文档链路建议将 `DIRTY_DOC_MQ` 设为 `rabbitmq` 或 `both`，以保证 `snapshot-worker` 能从 RabbitMQ 收到事件。
+
+## Protobuf 生成
+
+手动生成：
+```bash
+bash deploy/script/gen_proto.sh
+```
+
+生成目标：
+- `backend/pkg/gen`
+- `collab-go/pkg/gen`
+- `frontend/src/gen`
+- `collab/src/gen`
+
+## 仓库结构
+
+- `backend`：API 服务、worker、仓储层、存储集成
+- `frontend`：Vue 前端
+- `collab`：Node.js 协作核心
+- `collab-go`：Go WebSocket 协作网关
+- `proto`：Protobuf 协议
+- `deploy`：Compose、脚本、基础设施模板
+- `docs`：项目文档

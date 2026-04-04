@@ -1,72 +1,109 @@
 # Yoresee Doc
 
-Yoresee Doc is a collaborative document system with a Go backend, a Vue 3 frontend, and a real‑time collaboration stack based on Yjs.
+Yoresee Doc is a collaborative document platform built with a Go backend, Vue 3 frontend, and a Yjs-based real-time collaboration stack.
 
-## Project Highlights
-- **Real‑time collaboration** with Yjs (WebSocket + Redis/MQ)
-- **Connect RPC/gRPC** API layer with typed protobuf contracts
-- **Modular services**: backend + collab gateway + snapshot worker
-- **Config‑driven settings** via Consul KV
-- **Docker‑first** dev/prod setup with Nginx reverse proxy
+## Runtime Topology
 
-## Overview
-- **Frontend**: Vue 3 + Vite (Connect‑ES gRPC‑web client)
-- **Backend**: Go (Connect RPC/gRPC, Postgres, Redis, RabbitMQ)
-- **Collaboration**: Yjs via a Node “collab‑core” and a Go gateway (`collab-go`)
-- **Config**: Consul KV for runtime settings
+Core app services:
+- `frontend`: Vue 3 (Vite)
+- `backend`: Go Connect RPC/gRPC service
+- `collab-core`: Node.js Yjs collaboration core
+- `collab`: `collab-go` WebSocket gateway
+- `snapshot-worker`: document snapshot sync worker
+- `notification-worker`: notification event consumer
+- `search-sync-worker`: Elasticsearch sync worker
 
-## Architecture & Request Flow
-**Core services**
-- `frontend` (Vue) served behind Nginx
-- `backend` (Connect RPC/gRPC)
-- `collab-core` (Node/Yjs) + `collab-go` gateway (WebSocket)
-- `snapshot-worker` (consumer/worker for background tasks)
-- infra: Postgres, Redis, RabbitMQ, Consul
+Infrastructure services:
+- `postgres`
+- `redis`
+- `rabbitmq`
+- `consul`
+- `minio`
+- `elasticsearch`
+- `nginx` (single ingress)
 
-**Typical request flow**
-1. Browser -> Nginx (`/` for UI, `/grpc/` for gRPC‑web)
-2. Nginx -> Backend (Connect gRPC‑web)
-3. Backend -> Postgres/Redis/Consul/MQ
-4. Realtime collaboration: Browser -> Nginx `/ws/doc/` -> `collab-go` -> `collab-core` (Yjs) -> Redis/MQ/Backend as needed
-5. Background jobs/consumers: `snapshot-worker` consumes MQ messages (e.g. document snapshots)
+## Request and Event Flow
 
-## Repository Structure
-- `backend`: Go services, DB migrations, Connect/gRPC server, worker.
-- `frontend`: Vue 3 UI (Vite, Element Plus).
-- `proto`: Protobuf definitions (Connect/gRPC stubs generated from here).
-- `collab`: Node.js Yjs collaboration core.
-- `collab-go`: Go websocket gateway for collaboration.
-- `deploy`: Docker Compose, Nginx, scripts, and infra configs.
-- `docs`: Project documentation.
+Main request path:
+1. Browser -> Nginx
+2. Nginx `/` -> Frontend
+3. Nginx `/grpc/` -> Backend gRPC-web endpoint
+4. Backend -> Postgres/Redis/MinIO/Consul/Elasticsearch/MQ as needed
 
-## Quick Start (Docker Compose)
-Initialize configuration first, then start services.
+Realtime collaboration path:
+1. Browser -> Nginx `/ws/doc/{docId}`
+2. Nginx -> `collab-go`
+3. `collab-go` validates JWT and proxies to `collab-core`
+4. `collab-core` maintains Yjs doc state in memory and Redis
 
-### Development
+Async event path:
+1. `collab-core` marks dirty docs in Redis and publishes dirty-doc events
+2. `snapshot-worker` consumes `collab.dirty_docs` (RabbitMQ group mode) and also scans dirty set periodically
+3. `snapshot-worker` fetches `/internal/yjs/doc-snapshot/{docId}` from `collab-core`, writes snapshot/content to DB, and emits search-sync event when content changed
+4. `search-sync-worker` consumes `search.sync.document` and upserts Elasticsearch (when ES is enabled)
+5. `notification-worker` consumes `notification.create` and writes notification records
+
+## Health and Graceful Shutdown
+
+Backend probes:
+- `/health`
+- `/readyz`
+- `/livez`
+
+Collab probes:
+- `collab-core`: `/health`, `/readyz`, `/livez`
+- `collab-go`: `/health`, `/readyz`, `/livez`
+
+Shutdown behavior:
+- Backend and collab services support draining and graceful shutdown.
+- Readiness becomes `not_ready` during draining.
+
+## Deployment Modes
+
+`deploy/docker-compose.dev.yml`:
+- Source-mounted development containers
+- Backend debug port exposed (`2345`)
+- Postgres/Redis/RabbitMQ/Elasticsearch ports exposed to host
+- `start.sh dev ...` auto-runs `deploy/script/gen_proto.sh`
+
+`deploy/docker-compose.yml`:
+- Production-style images
+- Fewer host-exposed ports
+- Backend/worker binaries are prebuilt in image stages
+
+## Dev Prerequisites
+
+`start.sh dev ...` runs `deploy/script/gen_proto.sh` on the host machine before docker compose starts.
+
+Required on host:
+- `docker` + `docker compose`
+- `go` + `protoc` (for Go stubs)
+- frontend plugins in `frontend/node_modules` (`protoc-gen-es`, `protoc-gen-connect-es`)
+- `grpc_tools_node_protoc_plugin` in `PATH` (for Node gRPC stubs used by `collab`)
+
+## Configuration Workflow
+
+Single source of truth:
+- `deploy/.env`
+- template: `deploy/.env.example`
+
+Interactive init/update:
 ```bash
-bash deploy/script/init_config.sh
-bash deploy/script/start.sh dev up
+bash deploy/script/configure.sh
 ```
 
-### Release
-```bash
-bash deploy/script/init_config.sh
-bash deploy/script/start.sh release up
-```
+What `configure.sh` does:
+- prompts for key ports/secrets/env values
+- writes/updates `deploy/.env`
+- derives `MINIO_BROWSER_REDIRECT_URL` from `VITE_API_BASE_URL`
+- calls `prepare.sh` automatically
 
-### Other actions
-```bash
-bash deploy/script/start.sh dev rebuild
-bash deploy/script/start.sh dev restart
-bash deploy/script/start.sh dev clear
-```
-
-## Prepare Script
-`prepare.sh` now renders project configs from `deploy/.env`:
+Render generated config files:
 ```bash
 bash deploy/script/prepare.sh
 ```
-This generates/overwrites:
+
+Generated files:
 - `backend/config.toml`
 - `frontend/nginx.conf`
 - `deploy/nginx/nginx.conf`
@@ -74,7 +111,7 @@ This generates/overwrites:
 - `deploy/redis/redis.conf`
 - `deploy/rabbitmq/rabbitmq.conf`
 
-Templates are kept in:
+Template files:
 - `backend/config.toml.tmpl`
 - `frontend/nginx.conf.tmpl`
 - `deploy/nginx/nginx.conf.tmpl`
@@ -82,95 +119,79 @@ Templates are kept in:
 - `deploy/redis/redis.conf.tmpl`
 - `deploy/rabbitmq/rabbitmq.conf.tmpl`
 
-## Interactive Init Script
-Use interactive setup to initialize `deploy/.env` and render all deployment configs in one step:
+## Quick Start
+
+Recommended (interactive):
 ```bash
-bash deploy/script/init_config.sh
+bash deploy/script/configure.sh
+bash deploy/script/start.sh dev up
 ```
-If you prefer non-interactive defaults:
+
+Non-interactive:
 ```bash
 cp deploy/.env.example deploy/.env
 bash deploy/script/prepare.sh
+bash deploy/script/start.sh dev up
 ```
 
-## Services & Ports
-Default dev stack (see `deploy/docker-compose.dev.yml`):
-- **Nginx**: `http://localhost:8080`
-- **Backend gRPC**: `:9090` (inside network)
-- **Backend gRPC‑web**: proxied at `http://localhost:8080/grpc/`
-- **Collab WS**: `http://localhost:8080/ws/doc/`
-- **Consul UI**: `http://localhost:8500`
-- **Postgres**: `localhost:5432`
-- **Redis**: `localhost:6379`
-- **RabbitMQ**: `localhost:5672` (AMQP), management UI via Nginx `/rabbitmq/`
+Release mode:
+```bash
+bash deploy/script/start.sh release up
+```
 
-Other services (no direct ports in dev):
-- **snapshot-worker**: consumes MQ tasks (e.g. document snapshots)
+Backend image startup behavior:
+- backend container runs `migrate`, `db_init`, `es_init`, then starts `cmd/main`.
 
-Nginx routes are defined in `deploy/nginx/conf.d/default.conf`.
+Other actions:
+```bash
+bash deploy/script/start.sh dev rebuild
+bash deploy/script/start.sh dev restart
+bash deploy/script/start.sh dev clear
+```
 
-## Configuration
-Single source of truth: `deploy/.env` (template: `deploy/.env.example`).
+## Public Entry Points
 
-Compose and generated config files (including `backend/config.toml`, Nginx, Redis, RabbitMQ) are rendered from this env file.
+Default dev ports:
+- App UI: `http://localhost:8080`
+- gRPC-web: `http://localhost:8080/grpc/`
+- Collaboration WS: `ws://localhost:8080/ws/doc/{docId}?token={jwt}`
+- MinIO console (via Nginx): `http://localhost:8080/minio/`
+- Object public path (via Nginx): `http://localhost:8080/storage/...`
+- RabbitMQ management (via Nginx): `http://localhost:8080/rabbitmq/`
 
-Consul is required for runtime settings. In compose, it is started with ACL enabled and a root token:
-- `CONSUL_ROOT_TOKEN` (default: `yoresee_doc_root_token`)
-- Backend reads Consul from `consul:8500`
+Direct infra ports in dev:
+- Postgres: `localhost:5432`
+- Redis: `localhost:6379`
+- RabbitMQ AMQP: `localhost:5672`
+- Consul: `localhost:8500`
+- Elasticsearch: `localhost:9200`
 
-## Start Parameters & Tokens
-These values are used across compose files and `backend/config.toml`.
-**Production deployment must change them.**
+## Message Queue Notes
 
-### Docker Compose env
-- `CONSUL_ROOT_TOKEN`
-  Used by Consul ACL bootstrap and backend access. Change from default.
-- `BACKEND_INTERNAL_RPC_KEY`
-  Shared secret used by internal services (backend/collab/worker).
-- `VITE_GRPC_WEB_ENDPOINT` (frontend)
-  gRPC‑web endpoint prefix (default `/grpc`).
+- Worker consumers are currently configured to use RabbitMQ backend.
+- MQ interface supports Redis and RabbitMQ implementations.
+- Redis Pub/Sub does not provide true consumer-group semantics.
+- For dirty-doc pipeline, keep `DIRTY_DOC_MQ` as `rabbitmq` or `both` if snapshot-worker should consume events from RabbitMQ.
 
-### Backend config (`backend/config.toml`)
-Usually generated by `prepare.sh`, but the important fields are:
-- **Database**: `database.user`, `database.password`, `database.name`
-- **Redis**: `redis.password`
-- **Consul**: `consul.token`, `consul.address`, `consul.prefix`
-- **MQ**: `mq_config.rabbitmq.url`
-- **JWT**: `backend.jwt.secret`
-- **Security**: `backend.security` (hash cost, lock duration)
+## Build and Protobuf
 
-### Other service creds
-- **Postgres**: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-- **Redis**: `REDIS_PASSWORD`
-- **RabbitMQ**: `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`
-
-## Production Checklist
-Before deploying, make sure you:
-1. Replace all default tokens/secrets above.
-2. Mount a real `backend/config.toml` into the backend and snapshot worker.
-3. Configure Nginx TLS if exposing public endpoints (`deploy/nginx/conf.d/default.conf`).
-4. Persist volumes for Postgres/Redis/Consul/RabbitMQ.
-
-## Protobuf Generation
-The dev compose script calls:
+Manual protobuf generation:
 ```bash
 bash deploy/script/gen_proto.sh
 ```
-This generates:
-- Go stubs for backend and collab‑go
-- Connect‑ES JS stubs for the frontend
-- Node gRPC stubs for `collab`
 
-## Key Runtime Components
-- **backend/cmd/main.go**: service entry; initializes config, DB, Redis, Consul, MQ, and Connect servers.
-- **backend/cmd/migrate**: DB migrations.
-- **backend/cmd/db_init**: seed/init data.
-- **backend/cmd/snapshot-worker**: snapshot worker (consumes MQ).
+Generated targets:
+- `backend/pkg/gen`
+- `collab-go/pkg/gen`
+- `frontend/src/gen`
+- `collab/src/gen`
 
-## Development Notes
-- Frontend dev server runs inside the container on port 80 and is proxied by Nginx.
-- Backend dev container runs migrations and db init on startup.
-- Collaboration stack requires Redis + RabbitMQ.
+## Repository Structure
 
----
-If you want a deeper architecture diagram or module‑level readme, tell me which part you want to expand.
+- `backend`: API service, workers, repositories, storage integration
+- `frontend`: Vue application
+- `collab`: Node.js collaboration core
+- `collab-go`: Go WebSocket gateway for collaboration traffic
+- `proto`: protobuf contracts
+- `deploy`: compose files, scripts, infra templates
+- `docs`: project docs
