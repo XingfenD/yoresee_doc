@@ -39,7 +39,8 @@ export const createTemplate = async (data = {}) => {
   const req = new CreateTemplateRequest({
     targetContainer: containerMap[data.target_container] ?? CreateTemplateContainer.OWN_TEMPLATE,
     knowledgeBaseId: data.knowledge_base_id || '',
-    templateContent: data.template_content || ''
+    templateContent: data.template_content || '',
+    type: resolveDocumentType(data.type)
   });
 
   const resp = await unaryCall(documentClient, 'createTemplate', req);

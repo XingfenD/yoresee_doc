@@ -7,6 +7,7 @@ import {
 import { useLazyTabLoader } from '@/composables/list/useLazyTabLoader';
 import { useTemplateCatalog } from '@/composables/template/useTemplateCatalog';
 import { useApiAction } from '@/composables/actions/useApiAction';
+import { DEFAULT_DOCUMENT_TYPE, normalizeDocumentType } from '@/utils/documentType';
 
 export function useTemplateListPage({ t, router }) {
   const { runWithLoading, createApiErrorHandler } = useApiAction({ t });
@@ -228,6 +229,7 @@ export function useTemplateListPage({ t, router }) {
       async () => {
         const requestBody = {
           target_container: payload.scope,
+          type: normalizeDocumentType(payload.type || DEFAULT_DOCUMENT_TYPE),
           template_content: JSON.stringify({
             name: payload.name,
             description: payload.description,

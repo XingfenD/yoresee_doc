@@ -13,6 +13,7 @@ export function useDocumentEditorActions({
   router,
   kbId,
   docId,
+  currentDocType,
   currentDocTitle,
   editorContent,
   directoryTree,
@@ -206,6 +207,7 @@ export function useDocumentEditorActions({
       async () => {
         const requestBody = {
           target_container: payload.scope,
+          type: normalizeDocumentType(currentDocType?.value || DEFAULT_DOCUMENT_TYPE),
           template_content: JSON.stringify({
             name: payload.name,
             description: payload.description,

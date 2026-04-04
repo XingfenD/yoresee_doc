@@ -348,6 +348,7 @@ const {
   router,
   kbId,
   docId,
+  currentDocType,
   currentDocTitle,
   editorContent,
   directoryTree,
