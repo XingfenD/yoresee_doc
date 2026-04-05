@@ -196,6 +196,20 @@ const router = createRouter({
       path: '/manage',
       name: 'SystemManage',
       redirect: '/manage/user'
+    },
+    {
+      path: '/404',
+      name: 'NotFound',
+      component: () => import('../views/error/NotFound.vue')
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: (to) => ({
+        path: '/404',
+        query: {
+          from: to.fullPath
+        }
+      })
     }
   ]
 });
