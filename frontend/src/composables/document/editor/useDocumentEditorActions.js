@@ -25,6 +25,7 @@ export function useDocumentEditorActions({
   const isEditingTitle = ref(false);
   const pendingTitle = ref('');
   const savingTitle = ref(false);
+  const renamingNode = ref(false);
 
   const showCreateDialog = ref(false);
   const creatingLoading = ref(false);
@@ -127,8 +128,33 @@ export function useDocumentEditorActions({
     }
   };
 
-  const handleRenameFromTree = () => {
-    ElMessage.warning(t('document.renameNotSupported'));
+  const handleRenameFromTree = async (payload) => {
+    const targetNode = payload?.data;
+    const nextTitle = payload?.title?.trim?.() || '';
+    if (!targetNode?.id || !nextTitle) {
+      ElMessage.error(t('knowledgeBase.titleRequired'));
+      return;
+    }
+    const targetId = String(targetNode.id);
+    const currentTitle = String(targetNode.label || '').trim();
+    if (nextTitle === currentTitle) {
+      return;
+    }
+
+    await runWithLoading(
+      renamingNode,
+      () => updateDocumentMeta(targetId, { title: nextTitle }),
+      {
+        context: 'renameDocumentFromTree',
+        errorMessage: t('common.requestFailed'),
+        onSuccess: () => {
+          updateTreeNodeTitle(directoryTree.value, targetId, nextTitle);
+          if (String(docId.value || '') === targetId) {
+            currentDocTitle.value = nextTitle;
+          }
+        }
+      }
+    );
   };
 
   const startEditTitle = async () => {
