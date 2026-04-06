@@ -115,6 +115,8 @@ func normalizeName(name string) string {
 	switch normalized {
 	case "slide":
 		return "markdown_slide"
+	case "yoreseerichtext", "yoresee-rich-text":
+		return "yoresee_rich_text"
 	default:
 		return normalized
 	}

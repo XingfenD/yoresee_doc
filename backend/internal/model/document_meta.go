@@ -11,6 +11,7 @@ type DocumentType string
 const DocumentType_Markdown DocumentType = "markdown"
 const DocumentType_Table DocumentType = "table"
 const DocumentType_MarkdownSlide DocumentType = "markdown_slide"
+const DocumentType_YoreseeRichText DocumentType = "yoresee_rich_text"
 
 type ContainerType string
 
