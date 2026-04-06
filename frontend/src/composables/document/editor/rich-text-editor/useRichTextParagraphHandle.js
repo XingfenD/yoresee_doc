@@ -27,6 +27,8 @@ export function useRichTextParagraphHandle({
   let mouseHost = null;
   let scrollContainer = null;
   let hideTimer = 0;
+  const HIDE_DELAY_MS = 240;
+  const TRANSITION_HIDE_DELAY_MS = 320;
 
   const enabled = computed(() => Boolean(editorRef.value?.view && scrollContainerRef.value));
   const paragraphType = computed(() => hoveredMeta.value?.type || 'paragraph');
@@ -88,7 +90,7 @@ export function useRichTextParagraphHandle({
     }
   };
 
-  const scheduleReset = (delay = 120) => {
+  const scheduleReset = (delay = HIDE_DELAY_MS) => {
     clearHideTimer();
     hideTimer = window.setTimeout(() => {
       hideTimer = 0;
@@ -188,7 +190,14 @@ export function useRichTextParagraphHandle({
       editorDom: getEditorDom()
     });
 
-    if (!domBlock && hoveringHandle.value) {
+    if (!domBlock) {
+      if (hoveringHandle.value) {
+        return;
+      }
+      if (hoveredMeta.value) {
+        // Keep a short grace period when cursor moves from tiny/empty paragraphs to the handle.
+        scheduleReset(TRANSITION_HIDE_DELAY_MS);
+      }
       return;
     }
 
@@ -203,7 +212,7 @@ export function useRichTextParagraphHandle({
     if (hoveringHandle.value) {
       return;
     }
-    scheduleReset();
+    scheduleReset(TRANSITION_HIDE_DELAY_MS);
   };
 
   const handleScrollOrResize = () => {
@@ -398,7 +407,7 @@ export function useRichTextParagraphHandle({
 
   const handleHandleLeave = () => {
     hoveringHandle.value = false;
-    scheduleReset();
+    scheduleReset(HIDE_DELAY_MS);
   };
 
   watch(
