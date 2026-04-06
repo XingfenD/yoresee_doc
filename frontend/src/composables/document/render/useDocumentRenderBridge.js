@@ -3,6 +3,7 @@ import { normalizeDocumentType } from '@/utils/documentType';
 const MARKDOWN_DOC_TYPE = '1';
 const TABLE_DOC_TYPE = '2';
 const MARKDOWN_SLIDE_DOC_TYPE = '3';
+const YORESEE_RICH_TEXT_DOC_TYPE = '4';
 
 const toText = (value) => {
   if (value === null || value === undefined) {
@@ -37,6 +38,11 @@ const unwrapTemplateContent = (value) => {
 
 const normalizeSource = (value, { isTemplate = false } = {}) =>
   isTemplate ? unwrapTemplateContent(value) : toText(value);
+
+const stripCommentAnchorNoise = (value) =>
+  toText(value)
+    .replace(/<span\b[^>]*\bdata-comment-anchor-id=(["'])[^"']*\1[^>]*>([\s\S]*?)<\/span>/gi, '$2')
+    .replace(/<\/?span\b[^>]*\bdata-comment-anchor-id=(["'])[^"']*\1[^>]*\/?>/gi, '');
 
 const normalizeRows = (rows) => {
   if (!Array.isArray(rows) || rows.length === 0) {
@@ -150,6 +156,10 @@ const buildRendererRegistry = () => ({
     toPreviewMarkdown: (value, options) => normalizeSource(value, options),
     toDiffText: (value) => toText(value)
   },
+  [YORESEE_RICH_TEXT_DOC_TYPE]: {
+    toPreviewMarkdown: (value, options) => stripCommentAnchorNoise(normalizeSource(value, options)),
+    toDiffText: (value) => stripCommentAnchorNoise(toText(value))
+  },
   [TABLE_DOC_TYPE]: {
     toPreviewMarkdown: (value, options) => rowsToMarkdownTable(parseTableRows(value, options)),
     toDiffText: (value) => rowsToDiffText(parseTableRows(value, { isTemplate: false }))
@@ -204,8 +214,10 @@ export const resolveDocumentDiffContentPair = ({
 } = {}) => {
   const renderer = resolveRenderer(documentType);
   return {
-    leftText: renderer.toDiffText(leftContent),
-    rightText: renderer.toDiffText(rightContent)
+    // Final guard: strip comment-anchor wrappers for every doc type before diff rendering.
+    // This prevents noisy diffs when content accidentally contains inline anchor markup.
+    leftText: stripCommentAnchorNoise(renderer.toDiffText(leftContent)),
+    rightText: stripCommentAnchorNoise(renderer.toDiffText(rightContent))
   };
 };
 
@@ -216,4 +228,3 @@ export const resolveTableDiffRowsPair = ({
   leftRows: parseTableRows(leftContent, { isTemplate: false }),
   rightRows: parseTableRows(rightContent, { isTemplate: false })
 });
-

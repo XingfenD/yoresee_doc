@@ -96,6 +96,8 @@ export default {
     typeMarkdown: 'Markdown',
     typeTable: 'Table',
     typeSlide: 'MarkdownSlide',
+    typeYoreseeRichText: 'YoreseeRichText',
+    richTextShortcutHint: 'Markdown shortcuts are supported (e.g. #, -, 1.)',
     commentPlaceholder: 'Write a comment...',
     commentSend: 'Send',
     commentEmpty: 'No comments yet',

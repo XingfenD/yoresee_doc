@@ -198,6 +198,11 @@ const router = createRouter({
       redirect: '/manage/user'
     },
     {
+      path: '/editor/example/yoresee-rich-text',
+      name: 'YoreseeRichTextDemo',
+      component: () => import('../views/example/YoreseeRichTextDemo.vue')
+    },
+    {
       path: '/404',
       name: 'NotFound',
       component: () => import('../views/error/NotFound.vue')

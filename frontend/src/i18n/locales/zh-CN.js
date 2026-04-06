@@ -94,6 +94,8 @@ export default {
     typeMarkdown: 'Markdown',
     typeTable: '表格',
     typeSlide: 'MarkdownSlide',
+    typeYoreseeRichText: 'YoreseeRichText',
+    richTextShortcutHint: '支持 Markdown 基础语法快捷输入（如 #、-、1.）',
     commentPlaceholder: '写下你的评论...',
     commentSend: '发送',
     commentEmpty: '暂无评论',

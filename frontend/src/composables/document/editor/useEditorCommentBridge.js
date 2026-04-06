@@ -3,9 +3,22 @@ import { onBeforeUnmount, ref } from 'vue';
 export function useEditorCommentBridge({
   isCommentCollapsed,
   markdownEditorRef,
+  richTextEditorRef,
+  isMarkdownDocument,
+  isRichTextDocument,
   commentSidebarRef
 }) {
   const remoteCommentReloadTimer = ref(null);
+
+  const getActiveEditorRef = () => {
+    if (isRichTextDocument?.value) {
+      return richTextEditorRef.value;
+    }
+    if (isMarkdownDocument?.value) {
+      return markdownEditorRef.value;
+    }
+    return markdownEditorRef.value || richTextEditorRef.value;
+  };
 
   const getVditorInstance = () => markdownEditorRef.value?.getVditor?.();
 
@@ -21,16 +34,26 @@ export function useEditorCommentBridge({
   };
 
   const highlightInlineComment = (id) => {
-    const editor = getVditorInstance();
-    if (editor && typeof editor.hlCommentIds === 'function') {
-      editor.hlCommentIds([id]);
+    const editorRef = getActiveEditorRef();
+    if (editorRef && typeof editorRef.hlCommentIds === 'function') {
+      editorRef.hlCommentIds([id]);
+      return;
+    }
+    const vditor = getVditorInstance();
+    if (vditor && typeof vditor.hlCommentIds === 'function') {
+      vditor.hlCommentIds([id]);
     }
   };
 
   const unhighlightInlineComment = (id) => {
-    const editor = getVditorInstance();
-    if (editor && typeof editor.unHlCommentIds === 'function') {
-      editor.unHlCommentIds([id]);
+    const editorRef = getActiveEditorRef();
+    if (editorRef && typeof editorRef.unHlCommentIds === 'function') {
+      editorRef.unHlCommentIds([id]);
+      return;
+    }
+    const vditor = getVditorInstance();
+    if (vditor && typeof vditor.unHlCommentIds === 'function') {
+      vditor.unHlCommentIds([id]);
     }
   };
 
@@ -43,20 +66,20 @@ export function useEditorCommentBridge({
   };
 
   const handleAnchorRemove = (ids) => {
-    const markdownEditor = markdownEditorRef.value;
-    if (markdownEditor && typeof markdownEditor.removeCommentIds === 'function') {
-      markdownEditor.removeCommentIds(ids);
+    const editorRef = getActiveEditorRef();
+    if (editorRef && typeof editorRef.removeCommentIds === 'function') {
+      editorRef.removeCommentIds(ids);
       return;
     }
-    const editor = getVditorInstance();
-    if (!editor || typeof editor.removeCommentIds !== 'function') {
+    const vditor = getVditorInstance();
+    if (!vditor || typeof vditor.removeCommentIds !== 'function') {
       return;
     }
-    editor.removeCommentIds(Array.isArray(ids) ? ids : [ids]);
+    vditor.removeCommentIds(Array.isArray(ids) ? ids : [ids]);
   };
 
   const handleCommentMutated = () => {
-    markdownEditorRef.value?.broadcastCommentChange?.();
+    getActiveEditorRef()?.broadcastCommentChange?.();
   };
 
   const handleRemoteCommentChanged = () => {
@@ -70,15 +93,18 @@ export function useEditorCommentBridge({
   };
 
   const scrollToInlineAnchor = (id) => {
-    const editor = getVditorInstance();
-    if (!editor || typeof editor.getCommentIds !== 'function') {
+    const editorRef = getActiveEditorRef();
+    if (editorRef && typeof editorRef.scrollToCommentId === 'function') {
+      editorRef.scrollToCommentId(id);
       return;
     }
-    const commentEntries = editor.getCommentIds();
-    const target = Array.isArray(commentEntries)
-      ? commentEntries.find((entry) => entry.id === id)
-      : null;
-    const container = editor?.vditor?.wysiwyg?.element || editor?.vditor?.ir?.element;
+    const vditor = getVditorInstance();
+    if (!vditor || typeof vditor.getCommentIds !== 'function') {
+      return;
+    }
+    const commentEntries = vditor.getCommentIds();
+    const target = Array.isArray(commentEntries) ? commentEntries.find((entry) => entry.id === id) : null;
+    const container = vditor?.vditor?.wysiwyg?.element || vditor?.vditor?.ir?.element;
     if (!target || !container) {
       return;
     }
@@ -88,8 +114,8 @@ export function useEditorCommentBridge({
     } else {
       container.scrollTop = top;
     }
-    if (typeof editor.hlCommentIds === 'function') {
-      editor.hlCommentIds([id]);
+    if (typeof vditor.hlCommentIds === 'function') {
+      vditor.hlCommentIds([id]);
     }
   };
 

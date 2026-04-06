@@ -1,0 +1,22 @@
+const hashText = (input) => {
+  const source = String(input || '');
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+const formatDrawio = (node) => {
+  const xml = String(node?.attrs?.diagram || '');
+  if (!xml.trim()) {
+    return '[Draw.io] (empty)';
+  }
+  return `[Draw.io] bytes=${xml.length}, hash=${hashText(xml)}`;
+};
+
+export const drawioPreviewDiffAdapter = {
+  toPreview: formatDrawio,
+  toDiff: formatDrawio
+};

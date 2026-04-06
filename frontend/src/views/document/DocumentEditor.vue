@@ -108,6 +108,17 @@
               v-model="editorContent"
               @commit="flushSlideSave"
             />
+            <YoreseeRichTextEditor
+              v-else-if="isRichTextDocument"
+              ref="richTextEditorRef"
+              v-model="editorContent"
+              :placeholder="t('document.editorPlaceholder')"
+              :comment-enabled="inlineCommentEnabled"
+              @commit="flushRichTextSave"
+              @comment-add="handleInlineCommentAdd"
+              @comment-remove="handleInlineCommentRemove"
+              @comment-changed="handleRemoteCommentChanged"
+            />
           </div>
         </div>
 
@@ -162,6 +173,7 @@ import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
 import DirectorySidebar from '@/components/document/DirectorySidebar.vue';
 import MarkdownEditor from '@/components/document/MarkdownEditor.vue';
 import TableEditor from '@/components/document/TableEditor.vue';
+import YoreseeRichTextEditor from '@/components/document/YoreseeRichTextEditor.vue';
 import CommentSidebar from '@/components/comment/CommentSidebar.vue';
 import DocumentCreateDialog from '@/components/document/DocumentCreateDialog.vue';
 import DocumentEditorHeader from '@/components/document/DocumentEditorHeader.vue';
@@ -179,6 +191,7 @@ import { useDocumentEditorPolicy } from '@/composables/document/editor/useDocume
 import { useDocumentHeaderRouting } from '@/composables/document/editor/useDocumentHeaderRouting';
 import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
 import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
+import { useRichTextDocumentPersistence } from '@/composables/document/editor/rich-text-editor/useRichTextDocumentPersistence';
 import { useUserStore } from '@/store/user';
 import {
   getKnowledgeBaseDocuments,
@@ -267,6 +280,7 @@ const isCommentCollapsed = ref(false);
 const markdownEditorRef = ref(null);
 const tableEditorRef = ref(null);
 const slideEditorRef = ref(null);
+const richTextEditorRef = ref(null);
 const commentSidebarRef = ref(null);
 const {
   flushTableSave,
@@ -293,6 +307,18 @@ const {
   updateDocument
 });
 const {
+  flushRichTextSave,
+  rerenderRichTextEditor
+} = useRichTextDocumentPersistence({
+  docId,
+  currentDocType,
+  editorContent,
+  richTextEditorRef,
+  t,
+  getDocumentContent,
+  updateDocument
+});
+const {
   isSidebarCollapsed,
   isSidebarResizing,
   toggleSidebar,
@@ -306,12 +332,14 @@ const {
   onLayoutChange: () => {
     rerenderTableEditor();
     rerenderSlideEditor();
+    rerenderRichTextEditor();
   }
 });
 const {
   isMarkdownDocument,
   isTableDocument,
   isSlideDocument,
+  isRichTextDocument,
   canManageAttachments,
   canManageSettings,
   collabEnabled,
@@ -373,6 +401,7 @@ const {
   onChange: () => {
     rerenderTableEditor();
     rerenderSlideEditor();
+    rerenderRichTextEditor();
     clampSidebarWidth();
   }
 });
@@ -387,6 +416,9 @@ const {
 } = useEditorCommentBridge({
   isCommentCollapsed,
   markdownEditorRef,
+  richTextEditorRef,
+  isMarkdownDocument,
+  isRichTextDocument,
   commentSidebarRef
 });
 const {

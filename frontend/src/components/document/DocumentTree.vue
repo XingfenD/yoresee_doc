@@ -140,7 +140,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Folder, FolderOpened, Document, Grid, Postcard, Plus, Delete, Edit, MoreFilled } from '@element-plus/icons-vue';
+import { Folder, FolderOpened, Document, Grid, Postcard, EditPen, Plus, Delete, Edit, MoreFilled } from '@element-plus/icons-vue';
 import AppMenu from '@/components/base/AppMenu.vue';
 import AppMenuItem from '@/components/base/AppMenuItem.vue';
 import DocumentTypeMenu from '@/components/document/DocumentTypeMenu.vue';
@@ -228,12 +228,16 @@ const treeProps = {
 const isSelected = (data) => String(data?.id) === String(props.currentId);
 const isTableDocument = (data) => normalizeDocumentType(data?.type, '1') === '2';
 const isSlideDocument = (data) => normalizeDocumentType(data?.type, '1') === '3';
+const isRichTextDocument = (data) => normalizeDocumentType(data?.type, '1') === '4';
 const resolveDocumentIcon = (data) => {
   if (isTableDocument(data)) {
     return Grid;
   }
   if (isSlideDocument(data)) {
     return Postcard;
+  }
+  if (isRichTextDocument(data)) {
+    return EditPen;
   }
   return Document;
 };
