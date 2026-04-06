@@ -1,80 +1,14 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-
-const BLOCK_SELECTOR = [
-  'p',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'blockquote',
-  'pre',
-  'li',
-  'table',
-  'hr',
-  '.mindmap-node',
-  '.drawio-node',
-  'yoresee-mindmap',
-  'yoresee-drawio'
-].join(',');
-
-const PREFERRED_BLOCK_NODE_NAMES = new Set([
-  'listItem',
-  'paragraph',
-  'heading',
-  'blockquote',
-  'codeBlock',
-  'horizontalRule',
-  'table',
-  'mindmapBlock',
-  'drawioBlock'
-]);
-
-const NON_EMPTY_BLOCK_TYPES = new Set([
-  'horizontalRule',
-  'table',
-  'mindmapBlock',
-  'drawioBlock'
-]);
-const HANDLE_SIZE = 22;
-
-const normalizeBlockType = (value) => {
-  switch (value) {
-    case 'heading':
-      return 'heading';
-    case 'listItem':
-      return 'list';
-    case 'blockquote':
-      return 'quote';
-    case 'codeBlock':
-      return 'code';
-    case 'table':
-      return 'table';
-    case 'horizontalRule':
-      return 'divider';
-    case 'mindmapBlock':
-      return 'mindmap';
-    case 'drawioBlock':
-      return 'drawio';
-    default:
-      return 'paragraph';
-  }
-};
-
-const dedupeNumberList = (list = []) => {
-  const seen = new Set();
-  const result = [];
-  list.forEach((item) => {
-    const value = Number(item);
-    if (!Number.isFinite(value) || seen.has(value)) {
-      return;
-    }
-    seen.add(value);
-    result.push(value);
-  });
-  return result;
-};
+import {
+  dedupeNumberList,
+  resolveDomBlockFromMeta,
+  resolveHandleStyle,
+  resolveHoveredDomBlock,
+  resolveMetaFromRange,
+  resolvePositionFromMeta,
+  resolveRangeByMouseCoords,
+  resolveRangeFromDomBlock
+} from './paragraph-handle/paragraphHandleUtils';
 
 export function useRichTextParagraphHandle({
   editorRef,
@@ -92,6 +26,7 @@ export function useRichTextParagraphHandle({
   let editorDom = null;
   let mouseHost = null;
   let scrollContainer = null;
+  let hideTimer = 0;
 
   const enabled = computed(() => Boolean(editorRef.value?.view && scrollContainerRef.value));
   const paragraphType = computed(() => hoveredMeta.value?.type || 'paragraph');
@@ -139,144 +74,71 @@ export function useRichTextParagraphHandle({
     hoveredMeta.value = null;
   };
 
+  const clearHideTimer = () => {
+    if (hideTimer) {
+      window.clearTimeout(hideTimer);
+      hideTimer = 0;
+    }
+  };
+
+  const scheduleReset = (delay = 120) => {
+    clearHideTimer();
+    hideTimer = window.setTimeout(() => {
+      hideTimer = 0;
+      if (!hoveringHandle.value) {
+        reset();
+      }
+    }, delay);
+  };
+
   const getEditorDom = () => editorRef.value?.view?.dom || null;
+  const getEditorView = () => editorRef.value?.view || null;
+  const getEditorState = () => getEditorView()?.state || null;
 
-  const resolveHoveredDomBlock = (target) => {
-    const currentEditorDom = getEditorDom();
-    if (!currentEditorDom) {
-      return null;
-    }
-    const sourceTarget = target?.nodeType === Node.TEXT_NODE ? target.parentElement : target;
-    if (!(sourceTarget instanceof Element) || !currentEditorDom.contains(sourceTarget)) {
-      return null;
-    }
-
-    let domBlock = sourceTarget.closest(BLOCK_SELECTOR);
-    if (!domBlock || !currentEditorDom.contains(domBlock)) {
-      return null;
-    }
-
-    if (domBlock.tagName === 'P' && domBlock.parentElement?.tagName === 'LI') {
-      domBlock = domBlock.parentElement;
-    }
-
-    return domBlock;
-  };
-
-  const resolveRangeFromDomBlock = (domBlock) => {
-    const view = editorRef.value?.view;
-    const state = view?.state;
-    if (!view || !state || !domBlock) {
-      return null;
-    }
-    try {
-      const pos = view.posAtDOM(domBlock, 0);
-      const safePos = Math.max(0, Math.min(pos, state.doc.content.size));
-      const directNode = state.doc.nodeAt(safePos);
-      if (directNode && (directNode.isBlock || PREFERRED_BLOCK_NODE_NAMES.has(directNode.type?.name))) {
-        return {
-          from: safePos,
-          to: safePos + directNode.nodeSize
-        };
-      }
-      return {
-        from: safePos,
-        to: Math.max(0, Math.min(safePos + domBlock.textContent.length + 2, state.doc.content.size))
-      };
-    } catch (_) {
-      return null;
-    }
-  };
-
-  const resolveRangeByMouseCoords = (event) => {
-    const view = editorRef.value?.view;
-    const state = view?.state;
-    if (!view || !state || typeof event?.clientX !== 'number' || typeof event?.clientY !== 'number') {
-      return null;
-    }
-
-    const coords = view.posAtCoords({
-      left: event.clientX,
-      top: event.clientY
-    });
-    if (!coords || typeof coords.pos !== 'number') {
-      return null;
-    }
-
-    const pos = Math.max(0, Math.min(coords.pos, state.doc.content.size));
-    return { from: pos, to: pos };
-  };
-
-  const resolveMetaFromRange = (range) => {
-    const view = editorRef.value?.view;
-    const state = view?.state;
-    if (!view || !state || !range) {
-      return null;
-    }
-
-    const directNode = state.doc.nodeAt(range.from);
-    if (directNode && (directNode.isBlock || PREFERRED_BLOCK_NODE_NAMES.has(directNode.type?.name))) {
-      const nodeType = String(directNode.type?.name || 'paragraph');
-      const normalizedType = normalizeBlockType(nodeType);
-      const text = String(directNode.textContent || '').replace(/\u200b/g, '').trim();
-      const isEmpty = !NON_EMPTY_BLOCK_TYPES.has(nodeType) && text.length === 0;
-      return {
-        from: range.from,
-        to: range.from + directNode.nodeSize,
-        topFrom: range.from,
-        topTo: range.from + directNode.nodeSize,
-        nodeType,
-        type: normalizedType,
-        isEmpty
-      };
-    }
-
-    const probePos = Math.max(0, Math.min(range.from + 1, state.doc.content.size));
-    const $probe = state.doc.resolve(probePos);
-
-    for (let depth = $probe.depth; depth > 0; depth -= 1) {
-      const node = $probe.node(depth);
-      if (!node || (!node.isBlock && !PREFERRED_BLOCK_NODE_NAMES.has(node.type?.name))) {
-        continue;
-      }
-      const from = $probe.before(depth);
-      const to = $probe.after(depth);
-      const topFrom = $probe.before(1);
-      const topTo = $probe.after(1);
-      const nodeType = String(node.type?.name || 'paragraph');
-      const normalizedType = normalizeBlockType(nodeType);
-      const text = String(node.textContent || '').replace(/\u200b/g, '').trim();
-      const isEmpty = !NON_EMPTY_BLOCK_TYPES.has(nodeType) && text.length === 0;
-      return {
-        from,
-        to,
-        topFrom,
-        topTo,
-        nodeType,
-        type: normalizedType,
-        isEmpty
-      };
-    }
-
-    return null;
-  };
-
-  const updatePosition = () => {
-    const domBlock = hoveredDomBlock.value;
+  const updatePosition = (nextMeta = hoveredMeta.value, nextDomBlock = hoveredDomBlock.value) => {
     const container = scrollContainerRef.value;
-    if (!domBlock || !container || !domBlock.isConnected) {
+    if (!container || !nextMeta) {
       reset();
       return;
     }
-    const blockRect = domBlock.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    const top = blockRect.top - containerRect.top + container.scrollTop - HANDLE_SIZE;
-    const left = blockRect.left - containerRect.left + container.scrollLeft - HANDLE_SIZE;
 
-    style.value = {
-      top: `${top}px`,
-      left: `${left}px`
-    };
+    let blockRect = null;
+    if (nextDomBlock?.isConnected) {
+      blockRect = nextDomBlock.getBoundingClientRect();
+    }
+
+    if (!blockRect) {
+      const coords = resolvePositionFromMeta({
+        view: getEditorView(),
+        meta: nextMeta
+      });
+      if (coords) {
+        blockRect = {
+          top: coords.top,
+          left: coords.left
+        };
+      }
+    }
+
+    if (!blockRect) {
+      if (!hoveringHandle.value) {
+        reset();
+      }
+      return;
+    }
+
+    const nextStyle = resolveHandleStyle({
+      container,
+      blockRect
+    });
+    if (!nextStyle) {
+      if (!hoveringHandle.value) {
+        reset();
+      }
+      return;
+    }
+
+    style.value = nextStyle;
     visible.value = true;
   };
 
@@ -286,23 +148,44 @@ export function useRichTextParagraphHandle({
       return;
     }
 
-    const range = resolveRangeFromDomBlock(domBlock) || resolveRangeByMouseCoords(event);
-    const meta = resolveMetaFromRange(range);
+    const view = getEditorView();
+    const state = getEditorState();
+    const range = resolveRangeFromDomBlock({ view, state, domBlock })
+      || resolveRangeByMouseCoords({ view, state, event });
+    const meta = resolveMetaFromRange({ state, range });
+
     if (!meta || meta.from >= meta.to) {
       reset();
       return;
     }
 
-    hoveredDomBlock.value = domBlock;
+    const resolvedDomBlock = domBlock || resolveDomBlockFromMeta({
+      view,
+      editorRoot: getEditorDom(),
+      meta
+    });
+
+    hoveredDomBlock.value = resolvedDomBlock;
     hoveredMeta.value = meta;
-    updatePosition();
+    updatePosition(meta, resolvedDomBlock);
   };
 
   const handleMouseMove = (event) => {
+    clearHideTimer();
     if (event?.target instanceof Element && event.target.closest('.rich-text-paragraph-handle')) {
       return;
     }
-    updateHoveredBlock(resolveHoveredDomBlock(event?.target), event);
+
+    const domBlock = resolveHoveredDomBlock({
+      target: event?.target,
+      editorDom: getEditorDom()
+    });
+
+    if (!domBlock && hoveringHandle.value) {
+      return;
+    }
+
+    updateHoveredBlock(domBlock, event);
   };
 
   const handleMouseLeave = (event) => {
@@ -313,14 +196,14 @@ export function useRichTextParagraphHandle({
     if (hoveringHandle.value) {
       return;
     }
-    reset();
+    scheduleReset();
   };
 
   const handleScrollOrResize = () => {
-    if (!hoveredDomBlock.value) {
+    if (!hoveredMeta.value) {
       return;
     }
-    updatePosition();
+    updatePosition(hoveredMeta.value, hoveredDomBlock.value);
   };
 
   const bindEvents = () => {
@@ -343,6 +226,7 @@ export function useRichTextParagraphHandle({
   };
 
   const unbindEvents = () => {
+    clearHideTimer();
     if (mouseHost) {
       mouseHost.removeEventListener('mousemove', handleMouseMove);
       mouseHost.removeEventListener('mouseleave', handleMouseLeave);
@@ -370,7 +254,9 @@ export function useRichTextParagraphHandle({
       return false;
     }
 
-    const candidates = dedupeNumberList(positions).map((pos) => Math.max(0, Math.min(pos, state.doc.content.size)));
+    const candidates = dedupeNumberList(positions)
+      .map((pos) => Math.max(0, Math.min(pos, state.doc.content.size)));
+
     for (const pos of candidates) {
       try {
         const tr = view.state.tr.insert(pos, paragraphNodeType.create());
@@ -433,6 +319,21 @@ export function useRichTextParagraphHandle({
     return true;
   };
 
+  const focusHoveredBlock = (position = 'start') => {
+    const editor = editorRef.value;
+    const meta = hoveredMeta.value;
+    const size = editor?.state?.doc?.content?.size;
+    if (!editor || !meta || !Number.isFinite(size)) {
+      return false;
+    }
+    const targetPos = position === 'end'
+      ? Math.max(meta.from + 1, meta.to - 1)
+      : meta.from + 1;
+    const safePos = Math.max(1, Math.min(targetPos, size));
+    editor.commands.focus(safePos);
+    return true;
+  };
+
   const runParagraphAction = (key) => {
     const action = paragraphActions.value.find((item) => item?.key === key);
     if (!action) {
@@ -441,6 +342,9 @@ export function useRichTextParagraphHandle({
     const ctx = {
       blockType: paragraphType.value,
       isEmpty: paragraphIsEmpty.value,
+      editor: editorRef.value,
+      meta: hoveredMeta.value,
+      focusBlock: focusHoveredBlock,
       addParagraphAbove,
       addParagraphBelow,
       deleteParagraph: deleteHoveredParagraph
@@ -463,11 +367,13 @@ export function useRichTextParagraphHandle({
   };
 
   const handleHandleEnter = () => {
+    clearHideTimer();
     hoveringHandle.value = true;
   };
 
   const handleHandleLeave = () => {
     hoveringHandle.value = false;
+    scheduleReset();
   };
 
   watch(
@@ -493,6 +399,7 @@ export function useRichTextParagraphHandle({
   );
 
   onBeforeUnmount(() => {
+    clearHideTimer();
     unbindEvents();
   });
 

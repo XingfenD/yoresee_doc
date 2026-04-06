@@ -19,7 +19,7 @@
         class="mindmap-source-input"
         @input="applySource"
       />
-      <div class="mindmap-canvas-wrap">
+      <div ref="canvasWrapRef" class="mindmap-canvas-wrap">
         <svg ref="svgRef" class="mindmap-canvas"></svg>
       </div>
     </div>
@@ -49,17 +49,34 @@ const props = defineProps({
 });
 
 const svgRef = ref(null);
+const canvasWrapRef = ref(null);
 const editing = ref(false);
 const draftSource = ref(props.node?.attrs?.source || DEFAULT_MINDMAP_SOURCE);
 const markmapInstanceRef = ref(null);
 const resizeObserverRef = ref(null);
 const transformer = new Transformer();
 
+const syncSvgViewport = () => {
+  const svg = svgRef.value;
+  const wrap = canvasWrapRef.value;
+  if (!svg || !wrap) {
+    return;
+  }
+
+  const rect = wrap.getBoundingClientRect();
+  const width = Math.max(320, Math.round(rect.width || wrap.clientWidth || 0));
+  const height = Math.max(220, Math.round(rect.height || wrap.clientHeight || 0));
+  svg.setAttribute('width', String(width));
+  svg.setAttribute('height', String(height));
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+};
+
 const renderMindmap = async () => {
   await nextTick();
   if (!svgRef.value) {
     return;
   }
+  syncSvgViewport();
   const source = String(props.node?.attrs?.source || DEFAULT_MINDMAP_SOURCE).trim() || DEFAULT_MINDMAP_SOURCE;
   const transformed = transformer.transform(source);
   const root = transformed?.root;
@@ -105,11 +122,12 @@ watch(
 );
 
 onMounted(() => {
-  if (typeof ResizeObserver !== 'undefined' && svgRef.value) {
+  if (typeof ResizeObserver !== 'undefined' && canvasWrapRef.value) {
     const observer = new ResizeObserver(() => {
+      syncSvgViewport();
       markmapInstanceRef.value?.fit?.();
     });
-    observer.observe(svgRef.value);
+    observer.observe(canvasWrapRef.value);
     resizeObserverRef.value = observer;
   }
   renderMindmap();

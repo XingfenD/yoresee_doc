@@ -18,26 +18,21 @@
     >
       <el-icon><Plus /></el-icon>
     </button>
-    <template v-else>
-      <button
-        type="button"
-        class="handle-btn handle-btn--type"
-        :title="typeLabel"
-        @mousedown.prevent
-      >
+    <button
+      v-else
+      ref="triggerRef"
+      type="button"
+      class="handle-btn handle-btn--combo"
+      :title="moreTitle || typeLabel"
+      @mousedown.prevent
+      @click.stop="toggleMenu"
+    >
+      <span class="handle-btn-combo-main">
         <el-icon><component :is="currentTypeIcon" /></el-icon>
-      </button>
-      <button
-        ref="triggerRef"
-        type="button"
-        class="handle-btn handle-btn--more"
-        :title="moreTitle"
-        @mousedown.prevent
-        @click.stop="toggleMenu"
-      >
-        <el-icon><MoreFilled /></el-icon>
-      </button>
-    </template>
+      </span>
+      <span class="handle-btn-combo-divider"></span>
+      <span class="handle-btn-combo-dots" aria-hidden="true"></span>
+    </button>
   </div>
 
   <AppMenu
@@ -70,6 +65,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import {
   ArrowDownBold,
   ArrowUpBold,
+  ChatDotRound,
   ChatLineRound,
   Connection,
   Delete,
@@ -78,8 +74,9 @@ import {
   List,
   Menu,
   Minus,
-  MoreFilled,
   Plus,
+  RefreshLeft,
+  RefreshRight,
   Tickets
 } from '@element-plus/icons-vue';
 import AppMenu from '@/components/base/AppMenu.vue';
@@ -143,6 +140,18 @@ const blockTypeIconMap = {
 const actionIconMap = {
   'add-above': ArrowUpBold,
   'add-below': ArrowDownBold,
+  paragraph: Document,
+  'heading-1': Menu,
+  'heading-2': Menu,
+  'bullet-list': List,
+  'ordered-list': List,
+  blockquote: ChatLineRound,
+  'code-block': Tickets,
+  mindmap: Connection,
+  drawio: Connection,
+  comment: ChatDotRound,
+  undo: RefreshLeft,
+  redo: RefreshRight,
   delete: Delete
 };
 
@@ -232,7 +241,6 @@ watch(
   z-index: 26;
   display: inline-flex;
   align-items: flex-start;
-  gap: 4px;
 }
 
 .handle-btn {
@@ -258,5 +266,34 @@ watch(
 .handle-btn--plus:hover {
   border-color: color-mix(in srgb, var(--primary-color) 65%, var(--border-color) 35%);
   background: color-mix(in srgb, var(--primary-color) 9%, var(--bg-white) 91%);
+}
+
+.handle-btn--combo {
+  width: auto;
+  min-width: 42px;
+  padding: 0 6px;
+  gap: 5px;
+}
+
+.handle-btn-combo-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.handle-btn-combo-divider {
+  width: 1px;
+  height: 11px;
+  background: color-mix(in srgb, var(--border-color) 78%, transparent);
+}
+
+.handle-btn-combo-dots {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow:
+    0 -5px 0 currentColor,
+    0 5px 0 currentColor;
 }
 </style>

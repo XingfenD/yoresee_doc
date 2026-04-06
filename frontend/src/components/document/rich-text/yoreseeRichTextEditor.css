@@ -8,114 +8,11 @@
   background: var(--bg-white);
 }
 
-.rich-text-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-color);
-  flex-wrap: wrap;
-}
-
-.toolbar-btn {
-  border: 1px solid var(--border-color);
-  background: var(--bg-white);
-  color: var(--text-medium);
-  border-radius: 6px;
-  height: 28px;
-  min-width: 32px;
-  padding: 0 8px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toolbar-btn:hover {
-  border-color: color-mix(in srgb, var(--primary-color) 52%, var(--border-color) 48%);
-  color: var(--primary-color);
-}
-
-.toolbar-btn.is-active {
-  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
-  border-color: color-mix(in srgb, var(--primary-color) 52%, var(--border-color) 48%);
-  color: var(--primary-color);
-}
-
-.toolbar-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.toolbar-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--border-color);
-}
-
-.toolbar-spacer {
-  flex: 1;
-}
-
-.code-language-floating {
-  position: absolute;
-  z-index: 34;
-  pointer-events: auto;
-}
-
-.code-language-input {
-  width: 180px;
-}
-
-.code-language-input :deep(.el-input__wrapper) {
-  min-height: 28px;
-  border-radius: 6px;
-  box-shadow: var(--shadow-sm);
-}
-
-.code-language-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.code-language-option-label {
-  color: var(--text-primary);
-}
-
-.code-language-option-value {
-  color: var(--text-light);
-  font-size: 12px;
-}
-
 .rich-text-body {
   flex: 1;
   min-height: 0;
   overflow: auto;
   position: relative;
-}
-
-.selection-comment-trigger {
-  position: absolute;
-  z-index: 35;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-white);
-  color: var(--text-medium);
-  box-shadow: var(--shadow-sm);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.selection-comment-trigger:hover {
-  color: var(--primary-color);
-  border-color: color-mix(in srgb, var(--primary-color) 52%, var(--border-color) 48%);
-  background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-white) 90%);
 }
 
 .rich-text-placeholder {
@@ -152,6 +49,7 @@
 
 .rich-text-body :deep(.yoresee-rich-text-content p) {
   margin: 0 0 10px;
+  min-height: 1.45em;
 }
 
 .rich-text-body :deep(.yoresee-rich-text-content ul),
@@ -165,6 +63,26 @@
   padding-left: 12px;
   border-left: 3px solid color-mix(in srgb, var(--primary-color) 38%, var(--border-color) 62%);
   color: var(--text-medium);
+}
+
+.rich-text-body :deep(.yoresee-rich-text-content a) {
+  color: color-mix(in srgb, var(--primary-color) 88%, #1d4ed8 12%);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1.5px;
+}
+
+.rich-text-body :deep(.yoresee-rich-text-content a:hover) {
+  color: color-mix(in srgb, var(--primary-color) 72%, #1e40af 28%);
+}
+
+.rich-text-body :deep(.yoresee-rich-text-content code) {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  background: color-mix(in srgb, var(--bg-light) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  border-radius: 6px;
+  padding: 1px 6px;
 }
 
 .rich-text-body :deep(.yoresee-rich-text-content .mindmap-node),
@@ -196,6 +114,10 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-primary);
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
 }
 
 .rich-text-body :deep(.yoresee-rich-text-content pre code.hljs) {
@@ -252,17 +174,25 @@
   background: var(--bg-white);
 }
 
-:global(.dark-mode) .toolbar-btn {
-  background: color-mix(in srgb, var(--bg-white) 96%, #000 4%);
-  color: var(--text-medium);
-}
-
 :global(.dark-mode) .rich-text-body :deep(.yoresee-rich-text-content) {
   color: var(--text-dark);
 }
 
 :global(.dark-mode) .rich-text-body :deep(.yoresee-rich-text-content pre) {
   background: color-mix(in srgb, var(--bg-light) 20%, #05070a 80%);
+}
+
+:global(.dark-mode) .rich-text-body :deep(.yoresee-rich-text-content a) {
+  color: #8fb6ff;
+}
+
+:global(.dark-mode) .rich-text-body :deep(.yoresee-rich-text-content a:hover) {
+  color: #b7d0ff;
+}
+
+:global(.dark-mode) .rich-text-body :deep(.yoresee-rich-text-content code) {
+  background: color-mix(in srgb, #0f172a 72%, transparent);
+  border-color: color-mix(in srgb, #334155 66%, transparent);
 }
 
 :global(.dark-mode) .rich-text-body :deep(.yoresee-rich-text-content pre code .hljs-comment),

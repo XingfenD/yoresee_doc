@@ -55,7 +55,7 @@ export function useRichTextCommentBridge(options = {}) {
   };
 
   const updateSelectionCommentTrigger = () => {
-    if (!commentEnabledRef.value || !editorRef.value || !scrollContainerRef.value) {
+    if (!editorRef.value || !scrollContainerRef.value) {
       selectionCommentVisible.value = false;
       return;
     }
@@ -86,8 +86,8 @@ export function useRichTextCommentBridge(options = {}) {
     }
     const container = scrollContainerRef.value;
     const containerRect = container.getBoundingClientRect();
-    const triggerWidth = 28;
-    const triggerHeight = 28;
+    const triggerWidth = commentEnabledRef.value ? 308 : 278;
+    const triggerHeight = 36;
     const rawLeft = toCoords.right - containerRect.left + container.scrollLeft + 8;
     const rawTop = Math.min(fromCoords.top, toCoords.top) - containerRect.top + container.scrollTop - triggerHeight - 6;
     const minLeft = container.scrollLeft + 8;

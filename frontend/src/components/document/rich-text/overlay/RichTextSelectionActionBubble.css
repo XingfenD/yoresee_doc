@@ -1,0 +1,179 @@
+.selection-action-bubble {
+  position: absolute;
+  z-index: 35;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+}
+
+.selection-action-btn {
+  min-width: 26px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-medium);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.selection-action-btn:hover,
+.selection-action-btn.is-active {
+  color: var(--primary-color);
+  border-color: color-mix(in srgb, var(--primary-color) 48%, transparent);
+  background: color-mix(in srgb, var(--primary-color) 11%, transparent);
+}
+
+.selection-action-btn--icon :deep(.el-icon) {
+  font-size: 14px;
+}
+
+.selection-color-group {
+  position: relative;
+}
+
+.selection-color-trigger {
+  height: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-light) 58%, var(--bg-white) 42%);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px 0 4px;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.selection-color-trigger:hover,
+.selection-color-trigger.is-active {
+  border-color: color-mix(in srgb, var(--primary-color) 48%, var(--border-color) 52%);
+}
+
+.selection-color-trigger-a {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--border-color) 64%, transparent);
+}
+
+.selection-color-trigger-arrow {
+  color: var(--text-light);
+  font-size: 13px;
+}
+
+.selection-color-panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  width: 264px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  box-shadow: var(--shadow-md);
+  padding: 10px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selection-color-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.selection-color-text-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.selection-color-text-item {
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.selection-color-text-item.is-active {
+  border-color: var(--primary-color);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 25%, transparent);
+}
+
+.selection-color-bg-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.selection-color-bg-item {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+
+.selection-color-bg-item.is-none::before,
+.selection-color-bg-item.is-none::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 2px;
+  background: #5b8def;
+  transform-origin: center;
+}
+
+.selection-color-bg-item.is-none::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.selection-color-bg-item.is-none::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.selection-color-bg-item.is-active {
+  border-color: var(--primary-color);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 30%, transparent);
+}
+
+.selection-color-reset-btn {
+  width: 100%;
+  height: 32px;
+  border-radius: 7px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-white);
+  color: var(--text-medium);
+  font-size: 14px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.selection-color-reset-btn:hover {
+  border-color: color-mix(in srgb, var(--primary-color) 48%, var(--border-color) 52%);
+  color: var(--primary-color);
+}
