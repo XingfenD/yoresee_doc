@@ -9,6 +9,7 @@
     <el-autocomplete
       v-model="draftProxy"
       class="code-language-input"
+      popper-class="rich-text-code-language-popper"
       :fetch-suggestions="querySuggestions"
       :trigger-on-focus="true"
       :debounce="0"
@@ -98,5 +99,45 @@ const draftProxy = computed({
 .code-language-option-value {
   color: var(--text-light);
   font-size: 12px;
+}
+
+:global(.rich-text-code-language-popper.el-popper) {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+}
+
+:global(.rich-text-code-language-popper .el-autocomplete-suggestion__wrap) {
+  max-height: 260px;
+}
+
+:global(.rich-text-code-language-popper .el-autocomplete-suggestion__list li) {
+  border-radius: 6px;
+  margin: 2px 4px;
+  padding: 6px 10px;
+}
+
+:global(.rich-text-code-language-popper .el-autocomplete-suggestion__list li.highlighted),
+:global(.rich-text-code-language-popper .el-autocomplete-suggestion__list li:hover) {
+  background: var(--select-option-hover);
+}
+
+:global(.dark-mode .rich-text-code-language-popper.el-popper) {
+  background: var(--bg-white);
+  border-color: var(--border-color);
+}
+
+:global(.dark-mode .rich-text-code-language-popper .el-popper__arrow::before) {
+  background: var(--bg-white);
+  border-color: var(--border-color);
+}
+
+:global(.dark-mode .rich-text-code-language-popper .el-autocomplete-suggestion__wrap) {
+  background: var(--bg-white);
+}
+
+:global(.dark-mode .rich-text-code-language-popper .el-autocomplete-suggestion__list li) {
+  color: var(--text-primary);
+  background: transparent;
 }
 </style>
