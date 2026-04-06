@@ -278,8 +278,9 @@ const {
   editorRef: editor,
   scrollContainerRef: bodyScrollRef,
   labels: {
-    addAbove: '上方插入空段落',
-    addBelow: '下方插入空段落',
+    insertEmptyParagraph: '插入空段落',
+    addAbove: '在上方',
+    addBelow: '在下方',
     delete: t('document.delete')
   },
   resolveActions: ({ isEmpty, defaults }) => {

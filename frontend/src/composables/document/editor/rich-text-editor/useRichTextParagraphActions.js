@@ -82,7 +82,10 @@ export function useRichTextParagraphActions({
           focusForParagraphAction(ctx);
           toggleBlockquote();
         }
-      },
+      }
+    ];
+
+    const insertActions = [
       {
         key: 'code-block',
         label: '代码块',
@@ -95,15 +98,24 @@ export function useRichTextParagraphActions({
     ];
 
     componentToolbarItemsRef.value.forEach((item) => {
-      actions.push({
+      insertActions.push({
         key: `component-${item.key}`,
-        label: `插入${item.label}`,
+        label: item.label,
         iconKey: item.key,
         handler: (ctx) => {
           insertComponentByHandle(ctx, item);
         }
       });
     });
+
+    if (insertActions.length > 0) {
+      actions.push({
+        key: 'insert',
+        label: '插入',
+        iconKey: 'insert',
+        children: insertActions
+      });
+    }
 
     actions.push({
       key: 'undo',

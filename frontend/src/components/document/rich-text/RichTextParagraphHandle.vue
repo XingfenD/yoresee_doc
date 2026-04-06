@@ -43,20 +43,15 @@
     :ignore-elements="[triggerRef, rootRef]"
     @close="closeMenu"
   >
-    <AppMenuItem
-      v-for="item in actions"
-      :key="item.key"
-      :danger="Boolean(item.danger)"
-      :disabled="Boolean(item.disabled)"
-      @click="selectAction(item.key)"
-    >
-      <template #icon>
-        <el-icon v-if="resolveActionIcon(item)">
-          <component :is="resolveActionIcon(item)" />
-        </el-icon>
-      </template>
-      {{ item.label }}
-    </AppMenuItem>
+    <div class="handle-menu-root" @mouseleave="handleMenuMouseLeave">
+      <RichTextHandleMenuBranch
+        :actions="actions"
+        :open-paths="openPaths"
+        :resolve-icon="resolveActionIcon"
+        @group-enter="handleGroupEnter"
+        @select="selectAction"
+      />
+    </div>
   </AppMenu>
 </template>
 
@@ -80,7 +75,7 @@ import {
   Tickets
 } from '@element-plus/icons-vue';
 import AppMenu from '@/components/base/AppMenu.vue';
-import AppMenuItem from '@/components/base/AppMenuItem.vue';
+import RichTextHandleMenuBranch from '@/components/document/rich-text/RichTextHandleMenuBranch.vue';
 
 const props = defineProps({
   visible: {
@@ -124,6 +119,7 @@ const rootRef = ref(null);
 const menuRef = ref(null);
 const menuVisible = ref(false);
 const menuPosition = ref({ x: 0, y: 0 });
+const openPaths = ref([]);
 
 const blockTypeIconMap = {
   paragraph: Document,
@@ -149,6 +145,7 @@ const actionIconMap = {
   'code-block': Tickets,
   mindmap: Connection,
   drawio: Connection,
+  insert: Plus,
   comment: ChatDotRound,
   undo: RefreshLeft,
   redo: RefreshRight,
@@ -192,12 +189,14 @@ const updateMenuPosition = async () => {
 
 const openMenu = async () => {
   menuVisible.value = true;
+  openPaths.value = [];
   emit('mouseenter');
   await updateMenuPosition();
 };
 
 const closeMenu = () => {
   menuVisible.value = false;
+  openPaths.value = [];
   emit('mouseleave');
 };
 
@@ -210,8 +209,21 @@ const toggleMenu = () => {
 };
 
 const selectAction = (actionKey) => {
+  if (!actionKey) {
+    return;
+  }
   emit('action', actionKey);
   closeMenu();
+};
+
+const handleGroupEnter = ({ level, path }) => {
+  const next = openPaths.value.slice(0, Math.max(0, level + 1));
+  next[level] = path || null;
+  openPaths.value = next;
+};
+
+const handleMenuMouseLeave = () => {
+  openPaths.value = [];
 };
 
 const onHandleEnter = () => {
@@ -295,5 +307,9 @@ watch(
   box-shadow:
     0 -5px 0 currentColor,
     0 5px 0 currentColor;
+}
+
+.handle-menu-root {
+  min-width: 170px;
 }
 </style>

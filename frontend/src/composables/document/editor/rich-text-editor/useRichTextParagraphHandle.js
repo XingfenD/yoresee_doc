@@ -35,14 +35,21 @@ export function useRichTextParagraphHandle({
 
   const buildDefaultActions = () => ([
     {
-      key: 'add-above',
-      label: labels.addAbove || 'Add Paragraph Above',
-      iconKey: 'add-above'
-    },
-    {
-      key: 'add-below',
-      label: labels.addBelow || 'Add Paragraph Below',
-      iconKey: 'add-below'
+      key: 'insert-empty-paragraph',
+      label: labels.insertEmptyParagraph || '插入空段落',
+      iconKey: 'insert',
+      children: [
+        {
+          key: 'add-above',
+          label: labels.addAbove || '在上方',
+          iconKey: 'add-above'
+        },
+        {
+          key: 'add-below',
+          label: labels.addBelow || '在下方',
+          iconKey: 'add-below'
+        }
+      ]
     },
     {
       key: 'delete',
@@ -335,7 +342,25 @@ export function useRichTextParagraphHandle({
   };
 
   const runParagraphAction = (key) => {
-    const action = paragraphActions.value.find((item) => item?.key === key);
+    const findActionByKey = (actions, targetKey) => {
+      if (!Array.isArray(actions) || !targetKey) {
+        return null;
+      }
+      for (const item of actions) {
+        if (item?.key === targetKey) {
+          return item;
+        }
+        if (Array.isArray(item?.children) && item.children.length) {
+          const childMatched = findActionByKey(item.children, targetKey);
+          if (childMatched) {
+            return childMatched;
+          }
+        }
+      }
+      return null;
+    };
+
+    const action = findActionByKey(paragraphActions.value, key);
     if (!action) {
       return;
     }
