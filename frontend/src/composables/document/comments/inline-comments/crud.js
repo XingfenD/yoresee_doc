@@ -222,6 +222,9 @@ export function useInlineCommentCrud({
     const requestVersion = ++loadVersionRef.value;
     const requestDocId = getDocId?.();
     const inlineEnabled = !!getInlineEnabled?.();
+    const pendingEditingDrafts = commentList.value
+      .filter((item) => item && !item.external_id && item.editing)
+      .map((item) => ({ ...item }));
 
     if (!requestDocId || requestDocId === 'example' || !inlineEnabled) {
       commentList.value = [];
@@ -240,7 +243,7 @@ export function useInlineCommentCrud({
       if (requestVersion !== loadVersionRef.value || requestDocId !== getDocId?.()) {
         return false;
       }
-      commentList.value = (resp.comments || [])
+      const remoteComments = (resp.comments || [])
         .filter((item) => item.anchor_id)
         .map((item) => ({
           local_id: item.external_id || item.anchor_id,
@@ -256,12 +259,13 @@ export function useInlineCommentCrud({
           draft: '',
           saving: false
         }));
+      commentList.value = [...pendingEditingDrafts, ...remoteComments];
       return true;
     } catch (error) {
       if (requestVersion !== loadVersionRef.value || requestDocId !== getDocId?.()) {
         return false;
       }
-      commentList.value = [];
+      commentList.value = pendingEditingDrafts;
       return true;
     }
   };
