@@ -116,7 +116,7 @@ const props = defineProps({
   },
   enabledComponents: {
     type: Array,
-    default: () => ['mindmap', 'drawio']
+    default: () => ['mindmap', 'drawio', 'table']
   },
   commentEnabled: {
     type: Boolean,

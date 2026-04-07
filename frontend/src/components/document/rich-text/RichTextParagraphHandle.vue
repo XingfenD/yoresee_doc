@@ -143,6 +143,7 @@ const actionIconMap = {
   'ordered-list': List,
   blockquote: ChatLineRound,
   'code-block': Tickets,
+  table: Grid,
   mindmap: Connection,
   drawio: Connection,
   insert: Plus,

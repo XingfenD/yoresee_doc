@@ -1,3 +1,17 @@
+import {
+  decodeRichTableModelFromAttr,
+  decodeRichTableModelFromMarkdownBlock,
+  encodeRichTableModelForAttr,
+  encodeRichTableModelToMarkdownBlock
+} from '@/components/document/rich-text/components/table/richTableModel';
+
+export {
+  decodeRichTableModelFromAttr,
+  decodeRichTableModelFromMarkdownBlock,
+  encodeRichTableModelForAttr,
+  encodeRichTableModelToMarkdownBlock
+};
+
 export const encodeDrawioSourceToBase64 = (value) => {
   const source = String(value || '');
   if (!source) {

@@ -41,6 +41,7 @@ export function useRichTextCodeLanguageOverlay(options = {}) {
   const codeLanguageFloatingVisible = ref(false);
   const codeLanguageFloatingStyle = ref({ top: '0px', left: '0px' });
   const codeLanguageInteracting = ref(false);
+  const codeBlockAnchorPos = ref(null);
 
   const sanitizeCodeLanguage = (value) => {
     const raw = String(value || '').trim().toLowerCase();
@@ -72,17 +73,9 @@ export function useRichTextCodeLanguageOverlay(options = {}) {
     return isSupportedHighlightLanguage(normalized) ? normalized : 'plaintext';
   };
 
-  const syncCodeLanguageDraft = () => {
-    if (!editorRef.value || !editorRef.value.isActive('codeBlock')) {
-      return;
-    }
-    const current = sanitizeCodeLanguage(editorRef.value.getAttributes('codeBlock')?.language);
-    codeLanguageDraft.value = isSupportedHighlightLanguage(current) ? current : 'plaintext';
-  };
-
-  const resolveActiveCodeBlockDom = () => {
+  const resolveSelectionCodeBlockMeta = () => {
     const instance = editorRef.value;
-    if (!instance || !instance.isActive('codeBlock')) {
+    if (!instance) {
       return null;
     }
     const { $from } = instance.state.selection;
@@ -98,14 +91,66 @@ export function useRichTextCodeLanguageOverlay(options = {}) {
         element = rawDom.parentElement;
       }
       if (!element) {
-        return null;
+        return {
+          pos,
+          node
+        };
       }
       if (element.tagName.toLowerCase() !== 'pre') {
         element = element.querySelector?.('pre') || element;
       }
-      return element;
+      return {
+        pos,
+        node,
+        element
+      };
     }
     return null;
+  };
+
+  const resolveAnchorCodeBlockMeta = () => {
+    const instance = editorRef.value;
+    const pos = Number(codeBlockAnchorPos.value);
+    if (!instance || !Number.isFinite(pos)) {
+      return null;
+    }
+    const node = instance.state.doc.nodeAt(pos);
+    if (!node || node.type?.name !== 'codeBlock') {
+      return null;
+    }
+    const rawDom = instance.view.nodeDOM(pos);
+    let element = rawDom instanceof HTMLElement ? rawDom : null;
+    if (!element && rawDom && typeof Node !== 'undefined' && rawDom.nodeType === Node.TEXT_NODE) {
+      element = rawDom.parentElement;
+    }
+    if (element && element.tagName.toLowerCase() !== 'pre') {
+      element = element.querySelector?.('pre') || element;
+    }
+    return {
+      pos,
+      node,
+      element: element || null
+    };
+  };
+
+  const syncCodeLanguageDraft = () => {
+    const selected = resolveSelectionCodeBlockMeta();
+    if (!selected) {
+      return;
+    }
+    codeBlockAnchorPos.value = selected.pos;
+    const current = sanitizeCodeLanguage(selected.node?.attrs?.language);
+    codeLanguageDraft.value = isSupportedHighlightLanguage(current) ? current : 'plaintext';
+  };
+
+  const resolveActiveCodeBlockDom = () => {
+    const selected = resolveSelectionCodeBlockMeta();
+    if (selected) {
+      codeBlockAnchorPos.value = selected.pos;
+      return selected.element || null;
+    }
+    const anchored = resolveAnchorCodeBlockMeta();
+    return anchored?.element || null;
   };
 
   const updateCodeLanguageFloating = () => {
@@ -119,7 +164,7 @@ export function useRichTextCodeLanguageOverlay(options = {}) {
     }
     const containerRect = container.getBoundingClientRect();
     const blockRect = blockElement.getBoundingClientRect();
-    const floatingWidth = 180;
+    const floatingWidth = 132;
     const floatingHeight = 30;
     const rawLeft = blockRect.right - containerRect.left + container.scrollLeft - floatingWidth - 8;
     const rawTop = blockRect.top - containerRect.top + container.scrollTop + 8;
@@ -145,14 +190,31 @@ export function useRichTextCodeLanguageOverlay(options = {}) {
   };
 
   const applyCodeLanguage = (value) => {
-    if (!editorRef.value || !editorRef.value.isActive('codeBlock')) {
+    const instance = editorRef.value;
+    if (!instance) {
       return;
     }
     const nextLanguage = resolveCodeBlockLanguage(value);
     if (!nextLanguage) {
       return;
     }
-    editorRef.value.chain().focus().updateAttributes('codeBlock', { language: nextLanguage }).run();
+    const selected = resolveSelectionCodeBlockMeta() || resolveAnchorCodeBlockMeta();
+    if (!selected || !Number.isFinite(selected.pos)) {
+      return;
+    }
+
+    const currentNode = instance.state.doc.nodeAt(selected.pos);
+    if (!currentNode || currentNode.type?.name !== 'codeBlock') {
+      return;
+    }
+    const nextAttrs = {
+      ...currentNode.attrs,
+      language: nextLanguage
+    };
+    instance.view.dispatch(
+      instance.state.tr.setNodeMarkup(selected.pos, currentNode.type, nextAttrs)
+    );
+    codeBlockAnchorPos.value = selected.pos;
     codeLanguageDraft.value = nextLanguage;
     updateCodeLanguageFloating();
   };
@@ -168,12 +230,14 @@ export function useRichTextCodeLanguageOverlay(options = {}) {
 
   const handleCodeLanguageInputBlur = () => {
     setTimeout(() => {
-      codeLanguageInteracting.value = false;
-      updateCodeLanguageFloating();
+      if (!codeLanguageInteracting.value) {
+        updateCodeLanguageFloating();
+      }
     }, 0);
   };
 
   const hideCodeLanguageFloating = () => {
+    codeBlockAnchorPos.value = null;
     codeLanguageFloatingVisible.value = false;
   };
 

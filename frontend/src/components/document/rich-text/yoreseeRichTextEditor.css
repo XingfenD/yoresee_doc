@@ -90,6 +90,10 @@
   margin: 12px 0;
 }
 
+.rich-text-body :deep(.yoresee-rich-text-content .rich-table-node) {
+  margin: 12px 0;
+}
+
 .rich-text-body :deep(.yoresee-rich-text-content .yoresee-comment-anchor) {
   background: color-mix(in srgb, #f59e0b 20%, transparent);
   border-radius: 3px;

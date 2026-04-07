@@ -6,9 +6,6 @@
         <button type="button" class="mindmap-btn" @click="toggleEditing">
           {{ editing ? 'Done' : 'Edit Source' }}
         </button>
-        <button type="button" class="mindmap-btn mindmap-btn--danger" @click="deleteNode">
-          Remove
-        </button>
       </div>
     </header>
 
@@ -39,10 +36,6 @@ const props = defineProps({
     required: true
   },
   updateAttributes: {
-    type: Function,
-    required: true
-  },
-  deleteNode: {
     type: Function,
     required: true
   }
@@ -233,10 +226,6 @@ onBeforeUnmount(() => {
   padding: 0 8px;
   font-size: 12px;
   cursor: pointer;
-}
-
-.mindmap-btn--danger {
-  color: #ef4444;
 }
 
 .mindmap-node-body {

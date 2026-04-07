@@ -1,7 +1,9 @@
 import { MindmapExtension, mindmapCommandMeta } from './mindmap/mindmapExtension';
 import { DrawioExtension, drawioCommandMeta } from './drawio/drawioExtension';
+import { RichTableExtension, richTableCommandMeta } from './table/richTableExtension';
 import { mindmapPreviewDiffAdapter } from './mindmap/mindmapPreviewDiffAdapter';
 import { drawioPreviewDiffAdapter } from './drawio/drawioPreviewDiffAdapter';
+import { richTablePreviewDiffAdapter } from './table/richTablePreviewDiffAdapter';
 
 const COMPONENT_REGISTRY = {
   mindmap: {
@@ -15,10 +17,16 @@ const COMPONENT_REGISTRY = {
     toolbarItem: drawioCommandMeta,
     nodeType: 'drawioBlock',
     previewDiffAdapter: drawioPreviewDiffAdapter
+  },
+  table: {
+    extension: RichTableExtension,
+    toolbarItem: richTableCommandMeta,
+    nodeType: 'tableBlock',
+    previewDiffAdapter: richTablePreviewDiffAdapter
   }
 };
 
-export const DEFAULT_RICH_TEXT_COMPONENTS = ['mindmap', 'drawio'];
+export const DEFAULT_RICH_TEXT_COMPONENTS = ['mindmap', 'drawio', 'table'];
 
 export const resolveRichTextComponentSystem = (enabledComponents = DEFAULT_RICH_TEXT_COMPONENTS) => {
   const keys = Array.isArray(enabledComponents) && enabledComponents.length > 0

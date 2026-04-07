@@ -2,6 +2,10 @@ import TurndownService from 'turndown';
 import { marked } from 'marked';
 import { COMMENT_ANCHOR_ATTR } from '@/components/document/rich-text/extensions/commentAnchorExtension';
 import {
+  decodeRichTableModelFromAttr,
+  decodeRichTableModelFromMarkdownBlock,
+  encodeRichTableModelForAttr,
+  encodeRichTableModelToMarkdownBlock,
   encodeDrawioSourceToBase64,
   extractDrawioBlocksFromHtml,
   extractLanguageFromCodeClass,
@@ -94,6 +98,34 @@ export const createRichTextTurndown = () => {
     }
   });
 
+  turndown.addRule('yoreseeTable', {
+    filter: (node) => {
+      if (!node) {
+        return false;
+      }
+      const nodeName = String(node.nodeName || '').toLowerCase();
+      if (nodeName === 'yoresee-table') {
+        return true;
+      }
+      if (typeof node.getAttribute !== 'function') {
+        return false;
+      }
+      const dataType = String(node.getAttribute('data-type') || '').toLowerCase();
+      const hasData = Boolean(node.getAttribute('data-table') || node.getAttribute('table'));
+      return hasData && dataType.includes('table');
+    },
+    replacement: (_, node) => {
+      const tableModel = decodeRichTableModelFromAttr(
+        node.getAttribute('data-table') || node.getAttribute('table')
+      );
+      const encoded = encodeRichTableModelToMarkdownBlock(tableModel);
+      if (!encoded) {
+        return '';
+      }
+      return `\n\n\`\`\`table\n${encoded}\n\`\`\`\n\n`;
+    }
+  });
+
   turndown.addRule('yoreseeCommentAnchor', {
     filter: (node) => node.nodeName === 'SPAN' && node.getAttribute(COMMENT_ANCHOR_ATTR),
     replacement: (content, node) => {
@@ -126,6 +158,14 @@ export const markdownToHtml = (value) => {
     .replace(/```mindmap\s*\n([\s\S]*?)```/gi, (_, mindmapSource) => {
       const encoded = encodeURIComponent(String(mindmapSource || '').trim());
       return `\n<yoresee-mindmap data-source="${encoded}"></yoresee-mindmap>\n`;
+    })
+    .replace(/```table\s*\n([\s\S]*?)```/gi, (_, tableSource) => {
+      const tableModel = decodeRichTableModelFromMarkdownBlock(tableSource);
+      if (!tableModel) {
+        return '';
+      }
+      const encoded = encodeRichTableModelForAttr(tableModel);
+      return `\n<yoresee-table data-table="${encoded}" data-type="table"></yoresee-table>\n`;
     });
 
   const parsed = marked.parse(sourceWithComponentBlocks, { async: false });

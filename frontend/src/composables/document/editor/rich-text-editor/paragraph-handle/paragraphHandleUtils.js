@@ -13,8 +13,10 @@ export const BLOCK_SELECTOR = [
   'hr',
   '.mindmap-node',
   '.drawio-node',
+  '.rich-table-node',
   'yoresee-mindmap',
-  'yoresee-drawio'
+  'yoresee-drawio',
+  'yoresee-table'
 ].join(',');
 
 const PREFERRED_BLOCK_NODE_NAMES = new Set([
@@ -25,6 +27,7 @@ const PREFERRED_BLOCK_NODE_NAMES = new Set([
   'codeBlock',
   'horizontalRule',
   'table',
+  'tableBlock',
   'mindmapBlock',
   'drawioBlock'
 ]);
@@ -32,6 +35,7 @@ const PREFERRED_BLOCK_NODE_NAMES = new Set([
 const NON_EMPTY_BLOCK_TYPES = new Set([
   'horizontalRule',
   'table',
+  'tableBlock',
   'mindmapBlock',
   'drawioBlock'
 ]);
@@ -49,6 +53,7 @@ const normalizeBlockType = (value) => {
     case 'codeBlock':
       return 'code';
     case 'table':
+    case 'tableBlock':
       return 'table';
     case 'horizontalRule':
       return 'divider';

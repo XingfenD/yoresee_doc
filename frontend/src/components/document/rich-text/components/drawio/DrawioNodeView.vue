@@ -14,9 +14,6 @@
         >
           Clear
         </button>
-        <button type="button" class="drawio-btn drawio-btn--danger" @click="deleteNode">
-          Remove
-        </button>
       </div>
     </header>
 
@@ -60,10 +57,6 @@ const props = defineProps({
     required: true
   },
   updateAttributes: {
-    type: Function,
-    required: true
-  },
-  deleteNode: {
     type: Function,
     required: true
   }
@@ -244,10 +237,6 @@ onBeforeUnmount(() => {
   font-size: 12px;
   padding: 0 8px;
   cursor: pointer;
-}
-
-.drawio-btn--danger {
-  color: #ef4444;
 }
 
 .drawio-body {
