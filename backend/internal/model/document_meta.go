@@ -27,11 +27,11 @@ type Document struct {
 	ParentID      int64          `gorm:"default:0;index" json:"parent_id"` // 0 means root
 	UserID        int64          `gorm:"not null;index" json:"user_id"`
 	KnowledgeID   *int64         `gorm:"index" json:"knowledge_id"`
-	ContainerType ContainerType  `gorm:"not null;index" json:"containter_type"`
+	ContainerType ContainerType  `gorm:"not null;default:'own';index" json:"containter_type"`
 	IsPublic      bool           `gorm:"default:false;index" json:"is_public"`
 	Tags          []string       `gorm:"serializer:json" json:"tags"`
-	Path          string         `gorm:"type:ltree;not null;index:idx_path_gist,using:gist"`
-	Depth         int            `gorm:"not null;index"`
+	Path          string         `gorm:"type:ltree;not null;default:'';index:idx_path_gist,using:gist"`
+	Depth         int            `gorm:"not null;default:0;index"`
 	ViewCount     int            `gorm:"default:0" json:"view_count"`
 	EditCount     int            `gorm:"default:0" json:"edit_count"`
 	Content       string         `gorm:"type:text" json:"content"`
