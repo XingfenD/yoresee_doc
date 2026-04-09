@@ -87,7 +87,7 @@
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
-              :collab-room="collabRoom"
+              :collab-room="markdownCollabRoom"
               :collab-url="collabUrl"
               :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
@@ -110,10 +110,16 @@
             />
             <YoreseeRichTextEditor
               v-else-if="isRichTextDocument"
+              :key="`rich-text-${docId}`"
               ref="richTextEditorRef"
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
+              :collab-enabled="collabEnabled"
+              :collab-room="richTextCollabRoom"
+              :collab-url="collabUrl"
+              :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
+              @collab-sync="handleCollabSync"
               @commit="flushRichTextSave"
               @comment-add="handleInlineCommentAdd"
               @comment-remove="handleInlineCommentRemove"
@@ -166,7 +172,7 @@ export default {
 </script>
 
 <script setup>
-import { defineAsyncComponent, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
@@ -350,6 +356,22 @@ const {
   kbId,
   docId,
   currentDocType
+});
+
+const markdownCollabRoom = computed(() => {
+  const base = String(collabRoom.value || '').trim();
+  if (!base) {
+    return '';
+  }
+  return `${base}:1`;
+});
+
+const richTextCollabRoom = computed(() => {
+  const base = String(collabRoom.value || '').trim();
+  if (!base) {
+    return '';
+  }
+  return `${base}:4`;
 });
 const {
   isEditingTitle,

@@ -19,7 +19,9 @@ export function useDocumentEditorPolicy(options = {}) {
 
   const canManageAttachments = computed(() => hasDocument.value && !isExampleDocument.value);
   const canManageSettings = computed(() => hasDocument.value && !isExampleDocument.value);
-  const collabEnabled = computed(() => hasDocument.value && !isExampleDocument.value && isMarkdownDocument.value);
+  const collabEnabled = computed(
+    () => hasDocument.value && !isExampleDocument.value && (isMarkdownDocument.value || isRichTextDocument.value)
+  );
   const inlineCommentEnabled = computed(
     () => hasDocument.value && !isExampleDocument.value && (isMarkdownDocument.value || isRichTextDocument.value)
   );
