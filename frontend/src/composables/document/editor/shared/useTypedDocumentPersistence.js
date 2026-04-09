@@ -37,7 +37,7 @@ export function useTypedDocumentPersistence(options = {}) {
   };
 
   const persistContent = async (content, requestSeq) => {
-    if (!docId.value || docId.value === 'example' || !isCurrentType.value) {
+    if (!docId.value || !isCurrentType.value) {
       return;
     }
     if (saveInFlight.value) {
@@ -89,7 +89,7 @@ export function useTypedDocumentPersistence(options = {}) {
   };
 
   const loadContent = async () => {
-    if (!docId.value || docId.value === 'example' || !isCurrentType.value) {
+    if (!docId.value || !isCurrentType.value) {
       return;
     }
     const nextLoadSeq = ++loadSeq.value;

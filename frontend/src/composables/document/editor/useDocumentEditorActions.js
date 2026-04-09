@@ -158,7 +158,7 @@ export function useDocumentEditorActions({
   };
 
   const startEditTitle = async () => {
-    if (!docId.value || docId.value === 'example') {
+    if (!docId.value) {
       return;
     }
     isEditingTitle.value = true;

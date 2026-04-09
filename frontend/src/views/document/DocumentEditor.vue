@@ -87,7 +87,7 @@
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
-              :collab-room="markdownCollabRoom"
+              :collab-room="typedCollabRoom"
               :collab-url="collabUrl"
               :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
@@ -115,7 +115,7 @@
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
-              :collab-room="richTextCollabRoom"
+              :collab-room="typedCollabRoom"
               :collab-url="collabUrl"
               :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
@@ -199,6 +199,7 @@ import { useTableDocumentPersistence } from '@/composables/document/editor/table
 import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
 import { useRichTextDocumentPersistence } from '@/composables/document/editor/rich-text-editor/useRichTextDocumentPersistence';
 import { useUserStore } from '@/store/user';
+import { normalizeDocumentType } from '@/utils/documentType';
 import {
   getKnowledgeBaseDocuments,
   getMyDocuments,
@@ -372,6 +373,16 @@ const richTextCollabRoom = computed(() => {
     return '';
   }
   return `${base}:4`;
+});
+
+const typedCollabRoom = computed(() => {
+  if (isMarkdownDocument.value) {
+    return markdownCollabRoom.value;
+  }
+  if (isRichTextDocument.value) {
+    return richTextCollabRoom.value;
+  }
+  return '';
 });
 const {
   isEditingTitle,

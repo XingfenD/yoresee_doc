@@ -104,7 +104,7 @@ export function useInlineCommentCrud({
     if (item.saving) return;
 
     const docId = getDocId?.();
-    if (!docId || docId === 'example') {
+    if (!docId) {
       return;
     }
 
@@ -226,7 +226,7 @@ export function useInlineCommentCrud({
       .filter((item) => item && !item.external_id && item.editing)
       .map((item) => ({ ...item }));
 
-    if (!requestDocId || requestDocId === 'example' || !inlineEnabled) {
+    if (!requestDocId || !inlineEnabled) {
       commentList.value = [];
       if (requestVersion === loadVersionRef.value) {
         return false;
