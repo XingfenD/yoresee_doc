@@ -10,5 +10,5 @@ node_modules/
 gen/
 
 .DS_Store
-
+CLAUDE.md
 nginx.conf
