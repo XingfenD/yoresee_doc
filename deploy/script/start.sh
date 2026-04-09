@@ -2,12 +2,13 @@
 
 # Check parameter count
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <dev|release> <rebuild|clear|restart|up>"
+    echo "Usage: $0 <dev|release> <rebuild|clear|restart|up|build>"
     echo "  dev|release: Use docker-compose.dev.yml or docker-compose.yml"
     echo "  rebuild: Clean containers and volumes, then rebuild and start"
     echo "  clear: Clean containers and volumes"
     echo "  restart: Stop and restart services"
     echo "  up: Start services"
+    echo "  build: Build images without starting"
     exit 1
 fi
 
@@ -20,8 +21,8 @@ if [[ "$ENVIRONMENT" != "dev" && "$ENVIRONMENT" != "release" ]]; then
     exit 1
 fi
 
-if [[ "$ACTION" != "rebuild" && "$ACTION" != "clear" && "$ACTION" != "restart" && "$ACTION" != "up" ]]; then
-    echo "Error: Second argument must be 'rebuild', 'clear', 'restart', or 'up'"
+if [[ "$ACTION" != "rebuild" && "$ACTION" != "clear" && "$ACTION" != "restart" && "$ACTION" != "up" && "$ACTION" != "build" ]]; then
+    echo "Error: Second argument must be 'rebuild', 'clear', 'restart', 'up', or 'build'"
     exit 1
 fi
 
@@ -68,6 +69,10 @@ case "$ACTION" in
     "up")
         echo "Starting services..."
         docker compose -f "$COMPOSE_FILE" up -d
+        ;;
+    "build")
+        echo "Building images..."
+        docker compose -f "$COMPOSE_FILE" build
         ;;
     *)
         echo "Unknown action: $ACTION"

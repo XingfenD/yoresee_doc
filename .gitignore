@@ -1,6 +1,7 @@
 .vscode/
 .trae/
 .idea/
+.claude/
 temp/
 tmp/
 
