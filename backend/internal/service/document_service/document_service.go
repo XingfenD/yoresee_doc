@@ -1,6 +1,8 @@
 package document_service
 
 import (
+	"context"
+
 	"github.com/XingfenD/yoresee_doc/internal/repository/attachment_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_version_repo"
@@ -33,3 +35,15 @@ func NewDocumentService() *DocumentService {
 }
 
 var DocumentSvc = NewDocumentService()
+
+func (s *DocumentService) DeleteDocument(id int64) error {
+	return s.documentRepo.Delete(id).Exec()
+}
+
+func (s *DocumentService) DeleteDocumentByExternalID(ctx context.Context, externalID string) error {
+	docID, err := s.documentRepo.GetIDByExternalID(externalID).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return s.DeleteDocument(docID)
+}
