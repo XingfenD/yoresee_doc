@@ -86,6 +86,7 @@ export default {
     deleteDocument: 'Delete Document',
     deleteDocumentConfirm: 'Are you sure you want to delete this document?',
     deleteNotSupported: 'Document deletion is not available yet',
+    deleteSuccess: 'Document deleted successfully',
     renameDocument: 'Rename Document',
     renameNotSupported: 'Document rename is not available yet',
     enterDocumentTitle: 'Please enter document title',

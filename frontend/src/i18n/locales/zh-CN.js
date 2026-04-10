@@ -84,6 +84,7 @@ export default {
     deleteDocument: '删除文档',
     deleteDocumentConfirm: '确定要删除当前文档吗？',
     deleteNotSupported: '当前版本暂不支持删除文档',
+    deleteSuccess: '文档删除成功',
     renameDocument: '重命名文档',
     renameNotSupported: '当前版本暂不支持重命名文档',
     enterDocumentTitle: '请输入文档标题',

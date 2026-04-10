@@ -16,6 +16,7 @@ const {
   UpdateDocumentMetaRequest,
   UpdateDocumentSettingsRequest,
   CreateDocumentRequest,
+  DeleteDocumentRequest,
   ListRecentDocumentsRequest,
   RecordRecentDocumentRequest,
   GetDocumentContentRequest,
@@ -103,6 +104,16 @@ export const createDocument = async (data) => {
   return handleResponse(base, {
     external_id: resp.externalId
   });
+};
+
+export const deleteDocument = async (documentExternalID) => {
+  const req = new DeleteDocumentRequest({
+    documentExternalId: documentExternalID
+  });
+
+  const resp = await unaryCall(documentClient, 'deleteDocument', req);
+  const base = baseToObject(resp);
+  return handleResponse(base, {});
 };
 
 export const getDocumentContent = async (documentExternalID) => {

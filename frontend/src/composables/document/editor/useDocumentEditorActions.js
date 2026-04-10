@@ -3,6 +3,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   createDocument as createDocumentApi,
   createTemplate as createTemplateApi,
+  deleteDocument as deleteDocumentApi,
   updateDocumentMeta
 } from '@/services/api';
 import { useApiAction } from '@/composables/actions/useApiAction';
@@ -112,8 +113,11 @@ export function useDocumentEditorActions({
     openCreateDocumentDialog(payload?.id || null, DEFAULT_DOCUMENT_TYPE);
   };
 
-  const handleDeleteDocument = async () => {
-    if (!docId.value) {
+  const deletingDocument = ref(false);
+
+  const handleDeleteDocument = async (target) => {
+    const targetId = target?.id || docId.value;
+    if (!targetId) {
       return;
     }
     try {
@@ -122,10 +126,30 @@ export function useDocumentEditorActions({
         cancelButtonText: t('button.cancel'),
         type: 'warning'
       });
-      ElMessage.warning(t('document.deleteNotSupported'));
-    } catch (error) {
-      // cancel
+    } catch {
+      return;
     }
+
+    await runWithLoading(
+      deletingDocument,
+      () => deleteDocumentApi(targetId),
+      {
+        context: 'deleteDocument',
+        successMessage: t('document.deleteSuccess'),
+        errorMessage: t('common.requestFailed'),
+        onSuccess: async () => {
+          await fetchDocuments();
+          if (String(targetId) === String(docId.value)) {
+            const isPersonal = kbId.value === 'personal';
+            if (isPersonal) {
+              router.push('/mydocuments');
+            } else {
+              router.push(`/knowledge-base/${kbId.value}`);
+            }
+          }
+        }
+      }
+    );
   };
 
   const handleRenameFromTree = async (payload) => {

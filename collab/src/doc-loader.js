@@ -4,10 +4,18 @@ const backend = require('./grpc');
 
 const snapshotTimeoutMs = Number(process.env.BACKEND_SNAPSHOT_TIMEOUT_MS || 3000);
 
+const stripTypeSuffix = (id) => {
+  if (!id) return id;
+  const idx = id.lastIndexOf(':');
+  if (idx > 0) return id.slice(0, idx);
+  return id;
+};
+
 async function loadDoc(docId) {
   const start = Date.now();
   console.log(`[doc-loader] start docId=${docId}`);
   const redisKey = `collab:yjs:doc:updates:${docId}`;
+  const backendDocId = stripTypeSuffix(docId);
 
   try {
     const updates = await redis.getListBuffers(redisKey);
@@ -27,7 +35,7 @@ async function loadDoc(docId) {
     try {
       console.log(`[doc-loader] requesting snapshot docId=${docId}`);
       const snapshot = await Promise.race([
-        backend.getDocumentYjsSnapshot(docId),
+        backend.getDocumentYjsSnapshot(backendDocId),
         new Promise((_, reject) => setTimeout(() => reject(new Error('snapshot timeout')), snapshotTimeoutMs))
       ]);
       console.log(`[doc-loader] received snapshot docId=${docId} length=${snapshot ? snapshot.length : 0}`);
@@ -41,7 +49,7 @@ async function loadDoc(docId) {
       } else {
         console.log(`[doc-loader] snapshot empty docId=${docId} took=${Date.now() - start}ms`);
         console.log(`[doc-loader] trying to get document content docId=${docId}`);
-        const content = await backend.getDocumentContent(docId);
+        const content = await backend.getDocumentContent(backendDocId);
         console.log(`[doc-loader] received content docId=${docId} length=${content ? content.length : 0}`);
 
         if (content) {
@@ -61,7 +69,7 @@ async function loadDoc(docId) {
       // Fallback to getting document content when snapshot fails
       try {
         console.log(`[doc-loader] fallback: trying to get document content docId=${docId}`);
-        const content = await backend.getDocumentContent(docId);
+        const content = await backend.getDocumentContent(backendDocId);
         console.log(`[doc-loader] fallback: received content docId=${docId} length=${content ? content.length : 0}`);
 
         if (content) {
