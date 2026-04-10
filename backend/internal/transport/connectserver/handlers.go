@@ -765,4 +765,16 @@ func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
 		},
 		opts...,
 	))
+
+	mux.Handle(pb.DocumentService_DeleteDocument_FullMethodName, connect.NewUnaryHandler(
+		pb.DocumentService_DeleteDocument_FullMethodName,
+		func(ctx context.Context, req *connect.Request[pb.DeleteDocumentRequest]) (*connect.Response[pb.DeleteDocumentResponse], error) {
+			resp, err := docSvc.DeleteDocument(ctx, req.Msg)
+			if err != nil {
+				return nil, err
+			}
+			return connect.NewResponse(resp), nil
+		},
+		opts...,
+	))
 }

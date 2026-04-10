@@ -935,6 +935,14 @@ message UpdateTemplateSettingsResponse {
   BaseResponse base = 1;
 }
 
+message DeleteDocumentRequest {
+  string document_external_id = 1;
+}
+
+message DeleteDocumentResponse {
+  BaseResponse base = 1;
+}
+
 message ListRecentTemplatesRequest {
   optional string start_time = 1;
   optional string end_time = 2;
@@ -1008,6 +1016,8 @@ service DocumentService {
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
   // update template settings.
   rpc UpdateTemplateSettings(UpdateTemplateSettingsRequest) returns (UpdateTemplateSettingsResponse);
+  // delete a document.
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
 }
 
 // commentService provides document comment APIs.

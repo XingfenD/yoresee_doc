@@ -692,3 +692,21 @@ func (s *DocumentServiceServer) UpdateTemplateSettings(ctx context.Context, req 
 		Base: baseResponseFromErr(nil),
 	}, nil
 }
+
+func (s *DocumentServiceServer) DeleteDocument(ctx context.Context, req *pb.DeleteDocumentRequest) (*pb.DeleteDocumentResponse, error) {
+	userExternalID, ok := ctx.Value("user_external_id").(string)
+	if !ok || userExternalID == "" {
+		return &pb.DeleteDocumentResponse{Base: baseResponseFromStatus(status.StatusTokenInvalid)}, nil
+	}
+	if req == nil || req.DocumentExternalId == "" {
+		return &pb.DeleteDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
+	}
+
+	if err := document_service.DocumentSvc.DeleteDocumentByExternalID(ctx, req.DocumentExternalId); err != nil {
+		return &pb.DeleteDocumentResponse{Base: baseResponseFromErr(err)}, nil
+	}
+
+	return &pb.DeleteDocumentResponse{
+		Base: baseResponseFromErr(nil),
+	}, nil
+}

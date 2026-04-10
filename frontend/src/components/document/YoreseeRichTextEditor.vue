@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { EditorContent } from '@tiptap/vue-3';
 import { useI18n } from 'vue-i18n';
 import RichTextParagraphHandle from '@/components/document/rich-text/RichTextParagraphHandle.vue';
@@ -95,6 +95,7 @@ import { useRichTextToolbarActions } from '@/composables/document/editor/rich-te
 import { useRichTextEditorRuntime } from '@/composables/document/editor/rich-text-editor/useRichTextEditorRuntime';
 import { useRichTextSelectionColors } from '@/composables/document/editor/rich-text-editor/useRichTextSelectionColors';
 import { useRichTextParagraphActions } from '@/composables/document/editor/rich-text-editor/useRichTextParagraphActions';
+import { useRichTextYjsCollaboration } from '@/composables/document/editor/rich-text-editor/useRichTextYjsCollaboration';
 
 const props = defineProps({
   modelValue: {
@@ -122,6 +123,22 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  collabEnabled: {
+    type: Boolean,
+    default: false
+  },
+  collabRoom: {
+    type: String,
+    default: ''
+  },
+  collabUrl: {
+    type: String,
+    default: '/ws/doc'
+  },
+  collabToken: {
+    type: String,
+    default: ''
+  },
   reservedBridgeOptions: {
     type: Object,
     default: () => ({})
@@ -130,6 +147,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'update:modelValue',
+  'collab-sync',
   'commit',
   'ready',
   'comment-add',
@@ -147,6 +165,10 @@ const modelValueRef = computed(() => props.modelValue);
 const enabledComponentsRef = computed(() => props.enabledComponents);
 const externalExtensionsRef = computed(() => props.externalExtensions);
 const reservedBridgeOptionsRef = computed(() => props.reservedBridgeOptions);
+const collabEnabledRef = computed(() => props.collabEnabled);
+const collabRoomRef = computed(() => props.collabRoom);
+const collabUrlRef = computed(() => props.collabUrl);
+const collabTokenRef = computed(() => props.collabToken);
 const {
   applyingModelValue,
   isJsonValueMode,
@@ -159,6 +181,17 @@ const {
 } = useRichTextValueBridge({
   editorRef: editor,
   valueFormatRef
+});
+
+const collaboration = useRichTextYjsCollaboration({
+  collabEnabledRef,
+  collabRoomRef,
+  collabUrlRef,
+  collabTokenRef,
+  modelValueRef,
+  editorRef: editor,
+  resolveInitialEditorContent,
+  onSync: (isSynced) => emit('collab-sync', isSynced)
 });
 
 const {
@@ -314,7 +347,7 @@ const handleSelectionCommentClick = () => {
   addInlineComment();
 };
 
-useRichTextEditorRuntime({
+const runtime = useRichTextEditorRuntime({
   editorRef: editor,
   bodyScrollRef,
   modelValueRef,
@@ -323,7 +356,9 @@ useRichTextEditorRuntime({
   commentEnabledRef,
   enabledComponentsRef,
   externalExtensionsRef,
+  additionalExtensionsRef: collaboration.collaborationExtensionsRef,
   reservedBridgeOptionsRef,
+  collaborationBridgeRef: collaboration.collaborationBridgeRef,
   componentToolbarItemsRef: componentToolbarItems,
   lowlight,
   applyingModelValueRef: applyingModelValue,
@@ -345,6 +380,14 @@ useRichTextEditorRuntime({
   onCommit: () => emit('commit'),
   onReady: (payload) => emit('ready', payload)
 });
+
+watch(
+  () => [props.collabEnabled, props.collabRoom, props.collabUrl, props.collabToken],
+  () => {
+    collaboration.setupCollaboration();
+    runtime.recreateEditor();
+  }
+);
 
 defineExpose({
   reRender: () => {

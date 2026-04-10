@@ -87,7 +87,7 @@
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
-              :collab-room="collabRoom"
+              :collab-room="typedCollabRoom"
               :collab-url="collabUrl"
               :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
@@ -110,10 +110,16 @@
             />
             <YoreseeRichTextEditor
               v-else-if="isRichTextDocument"
+              :key="`rich-text-${docId}`"
               ref="richTextEditorRef"
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
+              :collab-enabled="collabEnabled"
+              :collab-room="typedCollabRoom"
+              :collab-url="collabUrl"
+              :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
+              @collab-sync="handleCollabSync"
               @commit="flushRichTextSave"
               @comment-add="handleInlineCommentAdd"
               @comment-remove="handleInlineCommentRemove"
@@ -166,7 +172,7 @@ export default {
 </script>
 
 <script setup>
-import { defineAsyncComponent, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
@@ -193,6 +199,7 @@ import { useTableDocumentPersistence } from '@/composables/document/editor/table
 import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
 import { useRichTextDocumentPersistence } from '@/composables/document/editor/rich-text-editor/useRichTextDocumentPersistence';
 import { useUserStore } from '@/store/user';
+import { normalizeDocumentType } from '@/utils/documentType';
 import {
   getKnowledgeBaseDocuments,
   getMyDocuments,
@@ -350,6 +357,32 @@ const {
   kbId,
   docId,
   currentDocType
+});
+
+const markdownCollabRoom = computed(() => {
+  const base = String(collabRoom.value || '').trim();
+  if (!base) {
+    return '';
+  }
+  return `${base}:1`;
+});
+
+const richTextCollabRoom = computed(() => {
+  const base = String(collabRoom.value || '').trim();
+  if (!base) {
+    return '';
+  }
+  return `${base}:4`;
+});
+
+const typedCollabRoom = computed(() => {
+  if (isMarkdownDocument.value) {
+    return markdownCollabRoom.value;
+  }
+  if (isRichTextDocument.value) {
+    return richTextCollabRoom.value;
+  }
+  return '';
 });
 const {
   isEditingTitle,

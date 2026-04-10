@@ -21,7 +21,9 @@ export function useRichTextEditorRuntime(options = {}) {
     commentEnabledRef,
     enabledComponentsRef,
     externalExtensionsRef,
+    additionalExtensionsRef,
     reservedBridgeOptionsRef,
+    collaborationBridgeRef,
     componentToolbarItemsRef,
     lowlight,
     applyingModelValueRef,
@@ -47,7 +49,7 @@ export function useRichTextEditorRuntime(options = {}) {
   const buildReservedBridge = () => ({
     ...reservedBridgeOptionsRef.value,
     comments: null,
-    collaboration: null
+    collaboration: collaborationBridgeRef?.value || null
   });
 
   const handleSelectionOverlayScrollOrResize = () => {
@@ -79,13 +81,11 @@ export function useRichTextEditorRuntime(options = {}) {
     return true;
   };
 
-  onMounted(() => {
-    const initialValue = valueFormatIsJsonRef.value
-      ? modelValueRef.value
-      : String(modelValueRef.value || '');
-    syncLastEmittedValue(initialValue);
-
+  const createEditor = () => {
     const componentSystem = resolveRichTextComponentSystem(enabledComponentsRef.value);
+    const extraExtensions = Array.isArray(additionalExtensionsRef?.value)
+      ? additionalExtensionsRef.value
+      : [];
     componentToolbarItemsRef.value = componentSystem.toolbarItems;
 
     editorRef.value = new Editor({
@@ -112,6 +112,7 @@ export function useRichTextEditorRuntime(options = {}) {
         Placeholder.configure({
           placeholder: placeholderTextRef.value
         }),
+        ...extraExtensions,
         ...(commentEnabledRef.value ? [CommentAnchorExtension] : []),
         ...componentSystem.extensions,
         ...externalExtensionsRef.value
@@ -157,6 +158,25 @@ export function useRichTextEditorRuntime(options = {}) {
 
     syncCodeLanguageDraft();
     updateCodeLanguageFloating();
+  };
+
+  const destroyEditor = () => {
+    editorRef.value?.destroy();
+    editorRef.value = null;
+  };
+
+  const recreateEditor = () => {
+    destroyEditor();
+    createEditor();
+  };
+
+  onMounted(() => {
+    const initialValue = valueFormatIsJsonRef.value
+      ? modelValueRef.value
+      : String(modelValueRef.value || '');
+    syncLastEmittedValue(initialValue);
+
+    createEditor();
 
     nextTick(() => {
       bodyScrollRef.value?.addEventListener('scroll', handleSelectionOverlayScrollOrResize, {
@@ -184,7 +204,10 @@ export function useRichTextEditorRuntime(options = {}) {
     bodyScrollRef.value?.removeEventListener('scroll', handleSelectionOverlayScrollOrResize);
     document.removeEventListener('selectionchange', requestSelectionCommentTriggerUpdate);
     window.removeEventListener('resize', handleSelectionOverlayScrollOrResize);
-    editorRef.value?.destroy();
-    editorRef.value = null;
+    destroyEditor();
   });
+
+  return {
+    recreateEditor
+  };
 }

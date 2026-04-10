@@ -13,8 +13,8 @@ export function useDirectoryTreeState({
 }) {
   const treeLoading = ref(false);
   const directoryTree = ref([]);
-  const knowledgeBaseName = ref('示例知识库');
-  const currentDocTitle = ref('示例文档');
+  const knowledgeBaseName = ref('');
+  const currentDocTitle = ref('');
   const currentDocType = ref('1');
   const isAllExpanded = ref(true);
 
@@ -56,7 +56,7 @@ export function useDirectoryTreeState({
   };
 
   const updateCurrentDocTitle = () => {
-    if (!docId.value || docId.value === 'example') {
+    if (!docId.value) {
       currentDocType.value = '1';
       return;
     }
@@ -116,10 +116,6 @@ export function useDirectoryTreeState({
   };
 
   const fetchDocuments = async () => {
-    if (kbId.value === 'example') {
-      return;
-    }
-
     treeLoading.value = true;
     try {
       if (kbId.value === 'personal') {
@@ -142,7 +138,7 @@ export function useDirectoryTreeState({
   };
 
   const goBack = () => {
-    if (kbId.value === 'personal' || kbId.value === 'example') {
+    if (kbId.value === 'personal') {
       router.push('/mydocuments');
     } else {
       router.push(`/knowledge-base/${kbId.value}`);

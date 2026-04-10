@@ -10,7 +10,7 @@ export function useDocumentRouteContext({ props, route }) {
     return 'home';
   };
 
-  const collabEnabled = computed(() => !!docId.value && docId.value !== 'example');
+  const collabEnabled = computed(() => !!docId.value);
   const collabRoom = computed(() => (docId.value ? `${docId.value}` : ''));
   const collabUrl = computed(() => '/ws/doc');
   const collabToken = computed(() => localStorage.getItem('token') || '');
