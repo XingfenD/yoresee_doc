@@ -495,6 +495,17 @@ export default {
     light: 'Light Mode',
     dark: 'Dark Mode'
   },
+  pageTitle: {
+    documentEditor: 'Document Editor',
+    knowledgeBase: 'Knowledge Base',
+    templatePreview: 'Template Preview',
+    userGroup: 'User Group',
+    organization: 'Organization',
+    attachments: 'Attachments',
+    history: 'History',
+    documentSettings: 'Document Settings',
+    attachmentPreview: 'Attachment Preview'
+  },
   common: {
     yes: 'Yes',
     no: 'No',

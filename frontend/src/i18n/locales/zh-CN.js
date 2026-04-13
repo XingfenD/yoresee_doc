@@ -493,6 +493,17 @@ export default {
     light: '浅色模式',
     dark: '深色模式'
   },
+  pageTitle: {
+    documentEditor: '文档编辑',
+    knowledgeBase: '知识库',
+    templatePreview: '模板预览',
+    userGroup: '用户组',
+    organization: '组织',
+    attachments: '附件',
+    history: '历史记录',
+    documentSettings: '文档设置',
+    attachmentPreview: '附件预览'
+  },
   common: {
     yes: '是',
     no: '否',

@@ -171,7 +171,7 @@ export default {
 </script>
 
 <script setup>
-import { defineAsyncComponent, ref } from 'vue';
+import { defineAsyncComponent, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
@@ -196,6 +196,7 @@ import { useDocumentEditorPolicy } from '@/composables/document/editor/useDocume
 import { useDocumentHeaderRouting } from '@/composables/document/editor/useDocumentHeaderRouting';
 import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
 import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
+import { usePageTitle } from '@/composables/usePageTitle';
 import { useUserStore } from '@/store/user';
 import {
   getKnowledgeBaseDocuments,
@@ -277,6 +278,8 @@ const {
   getKnowledgeBaseDocuments,
   getMyDocuments
 });
+
+usePageTitle(computed(() => t('pageTitle.documentEditor')), currentDocTitle);
 
 const editorContent = ref('');
 const editorLayoutRef = ref(null);

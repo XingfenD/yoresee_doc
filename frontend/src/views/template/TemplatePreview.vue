@@ -75,7 +75,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -87,6 +87,7 @@ import DocumentPreviewViewer from '@/components/document/render/DocumentPreviewV
 import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
 import { usePageBoot } from '@/composables/shell/usePageBoot';
 import { useTemplatePreviewPage } from '@/composables/template/useTemplatePreviewPage';
+import { usePageTitle } from '@/composables/usePageTitle';
 
 const route = useRoute();
 const router = useRouter();
@@ -134,6 +135,8 @@ const {
   route,
   router
 });
+
+usePageTitle(computed(() => t('pageTitle.templatePreview')), computed(() => template.value?.name || ''));
 
 onMounted(() => {
   boot(init);

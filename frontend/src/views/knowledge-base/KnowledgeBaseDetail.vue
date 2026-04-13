@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
@@ -99,6 +99,7 @@ import InfoStatsCard from '@/components/shared/InfoStatsCard.vue';
 import KnowledgeBaseDocumentTreePanel from '@/components/knowledge-base/KnowledgeBaseDocumentTreePanel.vue';
 import KnowledgeBaseTemplatesPanel from '@/components/knowledge-base/KnowledgeBaseTemplatesPanel.vue';
 import { useKnowledgeBaseDetailPage } from '@/composables/knowledge-base/useKnowledgeBaseDetailPage';
+import { usePageTitle } from '@/composables/usePageTitle';
 
 const { locale, t } = useI18n();
 const router = useRouter();
@@ -153,6 +154,8 @@ const {
   userStore,
   locale
 });
+
+usePageTitle(computed(() => t('pageTitle.knowledgeBase')), knowledgeBaseName);
 
 onMounted(async () => {
   await init();

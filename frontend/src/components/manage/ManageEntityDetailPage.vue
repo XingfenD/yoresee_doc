@@ -140,6 +140,7 @@ import { useManageShell } from '@/composables/shell/useManageShell';
 import { useServerTable } from '@/composables/list/useServerTable';
 import { usePageBoot } from '@/composables/shell/usePageBoot';
 import { isActionCancelled, useApiAction } from '@/composables/actions/useApiAction';
+import { usePageTitle } from '@/composables/usePageTitle';
 import PageLayout from '@/components/layout/PageLayout.vue';
 import TitleBar from '@/components/layout/TitleBar.vue';
 import ManageLayout from '@/components/manage/ManageLayout.vue';
@@ -226,6 +227,12 @@ const {
 const { boot } = usePageBoot({ initLanguage, fetchSystemInfo });
 
 const entityInfo = ref(null);
+const pageTitleLabel = computed(() => {
+  return props.entityType === 'user-group'
+    ? t('pageTitle.userGroup')
+    : t('pageTitle.organization');
+});
+usePageTitle(pageTitleLabel, computed(() => entityInfo.value?.name || ''));
 const entityStats = computed(() => [
   { key: 'members', icon: User, label: t('common.members'), value: entityInfo.value?.member_count ?? 0 }
 ]);
