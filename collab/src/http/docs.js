@@ -32,12 +32,23 @@ async function loadDocForRead(docs, redis, docId) {
   return buildDocFromRedis(redis, docId);
 }
 
-function encodeSnapshotResponse(doc) {
+const XML_FRAGMENT_DOC_TYPES = new Set(['yoresee_rich_text']);
+
+function encodeSnapshotResponse(doc, docType) {
   const update = Y.encodeStateAsUpdate(doc);
-  const ytext = doc.getText('content');
+  let content = '';
+
+  if (XML_FRAGMENT_DOC_TYPES.has(docType)) {
+    const fragment = doc.getXmlFragment('content');
+    content = fragment ? fragment.toString() : '';
+  } else {
+    const ytext = doc.getText('content');
+    content = ytext ? ytext.toString() : '';
+  }
+
   return {
     state: Buffer.from(update).toString('base64'),
-    content: ytext ? ytext.toString() : ''
+    content
   };
 }
 

@@ -35,13 +35,14 @@ function createRequestHandler({ redis, wsUtils, getIsDraining }) {
           return;
         }
 
+        const docType = url.searchParams.get('type') || '';
         const doc = await loadDocForRead(docs, redis, docId);
         if (!doc) {
           writeText(res, 404, 'doc not loaded');
           return;
         }
 
-        writeJson(res, 200, encodeSnapshotResponse(doc));
+        writeJson(res, 200, encodeSnapshotResponse(doc, docType));
         return;
       }
 
