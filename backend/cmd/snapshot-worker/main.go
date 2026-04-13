@@ -48,7 +48,7 @@ func main() {
 	collabCoreHTTP := utils.GetEnvVar("COLLAB_CORE_HTTP", "http://collab-core:1234")
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	dirtySetKey := constant.DirtyDocSetDefault
+	dirtySetKey := key.KeyCollabDirtyDocSet()
 	inFlight := &sync.Map{}
 
 	logrus.Infof("Snapshot worker started: topic=%s group=%s collabCore=%s", topic, group, collabCoreHTTP)

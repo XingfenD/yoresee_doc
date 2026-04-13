@@ -1,4 +1,5 @@
 const Y = require('yjs');
+const { keyCollabDocUpdates } = require('../key');
 
 function findDocInMemory(docs, docId) {
   if (!docs) {
@@ -8,7 +9,7 @@ function findDocInMemory(docs, docId) {
 }
 
 async function buildDocFromRedis(redis, docId) {
-  const redisKey = `collab:yjs:doc:updates:${docId}`;
+  const redisKey = keyCollabDocUpdates(docId);
   const updates = await redis.getListBuffers(redisKey);
   if (!updates || updates.length === 0) {
     return null;

@@ -1,13 +1,14 @@
 const Y = require('yjs');
 const redis = require('./redis');
 const backend = require('./grpc');
+const { keyCollabDocUpdates } = require('./key');
 
 const snapshotTimeoutMs = Number(process.env.BACKEND_SNAPSHOT_TIMEOUT_MS || 3000);
 
 async function loadDoc(docId) {
   const start = Date.now();
   console.log(`[doc-loader] start docId=${docId}`);
-  const redisKey = `collab:yjs:doc:updates:${docId}`;
+  const redisKey = keyCollabDocUpdates(docId);
   const backendDocId = docId;
 
   try {

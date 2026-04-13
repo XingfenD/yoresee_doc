@@ -85,3 +85,7 @@ func KeyCollabDocUpdates(docID string) string {
 func KeyCollabRoom(docID string) string {
 	return fmt.Sprintf("collab:room:doc-%s", docID)
 }
+
+func KeyCollabDirtyDocSet() string {
+	return "collab:yjs:dirty:doc"
+}

@@ -6,7 +6,6 @@ const (
 
 const (
 	DirtyDocTopicDefault = "collab.dirty_docs"
-	DirtyDocSetDefault   = "collab:yjs:dirty:doc"
 )
 
 const (

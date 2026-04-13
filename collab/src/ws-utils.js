@@ -8,6 +8,7 @@ const { loadDoc } = require('./doc-loader');
 const redis = require('./redis');
 const mq = require('./mq');
 const config = require('./config');
+const { keyCollabDocUpdates, keyCollabRoom } = require('./key');
 
 const wsReadyStateConnecting = 0;
 const wsReadyStateOpen = 1;
@@ -78,7 +79,7 @@ const persistUpdate = async (docId, doc, update) => {
   if (!docId) {
     return;
   }
-  const redisKey = `collab:yjs:doc:updates:${docId}`;
+  const redisKey = keyCollabDocUpdates(docId);
   await redis.appendListBuffer(redisKey, update);
   await redis.addDirtyDoc(docId);
   await redis.updateRoomActiveTime(`doc-${docId}`);

@@ -1,5 +1,6 @@
 const { createClient, commandOptions } = require('redis');
 const config = require('./config');
+const { keyCollabRoomRaw, keyCollabRoomPattern, parseRoomName, keyCollabYjs } = require('./key');
 
 let redisClient = null;
 
@@ -31,7 +32,7 @@ async function updateRoomActiveTime(roomName) {
   if (!redisClient) return;
 
   try {
-    const key = `collab:room:${roomName}`;
+    const key = keyCollabRoomRaw(roomName);
     await redisClient.set(key, Date.now().toString(), { EX: 3600 * 24 });
   } catch (err) {
     console.error('Failed to update room active time:', err);
@@ -42,8 +43,8 @@ async function getActiveRooms() {
   if (!redisClient) return [];
 
   try {
-    const keys = await redisClient.keys('collab:room:*');
-    return keys.map(key => key.replace('collab:room:', ''));
+    const keys = await redisClient.keys(keyCollabRoomPattern());
+    return keys.map(k => parseRoomName(k));
   } catch (err) {
     console.error('Failed to get active rooms:', err);
     return [];
@@ -54,7 +55,7 @@ async function checkRoomExists(roomName) {
   if (!redisClient) return false;
 
   try {
-    const yjsKey = `collab:yjs:${roomName}`;
+    const yjsKey = keyCollabYjs(roomName);
     const exists = await redisClient.exists(yjsKey);
     return exists;
   } catch (err) {
