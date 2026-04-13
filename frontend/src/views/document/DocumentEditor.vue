@@ -87,7 +87,7 @@
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
-              :collab-room="typedCollabRoom"
+              :collab-room="collabRoom"
               :collab-url="collabUrl"
               :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
@@ -115,12 +115,11 @@
               v-model="editorContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
-              :collab-room="typedCollabRoom"
+              :collab-room="collabRoom"
               :collab-url="collabUrl"
               :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
               @collab-sync="handleCollabSync"
-              @commit="flushRichTextSave"
               @comment-add="handleInlineCommentAdd"
               @comment-remove="handleInlineCommentRemove"
               @comment-changed="handleRemoteCommentChanged"
@@ -172,7 +171,7 @@ export default {
 </script>
 
 <script setup>
-import { computed, defineAsyncComponent, ref } from 'vue';
+import { defineAsyncComponent, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
@@ -197,9 +196,7 @@ import { useDocumentEditorPolicy } from '@/composables/document/editor/useDocume
 import { useDocumentHeaderRouting } from '@/composables/document/editor/useDocumentHeaderRouting';
 import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
 import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
-import { useRichTextDocumentPersistence } from '@/composables/document/editor/rich-text-editor/useRichTextDocumentPersistence';
 import { useUserStore } from '@/store/user';
-import { normalizeDocumentType } from '@/utils/documentType';
 import {
   getKnowledgeBaseDocuments,
   getMyDocuments,
@@ -289,6 +286,9 @@ const tableEditorRef = ref(null);
 const slideEditorRef = ref(null);
 const richTextEditorRef = ref(null);
 const commentSidebarRef = ref(null);
+const rerenderRichTextEditor = () => {
+  richTextEditorRef.value?.reRender?.();
+};
 const {
   flushTableSave,
   rerenderTableEditor
@@ -309,18 +309,6 @@ const {
   currentDocType,
   editorContent,
   slideEditorRef,
-  t,
-  getDocumentContent,
-  updateDocument
-});
-const {
-  flushRichTextSave,
-  rerenderRichTextEditor
-} = useRichTextDocumentPersistence({
-  docId,
-  currentDocType,
-  editorContent,
-  richTextEditorRef,
   t,
   getDocumentContent,
   updateDocument
@@ -357,32 +345,6 @@ const {
   kbId,
   docId,
   currentDocType
-});
-
-const markdownCollabRoom = computed(() => {
-  const base = String(collabRoom.value || '').trim();
-  if (!base) {
-    return '';
-  }
-  return `${base}:1`;
-});
-
-const richTextCollabRoom = computed(() => {
-  const base = String(collabRoom.value || '').trim();
-  if (!base) {
-    return '';
-  }
-  return `${base}:4`;
-});
-
-const typedCollabRoom = computed(() => {
-  if (isMarkdownDocument.value) {
-    return markdownCollabRoom.value;
-  }
-  if (isRichTextDocument.value) {
-    return richTextCollabRoom.value;
-  }
-  return '';
 });
 const {
   isEditingTitle,

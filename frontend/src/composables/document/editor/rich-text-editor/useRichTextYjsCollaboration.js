@@ -2,6 +2,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import Collaboration from '@tiptap/extension-collaboration';
+import {
+  createYjsContentBridge,
+  YJS_CONTENT_CARRIER,
+  YJS_CONTENT_FIELD
+} from '@/composables/document/editor/collab/useYjsContentBridge';
 
 const resolveCollabUrl = (rawUrl) => {
   const input = String(rawUrl || '').trim();
@@ -25,21 +30,6 @@ const getAwarenessPeerCount = (provider) => {
     return provider.awareness.getStates().size;
   } catch (_) {
     return 0;
-  }
-};
-
-const isFragmentEmpty = (fragment) => {
-  if (!fragment) {
-    return true;
-  }
-  if (typeof fragment.length === 'number' && fragment.length > 0) {
-    return false;
-  }
-  try {
-    const json = fragment.toJSON?.();
-    return !Array.isArray(json) || json.length === 0;
-  } catch (_) {
-    return true;
   }
 };
 
@@ -69,7 +59,7 @@ export function useRichTextYjsCollaboration(options = {}) {
   } = options;
 
   const ydocRef = ref(null);
-  const yFragmentRef = ref(null);
+  const contentBridgeRef = ref(null);
   const providerRef = ref(null);
   const collabSyncedRef = ref(false);
   const pendingSeedRef = ref(false);
@@ -95,10 +85,11 @@ export function useRichTextYjsCollaboration(options = {}) {
   };
 
   const maybeSeedAfterSync = () => {
+    const bridge = contentBridgeRef.value;
     if (!collabSyncedRef.value) {
       return;
     }
-    if (!isFragmentEmpty(yFragmentRef.value)) {
+    if (!bridge || !bridge.isEmpty()) {
       pendingSeedRef.value = false;
       return;
     }
@@ -123,7 +114,7 @@ export function useRichTextYjsCollaboration(options = {}) {
       ydocRef.value.destroy();
       ydocRef.value = null;
     }
-    yFragmentRef.value = null;
+    contentBridgeRef.value = null;
     pendingSeedRef.value = false;
     emitSync(false);
   };
@@ -141,7 +132,10 @@ export function useRichTextYjsCollaboration(options = {}) {
     }
 
     ydocRef.value = new Y.Doc();
-    yFragmentRef.value = ydocRef.value.getXmlFragment('content');
+    contentBridgeRef.value = createYjsContentBridge({
+      doc: ydocRef.value,
+      carrier: YJS_CONTENT_CARRIER.XML_FRAGMENT
+    });
 
     providerRef.value = new WebsocketProvider(url, collabRoomRef.value, ydocRef.value, {
       params: collabTokenRef.value ? { token: collabTokenRef.value } : {}
@@ -163,7 +157,7 @@ export function useRichTextYjsCollaboration(options = {}) {
     return [
       Collaboration.configure({
         document: ydocRef.value,
-        field: 'content'
+        field: YJS_CONTENT_FIELD
       })
     ];
   });

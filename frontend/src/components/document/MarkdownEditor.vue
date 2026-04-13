@@ -92,6 +92,67 @@ const { getCommentOptions, removeCommentIds, broadcastCommentChange } = useComme
   syncEditorToYjs
 });
 
+const normalizeIds = (ids = []) => {
+  if (Array.isArray(ids)) {
+    return ids.filter(Boolean);
+  }
+  return ids ? [ids] : [];
+};
+
+const getCommentIds = () => {
+  const vditor = vditorRef.value;
+  if (!vditor || typeof vditor.getCommentIds !== 'function') {
+    return [];
+  }
+  const entries = vditor.getCommentIds();
+  return Array.isArray(entries) ? entries : [];
+};
+
+const hlCommentIds = (ids = []) => {
+  const vditor = vditorRef.value;
+  if (!vditor || typeof vditor.hlCommentIds !== 'function') {
+    return;
+  }
+  const targetIds = normalizeIds(ids);
+  if (targetIds.length === 0) {
+    return;
+  }
+  vditor.hlCommentIds(targetIds);
+};
+
+const unHlCommentIds = (ids = []) => {
+  const vditor = vditorRef.value;
+  if (!vditor || typeof vditor.unHlCommentIds !== 'function') {
+    return;
+  }
+  const targetIds = normalizeIds(ids);
+  if (targetIds.length === 0) {
+    return;
+  }
+  vditor.unHlCommentIds(targetIds);
+};
+
+const scrollToCommentId = (id) => {
+  const targetId = String(id || '').trim();
+  if (!targetId) {
+    return;
+  }
+  const entries = getCommentIds();
+  const target = entries.find((entry) => entry.id === targetId);
+  const vditor = vditorRef.value;
+  const container = vditor?.vditor?.wysiwyg?.element || vditor?.vditor?.ir?.element;
+  if (!target || !container) {
+    return;
+  }
+  const top = Math.max((target.top || 0) - 24, 0);
+  if (typeof container.scrollTo === 'function') {
+    container.scrollTo({ top, behavior: 'smooth' });
+  } else {
+    container.scrollTop = top;
+  }
+  hlCommentIds([targetId]);
+};
+
 const vditorCore = useVditorCore({
   props,
   emit,
@@ -113,7 +174,11 @@ setValueSafely = vditorCore.setValueSafely;
 
 defineExpose({
   getVditor: () => vditorRef.value,
+  getCommentIds,
+  hlCommentIds,
+  unHlCommentIds,
   removeCommentIds,
+  scrollToCommentId,
   broadcastCommentChange
 });
 

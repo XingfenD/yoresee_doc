@@ -4,18 +4,11 @@ const backend = require('./grpc');
 
 const snapshotTimeoutMs = Number(process.env.BACKEND_SNAPSHOT_TIMEOUT_MS || 3000);
 
-const stripTypeSuffix = (id) => {
-  if (!id) return id;
-  const idx = id.lastIndexOf(':');
-  if (idx > 0) return id.slice(0, idx);
-  return id;
-};
-
 async function loadDoc(docId) {
   const start = Date.now();
   console.log(`[doc-loader] start docId=${docId}`);
   const redisKey = `collab:yjs:doc:updates:${docId}`;
-  const backendDocId = stripTypeSuffix(docId);
+  const backendDocId = docId;
 
   try {
     const updates = await redis.getListBuffers(redisKey);

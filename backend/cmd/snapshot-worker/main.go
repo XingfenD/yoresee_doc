@@ -113,16 +113,6 @@ func parseDocID(data []byte) string {
 	return payload
 }
 
-// stripTypeSuffix removes the ":N" type suffix from a collab docId
-// (e.g. "abc123:1" -> "abc123") to get the pure document external ID
-// that the backend database expects.
-func stripTypeSuffix(docID string) string {
-	if idx := strings.LastIndex(docID, ":"); idx > 0 {
-		return docID[:idx]
-	}
-	return docID
-}
-
 func fetchDocSnapshot(client *http.Client, baseURL, docID string) ([]byte, string, error) {
 	url := fmt.Sprintf("%s/internal/yjs/doc-snapshot/%s", strings.TrimRight(baseURL, "/"), docID)
 	resp, err := client.Get(url)
@@ -213,14 +203,13 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 	}
 	logrus.Infof("Snapshot fetched docId=%s bytes=%d", docID, len(state))
 
-	backendDocID := stripTypeSuffix(docID)
-	contentChanged, err := document_service.DocumentSvc.SaveDocumentSnapshotAndContent(ctx, backendDocID, state, content)
+	contentChanged, err := document_service.DocumentSvc.SaveDocumentSnapshotAndContent(ctx, docID, state, content)
 	if err != nil {
 		logrus.Errorf("Snapshot save failed docId=%s err=%v", docID, err)
 		return err
 	}
 	if contentChanged {
-		publishDocumentSearchSyncUpsertEvent(ctx, backendDocID)
+		publishDocumentSearchSyncUpsertEvent(ctx, docID)
 	}
 
 	if storage.GetRedis() != nil {

@@ -1,3 +1,5 @@
+import { YJS_COMMENT_META_FIELD } from '@/composables/document/editor/collab/useYjsContentBridge';
+
 export function useCommentBridge({ props, emit, vditorRef, ydocRef, syncEditorToYjs }) {
   const getCommentOptions = () => {
     if (!props.commentEnabled) {
@@ -44,7 +46,7 @@ export function useCommentBridge({ props, emit, vditorRef, ydocRef, syncEditorTo
     if (!props.collabEnabled || !ydocRef.value) {
       return;
     }
-    const commentMeta = ydocRef.value.getMap('comment_meta');
+    const commentMeta = ydocRef.value.getMap(YJS_COMMENT_META_FIELD);
     commentMeta.set('tick', `${Date.now()}_${Math.random().toString(36).slice(2)}`);
   };
 

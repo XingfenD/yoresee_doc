@@ -11,7 +11,7 @@
           v-model="valueProxy"
           class="link-dialog-input"
           type="text"
-          placeholder="https://example.com"
+          placeholder="https://yoresee.cc"
           @keydown.enter.prevent="$emit('confirm')"
         >
         <div class="link-dialog-actions">

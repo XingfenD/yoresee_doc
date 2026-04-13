@@ -1,6 +1,11 @@
 import { ref } from 'vue';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
+import {
+  createYjsContentBridge,
+  YJS_CONTENT_CARRIER,
+  YJS_COMMENT_META_FIELD
+} from '@/composables/document/editor/collab/useYjsContentBridge';
 
 export function useYjsCollaboration({
   props,
@@ -15,7 +20,8 @@ export function useYjsCollaboration({
 }) {
   const ydocRef = ref(null);
   const providerRef = ref(null);
-  const ytextRef = ref(null);
+  const contentBridgeRef = ref(null);
+  const contentObserverCleanupRef = ref(null);
   const ycommentMetaRef = ref(null);
   const commentMetaObserverRef = ref(null);
   const activeRoomRef = ref('');
@@ -90,17 +96,16 @@ export function useYjsCollaboration({
     }
     try {
       return provider.awareness.getStates().size;
-    } catch (error) {
+    } catch (_) {
       return 0;
     }
   };
 
   const syncContentToYjs = (content = '') => {
-    if (!props.collabEnabled || !ytextRef.value) {
+    if (!props.collabEnabled || !contentBridgeRef.value) {
       return;
     }
-    ytextRef.value.delete(0, ytextRef.value.length);
-    ytextRef.value.insert(0, content);
+    contentBridgeRef.value.replace(content);
   };
 
   const applyRemoteValue = (remoteValue) => {
@@ -144,8 +149,11 @@ export function useYjsCollaboration({
     }
 
     ydocRef.value = new Y.Doc();
-    ytextRef.value = ydocRef.value.getText('content');
-    ycommentMetaRef.value = ydocRef.value.getMap('comment_meta');
+    contentBridgeRef.value = createYjsContentBridge({
+      doc: ydocRef.value,
+      carrier: YJS_CONTENT_CARRIER.TEXT
+    });
+    ycommentMetaRef.value = ydocRef.value.getMap(YJS_COMMENT_META_FIELD);
     commentMetaObserverRef.value = (event) => {
       if (event?.transaction?.local) {
         return;
@@ -162,35 +170,36 @@ export function useYjsCollaboration({
     providerRef.value.on('sync', (isSynced) => {
       collabSyncedRef.value = isSynced;
       emit('collab-sync', isSynced);
-      if (!isSynced || !ytextRef.value) {
+
+      const bridge = contentBridgeRef.value;
+      if (!isSynced || !bridge) {
         return;
       }
-      const remote = ytextRef.value.toString();
-      if (ytextRef.value.length === 0) {
+      const remote = bridge.toString();
+      if (bridge.isEmpty()) {
         const peerCount = getAwarenessPeerCount();
         if (peerCount > 1) {
           return;
         }
         const seed = pendingSeedRef.value || props.modelValue || '';
-        if (seed) {
-          ytextRef.value.insert(0, seed);
-        }
+        bridge.insertIfEmpty(seed);
       } else if (remote && remote !== props.modelValue) {
         applyRemoteValue(remote);
       }
       pendingSeedRef.value = '';
     });
 
-    ytextRef.value.observe((event) => {
-      if (event?.transaction?.local) {
-        return;
-      }
-      const remoteValue = ytextRef.value?.toString() || '';
-      applyRemoteValue(remoteValue);
+    contentObserverCleanupRef.value = contentBridgeRef.value.observeRemote((remoteValue) => {
+      applyRemoteValue(remoteValue || '');
     });
   };
 
   const teardownCollaboration = () => {
+    if (contentObserverCleanupRef.value) {
+      contentObserverCleanupRef.value();
+      contentObserverCleanupRef.value = null;
+    }
+
     if (ycommentMetaRef.value && commentMetaObserverRef.value) {
       ycommentMetaRef.value.unobserve(commentMetaObserverRef.value);
     }
@@ -207,7 +216,7 @@ export function useYjsCollaboration({
       ydocRef.value = null;
     }
 
-    ytextRef.value = null;
+    contentBridgeRef.value = null;
     activeRoomRef.value = '';
     collabSyncedRef.value = false;
     pendingSeedRef.value = '';
@@ -215,27 +224,26 @@ export function useYjsCollaboration({
   };
 
   const handleModelValueChange = (newValue) => {
-    if (props.collabEnabled && ytextRef.value) {
-      if (ytextRef.value.toString() === newValue) {
+    const bridge = contentBridgeRef.value;
+    if (props.collabEnabled && bridge) {
+      if (bridge.toString() === newValue) {
         return;
       }
       if (!collabSyncedRef.value) {
         pendingSeedRef.value = newValue || '';
         return;
       }
-      if (collabSyncedRef.value && ytextRef.value.length === 0) {
+      if (bridge.isEmpty()) {
         const peerCount = getAwarenessPeerCount();
         if (peerCount > 1) {
           return;
         }
         const seed = newValue || pendingSeedRef.value || '';
         pendingSeedRef.value = '';
-        if (seed) {
-          ytextRef.value.insert(0, seed);
-        }
+        bridge.insertIfEmpty(seed);
         return;
       }
-      if (collabSyncedRef.value && ytextRef.value.length > 0 && activeRoomRef.value === props.collabRoom) {
+      if (activeRoomRef.value === props.collabRoom) {
         return;
       }
     }

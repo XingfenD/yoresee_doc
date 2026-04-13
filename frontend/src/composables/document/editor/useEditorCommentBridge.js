@@ -10,17 +10,37 @@ export function useEditorCommentBridge({
 }) {
   const remoteCommentReloadTimer = ref(null);
 
-  const getActiveEditorRef = () => {
-    if (isRichTextDocument?.value) {
-      return richTextEditorRef.value;
+  const editorCandidates = [
+    {
+      active: isRichTextDocument,
+      ref: richTextEditorRef
+    },
+    {
+      active: isMarkdownDocument,
+      ref: markdownEditorRef
     }
-    if (isMarkdownDocument?.value) {
-      return markdownEditorRef.value;
+  ];
+
+  const getActiveEditor = () => {
+    const activeEditor = editorCandidates
+      .find((candidate) => candidate.active?.value && candidate.ref?.value)
+      ?.ref?.value;
+    if (activeEditor) {
+      return activeEditor;
     }
-    return markdownEditorRef.value || richTextEditorRef.value;
+    return editorCandidates
+      .map((candidate) => candidate.ref?.value)
+      .find(Boolean) || null;
   };
 
-  const getVditorInstance = () => markdownEditorRef.value?.getVditor?.();
+  const callEditorMethod = (method, ...args) => {
+    const editor = getActiveEditor();
+    if (!editor || typeof editor[method] !== 'function') {
+      return false;
+    }
+    editor[method](...args);
+    return true;
+  };
 
   const handleInlineCommentAdd = (payload) => {
     if (isCommentCollapsed.value) {
@@ -33,53 +53,18 @@ export function useEditorCommentBridge({
     commentSidebarRef.value?.handleInlineAnchorRemove?.(ids);
   };
 
-  const highlightInlineComment = (id) => {
-    const editorRef = getActiveEditorRef();
-    if (editorRef && typeof editorRef.hlCommentIds === 'function') {
-      editorRef.hlCommentIds([id]);
-      return;
-    }
-    const vditor = getVditorInstance();
-    if (vditor && typeof vditor.hlCommentIds === 'function') {
-      vditor.hlCommentIds([id]);
-    }
-  };
-
-  const unhighlightInlineComment = (id) => {
-    const editorRef = getActiveEditorRef();
-    if (editorRef && typeof editorRef.unHlCommentIds === 'function') {
-      editorRef.unHlCommentIds([id]);
-      return;
-    }
-    const vditor = getVditorInstance();
-    if (vditor && typeof vditor.unHlCommentIds === 'function') {
-      vditor.unHlCommentIds([id]);
-    }
-  };
-
   const handleAnchorHover = (id, hovering) => {
-    if (hovering) {
-      highlightInlineComment(id);
-      return;
-    }
-    unhighlightInlineComment(id);
+    const targetMethod = hovering ? 'hlCommentIds' : 'unHlCommentIds';
+    callEditorMethod(targetMethod, [id]);
   };
 
   const handleAnchorRemove = (ids) => {
-    const editorRef = getActiveEditorRef();
-    if (editorRef && typeof editorRef.removeCommentIds === 'function') {
-      editorRef.removeCommentIds(ids);
-      return;
-    }
-    const vditor = getVditorInstance();
-    if (!vditor || typeof vditor.removeCommentIds !== 'function') {
-      return;
-    }
-    vditor.removeCommentIds(Array.isArray(ids) ? ids : [ids]);
+    const targetIds = Array.isArray(ids) ? ids : [ids];
+    callEditorMethod('removeCommentIds', targetIds);
   };
 
   const handleCommentMutated = () => {
-    getActiveEditorRef()?.broadcastCommentChange?.();
+    callEditorMethod('broadcastCommentChange');
   };
 
   const handleRemoteCommentChanged = () => {
@@ -93,30 +78,7 @@ export function useEditorCommentBridge({
   };
 
   const scrollToInlineAnchor = (id) => {
-    const editorRef = getActiveEditorRef();
-    if (editorRef && typeof editorRef.scrollToCommentId === 'function') {
-      editorRef.scrollToCommentId(id);
-      return;
-    }
-    const vditor = getVditorInstance();
-    if (!vditor || typeof vditor.getCommentIds !== 'function') {
-      return;
-    }
-    const commentEntries = vditor.getCommentIds();
-    const target = Array.isArray(commentEntries) ? commentEntries.find((entry) => entry.id === id) : null;
-    const container = vditor?.vditor?.wysiwyg?.element || vditor?.vditor?.ir?.element;
-    if (!target || !container) {
-      return;
-    }
-    const top = Math.max(target.top - 24, 0);
-    if (typeof container.scrollTo === 'function') {
-      container.scrollTo({ top, behavior: 'smooth' });
-    } else {
-      container.scrollTop = top;
-    }
-    if (typeof vditor.hlCommentIds === 'function') {
-      vditor.hlCommentIds([id]);
-    }
+    callEditorMethod('scrollToCommentId', id);
   };
 
   onBeforeUnmount(() => {
