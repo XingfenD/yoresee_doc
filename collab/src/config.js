@@ -12,6 +12,7 @@ const rabbitmqUrl = process.env.RABBITMQ_URL || '';
 const internalRpcKey = process.env.INTERNAL_RPC_KEY || '';
 const dirtyDocSetKey = process.env.DIRTY_DOC_SET_KEY || 'collab:yjs:dirty:doc';
 const dirtyDocNotifyThreshold = Number(process.env.DIRTY_DOC_NOTIFY_THRESHOLD || 200);
+const docUpdatesTTL = Number(process.env.DOC_UPDATES_TTL || 259200);
 
 module.exports = {
   port,
@@ -25,5 +26,6 @@ module.exports = {
   rabbitmqUrl,
   internalRpcKey,
   dirtyDocSetKey,
-  dirtyDocNotifyThreshold
+  dirtyDocNotifyThreshold,
+  docUpdatesTTL
 };

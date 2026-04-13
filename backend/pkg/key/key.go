@@ -77,3 +77,11 @@ func KeyJWTUserTokenSet(userExternalID string) string {
 func KeyESDocumentIndex(prefix string) string {
 	return fmt.Sprintf("%s_documents", prefix)
 }
+
+func KeyCollabDocUpdates(docID string) string {
+	return fmt.Sprintf("collab:yjs:doc:updates:%s", docID)
+}
+
+func KeyCollabRoom(docID string) string {
+	return fmt.Sprintf("collab:room:doc-%s", docID)
+}

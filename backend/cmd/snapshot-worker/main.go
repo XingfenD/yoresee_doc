@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,8 +14,10 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/service/document_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
+	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/constant"
+	"github.com/XingfenD/yoresee_doc/pkg/key"
 	"github.com/XingfenD/yoresee_doc/pkg/mq"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/bytedance/sonic"
@@ -165,7 +168,7 @@ func scanDirtyDocs(client *http.Client, baseURL, dirtySetKey string) ([]string, 
 		if docID == "" {
 			continue
 		}
-		roomKey := fmt.Sprintf("collab:room:doc-%s", docID)
+		roomKey := key.KeyCollabRoom(docID)
 		lastStr, err := storage.GetRedis().Get(ctx, roomKey).Result()
 		if err != nil {
 			logrus.Infof("Dirty doc %s skipped: room key missing", docID)
@@ -191,6 +194,9 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 	}
 	defer inFlight.Delete(docID)
 
+	updatesKey := key.KeyCollabDocUpdates(docID)
+	roomKey := key.KeyCollabRoom(docID)
+
 	logrus.Infof("Snapshot start docId=%s force=%v", docID, force)
 	state, content, err := fetchDocSnapshot(client, baseURL, docID)
 	if err != nil {
@@ -205,6 +211,11 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 
 	contentChanged, err := document_service.DocumentSvc.SaveDocumentSnapshotAndContent(ctx, docID, state, content)
 	if err != nil {
+		if errors.Is(err, status.StatusDocumentNotFound) {
+			logrus.Infof("Snapshot doc not found docId=%s, cleaning up Redis", docID)
+			cleanupCollabRedisKeys(ctx, dirtySetKey, docID, updatesKey, roomKey)
+			return nil
+		}
 		logrus.Errorf("Snapshot save failed docId=%s err=%v", docID, err)
 		return err
 	}
@@ -212,17 +223,13 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 		publishDocumentSearchSyncUpsertEvent(ctx, docID)
 	}
 
-	if storage.GetRedis() != nil {
-		key := fmt.Sprintf("collab:yjs:doc:updates:%s", docID)
-		pipe := storage.GetRedis().TxPipeline()
-		pipe.Del(ctx, key)
-		pipe.RPush(ctx, key, state)
+	if rdb := storage.GetRedis(); rdb != nil {
+		pipe := rdb.TxPipeline()
+		pipe.Del(ctx, updatesKey)
+		pipe.RPush(ctx, updatesKey, state)
+		pipe.SRem(ctx, dirtySetKey, docID)
 		if _, err := pipe.Exec(ctx); err != nil {
-			logrus.Errorf("Snapshot redis list replace failed docId=%s err=%v", docID, err)
-			return err
-		}
-		if err := storage.GetRedis().SRem(ctx, dirtySetKey, docID).Err(); err != nil {
-			logrus.Errorf("Snapshot redis srem failed docId=%s err=%v", docID, err)
+			logrus.Errorf("Snapshot redis update failed docId=%s err=%v", docID, err)
 			return err
 		}
 	}
@@ -233,6 +240,20 @@ func snapshotDoc(ctx context.Context, inFlight *sync.Map, client *http.Client, b
 		logrus.Infof("Snapshot saved (scan) for %s", docID)
 	}
 	return nil
+}
+
+func cleanupCollabRedisKeys(ctx context.Context, dirtySetKey, docID, updatesKey, roomKey string) {
+	rdb := storage.GetRedis()
+	if rdb == nil {
+		return
+	}
+	pipe := rdb.TxPipeline()
+	pipe.SRem(ctx, dirtySetKey, docID)
+	pipe.Del(ctx, updatesKey)
+	pipe.Del(ctx, roomKey)
+	if _, err := pipe.Exec(ctx); err != nil {
+		logrus.Warnf("Snapshot cleanup Redis failed docId=%s err=%v", docID, err)
+	}
 }
 
 func publishDocumentSearchSyncUpsertEvent(ctx context.Context, externalID string) {

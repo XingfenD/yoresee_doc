@@ -218,6 +218,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-yoresee_doc_jwt_secret_key}
       - COLLAB_CORE_URL=ws://${COLLAB_CORE_HOST:-collab-core}:${COLLAB_CORE_PORT:-1234}
       - BACKEND_GRPC_ADDR=${BACKEND_HOST:-backend}:${BACKEND_GRPC_PORT:-9090}
+      - INTERNAL_RPC_KEY=${BACKEND_INTERNAL_RPC_KEY:-yoresee_doc_internal_key}
     volumes:
       - ../collab-go:/app
     depends_on:

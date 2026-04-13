@@ -7,69 +7,54 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/XingfenD/yoresee_doc/collab-go/auth"
+	"github.com/XingfenD/yoresee_doc/collab-go/config"
+	"github.com/XingfenD/yoresee_doc/collab-go/handler"
 	"github.com/XingfenD/yoresee_doc/collab-go/health"
 	yoreseedocpb "github.com/XingfenD/yoresee_doc/collab-go/pkg/gen/yoresee_doc/v1"
 	"github.com/XingfenD/yoresee_doc/collab-go/proxy"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
 func main() {
-	addr := os.Getenv("ADDR")
-	if addr == "" {
-		addr = ":1234"
-	}
-	secret := os.Getenv("JWT_SECRET")
-	coreURL := os.Getenv("COLLAB_CORE_URL")
-	if coreURL == "" {
-		coreURL = "ws://collab-core:1234"
-	}
-	backendAddr := os.Getenv("BACKEND_GRPC_ADDR")
-	if backendAddr == "" {
-		backendAddr = "backend:9090"
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// var grpcConn *grpc.ClientConn
 	var systemService yoreseedocpb.SystemServiceClient
-	var err error
+	var documentService yoreseedocpb.DocumentServiceClient
 
-	// 使用推荐的 NewClient 方法替代 deprecated 的 Dial
-	grpcClient, err := grpc.NewClient(backendAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcClient, err := grpc.NewClient(cfg.BackendGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("Warning: failed to initialize gRPC client: %v. Health check will show backend as unknown.", err)
 	} else {
 		systemService = yoreseedocpb.NewSystemServiceClient(grpcClient)
+		documentService = yoreseedocpb.NewDocumentServiceClient(grpcClient)
 		defer grpcClient.Close()
 	}
 
-	authenticator := auth.NewAuthenticator(secret)
-	proxyHandler := proxy.NewProxy(coreURL)
+	authenticator := auth.NewAuthenticator(cfg.JWTSecret)
+	proxyHandler := proxy.NewProxy(cfg.CollabCoreURL)
 	healthChecker := health.NewHealthChecker(systemService)
+	wsHandler := handler.NewWSHandler(authenticator, proxyHandler, documentService, cfg.InternalRPCKey)
 
 	mux := http.NewServeMux()
 	healthChecker.RegisterProbeRoutes(mux)
-	mux.HandleFunc("/ws/doc/", func(w http.ResponseWriter, r *http.Request) {
-		handleWebSocket(w, r, authenticator, proxyHandler)
-	})
+	mux.Handle("/ws/doc/", wsHandler)
 
 	server := &http.Server{
-		Addr:              addr,
+		Addr:              cfg.Addr,
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	log.Printf("collab-gateway listening on %s", addr)
+	log.Printf("collab-gateway listening on %s", cfg.Addr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("collab-gateway exited unexpectedly: %v", err)
@@ -88,39 +73,4 @@ func main() {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Printf("collab-gateway graceful shutdown failed: %v", err)
 	}
-}
-
-func handleWebSocket(w http.ResponseWriter, r *http.Request, authenticator *auth.Authenticator, proxyHandler *proxy.Proxy) {
-	docID := strings.TrimPrefix(r.URL.Path, "/ws/doc/")
-	if docID == "" || strings.Contains(docID, "/") {
-		http.Error(w, "invalid doc id", http.StatusBadRequest)
-		return
-	}
-
-	token := r.URL.Query().Get("token")
-	if err := authenticator.ValidateToken(token); err != nil {
-		log.Printf("collab-gateway unauthorized path=%s remote=%s err=%v", r.URL.Path, r.RemoteAddr, err)
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("collab-gateway upgrade failed path=%s remote=%s err=%v", r.URL.Path, r.RemoteAddr, err)
-		return
-	}
-	defer conn.Close()
-
-	coreConn, err := proxyHandler.DialCore(docID)
-	if err != nil {
-		log.Printf("collab-gateway dial core failed docID=%s err=%v", docID, err)
-		return
-	}
-	defer coreConn.Close()
-
-	errCh := make(chan error, 2)
-	go proxyHandler.ProxyWS(conn, coreConn, errCh)
-	go proxyHandler.ProxyWS(coreConn, conn, errCh)
-
-	<-errCh
 }

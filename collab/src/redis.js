@@ -85,6 +85,9 @@ async function appendListBuffer(key, buffer) {
   try {
     const payload = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
     await redisClient.rPush(key, payload);
+    if (config.docUpdatesTTL > 0) {
+      await redisClient.expire(key, config.docUpdatesTTL);
+    }
   } catch (err) {
     console.error(`Failed to rpush buffer for ${key}:`, err.message);
   }
@@ -97,6 +100,9 @@ async function replaceListBuffer(key, buffer) {
     const pipeline = redisClient.multi();
     pipeline.del(key);
     pipeline.rPush(key, payload);
+    if (config.docUpdatesTTL > 0) {
+      pipeline.expire(key, config.docUpdatesTTL);
+    }
     await pipeline.exec();
   } catch (err) {
     console.error(`Failed to replace list buffer for ${key}:`, err.message);
