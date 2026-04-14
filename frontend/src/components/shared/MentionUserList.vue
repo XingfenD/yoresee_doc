@@ -12,10 +12,11 @@
         :class="{ 'is-active': index === activeIndex }"
         @mousedown.prevent="emit('select', user)"
       >
-        <img v-if="user.avatar" :src="user.avatar" class="mention-user-avatar" />
-        <span v-else class="mention-user-avatar mention-user-avatar--fallback">
-          {{ (user.nickname || user.username || '?').charAt(0).toUpperCase() }}
-        </span>
+        <AppAvatar
+          :src="user.avatar"
+          :name="user.nickname || user.username"
+          :size="24"
+        />
         <span class="mention-user-name">{{ user.nickname || user.username }}</span>
       </div>
     </div>
@@ -25,6 +26,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { listUsers } from '@/services/api/membership.js';
+import AppAvatar from '@/components/base/AppAvatar.vue';
 
 const props = defineProps({
   keyword: { type: String, default: '' },
@@ -81,24 +83,6 @@ watch(
 .mention-user-item:hover,
 .mention-user-item.is-active {
   background: var(--primary-light, #e8f0ff);
-}
-
-.mention-user-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.mention-user-avatar--fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-color, #165dff);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
 }
 
 .mention-user-name {

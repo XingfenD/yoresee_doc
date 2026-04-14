@@ -60,7 +60,7 @@
 
       <AppDropdown trigger="click" class="nav-item">
         <span class="user-info">
-          <el-avatar v-if="userAvatar" size="small" :src="userAvatar"></el-avatar>
+          <AppAvatar :src="userAvatar" :name="username" :size="24" />
           <span class="username">{{ username }}</span>
           <el-icon class="el-icon--right">
             <ArrowDown />
@@ -89,6 +89,7 @@ import { queryTopNavDisplay } from '@/services/auth';
 import { listNotifications } from '@/services/api';
 import { useApiAction } from '@/composables/actions/useApiAction';
 import AppDropdown from '@/components/base/AppDropdown.vue';
+import AppAvatar from '@/components/base/AppAvatar.vue';
 import {
   getTopNavDisplayMenusCache,
   setTopNavDisplayMenusCache

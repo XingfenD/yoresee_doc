@@ -1,6 +1,6 @@
 <template>
   <div class="comment-item" :class="rootClass">
-    <el-avatar v-if="showAvatar" :size="28" :src="avatar" />
+    <AppAvatar v-if="showAvatar" :src="avatar" :name="author" :size="28" />
     <div class="comment-item-main">
       <div class="comment-meta">
         <span class="comment-author">{{ author }}</span>
@@ -53,6 +53,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MoreFilled } from '@element-plus/icons-vue';
 import AppDropdown from '@/components/base/AppDropdown.vue';
+import AppAvatar from '@/components/base/AppAvatar.vue';
 
 const props = defineProps({
   avatar: {
@@ -143,6 +144,10 @@ function renderMentions(text) {
   align-items: flex-start;
   gap: 10px;
   position: relative;
+}
+
+.comment-item :deep(.app-avatar) {
+  margin-top: 5px;
 }
 
 .comment-item--reply {

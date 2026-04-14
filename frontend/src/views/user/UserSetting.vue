@@ -31,7 +31,7 @@
             <div class="setting-desc">{{ t('user.avatarHint') }}</div>
           </div>
           <div class="avatar-editor">
-            <el-avatar :size="64" :src="previewAvatar" />
+            <AppAvatar :src="previewAvatar" :name="userInfo?.nickname || userInfo?.username" :size="64" />
             <el-upload
               ref="avatarUploadRef"
               :auto-upload="false"
@@ -105,6 +105,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '@/store/user';
 import PageLayout from '@/components/layout/PageLayout.vue';
+import AppAvatar from '@/components/base/AppAvatar.vue';
 import { useUserShell } from '@/composables/shell/useUserShell';
 import { usePageBoot } from '@/composables/shell/usePageBoot';
 
