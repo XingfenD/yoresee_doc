@@ -134,6 +134,7 @@ export function useCommonListSharedState(props, emit) {
     gridTemplateColumns,
     treeDataColumns,
     treeDataGridTemplate,
+    buildGridTemplate,
     resolveRowKey,
     treeColumnResolvedKey,
     paginationPage,

@@ -4,7 +4,7 @@
       class="tree-table"
       :style="{
         '--tree-toggle-width': `${resolvedToggleWidth}px`,
-        '--tree-data-template': treeDataGridTemplate
+        '--tree-data-template': resizableDataTemplate
       }"
     >
       <!-- Header -->
@@ -12,7 +12,7 @@
         <div class="tree-toggle-head list-cell list-cell--head" />
         <div class="tree-data-head">
           <div
-            v-for="column in treeDataColumns"
+            v-for="column in effectiveDataColumns"
             :key="`tree-head-${column.key}`"
             class="list-cell list-cell--head"
             :class="[column.className, alignClass(column.headerAlign || column.align)]"
@@ -20,6 +20,10 @@
             <slot :name="`header-${column.key}`" :column="column">
               {{ column.label }}
             </slot>
+            <span
+              class="col-resize-handle"
+              @mousedown="startResize($event, column)"
+            />
           </div>
         </div>
       </div>
@@ -55,7 +59,7 @@
           <!-- Data cells -->
           <div class="tree-data-row">
             <div
-              v-for="(column, columnIndex) in treeDataColumns"
+              v-for="(column, columnIndex) in effectiveDataColumns"
               :key="`${resolveRowKey(row.raw, rowIndex)}-${column.key}`"
               class="list-cell list-cell--tree"
               :class="[column.className, alignClass(column.align)]"
@@ -100,6 +104,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Plus, Minus } from '@element-plus/icons-vue';
+import { useColumnResize } from '@/composables/list/useColumnResize.js';
 
 const props = defineProps({
   treeToggleWidth: { type: Number, default: 81 },
@@ -117,15 +122,28 @@ const props = defineProps({
   resolveRowKey: { type: Function, required: true },
   alignClass: { type: Function, required: true },
   toggleTreeNode: { type: Function, required: true },
-  isTreeColumn: { type: Function, required: true }
+  isTreeColumn: { type: Function, required: true },
+  buildGridTemplate: { type: Function, default: null },
 });
 
 defineEmits(['toggle-scroll']);
 
-// The sticky toggle column width grows with tree depth so content is never clipped
 const resolvedToggleWidth = computed(() =>
   Math.max(props.treeToggleWidth, props.maxTreeIndentWidth)
 );
+
+const treeDataColumnsRef = computed(() => props.treeDataColumns);
+
+const buildFn = computed(() =>
+  props.buildGridTemplate ??
+  ((cols) =>
+    cols
+      .map((c) => (c.width ? `${typeof c.width === 'number' ? c.width + 'px' : c.width}` : `${c.flex || 1}fr`))
+      .join(' '))
+);
+
+const { effectiveColumns: effectiveDataColumns, gridTemplateColumns: resizableDataTemplate, startResize } =
+  useColumnResize(treeDataColumnsRef, (cols) => buildFn.value(cols));
 
 const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   const page = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
@@ -136,7 +154,6 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
 </script>
 
 <style scoped>
-/* ── Outer scroll container ── */
 .tree-table-scroll {
   overflow-x: auto;
 }
@@ -144,12 +161,10 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
 .tree-table {
   display: flex;
   flex-direction: column;
-  /* Prevent data columns from compressing */
   min-width: max-content;
   width: 100%;
 }
 
-/* ── Head row ── */
 .tree-head {
   display: grid;
   grid-template-columns: var(--tree-toggle-width) 1fr;
@@ -157,7 +172,6 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
 
 .tree-toggle-head {
   justify-content: center;
-  /* Stick while scrolling horizontally */
   position: sticky;
   left: 0;
   z-index: 2;
@@ -168,7 +182,6 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   grid-template-columns: var(--tree-data-template);
 }
 
-/* ── Body ── */
 .tree-body {
   display: flex;
   flex-direction: column;
@@ -179,7 +192,6 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   grid-template-columns: var(--tree-toggle-width) 1fr;
 }
 
-/* Sticky toggle column per row */
 .tree-toggle-cell {
   position: sticky;
   left: 0;
@@ -205,7 +217,6 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   grid-template-columns: var(--tree-data-template);
 }
 
-/* ── Shared cell styles ── */
 .list-cell {
   min-width: 0;
   padding: 12px 14px;
@@ -216,6 +227,7 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .list-cell--head {
@@ -224,6 +236,7 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   color: var(--list-head-text, #1f2937);
   background: var(--list-head-bg, #e5ebf2);
   border-bottom-color: var(--list-head-border, #aeb8c6);
+  overflow: visible;
 }
 
 .list-cell--tree {
@@ -239,7 +252,6 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
 .is-center { justify-content: center;     text-align: center; }
 .is-right  { justify-content: flex-end;   text-align: right; }
 
-/* ── Tree controls ── */
 .tree-cell {
   display: flex;
   align-items: center;
@@ -279,5 +291,33 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
 .tree-node-label {
   font-size: 14px;
   color: var(--text-medium);
+}
+
+/* ── Resize handle ── */
+.col-resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.col-resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  top: 20%;
+  bottom: 20%;
+  width: 2px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.list-cell--head:hover .col-resize-handle::after,
+.col-resize-handle:hover::after {
+  background: var(--primary-color, #165dff);
 }
 </style>

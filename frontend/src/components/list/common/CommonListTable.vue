@@ -1,8 +1,8 @@
 <template>
   <div v-if="displayColumns.length > 0" class="list-table-scroll">
-    <div class="list-head" :style="{ gridTemplateColumns }">
+    <div class="list-head" :style="{ gridTemplateColumns: resizableGridTemplate }">
       <div
-        v-for="column in displayColumns"
+        v-for="column in effectiveColumns"
         :key="`head-${column.key}`"
         class="list-cell list-cell--head"
         :class="[column.className, alignClass(column.headerAlign || column.align)]"
@@ -10,6 +10,11 @@
         <slot :name="`header-${column.key}`" :column="column">
           {{ column.key === treeToggleColumnKey ? '' : column.label }}
         </slot>
+        <span
+          v-if="column.key !== treeToggleColumnKey"
+          class="col-resize-handle"
+          @mousedown="startResize($event, column)"
+        />
       </div>
     </div>
     <div class="list-body">
@@ -17,10 +22,10 @@
         v-for="(row, rowIndex) in rows"
         :key="resolveRowKey(row, rowIndex)"
         class="list-row"
-        :style="{ gridTemplateColumns }"
+        :style="{ gridTemplateColumns: resizableGridTemplate }"
       >
         <div
-          v-for="column in displayColumns"
+          v-for="column in effectiveColumns"
           :key="`${resolveRowKey(row, rowIndex)}-${column.key}`"
           class="list-cell"
           :class="[column.className, alignClass(column.align)]"
@@ -46,7 +51,10 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue';
+import { useColumnResize } from '@/composables/list/useColumnResize.js';
+
+const props = defineProps({
   rows: { type: Array, default: () => [] },
   columns: { type: Array, default: () => [] },
   displayColumns: { type: Array, default: () => [] },
@@ -55,15 +63,28 @@ defineProps({
   pageSize: { type: Number, default: 10 },
   treeToggleColumnKey: { type: String, default: '__tree_toggle__' },
   resolveRowKey: { type: Function, required: true },
-  alignClass: { type: Function, required: true }
+  alignClass: { type: Function, required: true },
+  buildGridTemplate: { type: Function, default: null },
 });
+
+const displayColumnsRef = computed(() => props.displayColumns);
+
+const buildFn = computed(() =>
+  props.buildGridTemplate ??
+  // Fallback: fixed-width columns use px, others use fr
+  ((cols) =>
+    cols
+      .map((c) => (c.width ? `${typeof c.width === 'number' ? c.width + 'px' : c.width}` : `${c.flex || 1}fr`))
+      .join(' '))
+);
+
+const { effectiveColumns, gridTemplateColumns: resizableGridTemplate, startResize } =
+  useColumnResize(displayColumnsRef, (cols) => buildFn.value(cols));
 
 const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   const page = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
   const size = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 0;
-  if (size <= 0) {
-    return rowIndex + 1;
-  }
+  if (size <= 0) return rowIndex + 1;
   return (Math.max(page, 1) - 1) * size + rowIndex + 1;
 };
 </script>
@@ -90,6 +111,7 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .list-cell--head {
@@ -98,25 +120,43 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   color: var(--list-head-text, #1f2937);
   background: var(--list-head-bg, #e5ebf2);
   border-bottom-color: var(--list-head-border, #aeb8c6);
+  overflow: visible;
 }
 
 .list-row:last-child .list-cell {
   border-bottom: none;
 }
 
-.is-left {
-  justify-content: flex-start;
-  text-align: left;
+.is-left   { justify-content: flex-start; text-align: left; }
+.is-center { justify-content: center;     text-align: center; }
+.is-right  { justify-content: flex-end;   text-align: right; }
+
+/* ── Resize handle ── */
+.col-resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 1;
+  /* Invisible by default, highlight on hover */
 }
 
-.is-center {
-  justify-content: center;
-  text-align: center;
+.col-resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  top: 20%;
+  bottom: 20%;
+  width: 2px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background 0.15s;
 }
 
-.is-right {
-  justify-content: flex-end;
-  text-align: right;
+.list-cell--head:hover .col-resize-handle::after,
+.col-resize-handle:hover::after {
+  background: var(--primary-color, #165dff);
 }
-
 </style>

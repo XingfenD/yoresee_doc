@@ -39,6 +39,7 @@
         :tree-toggle-column-key="treeToggleColumnKey"
         :resolve-row-key="resolveRowKey"
         :align-class="alignClass"
+        :build-grid-template="buildGridTemplate"
       >
         <template v-for="name in forwardedSlotNames" :key="`table-${name}`" #[name]="slotProps">
           <slot :name="name" v-bind="slotProps || {}" />
@@ -63,6 +64,7 @@
         :align-class="alignClass"
         :toggle-tree-node="toggleTreeNode"
         :is-tree-column="isTreeColumn"
+        :build-grid-template="buildGridTemplate"
         @toggle-scroll="setToggleScrollLeft"
       >
         <template v-for="name in forwardedSlotNames" :key="`tree-${name}`" #[name]="slotProps">
@@ -237,6 +239,7 @@ const {
   gridTemplateColumns,
   treeDataColumns,
   treeDataGridTemplate,
+  buildGridTemplate,
   resolveRowKey,
   treeColumnResolvedKey,
   paginationPage,
