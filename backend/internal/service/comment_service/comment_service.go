@@ -81,7 +81,7 @@ func (s *CommentService) CreateComment(req *dto.CreateCommentRequest) (*model.Do
 	if req.Quote != nil {
 		notifyQuote = strings.TrimSpace(*req.Quote)
 	}
-	s.notifyCommentTargets(doc, item, parentComment, notifyQuote)
+	s.notifyCommentTargets(doc, item, parentComment, notifyQuote, req.MentionedUserExternalIDs)
 	return item, nil
 }
 
@@ -152,7 +152,7 @@ func (s *CommentService) UpdateComment(req *dto.UpdateCommentRequest, isAdmin bo
 
 var CommentSvc = NewCommentService()
 
-func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *model.DocumentComment, parent *model.DocumentComment, quote string) {
+func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *model.DocumentComment, parent *model.DocumentComment, quote string, mentionedUserExternalIDs []string) {
 	if doc == nil || comment == nil {
 		return
 	}
@@ -176,6 +176,12 @@ func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *mode
 		}
 	}
 
+	for _, mentionedID := range mentionedUserExternalIDs {
+		if strings.TrimSpace(mentionedID) != "" && mentionedID != comment.ExternalID {
+			receiverSet[mentionedID] = struct{}{}
+		}
+	}
+
 	if len(receiverSet) == 0 {
 		return
 	}
@@ -186,10 +192,11 @@ func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *mode
 	}
 
 	payload := map[string]any{
-		"document_external_id":       doc.ExternalID,
-		"comment_external_id":        comment.ExternalID,
-		"document_title":             doc.Title,
-		"parent_comment_external_id": parentExternalID,
+		"document_external_id":         doc.ExternalID,
+		"comment_external_id":          comment.ExternalID,
+		"document_title":               doc.Title,
+		"parent_comment_external_id":   parentExternalID,
+		"mentioned_user_external_ids":  mentionedUserExternalIDs,
 	}
 	payloadJSON, _ := json.Marshal(payload)
 

@@ -1,12 +1,13 @@
 package dto
 
 type CreateCommentRequest struct {
-	DocumentExternalID string
-	Content            string
-	ParentExternalID   *string
-	AnchorID           *string
-	Quote              *string
-	CreatorExternalID  string
+	DocumentExternalID        string
+	Content                   string
+	ParentExternalID          *string
+	AnchorID                  *string
+	Quote                     *string
+	CreatorExternalID         string
+	MentionedUserExternalIDs  []string
 }
 
 type ListCommentsRequest struct {

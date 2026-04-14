@@ -692,6 +692,7 @@ message CreateDocumentCommentRequest {
   optional string parent_external_id = 3;
   optional string anchor_id = 4;
   optional string quote = 5;
+  repeated string mentioned_user_external_ids = 6;
 }
 
 message CreateDocumentCommentResponse {

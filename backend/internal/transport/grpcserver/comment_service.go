@@ -51,12 +51,13 @@ func (s *CommentServiceServer) CreateDocumentComment(ctx context.Context, req *p
 	}
 
 	comment, err := comment_service.CommentSvc.CreateComment(&dto.CreateCommentRequest{
-		DocumentExternalID: req.DocumentExternalId,
-		Content:            req.Content,
-		ParentExternalID:   parentExternalID,
-		AnchorID:           anchorID,
-		Quote:              quote,
-		CreatorExternalID:  userExternalID,
+		DocumentExternalID:       req.DocumentExternalId,
+		Content:                  req.Content,
+		ParentExternalID:         parentExternalID,
+		AnchorID:                 anchorID,
+		Quote:                    quote,
+		CreatorExternalID:        userExternalID,
+		MentionedUserExternalIDs: req.MentionedUserExternalIds,
 	})
 	if err != nil {
 		return &pb.CreateDocumentCommentResponse{Base: baseResponseFromErr(err)}, nil
