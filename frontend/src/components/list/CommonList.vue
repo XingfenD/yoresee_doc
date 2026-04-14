@@ -285,6 +285,7 @@ const {
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  overflow-x: auto;
 }
 
 .common-list.is-tree {
