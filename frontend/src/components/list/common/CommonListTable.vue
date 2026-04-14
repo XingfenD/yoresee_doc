@@ -1,5 +1,5 @@
 <template>
-  <template v-if="displayColumns.length > 0">
+  <div v-if="displayColumns.length > 0" class="list-table-scroll">
     <div class="list-head" :style="{ gridTemplateColumns }">
       <div
         v-for="column in displayColumns"
@@ -42,7 +42,7 @@
         </div>
       </div>
     </div>
-  </template>
+  </div>
 </template>
 
 <script setup>
@@ -69,9 +69,14 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
 </script>
 
 <style scoped>
+.list-table-scroll {
+  overflow-x: auto;
+}
+
 .list-head,
 .list-row {
   display: grid;
+  min-width: max-content;
   width: 100%;
 }
 
