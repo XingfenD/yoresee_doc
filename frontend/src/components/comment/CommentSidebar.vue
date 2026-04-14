@@ -46,11 +46,10 @@
           >
             <template #editor>
               <div class="inline-comment-editor">
-                <el-input
+                <MentionTextarea
                   v-model="item.draft"
-                  type="textarea"
-                  :autosize="{ minRows: 2, maxRows: 4 }"
                   :placeholder="t('document.inlineCommentInputPlaceholder')"
+                  @mention-users-change="(ids) => { item.mentionedUserExternalIds = ids }"
                 />
                 <div class="inline-comment-editor-actions">
                   <el-button size="small" type="primary" :loading="item.saving" @click="saveEdit(item)">
@@ -75,6 +74,7 @@ import { useI18n } from 'vue-i18n';
 import { ArrowRight } from '@element-plus/icons-vue';
 import CommentList from '@/components/comment/CommentList.vue';
 import CommentItem from '@/components/comment/CommentItem.vue';
+import MentionTextarea from '@/components/comment/MentionTextarea.vue';
 import PanelSidebarShell from '@/components/layout/PanelSidebarShell.vue';
 import { usePanelSidebar } from '@/composables/layout/usePanelSidebar';
 import { useInlineComments } from '@/composables/document/comments/useInlineComments';

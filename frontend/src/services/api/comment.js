@@ -19,7 +19,8 @@ export const createDocumentComment = async (data = {}) => {
     documentExternalId: data.document_external_id || '',
     content: data.content || '',
     parentExternalId: data.parent_external_id || undefined,
-    anchorId: data.anchor_id || undefined
+    anchorId: data.anchor_id || undefined,
+    mentionedUserExternalIds: data.mentioned_user_external_ids || []
   });
   const resp = await unaryCall(commentClient, 'createDocumentComment', req);
   const base = baseToObject(resp);

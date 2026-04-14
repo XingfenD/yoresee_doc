@@ -1,0 +1,18 @@
+.mention-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--primary-light, #e8f0fe);
+  color: var(--primary-color, #165dff);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
+.mention-chip:hover {
+  background: #d2e3fc;
+}

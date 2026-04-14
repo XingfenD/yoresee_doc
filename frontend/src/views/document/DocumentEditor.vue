@@ -119,6 +119,7 @@
               :collab-url="collabUrl"
               :collab-token="collabToken"
               :comment-enabled="inlineCommentEnabled"
+              :external-extensions="richTextExtensions"
               @collab-sync="handleCollabSync"
               @comment-add="handleInlineCommentAdd"
               @comment-remove="handleInlineCommentRemove"
@@ -184,6 +185,7 @@ import DocumentCreateDialog from '@/components/document/DocumentCreateDialog.vue
 import DocumentEditorHeader from '@/components/document/DocumentEditorHeader.vue';
 import PageLayout from '@/components/layout/PageLayout.vue';
 import TemplateCreateDialog from '@/components/template/TemplateCreateDialog.vue';
+import { MentionExtension } from '@/components/document/rich-text/extensions/mentionExtension.js';
 import { useWorkspaceShell } from '@/composables/shell/useWorkspaceShell';
 import { useDocumentRouteContext } from '@/composables/document/editor/useDocumentRouteContext';
 import { useDirectoryTreeState } from '@/composables/document/tree/useDirectoryTreeState';
@@ -289,6 +291,7 @@ const tableEditorRef = ref(null);
 const slideEditorRef = ref(null);
 const richTextEditorRef = ref(null);
 const commentSidebarRef = ref(null);
+const richTextExtensions = [MentionExtension];
 const rerenderRichTextEditor = () => {
   richTextEditorRef.value?.reRender?.();
 };

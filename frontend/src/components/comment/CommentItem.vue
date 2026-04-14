@@ -33,10 +33,9 @@
         v-else
         class="comment-text"
         :class="{ 'comment-text--clickable': contentClickable }"
+        v-html="renderMentions(content)"
         @click="handleContentClick"
-      >
-        {{ content }}
-      </div>
+      />
       <button
         v-if="!editing && replyable"
         type="button"
@@ -123,6 +122,19 @@ const handleContentClick = () => {
   }
   emit('content-click');
 };
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderMentions(text) {
+  if (!text) return '';
+  return escapeHtml(text).replace(/@([\w\u4e00-\u9fa5]+)/g, '<span class="mention-chip">@$1</span>');
+}
 </script>
 
 <style scoped>

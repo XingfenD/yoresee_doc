@@ -131,7 +131,8 @@ export function useInlineCommentCrud({
           document_external_id: docId,
           content,
           parent_external_id: item.parent_external_id || undefined,
-          anchor_id: item.anchor_id
+          anchor_id: item.anchor_id,
+          mentioned_user_external_ids: item.mentionedUserExternalIds || []
         });
         const saved = resp.comment;
         item.content = saved?.content || content;
@@ -144,6 +145,7 @@ export function useInlineCommentCrud({
         item.anchor_id = saved?.anchor_id || item.anchor_id;
         item.editing = false;
         item.draft = '';
+        item.mentionedUserExternalIds = [];
         if (typeof onCommentMutated === 'function') {
           onCommentMutated({ type: 'create', comment_id: item.external_id, anchor_id: item.anchor_id });
         }
