@@ -172,7 +172,7 @@ export default {
 </script>
 
 <script setup>
-import { defineAsyncComponent, ref, computed } from 'vue';
+import { defineAsyncComponent, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { FullScreen, ScaleToOriginal } from '@element-plus/icons-vue';
@@ -448,6 +448,18 @@ const {
   cancelEditTitle,
   recordRecentDocument
 });
+
+// When navigating from the notification center with ?comment=<anchorId>,
+// auto-expand the comment sidebar and scroll to the referenced comment.
+watch(collabReady, (ready) => {
+  if (!ready) return;
+  const anchorId = route.query.comment;
+  if (!anchorId) return;
+  isCommentCollapsed.value = false;
+  setTimeout(() => {
+    scrollToInlineAnchor(String(anchorId));
+  }, 600);
+}, { once: true });
 </script>
 
 <style scoped>

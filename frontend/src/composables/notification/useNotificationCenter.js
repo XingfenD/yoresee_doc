@@ -59,7 +59,13 @@ export function useNotificationCenter({ t }) {
     return value || t('user.notifications.types.system');
   };
 
-  const buildTitle = (row) => row.title || row.content || '-';
+  const buildTitle = (row) => {
+    if (row.type === 'mention') return t('user.notifications.titles.mention');
+    if (row.type === 'reply') return t('user.notifications.titles.reply');
+    if (row.type === 'comment') return t('user.notifications.titles.comment');
+    if (row.type === 'system') return t('user.notifications.titles.system');
+    return row.title || row.content || '-';
+  };
 
   const formatDate = (value) => {
     if (!value) return '-';

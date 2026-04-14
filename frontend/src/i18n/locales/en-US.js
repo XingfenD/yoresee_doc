@@ -342,6 +342,12 @@ export default {
         reply: 'Reply',
         mention: 'Mention',
         system: 'System'
+      },
+      titles: {
+        comment: 'New comment on your document',
+        reply: 'Someone replied to your comment',
+        mention: 'You were mentioned in a comment',
+        system: 'System notification'
       }
     },
     invite: {

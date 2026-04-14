@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/XingfenD/yoresee_doc/internal/constant"
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/internal/repository/comment_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
+	"github.com/XingfenD/yoresee_doc/internal/repository/knowledge_base_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
@@ -20,6 +22,7 @@ type CommentService struct {
 	commentRepo  *comment_repo.CommentRepository
 	documentRepo *document_repo.DocumentRepository
 	userRepo     *user_repo.UserRepository
+	kbRepo       *knowledge_base_repo.KnowledgeBaseRepository
 }
 
 func NewCommentService() *CommentService {
@@ -27,6 +30,7 @@ func NewCommentService() *CommentService {
 		commentRepo:  comment_repo.CommentRepo,
 		documentRepo: &document_repo.DocumentRepo,
 		userRepo:     user_repo.UserRepo,
+		kbRepo:       knowledge_base_repo.KnowledgeBaseRepo,
 	}
 }
 
@@ -156,58 +160,97 @@ func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *mode
 	if doc == nil || comment == nil {
 		return
 	}
-	receiverSet := map[string]struct{}{}
 
-	if doc.UserID != comment.CreatorID {
-		owner, err := s.userRepo.GetByID(doc.UserID).Exec()
-		if err == nil && owner != nil && strings.TrimSpace(owner.ExternalID) != "" {
-			receiverSet[owner.ExternalID] = struct{}{}
+	// Resolve knowledge base external ID for navigation payload
+	kbExternalID := ""
+	if doc.KnowledgeID != nil && *doc.KnowledgeID != 0 {
+		kb, err := s.kbRepo.GetByID(*doc.KnowledgeID).Exec()
+		if err == nil && kb != nil {
+			kbExternalID = kb.ExternalID
 		}
 	}
 
 	parentExternalID := ""
 	if parent != nil && parent.ID != 0 {
 		parentExternalID = parent.ExternalID
+	}
+
+	payloadBase := map[string]any{
+		"document_external_id":        doc.ExternalID,
+		"comment_external_id":         comment.ExternalID,
+		"document_title":              doc.Title,
+		"parent_comment_external_id":  parentExternalID,
+		"knowledge_base_external_id":  kbExternalID,
+		"mentioned_user_external_ids": mentionedUserExternalIDs,
+	}
+	payloadJSON, _ := json.Marshal(payloadBase)
+	payloadStr := string(payloadJSON)
+
+	publish := func(receivers []string, notifType, title string) {
+		if len(receivers) == 0 {
+			return
+		}
+		evt := domain_event.NotificationCreateEvent{
+			ReceiverExternalIDs: receivers,
+			Type:                notifType,
+			Title:               title,
+			Content:             comment.Content,
+			PayloadJSON:         payloadStr,
+		}
+		if err := domain_event.PublishNotificationCreateEvent(context.Background(), evt); err != nil {
+			logrus.Errorf("publish %s notification failed: %v", notifType, err)
+		}
+	}
+
+	// Build mention receiver set (highest priority — skip for other types)
+	mentionSet := map[string]struct{}{}
+	for _, id := range mentionedUserExternalIDs {
+		id = strings.TrimSpace(id)
+		if id != "" && id != comment.ExternalID {
+			mentionSet[id] = struct{}{}
+		}
+	}
+
+	// Build reply receivers (parent comment creator, excluding commenter and mention receivers)
+	var replyReceivers []string
+	if parent != nil && parent.ID != 0 {
 		parentCreator, err := s.userRepo.GetByID(parent.CreatorID).Exec()
-		if err == nil && parentCreator != nil && strings.TrimSpace(parentCreator.ExternalID) != "" {
-			if parentCreator.ID != comment.CreatorID {
-				receiverSet[parentCreator.ExternalID] = struct{}{}
+		if err == nil && parentCreator != nil {
+			id := strings.TrimSpace(parentCreator.ExternalID)
+			if id != "" && parentCreator.ID != comment.CreatorID {
+				if _, isMentioned := mentionSet[id]; !isMentioned {
+					replyReceivers = append(replyReceivers, id)
+				}
 			}
 		}
 	}
 
-	for _, mentionedID := range mentionedUserExternalIDs {
-		if strings.TrimSpace(mentionedID) != "" && mentionedID != comment.ExternalID {
-			receiverSet[mentionedID] = struct{}{}
+	// Build comment receivers (document owner, excluding commenter, reply receivers, and mention receivers)
+	replySet := map[string]struct{}{}
+	for _, id := range replyReceivers {
+		replySet[id] = struct{}{}
+	}
+	var commentReceivers []string
+	if doc.UserID != comment.CreatorID {
+		owner, err := s.userRepo.GetByID(doc.UserID).Exec()
+		if err == nil && owner != nil {
+			id := strings.TrimSpace(owner.ExternalID)
+			if id != "" {
+				if _, isMentioned := mentionSet[id]; !isMentioned {
+					if _, isReply := replySet[id]; !isReply {
+						commentReceivers = append(commentReceivers, id)
+					}
+				}
+			}
 		}
 	}
 
-	if len(receiverSet) == 0 {
-		return
+	mentionReceivers := make([]string, 0, len(mentionSet))
+	for id := range mentionSet {
+		mentionReceivers = append(mentionReceivers, id)
 	}
 
-	receivers := make([]string, 0, len(receiverSet))
-	for id := range receiverSet {
-		receivers = append(receivers, id)
-	}
-
-	payload := map[string]any{
-		"document_external_id":         doc.ExternalID,
-		"comment_external_id":          comment.ExternalID,
-		"document_title":               doc.Title,
-		"parent_comment_external_id":   parentExternalID,
-		"mentioned_user_external_ids":  mentionedUserExternalIDs,
-	}
-	payloadJSON, _ := json.Marshal(payload)
-
-	evt := domain_event.NotificationCreateEvent{
-		ReceiverExternalIDs: receivers,
-		Type:                "comment",
-		Title:               "新评论",
-		Content:             comment.Content,
-		PayloadJSON:         string(payloadJSON),
-	}
-	if err := domain_event.PublishNotificationCreateEvent(context.Background(), evt); err != nil {
-		logrus.Errorf("publish comment notification failed: %v", err)
-	}
+	publish(mentionReceivers, constant.NotificationType_Mention, constant.GetNotificationTitle(constant.NotificationType_Mention))
+	publish(replyReceivers, constant.NotificationType_Reply, constant.GetNotificationTitle(constant.NotificationType_Reply))
+	publish(commentReceivers, constant.NotificationType_Comment, constant.GetNotificationTitle(constant.NotificationType_Comment))
 }

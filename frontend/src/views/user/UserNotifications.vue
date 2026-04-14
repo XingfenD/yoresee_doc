@@ -145,8 +145,23 @@ const {
 onMounted(() => {
   boot(init);
 });
-const openDetail = () => {
-  // Sample only; would route to doc + comment anchor in real integration.
+const openDetail = (row) => {
+  const payload = (() => {
+    try { return JSON.parse(row.payload || '{}'); } catch { return {}; }
+  })();
+  const docId = payload.document_external_id;
+  const commentId = payload.comment_external_id;
+  const kbId = payload.knowledge_base_external_id;
+  if (!docId) return;
+
+  if (!row.read) markRead(row);
+
+  const query = commentId ? { comment: commentId } : {};
+  if (kbId) {
+    router.push({ name: 'KnowledgeBaseDocumentEditor', params: { kbId, docId }, query });
+  } else {
+    router.push({ name: 'MyDocumentEditor', params: { docId }, query });
+  }
 };
 </script>
 

@@ -340,6 +340,12 @@ export default {
         reply: '回复',
         mention: '@我',
         system: '系统'
+      },
+      titles: {
+        comment: '收到新评论',
+        reply: '回复了你的评论',
+        mention: '在评论中提及了你',
+        system: '系统通知'
       }
     },
     invite: {
