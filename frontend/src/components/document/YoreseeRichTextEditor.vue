@@ -74,6 +74,15 @@
     <footer class="rich-text-hint">
       {{ t('document.richTextShortcutHint') }}
     </footer>
+
+    <!-- Mention popup — rendered inside the main app so it inherits theme/CSS vars -->
+    <MentionUserList
+      :visible="mentionPopupState.visible"
+      :keyword="mentionPopupState.keyword"
+      :position="mentionPopupState.position"
+      :active-index="mentionPopupState.activeIndex"
+      @select="onMentionSelect"
+    />
   </div>
 </template>
 
@@ -86,6 +95,8 @@ import RichTextCodeLanguageFloating from '@/components/document/rich-text/overla
 import RichTextSelectionActionBubble from '@/components/document/rich-text/overlay/RichTextSelectionActionBubble.vue';
 import RichTextLinkHoverCard from '@/components/document/rich-text/overlay/RichTextLinkHoverCard.vue';
 import RichTextLinkDialog from '@/components/document/rich-text/overlay/RichTextLinkDialog.vue';
+import MentionUserList from '@/components/shared/MentionUserList.vue';
+import { mentionPopupState, hideMentionPopup } from '@/components/document/rich-text/mentionPopupState.js';
 import { useRichTextParagraphHandle } from '@/composables/document/editor/rich-text-editor/useRichTextParagraphHandle';
 import { useRichTextValueBridge } from '@/composables/document/editor/rich-text-editor/useRichTextValueBridge';
 import { useRichTextCodeLanguageOverlay } from '@/composables/document/editor/rich-text-editor/useRichTextCodeLanguageOverlay';
@@ -96,6 +107,11 @@ import { useRichTextEditorRuntime } from '@/composables/document/editor/rich-tex
 import { useRichTextSelectionColors } from '@/composables/document/editor/rich-text-editor/useRichTextSelectionColors';
 import { useRichTextParagraphActions } from '@/composables/document/editor/rich-text-editor/useRichTextParagraphActions';
 import { useRichTextYjsCollaboration } from '@/composables/document/editor/rich-text-editor/useRichTextYjsCollaboration';
+
+function onMentionSelect(user) {
+  mentionPopupState.onSelect?.(user);
+  hideMentionPopup();
+}
 
 const props = defineProps({
   modelValue: {

@@ -1,107 +1,61 @@
-import { createApp, h } from 'vue';
-import MentionUserList from '@/components/shared/MentionUserList.vue';
-import { listUsers } from '@/services/api/membership.js';
+import { mentionPopupState, hideMentionPopup } from './mentionPopupState.js';
 
 /**
  * Tiptap suggestion configuration for @mention.
+ * UI is rendered by MentionUserList inside the main Vue app (via YoreseeRichTextEditor).
+ * This file only drives the reactive state — no createApp, no DOM manipulation.
  */
 export const mentionSuggestion = {
   char: '@',
   allowSpaces: false,
   startOfLine: false,
 
-  items: async ({ query }) => {
-    try {
-      const result = await listUsers({ keyword: query, page: 1, page_size: 8 });
-      return result.users || [];
-    } catch {
-      return [];
-    }
-  },
+  // items() is not used here — fetching is done inside MentionUserList via watch on keyword
+  items: () => [],
 
   render: () => {
-    let app = null;
-    let mountEl = null;
-    let currentProps = {};
-
     function getPosition(clientRect) {
       const rect = typeof clientRect === 'function' ? clientRect() : clientRect;
       if (!rect) return { x: 0, y: 0 };
       return { x: rect.left, y: rect.bottom + 4 };
     }
 
-    function remount() {
-      if (app) {
-        app.unmount();
-        app = null;
-      }
-      if (!mountEl) {
-        mountEl = document.createElement('div');
-        document.body.appendChild(mountEl);
-      }
-
-      const props = { ...currentProps };
-      app = createApp({
-        render: () => h(MentionUserList, props),
-      });
-      app.mount(mountEl);
-    }
-
     return {
       onStart(props) {
-        currentProps = {
-          visible: true,
-          keyword: props.query || '',
-          position: getPosition(props.clientRect),
-          activeIndex: 0,
-          onSelect: (user) => props.command({ id: user.external_id, label: user.nickname || user.username }),
-        };
-        remount();
+        mentionPopupState.visible = true;
+        mentionPopupState.keyword = props.query || '';
+        mentionPopupState.position = getPosition(props.clientRect);
+        mentionPopupState.activeIndex = 0;
+        mentionPopupState.onSelect = (user) =>
+          props.command({ id: user.external_id, label: user.nickname || user.username });
       },
 
       onUpdate(props) {
-        currentProps = {
-          visible: true,
-          keyword: props.query || '',
-          position: getPosition(props.clientRect),
-          activeIndex: currentProps.activeIndex || 0,
-          onSelect: (user) => props.command({ id: user.external_id, label: user.nickname || user.username }),
-        };
-        remount();
+        mentionPopupState.keyword = props.query || '';
+        mentionPopupState.position = getPosition(props.clientRect);
+        mentionPopupState.onSelect = (user) =>
+          props.command({ id: user.external_id, label: user.nickname || user.username });
       },
 
       onKeyDown({ event }) {
+        if (!mentionPopupState.visible) return false;
         if (event.key === 'Escape') {
-          currentProps = { ...currentProps, visible: false };
-          remount();
+          hideMentionPopup();
           return true;
         }
         if (event.key === 'ArrowDown') {
-          currentProps = { ...currentProps, activeIndex: (currentProps.activeIndex + 1) % 8 };
-          remount();
+          mentionPopupState.activeIndex = (mentionPopupState.activeIndex + 1) % 8;
           return true;
         }
         if (event.key === 'ArrowUp') {
-          currentProps = { ...currentProps, activeIndex: Math.max(0, currentProps.activeIndex - 1) };
-          remount();
+          mentionPopupState.activeIndex = Math.max(0, mentionPopupState.activeIndex - 1);
           return true;
-        }
-        if (event.key === 'Enter') {
-          // Handled by MentionUserList click; skip here to avoid double submit
-          return false;
         }
         return false;
       },
 
       onExit() {
-        if (app) {
-          app.unmount();
-          app = null;
-        }
-        if (mountEl) {
-          document.body.removeChild(mountEl);
-          mountEl = null;
-        }
+        hideMentionPopup();
       },
     };
   },
