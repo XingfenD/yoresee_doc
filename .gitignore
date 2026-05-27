@@ -2,6 +2,7 @@
 .trae/
 .idea/
 .claude/
+.codegraph/
 temp/
 tmp/
 
