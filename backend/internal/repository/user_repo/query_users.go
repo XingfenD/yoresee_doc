@@ -12,7 +12,6 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/cache"
 	"github.com/XingfenD/yoresee_doc/pkg/key"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -62,10 +61,10 @@ func (op *QueryUsersOperation) WithPagination(page, pageSize int) *QueryUsersOpe
 
 func (op *QueryUsersOperation) ExecWithTotal() ([]model.User, int64, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
-	if op.tx == storage.DB && op.page > 0 && op.pageSize > 0 {
+	if op.tx == op.repo.db && op.page > 0 && op.pageSize > 0 {
 		if users, total, ok := op.tryCache(context.Background()); ok {
 			return users, total, nil
 		}
@@ -98,7 +97,7 @@ func (op *QueryUsersOperation) ExecWithTotal() ([]model.User, int64, error) {
 		return nil, 0, err
 	}
 
-	if op.tx == storage.DB && op.page > 0 && op.pageSize > 0 {
+	if op.tx == op.repo.db && op.page > 0 && op.pageSize > 0 {
 		op.storeCache(context.Background(), users, total)
 	}
 
@@ -106,7 +105,7 @@ func (op *QueryUsersOperation) ExecWithTotal() ([]model.User, int64, error) {
 }
 
 func (op *QueryUsersOperation) tryCache(ctx context.Context) ([]model.User, int64, bool) {
-	version := getUserQueryVersion(ctx)
+	version := op.getUserQueryVersion(ctx)
 	queryHash := buildUserQueryHash(op.keyword, op.userIDs)
 	cacheKey := key.KeyUserQueryList(fmt.Sprintf("%d:%s", version, queryHash), op.page, op.pageSize)
 
@@ -145,7 +144,7 @@ func (op *QueryUsersOperation) storeCache(ctx context.Context, users []model.Use
 		userIDs = append(userIDs, user.ID)
 	}
 
-	version := getUserQueryVersion(ctx)
+	version := op.getUserQueryVersion(ctx)
 	queryHash := buildUserQueryHash(op.keyword, op.userIDs)
 	cacheKey := key.KeyUserQueryList(fmt.Sprintf("%d:%s", version, queryHash), op.page, op.pageSize)
 	if err := cache.SetJSON(ctx, cacheKey, &userQueryCache{UserIDs: userIDs, Total: total}, userQueryCacheTTL); err != nil {
@@ -176,8 +175,8 @@ func buildUserQueryHash(keyword *string, userIDs []int64) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func getUserQueryVersion(ctx context.Context) int64 {
-	val, err := storage.KVS.Get(ctx, key.KeyUserQueryVersion()).Int64()
+func (op *QueryUsersOperation) getUserQueryVersion(ctx context.Context) int64 {
+	val, err := op.repo.redis.Get(ctx, key.KeyUserQueryVersion()).Int64()
 	if err != nil {
 		return 1
 	}

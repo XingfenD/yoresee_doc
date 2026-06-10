@@ -2,7 +2,6 @@ package knowledge_base_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +13,7 @@ type KnowledgeBaseGetIDByExternalIDOperation struct {
 
 func (r *KnowledgeBaseRepository) GetIDByExternalID(externalID string) (op *KnowledgeBaseGetIDByExternalIDOperation) {
 	return &KnowledgeBaseGetIDByExternalIDOperation{
-		repo:       KnowledgeBaseRepo,
+		repo:       r,
 		externalID: externalID,
 	}
 }
@@ -27,7 +26,7 @@ func (op *KnowledgeBaseGetIDByExternalIDOperation) WithTx(tx *gorm.DB) *Knowledg
 func (op *KnowledgeBaseGetIDByExternalIDOperation) Exec() (int64, error) {
 	var id int64
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 	err := op.tx.Model(&model.KnowledgeBase{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	if err != nil {

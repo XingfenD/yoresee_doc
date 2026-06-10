@@ -6,19 +6,22 @@ import (
 	cache_loader "github.com/XingfenD/yoresee_doc/internal/cache"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/key"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type DocumentRepository struct {
+	db     *gorm.DB
+	redis  *redis.Client
 	Loader cache_loader.Loader
 }
 
-var DocumentRepo DocumentRepository
-
-func Init(redis *redis.Client) {
-	DocumentRepo.Loader = *cache_loader.NewLoader(redis)
+func NewDocumentRepository(db *gorm.DB, redis *redis.Client) *DocumentRepository {
+	return &DocumentRepository{
+		db:     db,
+		redis:  redis,
+		Loader: *cache_loader.NewLoader(redis),
+	}
 }
 
 type DocumentDeleteOperation struct {
@@ -54,7 +57,7 @@ func (op *DocumentDeleteOperation) Exec() error {
 	if op.tx != nil {
 		db = op.tx
 	} else {
-		db = storage.DB
+		db = op.repo.db
 	}
 
 	if err := db.First(&doc, op.id).Error; err != nil {
@@ -78,7 +81,7 @@ func (op *DocumentDeleteOperation) Exec() error {
 
 	if op.tx == nil {
 		docCacheKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_Doc, doc.ExternalID)
-		if err := storage.KVS.Del(op.ctx, docCacheKey).Err(); err != nil {
+		if err := op.repo.redis.Del(op.ctx, docCacheKey).Err(); err != nil {
 		}
 
 		if err := op.repo.BumpSubtreeVersionsByPath(op.ctx, doc.Path); err != nil {

@@ -2,7 +2,6 @@ package template_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -28,5 +27,5 @@ func (op *TemplateCreateOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Create(op.template).Error
 	}
-	return storage.DB.Create(op.template).Error
+	return op.repo.db.Create(op.template).Error
 }

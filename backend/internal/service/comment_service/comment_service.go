@@ -9,6 +9,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/domain_event"
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/comment_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/knowledge_base_repo"
@@ -25,12 +26,12 @@ type CommentService struct {
 	kbRepo       *knowledge_base_repo.KnowledgeBaseRepository
 }
 
-func NewCommentService() *CommentService {
+func NewCommentService(repos *repository.Repositories) *CommentService {
 	return &CommentService{
-		commentRepo:  comment_repo.CommentRepo,
-		documentRepo: &document_repo.DocumentRepo,
-		userRepo:     user_repo.UserRepo,
-		kbRepo:       knowledge_base_repo.KnowledgeBaseRepo,
+		commentRepo:  repos.Comment,
+		documentRepo: repos.Document,
+		userRepo:     repos.User,
+		kbRepo:       repos.KnowledgeBase,
 	}
 }
 
@@ -154,7 +155,7 @@ func (s *CommentService) UpdateComment(req *dto.UpdateCommentRequest, isAdmin bo
 	return comment, nil
 }
 
-var CommentSvc = NewCommentService()
+var CommentSvc *CommentService
 
 func (s *CommentService) notifyCommentTargets(doc *model.Document, comment *model.DocumentComment, parent *model.DocumentComment, quote string, mentionedUserExternalIDs []string) {
 	if doc == nil || comment == nil {

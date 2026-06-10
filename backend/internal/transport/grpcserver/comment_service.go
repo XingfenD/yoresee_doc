@@ -21,10 +21,10 @@ type CommentServiceServer struct {
 	docRepo  *document_repo.DocumentRepository
 }
 
-func NewCommentServiceServer() *CommentServiceServer {
+func NewCommentServiceServer(userRepo *user_repo.UserRepository, docRepo *document_repo.DocumentRepository) *CommentServiceServer {
 	return &CommentServiceServer{
-		userRepo: user_repo.UserRepo,
-		docRepo:  &document_repo.DocumentRepo,
+		userRepo: userRepo,
+		docRepo:  docRepo,
 	}
 }
 

@@ -6,7 +6,6 @@ import (
 	cache_loader "github.com/XingfenD/yoresee_doc/internal/cache"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/key"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -49,7 +48,7 @@ func (op *DocumentGetIDByExternalIDOperation) Exec(ctx context.Context) (int64, 
 		WithDefaultKeyAndParser(extidKey, cache_loader.ParseInt64).
 		WithKeyAndParser(modelKey, cache_loader.ParseIDFromDocument).
 		WithDBLoader(func() (*int64, error) {
-			id, err := op.query(storage.DB)
+			id, err := op.query(op.repo.db)
 			if err != nil {
 				return nil, err
 			}

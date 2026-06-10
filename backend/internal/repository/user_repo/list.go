@@ -2,7 +2,6 @@ package user_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +28,7 @@ func (op *UserListOperation) Exec() ([]model.User, error) {
 	if op.tx != nil {
 		err = op.tx.Find(&users).Error
 	} else {
-		err = storage.DB.Find(&users).Error
+		err = op.repo.db.Find(&users).Error
 	}
 
 	return users, err

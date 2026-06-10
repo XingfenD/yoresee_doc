@@ -1,5 +1,11 @@
 package template_repo
 
-type TemplateRepository struct{}
+import "gorm.io/gorm"
 
-var TemplateRepo = &TemplateRepository{}
+type TemplateRepository struct {
+	db *gorm.DB
+}
+
+func NewTemplateRepository(db *gorm.DB) *TemplateRepository {
+	return &TemplateRepository{db: db}
+}

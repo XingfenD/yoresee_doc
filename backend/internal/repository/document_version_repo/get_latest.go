@@ -2,7 +2,6 @@ package document_version_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +25,7 @@ func (op *DocumentVersionGetLastedOperation) WithTx(tx *gorm.DB) *DocumentVersio
 
 func (op *DocumentVersionGetLastedOperation) Exec() (int64, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	var maxVersion int64

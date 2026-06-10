@@ -2,7 +2,6 @@ package comment_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +25,7 @@ func (op *CommentGetByExternalIDOperation) WithTx(tx *gorm.DB) *CommentGetByExte
 
 func (op *CommentGetByExternalIDOperation) Exec() (*model.DocumentComment, error) {
 	var item model.DocumentComment
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

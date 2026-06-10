@@ -2,7 +2,6 @@ package membership_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +28,7 @@ func (op *ListUserGroupOperation) Exec() ([]model.UserGroupMeta, error) {
 	if op.tx != nil {
 		err = op.tx.Find(&userGroups).Error
 	} else {
-		err = storage.DB.Find(&userGroups).Error
+		err = op.repo.db.Find(&userGroups).Error
 	}
 
 	return userGroups, err

@@ -2,7 +2,6 @@ package template_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -23,7 +22,7 @@ type ListTemplateOperation struct {
 
 func (r *TemplateRepository) List(m *model.Template) (op *ListTemplateOperation) {
 	return &ListTemplateOperation{
-		repo:  TemplateRepo,
+		repo:  r,
 		model: m,
 	}
 }
@@ -72,7 +71,7 @@ func (op *ListTemplateOperation) WithPagination(page, pageSize int) *ListTemplat
 
 func (op *ListTemplateOperation) ExecWithTotal() (templates []*model.Template, total int64, err error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	dbQuery := op.tx.Model(op.model)

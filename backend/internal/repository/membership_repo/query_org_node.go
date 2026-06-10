@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -46,7 +45,7 @@ func (op *QueryOrgNodeOperation) WithPagination(page, pageSize int) *QueryOrgNod
 
 func (op *QueryOrgNodeOperation) ExecWithTotal() ([]model.OrgNodeMeta, int64, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	query := op.tx.Model(&model.OrgNodeMeta{})
@@ -80,7 +79,7 @@ func (op *QueryOrgNodeOperation) ExecWithTotal() ([]model.OrgNodeMeta, int64, er
 
 func (op *QueryOrgNodeOperation) Exec() ([]model.OrgNodeMeta, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	query := op.tx.Model(&model.OrgNodeMeta{})
@@ -122,7 +121,7 @@ func (op *MGetOrgNodeByIDOperation) WithTx(tx *gorm.DB) *MGetOrgNodeByIDOperatio
 
 func (op *MGetOrgNodeByIDOperation) Exec() (map[int64]*model.OrgNodeMeta, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	var orgNodes []model.OrgNodeMeta
@@ -157,7 +156,7 @@ func (op *QueryOrgNodeByPathPrefixOperation) WithTx(tx *gorm.DB) *QueryOrgNodeBy
 
 func (op *QueryOrgNodeByPathPrefixOperation) Exec() ([]model.OrgNodeMeta, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	var orgNodes []model.OrgNodeMeta

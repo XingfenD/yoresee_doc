@@ -2,7 +2,6 @@ package document_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 )
 
 func (r *DocumentRepository) MGetByIDs(ids []int64) ([]*model.Document, error) {
@@ -11,7 +10,7 @@ func (r *DocumentRepository) MGetByIDs(ids []int64) ([]*model.Document, error) {
 	}
 
 	var docs []*model.Document
-	if err := storage.DB.Model(&model.Document{}).Where("id IN ?", ids).Find(&docs).Error; err != nil {
+	if err := r.db.Model(&model.Document{}).Where("id IN ?", ids).Find(&docs).Error; err != nil {
 		return nil, err
 	}
 

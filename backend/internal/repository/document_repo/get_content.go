@@ -2,7 +2,6 @@ package document_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +27,7 @@ func (op *DocumentGetContentOperation) Exec() (string, error) {
 	var docMeta model.Document
 	var err error
 
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

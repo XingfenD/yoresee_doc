@@ -5,6 +5,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/notification_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -17,10 +18,10 @@ type NotificationService struct {
 	userRepo         *user_repo.UserRepository
 }
 
-func NewNotificationService() *NotificationService {
+func NewNotificationService(repos *repository.Repositories) *NotificationService {
 	return &NotificationService{
-		notificationRepo: notification_repo.NotificationRepo,
-		userRepo:         user_repo.UserRepo,
+		notificationRepo: repos.Notification,
+		userRepo:         repos.User,
 	}
 }
 
@@ -123,4 +124,4 @@ func (s *NotificationService) MarkAllRead(userExternalID string) error {
 	return nil
 }
 
-var NotificationSvc = NewNotificationService()
+var NotificationSvc *NotificationService

@@ -2,7 +2,6 @@ package template_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +24,7 @@ func (op *TemplateMGetByIDsOperation) WithTx(tx *gorm.DB) *TemplateMGetByIDsOper
 }
 
 func (op *TemplateMGetByIDsOperation) Exec() ([]*model.Template, error) {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

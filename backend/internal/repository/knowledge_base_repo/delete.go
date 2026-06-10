@@ -2,7 +2,6 @@ package knowledge_base_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +13,7 @@ type DeleteKnowledgeBaseOperation struct {
 
 func (r *KnowledgeBaseRepository) Delete(knowledgeBase *model.KnowledgeBase) (op *DeleteKnowledgeBaseOperation) {
 	return &DeleteKnowledgeBaseOperation{
-		repo:          KnowledgeBaseRepo,
+		repo:          r,
 		knowledgeBase: knowledgeBase,
 	}
 }
@@ -26,7 +25,7 @@ func (op *DeleteKnowledgeBaseOperation) WithTx(tx *gorm.DB) *DeleteKnowledgeBase
 
 func (op *DeleteKnowledgeBaseOperation) Exec() error {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 	err := op.tx.Delete(op.knowledgeBase).Error
 	return err

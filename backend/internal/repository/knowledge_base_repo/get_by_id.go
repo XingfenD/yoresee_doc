@@ -2,7 +2,6 @@ package knowledge_base_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +13,7 @@ type KnowledgeBaseGetByIDOperation struct {
 
 func (r *KnowledgeBaseRepository) GetByID(id int64) (op *KnowledgeBaseGetByIDOperation) {
 	return &KnowledgeBaseGetByIDOperation{
-		repo: KnowledgeBaseRepo,
+		repo: r,
 		id:   id,
 	}
 }
@@ -26,7 +25,7 @@ func (op *KnowledgeBaseGetByIDOperation) WithTx(tx *gorm.DB) *KnowledgeBaseGetBy
 
 func (op *KnowledgeBaseGetByIDOperation) Exec() (knowledgeBase *model.KnowledgeBase, err error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 	err = op.tx.First(knowledgeBase, "id = ?", op.id).Error
 	return

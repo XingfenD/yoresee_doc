@@ -2,7 +2,6 @@ package user_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -32,7 +31,7 @@ func (op *UserSearchOperation) Exec() ([]model.User, error) {
 		db := op.tx.Where("username LIKE ? OR email LIKE ?", "%"+op.query+"%", "%"+op.query+"%")
 		err = db.Or("CAST(id AS CHAR) = ?", op.query).Find(&users).Error
 	} else {
-		db := storage.DB.Where("username LIKE ? OR email LIKE ?", "%"+op.query+"%", "%"+op.query+"%")
+		db := op.repo.db.Where("username LIKE ? OR email LIKE ?", "%"+op.query+"%", "%"+op.query+"%")
 		err = db.Or("CAST(id AS CHAR) = ?", op.query).Find(&users).Error
 	}
 

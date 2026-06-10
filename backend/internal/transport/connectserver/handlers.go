@@ -5,20 +5,21 @@ import (
 	"net/http"
 
 	"connectrpc.com/connect"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/transport/grpcserver"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
 )
 
-func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption) {
+func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption, repos *repository.Repositories) {
 	authSvc := grpcserver.NewAuthServiceServer()
 	docSvc := grpcserver.NewDocumentServiceServer()
 	kbSvc := grpcserver.NewKnowledgeBaseServiceServer()
 	sysSvc := grpcserver.NewSystemServiceServer()
 	settingSvc := grpcserver.NewSettingServiceServer()
 	memberSvc := grpcserver.NewMembershipServiceServer()
-	inviteSvc := grpcserver.NewInvitationServiceServer()
+	inviteSvc := grpcserver.NewInvitationServiceServer(repos.User)
 	notifySvc := grpcserver.NewNotificationServiceServer()
-	commentSvc := grpcserver.NewCommentServiceServer()
+	commentSvc := grpcserver.NewCommentServiceServer(repos.User, repos.Document)
 
 	mux.Handle(pb.AuthService_Login_FullMethodName, connect.NewUnaryHandler(
 		pb.AuthService_Login_FullMethodName,

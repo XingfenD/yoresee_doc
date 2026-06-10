@@ -2,7 +2,6 @@ package template_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +13,7 @@ type TemplateGetByIDOperation struct {
 
 func (r *TemplateRepository) GetByID(id int64) (op *TemplateGetByIDOperation) {
 	return &TemplateGetByIDOperation{
-		repo: TemplateRepo,
+		repo: r,
 		id:   id,
 	}
 }
@@ -26,7 +25,7 @@ func (op *TemplateGetByIDOperation) WithTx(tx *gorm.DB) *TemplateGetByIDOperatio
 
 func (op *TemplateGetByIDOperation) Exec() (template *model.Template, err error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 	template = &model.Template{}
 	err = op.tx.First(template, "id = ?", op.id).Error

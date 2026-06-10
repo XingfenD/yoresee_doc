@@ -19,6 +19,7 @@ type Initializer struct {
 	shutdownHooks []utils.ShutdownHook
 	hookNames     map[string]struct{}
 	shutdownOnce  sync.Once
+	Repositories  *repository.Repositories
 }
 
 func NewInitializer() *Initializer {
@@ -219,8 +220,8 @@ func (i *Initializer) InitMQ() *Initializer {
 }
 
 func (i *Initializer) InitRepository() *Initializer {
-	return i.Check("repository.MustInit", func() error {
-		repository.MustInit()
+	return i.Check("repository.NewRepositories", func() error {
+		i.Repositories = repository.NewRepositories(storage.DB, storage.KVS)
 		return nil
 	})
 }

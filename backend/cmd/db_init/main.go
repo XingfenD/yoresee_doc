@@ -53,7 +53,7 @@ func isDatabaseInitialized() bool {
 }
 
 func initializeDatabaseInTransaction() error {
-	return utils.WithTransaction(func(tx *gorm.DB) error {
+	return utils.WithTransaction(storage.DB, func(tx *gorm.DB) error {
 		if err := initializePermissionsInTx(tx); err != nil {
 			return err
 		}

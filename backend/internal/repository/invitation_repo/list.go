@@ -2,7 +2,6 @@ package invitation_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -81,7 +80,7 @@ func (op *InvitationListOperation) WithPagination(page, pageSize int) *Invitatio
 }
 
 func (op *InvitationListOperation) Exec() ([]model.Invitation, error) {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}
@@ -155,7 +154,7 @@ func (op *InvitationListOperation) Exec() ([]model.Invitation, error) {
 }
 
 func (op *InvitationListOperation) ExecWithTotal() ([]model.Invitation, int64, error) {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

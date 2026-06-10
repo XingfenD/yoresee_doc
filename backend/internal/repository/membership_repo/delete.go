@@ -2,7 +2,6 @@ package membership_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +27,7 @@ func (op *DeleteUserGroupOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Delete(op.group).Error
 	}
-	return storage.DB.Delete(op.group).Error
+	return op.repo.db.Delete(op.group).Error
 }
 
 type DeleteOrgNodeOperation struct {
@@ -53,5 +52,5 @@ func (op *DeleteOrgNodeOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Delete(op.orgNode).Error
 	}
-	return storage.DB.Delete(op.orgNode).Error
+	return op.repo.db.Delete(op.orgNode).Error
 }

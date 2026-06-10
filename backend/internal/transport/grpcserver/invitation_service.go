@@ -19,9 +19,9 @@ type InvitationServiceServer struct {
 	userRepo *user_repo.UserRepository
 }
 
-func NewInvitationServiceServer() *InvitationServiceServer {
+func NewInvitationServiceServer(userRepo *user_repo.UserRepository) *InvitationServiceServer {
 	return &InvitationServiceServer{
-		userRepo: user_repo.UserRepo,
+		userRepo: userRepo,
 	}
 }
 

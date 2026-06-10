@@ -1,5 +1,11 @@
 package document_version_repo
 
-type DocumentVersionRepository struct{}
+import "gorm.io/gorm"
 
-var DocumentVersionRepo = &DocumentVersionRepository{}
+type DocumentVersionRepository struct {
+	db *gorm.DB
+}
+
+func NewDocumentVersionRepository(db *gorm.DB) *DocumentVersionRepository {
+	return &DocumentVersionRepository{db: db}
+}

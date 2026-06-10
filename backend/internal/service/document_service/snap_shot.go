@@ -39,7 +39,7 @@ func (s *DocumentService) SaveDocumentSnapshotAndContent(ctx context.Context, do
 	err := cache.DoubleDelete(
 		context.Background(),
 		func() error {
-			return utils.WithTransaction(func(tx *gorm.DB) error {
+			return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 				docModel, err := s.documentRepo.GetByExternalID(docExternalID).WithTx(tx).Exec(ctx)
 				if err != nil {
 					return status.StatusDocumentNotFound

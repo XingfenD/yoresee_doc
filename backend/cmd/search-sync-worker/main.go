@@ -45,7 +45,7 @@ func main() {
 				OnError: mq.ErrorActionRequeue,
 			},
 			func(ctx context.Context, message mq.Message) error {
-				return handleDocumentEvent(ctx, message.Body)
+				return handleDocumentEvent(ctx, message.Body, initializer.Repositories.Document)
 			},
 		); err != nil {
 			logrus.Fatalf("Subscribe search sync topic failed: %v", err)
@@ -72,7 +72,7 @@ func initSearchSyncWorker() (*bootstrap.Initializer, error) {
 	return initializer, initializer.Err()
 }
 
-func handleDocumentEvent(ctx context.Context, data []byte) error {
+func handleDocumentEvent(ctx context.Context, data []byte, docRepo *document_repo.DocumentRepository) error {
 	evt, err := domain_event.DecodeDocumentSyncEvent(data)
 	if err != nil {
 		logrus.Warnf("Parse search sync event failed: %v", err)
@@ -81,7 +81,7 @@ func handleDocumentEvent(ctx context.Context, data []byte) error {
 
 	switch evt.Action {
 	case domain_event.DocumentActionUpsert:
-		doc, err := document_repo.DocumentRepo.GetByExternalID(evt.ExternalID).Exec(ctx)
+		doc, err := docRepo.GetByExternalID(evt.ExternalID).Exec(ctx)
 		if err != nil {
 			logrus.Warnf("Search sync load document failed, external_id=%s, err=%v", evt.ExternalID, err)
 			return err

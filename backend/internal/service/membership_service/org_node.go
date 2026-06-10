@@ -74,7 +74,7 @@ func (s *MembershipService) CreateOrgNode(req *dto.CreateOrgNodeRequest) (string
 	}
 
 	var createdExternalID string
-	err := utils.WithTransaction(func(tx *gorm.DB) error {
+	err := utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		creatorID, err := s.useRepo.GetIDByExternalID(req.CreatorUserExternalID).WithTx(tx).Exec()
 		if err != nil {
 			return status.StatusUserNotFound
@@ -136,7 +136,7 @@ func (s *MembershipService) UpdateOrgNode(req *dto.UpdateOrgNodeRequest) error {
 		return status.StatusParamError
 	}
 
-	return utils.WithTransaction(func(tx *gorm.DB) error {
+	return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		node, err := s.repo.GetOrgNodeByExternalID(req.ExternalID).WithTx(tx).Exec()
 		if err != nil {
 			return status.StatusMembershipMetaNotFound
@@ -181,7 +181,7 @@ func (s *MembershipService) DeleteOrgNode(req *dto.DeleteOrgNodeRequest) error {
 		return status.StatusParamError
 	}
 
-	return utils.WithTransaction(func(tx *gorm.DB) error {
+	return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		node, err := s.repo.GetOrgNodeByExternalID(req.ExternalID).WithTx(tx).Exec()
 		if err != nil {
 			return status.StatusMembershipMetaNotFound
@@ -211,7 +211,7 @@ func (s *MembershipService) MoveOrgNode(req *dto.MoveOrgNodeRequest) error {
 		return status.StatusParamError
 	}
 
-	return utils.WithTransaction(func(tx *gorm.DB) error {
+	return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		node, err := s.repo.GetOrgNodeByExternalID(req.ExternalID).WithTx(tx).Exec()
 		if err != nil {
 			return status.StatusMembershipMetaNotFound

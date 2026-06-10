@@ -2,7 +2,6 @@ package knowledge_base_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +27,7 @@ func (op *MGetKnowledgeBaseByIDsOperation) Exec() ([]*model.KnowledgeBase, error
 	if len(op.ids) == 0 {
 		return []*model.KnowledgeBase{}, nil
 	}
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

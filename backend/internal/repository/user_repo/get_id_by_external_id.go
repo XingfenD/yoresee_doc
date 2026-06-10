@@ -2,7 +2,6 @@ package user_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +30,7 @@ func (op *UserGetIDByExternalIDOperation) Exec() (int64, error) {
 	if op.tx != nil {
 		err = op.tx.Model(&model.User{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	} else {
-		err = storage.DB.Model(&model.User{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
+		err = op.repo.db.Model(&model.User{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	}
 
 	return id, err

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -43,7 +42,7 @@ func (op *ListRecentDocumentsOperation) WithTx(tx *gorm.DB) *ListRecentDocuments
 }
 
 func (op *ListRecentDocumentsOperation) Exec() ([]*model.RecentDocument, int64, error) {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

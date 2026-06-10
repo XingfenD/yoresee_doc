@@ -3,6 +3,7 @@ package document_service
 import (
 	"context"
 
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/attachment_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/document_version_repo"
@@ -10,9 +11,11 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/repository/knowledge_base_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/template_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
+	"gorm.io/gorm"
 )
 
 type DocumentService struct {
+	db             *gorm.DB
 	documentRepo   *document_repo.DocumentRepository
 	userRepo       *user_repo.UserRepository
 	kbRepo         *knowledge_base_repo.KnowledgeBaseRepository
@@ -22,19 +25,20 @@ type DocumentService struct {
 	attachmentRepo *attachment_repo.AttachmentRepository
 }
 
-func NewDocumentService() *DocumentService {
+func NewDocumentService(repos *repository.Repositories) *DocumentService {
 	return &DocumentService{
-		documentRepo:   &document_repo.DocumentRepo,
-		userRepo:       user_repo.UserRepo,
-		kbRepo:         knowledge_base_repo.KnowledgeBaseRepo,
-		docVersionRepo: document_version_repo.DocumentVersionRepo,
-		snapshotRepo:   doc_yjs_snapshot_repo.DocumentYjsSnapshotRepo,
-		templateRepo:   template_repo.TemplateRepo,
-		attachmentRepo: attachment_repo.AttachmentRepo,
+		db:             repos.DB,
+		documentRepo:   repos.Document,
+		userRepo:       repos.User,
+		kbRepo:         repos.KnowledgeBase,
+		docVersionRepo: repos.DocumentVersion,
+		snapshotRepo:   repos.DocumentYjsSnapshot,
+		templateRepo:   repos.Template,
+		attachmentRepo: repos.Attachment,
 	}
 }
 
-var DocumentSvc = NewDocumentService()
+var DocumentSvc *DocumentService
 
 func (s *DocumentService) DeleteDocument(id int64) error {
 	return s.documentRepo.Delete(id).Exec()

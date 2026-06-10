@@ -7,10 +7,10 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/invitation_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -20,10 +20,10 @@ type InvitationService struct {
 	userRepo       *user_repo.UserRepository
 }
 
-func NewInvitationService() *InvitationService {
+func NewInvitationService(repos *repository.Repositories) *InvitationService {
 	return &InvitationService{
-		invitationRepo: invitation_repo.InvitationRepo,
-		userRepo:       user_repo.UserRepo,
+		invitationRepo: repos.Invitation,
+		userRepo:       repos.User,
 	}
 }
 
@@ -43,7 +43,7 @@ func (s *InvitationService) Generate(userID int64, maxUsedCnt *int64, expiresAt 
 		Note:       note,
 	}
 
-	if err := storage.DB.Create(invitation).Error; err != nil {
+	if err := s.invitationRepo.Create(invitation).Exec(); err != nil {
 		return nil, status.StatusWriteDBError
 	}
 	return invitation, nil
@@ -234,4 +234,4 @@ func (s *InvitationService) UpdateCode(code string, newExpireTime *time.Time, ne
 	return nil
 }
 
-var InvitationSvc = NewInvitationService()
+var InvitationSvc *InvitationService

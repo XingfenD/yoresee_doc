@@ -2,7 +2,6 @@ package document_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,7 +25,7 @@ func (op *UpsertRecentDocumentOperation) WithTx(tx *gorm.DB) *UpsertRecentDocume
 }
 
 func (op *UpsertRecentDocumentOperation) Exec() error {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

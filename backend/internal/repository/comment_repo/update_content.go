@@ -2,7 +2,6 @@ package comment_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +26,7 @@ func (op *CommentUpdateContentOperation) WithTx(tx *gorm.DB) *CommentUpdateConte
 }
 
 func (op *CommentUpdateContentOperation) Exec() error {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

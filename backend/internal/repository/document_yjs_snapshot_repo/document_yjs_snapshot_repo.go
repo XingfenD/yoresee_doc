@@ -2,14 +2,17 @@ package doc_yjs_snapshot_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-type DocumentYjsSnapshotRepository struct{}
+type DocumentYjsSnapshotRepository struct {
+	db *gorm.DB
+}
 
-var DocumentYjsSnapshotRepo = &DocumentYjsSnapshotRepository{}
+func NewDocumentYjsSnapshotRepository(db *gorm.DB) *DocumentYjsSnapshotRepository {
+	return &DocumentYjsSnapshotRepository{db: db}
+}
 
 type DocumentYjsSnapshotGetOperation struct {
 	repo  *DocumentYjsSnapshotRepository
@@ -31,7 +34,7 @@ func (op *DocumentYjsSnapshotGetOperation) WithTx(tx *gorm.DB) *DocumentYjsSnaps
 
 func (op *DocumentYjsSnapshotGetOperation) Exec() (*model.DocumentYjsSnapshot, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	var snapshot model.DocumentYjsSnapshot
@@ -63,7 +66,7 @@ func (op *DocumentYjsSnapshotSaveOperation) WithTx(tx *gorm.DB) *DocumentYjsSnap
 
 func (op *DocumentYjsSnapshotSaveOperation) Exec() error {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	snapshot := &model.DocumentYjsSnapshot{

@@ -2,7 +2,6 @@ package membership_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +30,7 @@ func (op *ListMembershipByTypeAndIDsOperation) Exec() ([]model.MembershipRelatio
 		return []model.MembershipRelation{}, nil
 	}
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	var memberships []model.MembershipRelation

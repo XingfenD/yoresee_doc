@@ -2,7 +2,6 @@ package membership_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +27,7 @@ func (op *UpdateUserGroupOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Save(op.group).Error
 	}
-	return storage.DB.Save(op.group).Error
+	return op.repo.db.Save(op.group).Error
 }
 
 type UpdateOrgNodeOperation struct {
@@ -53,5 +52,5 @@ func (op *UpdateOrgNodeOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Save(op.orgNode).Error
 	}
-	return storage.DB.Save(op.orgNode).Error
+	return op.repo.db.Save(op.orgNode).Error
 }

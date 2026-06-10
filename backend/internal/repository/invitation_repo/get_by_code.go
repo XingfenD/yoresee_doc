@@ -2,7 +2,6 @@ package invitation_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +30,7 @@ func (op *InvitationGetByCodeOperation) Exec() (*model.Invitation, error) {
 	if op.tx != nil {
 		err = op.tx.Where("code = ?", op.code).First(&invitation).Error
 	} else {
-		err = storage.DB.Where("code = ?", op.code).First(&invitation).Error
+		err = op.repo.db.Where("code = ?", op.code).First(&invitation).Error
 	}
 
 	return &invitation, err

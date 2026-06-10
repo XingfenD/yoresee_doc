@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -16,7 +17,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Start(grpcPort, grpcWebPort int) (*grpc.Server, error) {
+func Start(grpcPort, grpcWebPort int, repos *repository.Repositories) (*grpc.Server, error) {
 	allowUnauth := map[string]struct{}{
 		"/yoresee_doc.v1.AuthService/Login":        {},
 		"/yoresee_doc.v1.AuthService/Register":     {},
@@ -33,7 +34,7 @@ func Start(grpcPort, grpcWebPort int) (*grpc.Server, error) {
 	pb.RegisterKnowledgeBaseServiceServer(grpcServer, NewKnowledgeBaseServiceServer())
 	pb.RegisterSystemServiceServer(grpcServer, NewSystemServiceServer())
 	pb.RegisterMembershipServiceServer(grpcServer, NewMembershipServiceServer())
-	pb.RegisterInvitationServiceServer(grpcServer, NewInvitationServiceServer())
+	pb.RegisterInvitationServiceServer(grpcServer, NewInvitationServiceServer(repos.User))
 
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {

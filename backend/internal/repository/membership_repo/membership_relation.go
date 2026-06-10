@@ -2,7 +2,6 @@ package membership_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +27,7 @@ func (op *CreateMembershipOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Create(op.membership).Error
 	}
-	return storage.DB.Create(op.membership).Error
+	return op.repo.db.Create(op.membership).Error
 }
 
 type BatchCreateMembershipOperation struct {
@@ -57,7 +56,7 @@ func (op *BatchCreateMembershipOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Create(&op.memberships).Error
 	}
-	return storage.DB.Create(&op.memberships).Error
+	return op.repo.db.Create(&op.memberships).Error
 }
 
 type ListMembershipOperation struct {
@@ -85,7 +84,7 @@ func (op *ListMembershipOperation) Exec() ([]model.MembershipRelation, error) {
 	if op.tx != nil {
 		err = op.tx.Where(op.query).Find(&memberships).Error
 	} else {
-		err = storage.DB.Where(op.query).Find(&memberships).Error
+		err = op.repo.db.Where(op.query).Find(&memberships).Error
 	}
 
 	return memberships, err
@@ -113,7 +112,7 @@ func (op *DeleteMembershipOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Delete(op.membership).Error
 	}
-	return storage.DB.Delete(op.membership).Error
+	return op.repo.db.Delete(op.membership).Error
 }
 
 type BatchDeleteMembershipOperation struct {
@@ -142,5 +141,5 @@ func (op *BatchDeleteMembershipOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Delete(&op.memberships).Error
 	}
-	return storage.DB.Delete(&op.memberships).Error
+	return op.repo.db.Delete(&op.memberships).Error
 }

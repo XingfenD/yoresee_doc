@@ -2,21 +2,24 @@ package attachment_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
-type AttachmentRepository struct{}
+type AttachmentRepository struct {
+	db *gorm.DB
+}
 
-var AttachmentRepo = &AttachmentRepository{}
+func NewAttachmentRepository(db *gorm.DB) *AttachmentRepository {
+	return &AttachmentRepository{db: db}
+}
 
 func (r *AttachmentRepository) Create(attachment *model.Attachment) error {
-	return storage.DB.Create(attachment).Error
+	return r.db.Create(attachment).Error
 }
 
 func (r *AttachmentRepository) ListByDocumentID(documentID int64) ([]*model.Attachment, error) {
 	attachments := make([]*model.Attachment, 0)
-	if err := storage.DB.
+	if err := r.db.
 		Where("document_id = ?", documentID).
 		Order("created_at desc").
 		Find(&attachments).Error; err != nil {
@@ -27,7 +30,7 @@ func (r *AttachmentRepository) ListByDocumentID(documentID int64) ([]*model.Atta
 
 func (r *AttachmentRepository) GetByExternalIDAndDocumentID(externalID string, documentID int64) (*model.Attachment, error) {
 	attachment := &model.Attachment{}
-	if err := storage.DB.
+	if err := r.db.
 		Where("external_id = ? AND document_id = ?", externalID, documentID).
 		First(attachment).Error; err != nil {
 		return nil, err
@@ -36,7 +39,7 @@ func (r *AttachmentRepository) GetByExternalIDAndDocumentID(externalID string, d
 }
 
 func (r *AttachmentRepository) DeleteByID(id int64) error {
-	return storage.DB.Delete(&model.Attachment{}, id).Error
+	return r.db.Delete(&model.Attachment{}, id).Error
 }
 
 func IsNotFound(err error) bool {

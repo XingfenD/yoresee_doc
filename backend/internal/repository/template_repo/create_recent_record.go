@@ -2,7 +2,6 @@ package template_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,7 +25,7 @@ func (op *CreateRecentTemplateOperation) WithTx(tx *gorm.DB) {
 
 func (op *CreateRecentTemplateOperation) Exec() error {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	return op.tx.Clauses(clause.OnConflict{

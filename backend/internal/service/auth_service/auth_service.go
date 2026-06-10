@@ -9,6 +9,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/media"
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
 	"github.com/XingfenD/yoresee_doc/internal/service/invitation_service"
@@ -19,17 +20,19 @@ import (
 )
 
 type AuthService struct {
+	db       *gorm.DB
 	userRepo *user_repo.UserRepository
 }
 
-func NewAuthService() *AuthService {
+func NewAuthService(repos *repository.Repositories) *AuthService {
 	return &AuthService{
-		userRepo: user_repo.UserRepo,
+		db:       repos.DB,
+		userRepo: repos.User,
 	}
 }
 
 func (s *AuthService) Register(ctx context.Context, userCreate *dto.UserCreate) error {
-	return utils.WithTransaction(func(tx *gorm.DB) error {
+	return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		mode := config_service.ConfigSvc.GetSystemRegisterMode(ctx)
 		if mode == constant.RegisterMode_Invite {
 			if userCreate.InvitationCode == nil || *userCreate.InvitationCode == "" {
@@ -112,4 +115,4 @@ func (s *AuthService) Login(email string, password string) (string, *dto.UserRes
 	return token, userResponse, nil
 }
 
-var AuthSvc = NewAuthService()
+var AuthSvc *AuthService

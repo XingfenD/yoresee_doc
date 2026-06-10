@@ -1,5 +1,11 @@
 package invitation_repo
 
-type InvitationRepository struct{}
+import "gorm.io/gorm"
 
-var InvitationRepo = &InvitationRepository{}
+type InvitationRepository struct {
+	db *gorm.DB
+}
+
+func NewInvitationRepository(db *gorm.DB) *InvitationRepository {
+	return &InvitationRepository{db: db}
+}

@@ -7,19 +7,28 @@ import (
 	"sync/atomic"
 
 	"connectrpc.com/connect"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
+	"github.com/redis/go-redis/v9"
 	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"gorm.io/gorm"
 )
 
-var draining atomic.Bool
+var (
+	draining atomic.Bool
+	readyDB  *gorm.DB
+	readyKVS *redis.Client
+)
 
 func SetDraining(v bool) {
 	draining.Store(v)
 }
 
-func Start(grpcPort, grpcWebPort int) (*http.Server, *http.Server, error) {
+func Start(grpcPort, grpcWebPort int, db *gorm.DB, kvs *redis.Client, repos *repository.Repositories) (*http.Server, *http.Server, error) {
+	readyDB = db
+	readyKVS = kvs
 	allowUnauth := map[string]struct{}{
 		pb.AuthService_Login_FullMethodName:        {},
 		pb.AuthService_Register_FullMethodName:     {},
@@ -33,7 +42,7 @@ func Start(grpcPort, grpcWebPort int) (*http.Server, *http.Server, error) {
 	}
 
 	mux := http.NewServeMux()
-	registerHandlers(mux, opts)
+	registerHandlers(mux, opts, repos)
 	registerProbeRoutes(mux)
 
 	handler := withCORS(mux)

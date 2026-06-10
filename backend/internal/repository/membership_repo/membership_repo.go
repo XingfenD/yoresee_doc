@@ -1,5 +1,11 @@
 package membership_repo
 
-type MembershipRepository struct{}
+import "gorm.io/gorm"
 
-var MembershipRepo = &MembershipRepository{}
+type MembershipRepository struct {
+	db *gorm.DB
+}
+
+func NewMembershipRepository(db *gorm.DB) *MembershipRepository {
+	return &MembershipRepository{db: db}
+}

@@ -6,7 +6,6 @@ import (
 	cache_loader "github.com/XingfenD/yoresee_doc/internal/cache"
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/key"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -48,7 +47,7 @@ func (op *DocumentGetByExternalIDOperation) Exec(ctx context.Context) (*model.Do
 	documentCacheKey := key.KeyModelByExternalID(key.KeyObjectTypeEnum_Doc, op.externalID)
 	document, err := cache_loader.NewCacheLoadOperation[model.Document](&op.repo.Loader).
 		WithDBLoader(func() (*model.Document, error) {
-			return op.query(storage.DB)
+			return op.query(op.repo.db)
 		}).WithDefaultKeyAndParser(documentCacheKey, nil).
 		Exec(ctx)
 

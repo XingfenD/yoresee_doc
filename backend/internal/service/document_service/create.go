@@ -23,7 +23,7 @@ func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq
 
 	// TODO: redis support
 	docExternalID := utils.GenerateExternalID(utils.ExternalIDContextDocument)
-	err := utils.WithTransaction(func(tx *gorm.DB) error {
+	err := utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		docModel := &model.Document{
 			ExternalID:    docExternalID,
 			Title:         req.Title,

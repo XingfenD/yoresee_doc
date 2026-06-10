@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -40,7 +39,7 @@ func (op *QueryUserGroupOperation) WithPagination(page, pageSize int) *QueryUser
 
 func (op *QueryUserGroupOperation) ExecWithTotal() ([]model.UserGroupMeta, int64, error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	query := op.tx.Model(&model.UserGroupMeta{})

@@ -2,7 +2,6 @@ package notification_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -39,7 +38,7 @@ func (op *NotificationListOperation) WithPagination(page, pageSize int) *Notific
 }
 
 func (op *NotificationListOperation) ExecWithTotal() ([]model.Notification, int64, error) {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}

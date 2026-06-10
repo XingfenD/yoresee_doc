@@ -1,13 +1,12 @@
 package utils
 
 import (
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
 // WithTransaction 执行一个包含事务的操作
-func WithTransaction(fn func(tx *gorm.DB) error) error {
-	tx := storage.DB.Begin()
+func WithTransaction(db *gorm.DB, fn func(tx *gorm.DB) error) error {
+	tx := db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()

@@ -2,7 +2,6 @@ package knowledge_base_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +13,7 @@ type CreateKnowledgeBaseOperation struct {
 
 func (r *KnowledgeBaseRepository) Create(knowledgeBase *model.KnowledgeBase) (op *CreateKnowledgeBaseOperation) {
 	return &CreateKnowledgeBaseOperation{
-		repo:          KnowledgeBaseRepo,
+		repo:          r,
 		knowledgeBase: knowledgeBase,
 	}
 }
@@ -26,7 +25,7 @@ func (op *CreateKnowledgeBaseOperation) WithTx(tx *gorm.DB) *CreateKnowledgeBase
 
 func (op *CreateKnowledgeBaseOperation) Exec() error {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	return op.tx.Create(op.knowledgeBase).Error

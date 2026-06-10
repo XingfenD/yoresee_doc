@@ -2,7 +2,6 @@ package user_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +30,7 @@ func (op *UserGetByEmailOperation) Exec() (*model.User, error) {
 	if op.tx != nil {
 		err = op.tx.Where("email = ?", op.email).First(&user).Error
 	} else {
-		err = storage.DB.Where("email = ?", op.email).First(&user).Error
+		err = op.repo.db.Where("email = ?", op.email).First(&user).Error
 	}
 
 	return &user, err

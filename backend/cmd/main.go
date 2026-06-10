@@ -28,11 +28,17 @@ func main() {
 		logrus.Fatalf("Init backend failed: %v", err)
 	}
 
-	if err := service.Init(config.GlobalConfig); err != nil {
+	if err := service.Init(config.GlobalConfig, initializer.Repositories); err != nil {
 		logrus.Fatalf("Init services failed: %v", err)
 	}
 
-	grpcServer, grpcWebServer, err := connectserver.Start(config.GlobalConfig.Server.GrpcPort, config.GlobalConfig.Server.GrpcWebPort)
+	grpcServer, grpcWebServer, err := connectserver.Start(
+		config.GlobalConfig.Server.GrpcPort,
+		config.GlobalConfig.Server.GrpcWebPort,
+		initializer.Repositories.DB,
+		initializer.Repositories.Redis,
+		initializer.Repositories,
+	)
 	if err != nil {
 		logrus.Fatalf("Start connect servers failed: %v", err)
 	}

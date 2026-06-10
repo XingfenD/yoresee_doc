@@ -1,6 +1,7 @@
 package knowledge_base_service
 
 import (
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/knowledge_base_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
@@ -11,10 +12,10 @@ type KnowledgeBaseService struct {
 	userRepo          *user_repo.UserRepository
 }
 
-func NewKnowledgeBaseService() *KnowledgeBaseService {
+func NewKnowledgeBaseService(repos *repository.Repositories) *KnowledgeBaseService {
 	return &KnowledgeBaseService{
-		knowledgeBaseRepo: knowledge_base_repo.KnowledgeBaseRepo,
-		userRepo:          user_repo.UserRepo,
+		knowledgeBaseRepo: repos.KnowledgeBase,
+		userRepo:          repos.User,
 	}
 }
 
@@ -26,4 +27,4 @@ func (s *KnowledgeBaseService) GetIDByExternalID(externalID string) (int64, erro
 	return id, nil
 }
 
-var KnowledgeBaseSvc = NewKnowledgeBaseService()
+var KnowledgeBaseSvc *KnowledgeBaseService

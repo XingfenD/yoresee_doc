@@ -2,7 +2,6 @@ package user_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +30,7 @@ func (op *UserGetByIDOperation) Exec() (*model.User, error) {
 	if op.tx != nil {
 		err = op.tx.First(&user, op.id).Error
 	} else {
-		err = storage.DB.First(&user, op.id).Error
+		err = op.repo.db.First(&user, op.id).Error
 	}
 
 	return &user, err

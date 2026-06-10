@@ -2,7 +2,6 @@ package user_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +30,7 @@ func (op *ListUserByExternalOperation) Exec() ([]model.User, error) {
 	if op.tx != nil {
 		err = op.tx.Where("external_id IN ?", op.externalIDList).Find(&users).Error
 	} else {
-		err = storage.DB.Where("external_id IN ?", op.externalIDList).Find(&users).Error
+		err = op.repo.db.Where("external_id IN ?", op.externalIDList).Find(&users).Error
 	}
 
 	return users, err

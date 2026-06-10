@@ -2,7 +2,6 @@ package membership_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +29,7 @@ func (op *GetUserGroupIDByExternalIDOperation) Exec() (int64, error) {
 	if op.tx != nil {
 		err = op.tx.Model(&model.UserGroupMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	}
-	err = storage.DB.Model(&model.UserGroupMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
+	err = op.repo.db.Model(&model.UserGroupMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	return id, err
 }
 
@@ -58,6 +57,6 @@ func (op *GetOrgNodeIDByExternalIDOperation) Exec() (int64, error) {
 	if op.tx != nil {
 		err = op.tx.Model(&model.OrgNodeMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	}
-	err = storage.DB.Model(&model.OrgNodeMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
+	err = op.repo.db.Model(&model.OrgNodeMeta{}).Where("external_id = ?", op.externalID).Pluck("id", &id).Error
 	return id, err
 }

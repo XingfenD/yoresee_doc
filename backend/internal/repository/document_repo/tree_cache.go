@@ -9,7 +9,6 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/cache"
 	"github.com/XingfenD/yoresee_doc/pkg/key"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/singleflight"
@@ -49,18 +48,18 @@ func getDocPathByID(tx *gorm.DB, docID int64) (string, error) {
 }
 
 func (r *DocumentRepository) GetPathByID(id int64) (string, error) {
-	return getDocPathByID(storage.DB, id)
+	return getDocPathByID(r.db, id)
 }
 
 func (r *DocumentRepository) GetPathByIDWithTx(tx *gorm.DB, id int64) (string, error) {
 	return getDocPathByID(tx, id)
 }
 
-func getSubtreeVersion(ctx context.Context, path string) (int64, error) {
-	if storage.KVS == nil {
+func (r *DocumentRepository) getSubtreeVersion(ctx context.Context, path string) (int64, error) {
+	if r.redis == nil {
 		return 0, nil
 	}
-	val, err := storage.KVS.Get(ctx, key.KeyDocSubtreeVersion(path)).Result()
+	val, err := r.redis.Get(ctx, key.KeyDocSubtreeVersion(path)).Result()
 	if err == redis.Nil {
 		return 0, nil
 	}
@@ -75,11 +74,11 @@ func getSubtreeVersion(ctx context.Context, path string) (int64, error) {
 }
 
 func (r *DocumentRepository) BumpSubtreeVersionsByPath(ctx context.Context, path string) error {
-	if storage.KVS == nil {
+	if r.redis == nil {
 		return nil
 	}
 	prefixes := splitPathPrefixes(path)
-	pipe := storage.KVS.Pipeline()
+	pipe := r.redis.Pipeline()
 	for _, prefix := range prefixes {
 		pipe.Incr(ctx, key.KeyDocSubtreeVersion(prefix))
 	}
@@ -112,13 +111,13 @@ func setCachedSubtreeIDs(ctx context.Context, key string, ids []int64) {
 	}
 }
 
-func fetchDocumentsByIDs(ids []int64) ([]*model.Document, error) {
+func (r *DocumentRepository) fetchDocumentsByIDs(ids []int64) ([]*model.Document, error) {
 	if len(ids) == 0 {
 		return []*model.Document{}, nil
 	}
 
 	var docs []*model.Document
-	if err := storage.DB.Model(&model.Document{}).Where("id IN ?", ids).Find(&docs).Error; err != nil {
+	if err := r.db.Model(&model.Document{}).Where("id IN ?", ids).Find(&docs).Error; err != nil {
 		return nil, err
 	}
 

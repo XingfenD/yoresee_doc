@@ -3,21 +3,25 @@ package membership_service
 import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
 	"github.com/XingfenD/yoresee_doc/internal/model"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/membership_repo"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type MembershipService struct {
+	db      *gorm.DB
 	repo    *membership_repo.MembershipRepository
 	useRepo *user_repo.UserRepository
 }
 
-func NewMembershipService() *MembershipService {
+func NewMembershipService(repos *repository.Repositories) *MembershipService {
 	return &MembershipService{
-		repo:    membership_repo.MembershipRepo,
-		useRepo: user_repo.UserRepo,
+		db:      repos.DB,
+		repo:    repos.Membership,
+		useRepo: repos.User,
 	}
 }
 
@@ -115,4 +119,4 @@ func (s *MembershipService) GetOrgNodeMeta(externalID string) (*model.OrgNodeMet
 // 	}
 // }
 
-var MembershipSvc = NewMembershipService()
+var MembershipSvc *MembershipService

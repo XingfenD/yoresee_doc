@@ -1,5 +1,11 @@
 package comment_repo
 
-type CommentRepository struct{}
+import "gorm.io/gorm"
 
-var CommentRepo = &CommentRepository{}
+type CommentRepository struct {
+	db *gorm.DB
+}
+
+func NewCommentRepository(db *gorm.DB) *CommentRepository {
+	return &CommentRepository{db: db}
+}

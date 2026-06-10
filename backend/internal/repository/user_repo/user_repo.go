@@ -1,5 +1,15 @@
 package user_repo
 
-type UserRepository struct{}
+import (
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
+)
 
-var UserRepo = &UserRepository{}
+type UserRepository struct {
+	db    *gorm.DB
+	redis *redis.Client
+}
+
+func NewUserRepository(db *gorm.DB, redis *redis.Client) *UserRepository {
+	return &UserRepository{db: db, redis: redis}
+}

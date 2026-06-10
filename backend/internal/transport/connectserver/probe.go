@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 )
 
 type probeResponse struct {
@@ -41,24 +39,24 @@ func readinessErr() error {
 	if draining.Load() {
 		return fmt.Errorf("server is draining")
 	}
-	if storage.DB == nil {
+	if readyDB == nil {
 		return fmt.Errorf("database is not initialized")
 	}
-	if storage.KVS == nil {
+	if readyKVS == nil {
 		return fmt.Errorf("redis is not initialized")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
 	defer cancel()
 
-	sqlDB, err := storage.DB.DB()
+	sqlDB, err := readyDB.DB()
 	if err != nil {
 		return fmt.Errorf("database handle unavailable: %w", err)
 	}
 	if err := sqlDB.PingContext(ctx); err != nil {
 		return fmt.Errorf("database ping failed: %w", err)
 	}
-	if err := storage.KVS.Ping(ctx).Err(); err != nil {
+	if err := readyKVS.Ping(ctx).Err(); err != nil {
 		return fmt.Errorf("redis ping failed: %w", err)
 	}
 	return nil

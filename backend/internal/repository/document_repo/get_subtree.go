@@ -6,7 +6,6 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/model"
 	"github.com/XingfenD/yoresee_doc/pkg/key"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -49,7 +48,7 @@ func (op *DocumentGetSubtreeOperation) WithDirectoryOnly(with bool) *DocumentGet
 }
 
 func (op *DocumentGetSubtreeOperation) Exec(ctx context.Context) ([]*model.Document, error) {
-	db := storage.DB
+	db := op.repo.db
 	if op.tx != nil {
 		db = op.tx
 	}
@@ -77,15 +76,15 @@ func (op *DocumentGetSubtreeOperation) Exec(ctx context.Context) ([]*model.Docum
 	}
 
 	// in-transaction query should bypass cache to avoid stale reads
-	if op.tx != nil || storage.KVS == nil {
+	if op.tx != nil || op.repo.redis == nil {
 		return op.queryWithRoot(db, root.Path, root.Depth)
 	}
 
-	version, err := getSubtreeVersion(ctx, root.Path)
+	version, err := op.repo.getSubtreeVersion(ctx, root.Path)
 	if err == nil {
 		cacheKey := key.KeyDocSubtree(root.Path, version, op.depth)
 		if cachedIDs, ok, err := getCachedSubtreeIDs(ctx, cacheKey); err == nil && ok {
-			return fetchDocumentsByIDs(cachedIDs)
+			return op.repo.fetchDocumentsByIDs(cachedIDs)
 		}
 
 		val, err, _ := subtreeCacheSF.Do(cacheKey, func() (interface{}, error) {

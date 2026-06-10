@@ -197,7 +197,7 @@ func (s *MembershipService) CreateUserGroup(req *dto.CreateUserGroupRequest) (st
 	}
 
 	var createdExternalID string
-	err := utils.WithTransaction(func(tx *gorm.DB) error {
+	err := utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		creatorID, err := s.useRepo.GetIDByExternalID(req.CreatorUserExternalID).WithTx(tx).Exec()
 		if err != nil {
 			return status.StatusUserNotFound
@@ -241,7 +241,7 @@ func (s *MembershipService) UpdateUserGroup(req *dto.UpdateUserGroupRequest) err
 		return status.StatusParamError
 	}
 
-	return utils.WithTransaction(func(tx *gorm.DB) error {
+	return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		group, err := s.repo.GetUserGroupByExternalID(req.ExternalID).WithTx(tx).Exec()
 		if err != nil {
 			return status.StatusMembershipMetaNotFound
@@ -286,7 +286,7 @@ func (s *MembershipService) DeleteUserGroup(req *dto.DeleteUserGroupRequest) err
 		return status.StatusParamError
 	}
 
-	return utils.WithTransaction(func(tx *gorm.DB) error {
+	return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 		group, err := s.repo.GetUserGroupByExternalID(req.ExternalID).WithTx(tx).Exec()
 		if err != nil {
 			return status.StatusMembershipMetaNotFound

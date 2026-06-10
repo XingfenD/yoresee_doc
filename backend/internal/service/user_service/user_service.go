@@ -2,6 +2,7 @@ package user_service
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/dto"
+	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/repository/user_repo"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/sirupsen/logrus"
@@ -11,9 +12,9 @@ type UserService struct {
 	userRepo *user_repo.UserRepository
 }
 
-func NewUserService() *UserService {
+func NewUserService(repos *repository.Repositories) *UserService {
 	return &UserService{
-		userRepo: user_repo.UserRepo,
+		userRepo: repos.User,
 	}
 }
 
@@ -44,4 +45,4 @@ func (s *UserService) GetIDByExternalID(externalID string) (int64, error) {
 	return id, nil
 }
 
-var UserSvc = NewUserService()
+var UserSvc *UserService

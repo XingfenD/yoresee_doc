@@ -24,7 +24,7 @@ func (s *DocumentService) UpdateDocumentMeta(ctx context.Context, req *dto.Updat
 	err := cache.DoubleDelete(
 		context.Background(),
 		func() error {
-			return utils.WithTransaction(func(tx *gorm.DB) error {
+			return utils.WithTransaction(s.db, func(tx *gorm.DB) error {
 				oldDoc, err := s.documentRepo.GetByExternalID(req.ExternalID).WithTx(tx).Exec(ctx)
 				if err != nil {
 					return status.StatusDocumentNotFound

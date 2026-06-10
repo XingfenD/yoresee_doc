@@ -2,7 +2,6 @@ package knowledge_base_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +24,7 @@ type ListKnowledgeBaseOperation struct {
 
 func (r *KnowledgeBaseRepository) List(m *model.KnowledgeBase) (op *ListKnowledgeBaseOperation) {
 	return &ListKnowledgeBaseOperation{
-		repo:  KnowledgeBaseRepo,
+		repo:  r,
 		model: m,
 	}
 }
@@ -76,7 +75,7 @@ func (op *ListKnowledgeBaseOperation) WithPagination(page, pageSize int) *ListKn
 
 func (op *ListKnowledgeBaseOperation) Exec() (kbs []*model.KnowledgeBase, err error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	dbQuery := op.tx.Model(op.model)
@@ -114,7 +113,7 @@ func (op *ListKnowledgeBaseOperation) Exec() (kbs []*model.KnowledgeBase, err er
 
 func (op *ListKnowledgeBaseOperation) ExecWithTotal() (kbs []*model.KnowledgeBase, total int64, err error) {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 
 	dbQuery := op.tx.Model(op.model)

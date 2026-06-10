@@ -2,7 +2,6 @@ package invitation_repo
 
 import (
 	"github.com/XingfenD/yoresee_doc/internal/model"
-	"github.com/XingfenD/yoresee_doc/pkg/storage"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +30,7 @@ func (op *InvitationGetByIDOperation) Exec() (*model.Invitation, error) {
 	if op.tx != nil {
 		err = op.tx.First(&invitation, op.id).Error
 	} else {
-		err = storage.DB.First(&invitation, op.id).Error
+		err = op.repo.db.First(&invitation, op.id).Error
 	}
 
 	return &invitation, err
@@ -59,7 +58,7 @@ func (op *InvitationCreateOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Create(op.invitation).Error
 	}
-	return storage.DB.Create(op.invitation).Error
+	return op.repo.db.Create(op.invitation).Error
 }
 
 type InvitationUpdateOperation struct {
@@ -84,7 +83,7 @@ func (op *InvitationUpdateOperation) Exec() error {
 	if op.tx != nil {
 		return op.tx.Save(op.invitation).Error
 	}
-	return storage.DB.Save(op.invitation).Error
+	return op.repo.db.Save(op.invitation).Error
 }
 
 type InvitationDeleteOperation struct {
@@ -107,7 +106,7 @@ func (op *InvitationDeleteOperation) WithTx(tx *gorm.DB) *InvitationDeleteOperat
 
 func (op *InvitationDeleteOperation) Exec() error {
 	if op.tx == nil {
-		op.tx = storage.DB
+		op.tx = op.repo.db
 	}
 	return op.tx.Delete(&model.Invitation{}, op.id).Error
 }
