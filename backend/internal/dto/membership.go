@@ -1,67 +1,43 @@
 package dto
 
-import "github.com/XingfenD/yoresee_doc/internal/model"
+// MembershipType mirrors model.MembershipType to keep DTO layer independent.
+type MembershipType int64
+
+const (
+	MembershipType_UserGroup MembershipType = 1
+	MembershipType_OrgNode   MembershipType = 2
+)
 
 type MembershipRelationBase struct {
-	Type         model.MembershipType
-	UserID       int64
-	MembershipID int64
+	Type         MembershipType `json:"type"`
+	UserID       int64          `json:"user_id"`
+	MembershipID int64          `json:"membership_id"`
 }
 
 type MembershipBase struct {
-	Type                 model.MembershipType
-	MembershipExternalID string
-	MembershipName       string
+	Type                 MembershipType `json:"type"`
+	MembershipExternalID string         `json:"membership_external_id"`
+	MembershipName       string         `json:"membership_name"`
 }
 
 type MembershipBaseRequest struct {
-	Type                 model.MembershipType
-	MembershipExternalID string
+	Type                 MembershipType `json:"type"`
+	MembershipExternalID string         `json:"membership_external_id"`
 }
 
 type MembershipMetaResponse struct {
 	MembershipBase
-	Description string
-}
-
-func NewMembershipMetaResponseFromUserGroupMetaModel(m *model.UserGroupMeta) *MembershipMetaResponse {
-	if m == nil {
-		return nil
-	}
-
-	return &MembershipMetaResponse{
-		MembershipBase: MembershipBase{
-			Type:                 model.MembershipType_UserGroup,
-			MembershipName:       m.Name,
-			MembershipExternalID: m.ExternalID,
-		},
-		Description: m.Description,
-	}
-}
-
-func NewMembershipMetaResponseFromOrgNodeMetaModel(m *model.OrgNodeMeta) *MembershipMetaResponse {
-	if m == nil {
-		return nil
-	}
-
-	return &MembershipMetaResponse{
-		MembershipBase: MembershipBase{
-			Type:                 model.MembershipType_OrgNode,
-			MembershipName:       m.Name,
-			MembershipExternalID: m.ExternalID,
-		},
-		Description: m.Description,
-	}
+	Description string `json:"description"`
 }
 
 type CreateMembershipRelationRequest struct {
 	MembershipBaseRequest
-	UserExternalID string
+	UserExternalID string `json:"user_external_id"`
 }
 
 type MembershipRelationResponse struct {
 	MembershipBase
-	UserList []UserBase
+	UserList []UserBase `json:"user_list"`
 }
 
 // type MembershipAuthorityResponse struct {

@@ -49,7 +49,7 @@ func (s *DocumentService) listDocuments(ctx context.Context, req *internal_dto.D
 	return docs, total, nil
 }
 
-func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.ListDocumentsByExternalReq) ([]*dto.DocumentMetaResponse, int64, error) {
+func (s *DocumentService) ListDocumentsByExternal(ctx context.Context, req *dto.ListDocumentsByExternalRequest) ([]*dto.DocumentMetaResponse, int64, error) {
 	var userID *int64
 	if req == nil {
 		return nil, 0, status.StatusInternalParamsError

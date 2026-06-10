@@ -78,7 +78,7 @@ func (op *templateListOperation) ExecWithTotal() ([]*dto.TemplateResponse, int64
 	return resp, total, nil
 }
 
-func (s *DocumentService) ListTemplatesByExternal(req *dto.TemplateListByExternalReq) ([]*dto.TemplateResponse, int64, error) {
+func (s *DocumentService) ListTemplatesByExternal(req *dto.TemplateListByExternalRequest) ([]*dto.TemplateResponse, int64, error) {
 	var creatorID *int64
 	if req.CreatorExternalID != "" {
 		id, err := s.userRepo.GetIDByExternalID(req.CreatorExternalID).Exec()
@@ -101,7 +101,7 @@ func (s *DocumentService) ListTemplatesByExternal(req *dto.TemplateListByExterna
 	return list, total, nil
 }
 
-func buildTemplateListReqFromExternal(req *dto.TemplateListByExternalReq, creatorID *int64) (*internal_dto.TemplateListReq, error) {
+func buildTemplateListReqFromExternal(req *dto.TemplateListByExternalRequest, creatorID *int64) (*internal_dto.TemplateListReq, error) {
 	filter := &dto.TemplateListFilterArgs{}
 	if req.FilterArgs != nil {
 		*filter = *req.FilterArgs

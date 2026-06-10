@@ -1,20 +1,20 @@
 package dto
 
 type CreateNotificationRequest struct {
-	ReceiverExternalIDs []string
-	Type                string
-	Title               string
-	Content             string
-	PayloadJSON         string
+	ReceiverExternalIDs []string `json:"receiver_external_ids"`
+	Type                string   `json:"type"`
+	Title               string   `json:"title"`
+	Content             string   `json:"content"`
+	PayloadJSON         string   `json:"payload_json"`
 }
 
 type ListNotificationsRequest struct {
-	UserExternalID string
-	Status         *string
-	Pagination     Pagination
+	UserExternalID string     `json:"user_external_id"`
+	Status         *string    `json:"status,omitempty"`
+	Pagination     Pagination `json:"pagination"`
 }
 
 type MarkNotificationsReadRequest struct {
-	UserExternalID string
-	ExternalIDs    []string
+	UserExternalID string   `json:"user_external_id"`
+	ExternalIDs    []string `json:"external_ids"`
 }

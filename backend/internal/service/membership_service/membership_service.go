@@ -27,13 +27,13 @@ func NewMembershipService(repos *repository.Repositories) *MembershipService {
 
 func (s *MembershipService) GetMembershipIDByExternalID(req *dto.MembershipBaseRequest) (int64, error) {
 	var membershipID int64
-	if req.Type == model.MembershipType_OrgNode {
+	if req.Type == dto.MembershipType_OrgNode {
 		orgNodeID, err := s.repo.GetOrgNodeIDByExternalID(req.MembershipExternalID).Exec()
 		if err != nil {
 			return 0, status.StatusMembershipMetaNotFound
 		}
 		membershipID = orgNodeID
-	} else if req.Type == model.MembershipType_UserGroup {
+	} else if req.Type == dto.MembershipType_UserGroup {
 		userGroupID, err := s.repo.GetUserGroupIDByExternalID(req.MembershipExternalID).Exec()
 		if err != nil {
 			return 0, status.StatusMembershipMetaNotFound
@@ -60,7 +60,7 @@ func (s *MembershipService) CreateMembershipRelation(membership *dto.CreateMembe
 	model := &model.MembershipRelation{
 		UserID:       userID,
 		MembershipID: membershipID,
-		Type:         membership.Type,
+		Type:         model.MembershipType(membership.Type),
 	}
 
 	if err := s.repo.CreateMembership(model).Exec(); err != nil {

@@ -6,7 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (s *KnowledgeBaseService) ListByExternal(req *dto.KnowledgeBaseListByExternalReq) ([]*dto.KnowledgeBaseResponse, int64, error) {
+func (s *KnowledgeBaseService) ListByExternal(req *dto.KnowledgeBaseListByExternalRequest) ([]*dto.KnowledgeBaseResponse, int64, error) {
 	var creatorID *int64
 	if req.CreatorExternalID != "" {
 		id, err := s.userRepo.GetIDByExternalID(req.CreatorExternalID).Exec()

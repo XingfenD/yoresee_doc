@@ -51,7 +51,7 @@ func (s *KnowledgeBaseServiceServer) ListKnowledgeBases(ctx context.Context, req
 		sortArgs.Desc = req.GetOrderDesc()
 	}
 
-	serviceReq := &dto.KnowledgeBaseListByExternalReq{
+	serviceReq := &dto.KnowledgeBaseListByExternalRequest{
 		CreatorExternalID: "",
 		FilterArgs:        filterArgs,
 		SortArgs:          sortArgs,
@@ -91,7 +91,7 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 		return &pb.GetKnowledgeBaseResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	kbDTO, err := knowledge_base_service.KnowledgeBaseSvc.GetByExternalID(&dto.KnowledgeBaseGetByExternalIDReq{
+	kbDTO, err := knowledge_base_service.KnowledgeBaseSvc.GetByExternalID(&dto.KnowledgeBaseGetByExternalIDRequest{
 		KnowledgeBaseExternalID: req.KnowledgeBaseExternalId,
 	}).WithExtend().Exec()
 	if err != nil {
@@ -106,7 +106,7 @@ func (s *KnowledgeBaseServiceServer) GetKnowledgeBase(ctx context.Context, req *
 		})
 	}
 
-	svcReq := &dto.ListDocumentsByExternalReq{
+	svcReq := &dto.ListDocumentsByExternalRequest{
 		ExternalArgs: &dto.DocumentsListExternalArgs{
 			KnowledgeExternalID: utils.Of(kbDTO.ExternalID),
 		},

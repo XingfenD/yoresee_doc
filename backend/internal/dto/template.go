@@ -2,28 +2,28 @@ package dto
 
 import "time"
 
-type TemplateContainer int
+type TemplateContainer string
 
 const (
-	TemplateContainerOwn TemplateContainer = iota
-	TemplateContainerKnowledgeBase
-	TemplateContainerPublic
+	TemplateContainerOwn          TemplateContainer = "own"
+	TemplateContainerKnowledgeBase TemplateContainer = "knowledge_base"
+	TemplateContainerPublic        TemplateContainer = "public"
 )
 
 type CreateTemplateRequest struct {
-	UserExternalID          string
-	TargetContainer         TemplateContainer
-	KnowledgeBaseExternalID *string
-	TemplateContent         string
-	Type                    DocumentType
+	UserExternalID          string            `json:"user_external_id"`
+	TargetContainer         TemplateContainer `json:"target_container"`
+	KnowledgeBaseExternalID *string           `json:"knowledge_base_external_id,omitempty"`
+	TemplateContent         string            `json:"template_content"`
+	Type                    DocumentType      `json:"type"`
 }
 
 type UpdateTemplateSettingsRequest struct {
-	UserExternalID string
-	TemplateID     int64
-	Name           *string
-	Description    *string
-	IsPublic       *bool
+	UserExternalID string  `json:"user_external_id"`
+	TemplateID     int64   `json:"template_id"`
+	Name           *string `json:"name,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	IsPublic       *bool   `json:"is_public,omitempty"`
 }
 
 type TemplateResponse struct {
@@ -46,7 +46,7 @@ type TemplateListFilterArgs struct {
 	Type            *DocumentType      `json:"type"`
 }
 
-type TemplateListByExternalReq struct {
+type TemplateListByExternalRequest struct {
 	CreatorExternalID string                  `json:"creator_external_id"`
 	FilterArgs        *TemplateListFilterArgs `json:"filter_args"`
 	SortArgs          SortArgs                `json:"sort_args"`
@@ -54,14 +54,14 @@ type TemplateListByExternalReq struct {
 }
 
 type CreateRecentTemplateRequest struct {
-	UserExternalID string
-	TemplateID     int64
-	AccessTime     time.Time
+	UserExternalID string    `json:"user_external_id"`
+	TemplateID     int64     `json:"template_id"`
+	AccessTime     time.Time `json:"access_time"`
 }
 
 type ListRecentTemplatesRequest struct {
-	UserExternalID string
-	StartTime      *time.Time
-	EndTime        *time.Time
-	Pagination     Pagination
+	UserExternalID string     `json:"user_external_id"`
+	StartTime      *time.Time `json:"start_time,omitempty"`
+	EndTime        *time.Time `json:"end_time,omitempty"`
+	Pagination     Pagination `json:"pagination"`
 }

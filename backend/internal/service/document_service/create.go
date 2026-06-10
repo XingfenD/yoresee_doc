@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentReq) (*dto.CreateDocumentResponse, error) {
+func (s *DocumentService) Create(ctx context.Context, req *dto.CreateDocumentRequest) (*dto.CreateDocumentResponse, error) {
 	if err := validateCreateDocumentReq(req); err != nil {
 		logrus.Errorf("[Service layer: DocumentService] validateCreateDocumentReq failed, err=%+v", err)
 		return nil, status.GenErrWithCustomMsg(err, "invalid create document request")

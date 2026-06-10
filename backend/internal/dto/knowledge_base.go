@@ -53,9 +53,9 @@ func NewKnowledgeBaseResponseFromModel(kb *model.KnowledgeBase, kbExtend *Knowle
 }
 
 type CreateRecentKnowledgeBaseRequest struct {
-	UserExternalID          string
-	KnowledgeBaseExternalID string
-	AssessTime              time.Time
+	UserExternalID          string    `json:"user_external_id"`
+	KnowledgeBaseExternalID string    `json:"knowledge_base_external_id"`
+	AssessTime              time.Time `json:"assess_time"`
 }
 
 type CreateKnowledgeBaseRequest struct {
@@ -71,20 +71,20 @@ type CreateKnowledgeBaseResponse struct {
 }
 
 type ListRecentKnowledgeBasesRequest struct {
-	UserExternalID string
-	StartTime      *time.Time
-	EndTime        *time.Time
-	Pagination     Pagination
+	UserExternalID string     `json:"user_external_id"`
+	StartTime      *time.Time `json:"start_time,omitempty"`
+	EndTime        *time.Time `json:"end_time,omitempty"`
+	Pagination     Pagination `json:"pagination"`
 }
 
-type KnowledgeBaseListByExternalReq struct {
+type KnowledgeBaseListByExternalRequest struct {
 	CreatorExternalID string                       `json:"creator_external_id"`
 	FilterArgs        *KnowledgeBaseListFilterArgs `json:"filter_args"`
 	SortArgs          SortArgs                     `json:"sort_args"`
 	Pagination        Pagination                   `json:"pagination"`
 }
 
-type KnowledgeBaseGetByExternalIDReq struct {
+type KnowledgeBaseGetByExternalIDRequest struct {
 	KnowledgeBaseExternalID string `json:"knowledge_base_external_id"`
 }
 

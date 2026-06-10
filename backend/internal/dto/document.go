@@ -126,7 +126,7 @@ type RecordRecentDocumentRequest struct {
 	DocumentExternalID string `json:"document_external_id"`
 }
 
-type ListDocumentsByExternalReq struct {
+type ListDocumentsByExternalRequest struct {
 	ExternalArgs *DocumentsListExternalArgs `json:"external_args"`
 	ListDocumentsBaseArgs
 	FilterArgs *DocumentsListFilterArgs `json:"filter_args"`
@@ -135,7 +135,7 @@ type ListDocumentsByExternalReq struct {
 	Options    *RecursiveOptions        `json:"options"`
 }
 
-type CreateDocumentReq struct {
+type CreateDocumentRequest struct {
 	Title             string        `json:"title"`
 	Type              DocumentType  `json:"type"`
 	ContainerType     ContainerType `json:"container_type"`

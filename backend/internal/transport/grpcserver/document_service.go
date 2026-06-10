@@ -49,7 +49,7 @@ func (s *DocumentServiceServer) ListDocuments(ctx context.Context, req *pb.ListD
 		sortArgs.Desc = req.GetOrderDesc()
 	}
 
-	serviceReq := &dto.ListDocumentsByExternalReq{
+	serviceReq := &dto.ListDocumentsByExternalRequest{
 		ExternalArgs: &dto.DocumentsListExternalArgs{
 			UserExternalID:         req.UserExternalId,
 			RootDocumentExternalID: req.RootDocumentExternalId,
@@ -227,7 +227,7 @@ func (s *DocumentServiceServer) GetOwnDocuments(ctx context.Context, req *pb.Get
 		return &pb.GetOwnDocumentsResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	queryReq := &dto.ListDocumentsByExternalReq{
+	queryReq := &dto.ListDocumentsByExternalRequest{
 		ExternalArgs: &dto.DocumentsListExternalArgs{
 			UserExternalID: &userExternalID,
 		},
@@ -271,7 +271,7 @@ func (s *DocumentServiceServer) CreateDocument(ctx context.Context, req *pb.Crea
 		return &pb.CreateDocumentResponse{Base: baseResponseFromStatus(status.StatusParamError)}, nil
 	}
 
-	dtoReq := &dto.CreateDocumentReq{
+	dtoReq := &dto.CreateDocumentRequest{
 		Title:             req.Title,
 		Type:              doc_type_mapper.FromProtoType(req.Type),
 		IsPublic:          req.GetIsPublic(),
@@ -635,7 +635,7 @@ func (s *DocumentServiceServer) ListTemplates(ctx context.Context, req *pb.ListT
 		sortArgs.Desc = req.GetOrderDesc()
 	}
 
-	serviceReq := &dto.TemplateListByExternalReq{
+	serviceReq := &dto.TemplateListByExternalRequest{
 		FilterArgs: filterArgs,
 		SortArgs:   sortArgs,
 		Pagination: dto.Pagination{

@@ -9,11 +9,11 @@ import (
 type KnowledgeBaseGetByExternalIDOperation struct {
 	withUserExtend     bool
 	withDocumentExtend bool
-	req                *dto.KnowledgeBaseGetByExternalIDReq
+	req                *dto.KnowledgeBaseGetByExternalIDRequest
 	srvc               *KnowledgeBaseService
 }
 
-func (s *KnowledgeBaseService) GetByExternalID(req *dto.KnowledgeBaseGetByExternalIDReq) *KnowledgeBaseGetByExternalIDOperation {
+func (s *KnowledgeBaseService) GetByExternalID(req *dto.KnowledgeBaseGetByExternalIDRequest) *KnowledgeBaseGetByExternalIDOperation {
 	return &KnowledgeBaseGetByExternalIDOperation{
 		req:  req,
 		srvc: s,

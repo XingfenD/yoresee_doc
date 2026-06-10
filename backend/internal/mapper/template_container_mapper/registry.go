@@ -48,7 +48,7 @@ func (r *registry) register(mapper Mapper) error {
 
 	protoType := mapper.ProtoType()
 	dtoType := mapper.DTOType()
-	if dtoType < dto.TemplateContainerOwn {
+	if dtoType == "" {
 		return fmt.Errorf("template container mapper %q has invalid dto mapping", name)
 	}
 	if strings.TrimSpace(mapper.Scope()) == "" {
@@ -62,7 +62,7 @@ func (r *registry) register(mapper Mapper) error {
 		return fmt.Errorf("template container proto mapping %v already registered", protoType)
 	}
 	if _, exists := r.byDTO[dtoType]; exists {
-		return fmt.Errorf("template container dto mapping %d already registered", dtoType)
+		return fmt.Errorf("template container dto mapping %q already registered", dtoType)
 	}
 
 	r.byName[name] = mapper

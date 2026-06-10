@@ -8,7 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/status"
 )
 
-func validateCreateDocumentReq(req *dto.CreateDocumentReq) error {
+func validateCreateDocumentReq(req *dto.CreateDocumentRequest) error {
 	if req == nil {
 		return status.StatusInternalParamsError
 	}

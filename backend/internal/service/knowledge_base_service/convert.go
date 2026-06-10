@@ -8,7 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/status"
 )
 
-func buildKnowledgeBaseListReqFromExternal(req *dto.KnowledgeBaseListByExternalReq, creatorID *int64) *internal_dto.KnowledgeBaseListReq {
+func buildKnowledgeBaseListReqFromExternal(req *dto.KnowledgeBaseListByExternalRequest, creatorID *int64) *internal_dto.KnowledgeBaseListReq {
 	if req == nil {
 		return nil
 	}
