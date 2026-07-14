@@ -123,7 +123,8 @@ const props = defineProps({
   alignClass: { type: Function, required: true },
   toggleTreeNode: { type: Function, required: true },
   isTreeColumn: { type: Function, required: true },
-  buildGridTemplate: { type: Function, default: null },
+  buildGridTemplate: { type: Function, required: true },
+  resolveSerialNumber: { type: Function, required: true },
 });
 
 defineEmits(['toggle-scroll']);
@@ -134,23 +135,8 @@ const resolvedToggleWidth = computed(() =>
 
 const treeDataColumnsRef = computed(() => props.treeDataColumns);
 
-const buildFn = computed(() =>
-  props.buildGridTemplate ??
-  ((cols) =>
-    cols
-      .map((c) => (c.width ? `${typeof c.width === 'number' ? c.width + 'px' : c.width}` : `${c.flex || 1}fr`))
-      .join(' '))
-);
-
 const { effectiveColumns: effectiveDataColumns, gridTemplateColumns: resizableDataTemplate, startResize } =
-  useColumnResize(treeDataColumnsRef, (cols) => buildFn.value(cols));
-
-const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
-  const page = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
-  const size = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 0;
-  if (size <= 0) return rowIndex + 1;
-  return (Math.max(page, 1) - 1) * size + rowIndex + 1;
-};
+  useColumnResize(treeDataColumnsRef, (cols) => props.buildGridTemplate(cols));
 </script>
 
 <style scoped>
@@ -292,32 +278,8 @@ const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
   font-size: 14px;
   color: var(--text-medium);
 }
+</style>
 
-/* ── Resize handle ── */
-.col-resize-handle {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  cursor: col-resize;
-  z-index: 1;
-}
-
-.col-resize-handle::after {
-  content: '';
-  position: absolute;
-  right: 2px;
-  top: 20%;
-  bottom: 20%;
-  width: 2px;
-  border-radius: 1px;
-  background: transparent;
-  transition: background 0.15s;
-}
-
-.list-cell--head:hover .col-resize-handle::after,
-.col-resize-handle:hover::after {
-  background: var(--primary-color, #165dff);
-}
+<style>
+@import '@/styles/column-resize.css';
 </style>

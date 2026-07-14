@@ -1,7 +1,7 @@
 <template>
   <img
     v-if="src"
-    :src="src"
+    :src="resolvedSrc"
     class="app-avatar"
     :style="sizeStyle"
     :alt="name"
@@ -41,7 +41,7 @@ watch(() => props.src, () => { imgFailed.value = false; });
 
 const onImgError = () => { imgFailed.value = true; };
 
-const src = computed(() => (!imgFailed.value && props.src) ? props.src : '');
+const resolvedSrc = computed(() => (!imgFailed.value && props.src) ? props.src : '');
 
 const initial = computed(() => {
   const n = (props.name || '').trim();

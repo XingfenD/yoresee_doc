@@ -126,6 +126,13 @@ export function useCommonListSharedState(props, emit) {
     return 'is-left';
   };
 
+  const resolveSerialNumber = (rowIndex, currentPage, pageSize) => {
+    const page = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
+    const size = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 0;
+    if (size <= 0) return rowIndex + 1;
+    return (Math.max(page, 1) - 1) * size + rowIndex + 1;
+  };
+
   return {
     treeToggleColumnKey,
     treeToggleWidth,
@@ -144,6 +151,7 @@ export function useCommonListSharedState(props, emit) {
     emitSearch,
     handlePageChange,
     handleSizeChange,
-    alignClass
+    alignClass,
+    resolveSerialNumber
   };
 }

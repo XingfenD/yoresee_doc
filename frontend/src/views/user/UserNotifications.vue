@@ -93,6 +93,7 @@ import AppTag from '@/components/base/AppTag.vue';
 import { useUserShell } from '@/composables/shell/useUserShell';
 import { useNotificationCenter } from '@/composables/notification/useNotificationCenter';
 import { usePageBoot } from '@/composables/shell/usePageBoot';
+import { markNotificationsRead } from '@/services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -147,14 +148,17 @@ onMounted(() => {
 });
 const openDetail = (row) => {
   const payload = (() => {
-    try { return JSON.parse(row.payload || '{}'); } catch { return {}; }
+    try { return JSON.parse(row.payload || '{}'); } catch (e) { console.warn('Invalid notification payload', e); return {}; }
   })();
   const docId = payload.document_external_id;
   const commentId = payload.comment_external_id;
   const kbId = payload.knowledge_base_external_id;
   if (!docId) return;
 
-  if (!row.read) markRead(row);
+  // Fire-and-forget: mark read before navigating away (no need to reload list)
+  if (!row.read) {
+    markNotificationsRead([row.external_id]).catch(() => {});
+  }
 
   const query = commentId ? { comment: commentId } : {};
   if (kbId) {

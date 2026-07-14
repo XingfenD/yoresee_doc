@@ -40,6 +40,7 @@
         :resolve-row-key="resolveRowKey"
         :align-class="alignClass"
         :build-grid-template="buildGridTemplate"
+        :resolve-serial-number="resolveSerialNumber"
       >
         <template v-for="name in forwardedSlotNames" :key="`table-${name}`" #[name]="slotProps">
           <slot :name="name" v-bind="slotProps || {}" />
@@ -65,6 +66,7 @@
         :toggle-tree-node="toggleTreeNode"
         :is-tree-column="isTreeColumn"
         :build-grid-template="buildGridTemplate"
+        :resolve-serial-number="resolveSerialNumber"
         @toggle-scroll="setToggleScrollLeft"
       >
         <template v-for="name in forwardedSlotNames" :key="`tree-${name}`" #[name]="slotProps">
@@ -255,7 +257,8 @@ const {
   maxTreeIndentWidth,
   handlePageChange,
   handleSizeChange,
-  alignClass
+  alignClass,
+  resolveSerialNumber
 } = useCommonListState(props, emit);
 </script>
 

@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onScopeDispose } from 'vue';
 
 /**
  * Composable for drag-to-resize column widths.
@@ -10,9 +10,6 @@ import { ref, computed } from 'vue';
 export function useColumnResize(displayColumns, buildGridTemplate, minColumnWidth = 60) {
   // Map of column key -> overridden width in px (null = use column def default)
   const columnWidthOverrides = ref({});
-
-  // Reset overrides when columns change identity (e.g. navigating to a different list)
-  // Not done automatically — caller can call resetOverrides() if needed.
 
   const effectiveColumns = computed(() =>
     displayColumns.value.map((col) => {
@@ -32,23 +29,17 @@ export function useColumnResize(displayColumns, buildGridTemplate, minColumnWidt
     event.preventDefault();
     event.stopPropagation();
 
-    // Resolve starting width: override > column.width > measure from DOM
     let startWidth = columnWidthOverrides.value[column.key];
     if (startWidth == null) {
       if (column.width) {
         startWidth = typeof column.width === 'number' ? column.width : parseInt(column.width);
       } else {
-        // Measure the header cell from the DOM
         const cell = event.currentTarget?.closest?.('.list-cell');
         startWidth = cell ? cell.getBoundingClientRect().width : 120;
       }
     }
 
-    dragState = {
-      column,
-      startX: event.clientX,
-      startWidth,
-    };
+    dragState = { column, startX: event.clientX, startWidth };
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
@@ -60,10 +51,7 @@ export function useColumnResize(displayColumns, buildGridTemplate, minColumnWidt
     if (!dragState) return;
     const delta = event.clientX - dragState.startX;
     const newWidth = Math.max(minColumnWidth, dragState.startWidth + delta);
-    columnWidthOverrides.value = {
-      ...columnWidthOverrides.value,
-      [dragState.column.key]: newWidth,
-    };
+    columnWidthOverrides.value[dragState.column.key] = newWidth;
   }
 
   function onMouseUp() {
@@ -73,6 +61,17 @@ export function useColumnResize(displayColumns, buildGridTemplate, minColumnWidt
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   }
+
+  // Clean up listeners if scope is disposed mid-drag
+  onScopeDispose(() => {
+    if (dragState) {
+      dragState = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
 
   function resetOverrides() {
     columnWidthOverrides.value = {};

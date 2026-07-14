@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import { EditorContent } from '@tiptap/vue-3';
 import { useI18n } from 'vue-i18n';
 import RichTextParagraphHandle from '@/components/document/rich-text/RichTextParagraphHandle.vue';
@@ -112,6 +112,10 @@ function onMentionSelect(user) {
   mentionPopupState.onSelect?.(user);
   hideMentionPopup();
 }
+
+onBeforeUnmount(() => {
+  hideMentionPopup();
+});
 
 const props = defineProps({
   modelValue: {
