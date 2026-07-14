@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { listUsers } from '@/services/api/membership.js';
 import AppAvatar from '@/components/base/AppAvatar.vue';
 
@@ -38,20 +38,24 @@ const props = defineProps({
 const emit = defineEmits(['select']);
 
 const users = ref([]);
+let debounceTimer = null;
 
 watch(
   () => [props.visible, props.keyword],
-  async ([visible, keyword]) => {
+  ([visible, keyword]) => {
     if (!visible) {
       users.value = [];
       return;
     }
-    try {
-      const result = await listUsers({ keyword, page: 1, page_size: 8 });
-      users.value = result.users || [];
-    } catch {
-      users.value = [];
-    }
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      try {
+        const result = await listUsers({ keyword, page: 1, page_size: 8 });
+        users.value = result.users || [];
+      } catch {
+        users.value = [];
+      }
+    }, 150);
   },
   { immediate: true },
 );
