@@ -85,25 +85,7 @@ const props = defineProps({
   }
 });
 
-const normalizeRows = (rows, width) =>
-  Array.from({ length: Array.isArray(rows) ? rows.length : 0 }, (_, rowIndex) => {
-    const row = Array.isArray(rows[rowIndex]) ? rows[rowIndex] : [];
-    return Array.from({ length: width }, (_, colIndex) => {
-      const value = row[colIndex];
-      return value === null || value === undefined ? '' : String(value);
-    });
-  });
-
-const columnLabelAt = (index) => {
-  let value = Number(index) + 1;
-  let label = '';
-  while (value > 0) {
-    const remainder = (value - 1) % 26;
-    label = String.fromCharCode(65 + remainder) + label;
-    value = Math.floor((value - 1) / 26);
-  }
-  return label || 'A';
-};
+import { normalizeRows, columnLabelAt } from '@/utils/tableUtils';
 
 const rowCount = computed(() => Math.max(
   Array.isArray(props.leftRows) ? props.leftRows.length : 0,

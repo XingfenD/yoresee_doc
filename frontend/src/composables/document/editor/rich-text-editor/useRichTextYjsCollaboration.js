@@ -8,30 +8,7 @@ import {
   YJS_CONTENT_FIELD
 } from '@/composables/document/editor/collab/useYjsContentBridge';
 
-const resolveCollabUrl = (rawUrl) => {
-  const input = String(rawUrl || '').trim();
-  if (!input) {
-    return '';
-  }
-  if (input.startsWith('ws://') || input.startsWith('wss://')) {
-    return input;
-  }
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const host = window.location.host;
-  const path = input.startsWith('/') ? input : `/${input}`;
-  return `${protocol}://${host}${path}`;
-};
-
-const getAwarenessPeerCount = (provider) => {
-  if (!provider?.awareness) {
-    return 0;
-  }
-  try {
-    return provider.awareness.getStates().size;
-  } catch (_) {
-    return 0;
-  }
-};
+import { resolveCollabUrl, getAwarenessPeerCount } from '@/utils/collabUrl';
 
 const hasSeedContent = (content) => {
   if (typeof content === 'string') {

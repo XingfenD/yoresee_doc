@@ -95,32 +95,32 @@ const handleVisibleChange = (visible) => {
 
 <style scoped>
 :global(.dark-mode .app-dropdown-popper.el-popper) {
-  background-color: var(--bg-white) !important;
-  border-color: var(--border-color) !important;
+  background-color: var(--el-bg-color-overlay);
+  border-color: var(--el-border-color);
 }
 
 :global(.dark-mode .app-dropdown-popper .el-popper__arrow::before) {
-  background-color: var(--bg-white) !important;
-  border-color: var(--border-color) !important;
+  background-color: var(--el-bg-color-overlay);
+  border-color: var(--el-border-color);
 }
 
 :global(.dark-mode .app-dropdown-popper .el-dropdown-menu) {
-  background-color: var(--bg-white) !important;
+  background-color: var(--el-bg-color-overlay);
 }
 
 :global(.dark-mode .app-dropdown-popper .el-dropdown-menu__item) {
-  color: var(--text-dark) !important;
+  color: var(--el-text-color-regular);
 }
 
 :global(.dark-mode .app-dropdown-popper .el-dropdown-menu__item:not(.is-disabled):hover),
 :global(.dark-mode .app-dropdown-popper .el-dropdown-menu__item:not(.is-disabled):focus),
 :global(.dark-mode .app-dropdown-popper .el-dropdown-menu__item.is-hovering),
 :global(.dark-mode .app-dropdown-popper .el-dropdown-menu__item.hover) {
-  background-color: var(--select-option-hover) !important;
-  color: var(--text-dark) !important;
+  background-color: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
 }
 
 :global(.dark-mode .app-dropdown-popper .el-dropdown-menu__item.hover:not(:hover):not(:focus):not(.is-hovering)) {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 </style>

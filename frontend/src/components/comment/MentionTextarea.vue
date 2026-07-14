@@ -231,7 +231,7 @@ defineExpose({ getMentionedUsers, reset });
   background: var(--bg-white, #fff);
   border: 1px solid var(--border-color, #c9cdd4);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
   min-width: 180px;
   max-width: 260px;
   overflow: hidden;

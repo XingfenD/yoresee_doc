@@ -81,4 +81,45 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* Element Plus 组件级变量 — 消除 !important 覆盖 */
+  --el-color-primary: var(--primary-color);
+  --el-color-primary-light-9: var(--primary-light);
+  --el-fill-color-blank: var(--bg-white);
+  --el-fill-color-light: var(--select-option-hover);
+  --el-bg-color-overlay: var(--select-option-bg);
+  --el-text-color-primary: var(--text-dark);
+  --el-text-color-regular: var(--text-medium);
+  --el-text-color-secondary: var(--text-light);
+  --el-text-color-placeholder: var(--input-placeholder);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-color);
+  --el-mask-color: rgba(16, 18, 22, 0.72);
+
+  --el-input-bg-color: var(--input-bg);
+  --el-input-text-color: var(--input-text);
+  --el-input-border-color: var(--input-border);
+  --el-input-placeholder-color: var(--input-placeholder);
+
+  --el-card-bg-color: var(--bg-white);
+  --el-card-border-color: var(--border-color);
+
+  --el-dialog-bg-color: var(--bg-white);
+
+  --el-menu-bg-color: var(--bg-white);
+  --el-menu-text-color: var(--text-medium);
+  --el-menu-hover-bg-color: var(--bg-medium);
+  --el-menu-hover-text-color: var(--primary-color);
+  --el-menu-active-color: var(--primary-color);
+
+  --el-switch-on-color: #3a7afe;
+  --el-switch-off-color: #3a3a3a;
+
+  --el-dropdown-menu-bg-color: var(--bg-white);
+  --el-dropdown-menuItem-hover-fill: var(--select-option-hover);
+
+  --el-messagebox-title-color: var(--text-dark);
+  --el-messagebox-content-color: var(--text-dark);
+
+  --el-loading-fill-color: rgba(16, 18, 22, 0.72);
 }

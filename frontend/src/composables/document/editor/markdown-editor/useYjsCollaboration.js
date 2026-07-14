@@ -6,6 +6,7 @@ import {
   YJS_CONTENT_CARRIER,
   YJS_COMMENT_META_FIELD
 } from '@/composables/document/editor/collab/useYjsContentBridge';
+import { resolveCollabUrl, getAwarenessPeerCount } from '@/utils/collabUrl';
 
 export function useYjsCollaboration({
   props,
@@ -76,31 +77,6 @@ export function useYjsCollaboration({
     }
   };
 
-  const resolveCollabUrl = () => {
-    if (!props.collabUrl) {
-      return '';
-    }
-    if (props.collabUrl.startsWith('ws://') || props.collabUrl.startsWith('wss://')) {
-      return props.collabUrl;
-    }
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const host = window.location.host;
-    const path = props.collabUrl.startsWith('/') ? props.collabUrl : `/${props.collabUrl}`;
-    return `${protocol}://${host}${path}`;
-  };
-
-  const getAwarenessPeerCount = () => {
-    const provider = providerRef.value;
-    if (!provider || !provider.awareness) {
-      return 0;
-    }
-    try {
-      return provider.awareness.getStates().size;
-    } catch (_) {
-      return 0;
-    }
-  };
-
   const syncContentToYjs = (content = '') => {
     if (!props.collabEnabled || !contentBridgeRef.value) {
       return;
@@ -143,7 +119,7 @@ export function useYjsCollaboration({
     if (!props.collabEnabled || !props.collabRoom) {
       return;
     }
-    const url = resolveCollabUrl();
+    const url = resolveCollabUrl(props.collabUrl);
     if (!url) {
       return;
     }
@@ -177,7 +153,7 @@ export function useYjsCollaboration({
       }
       const remote = bridge.toString();
       if (bridge.isEmpty()) {
-        const peerCount = getAwarenessPeerCount();
+        const peerCount = getAwarenessPeerCount(providerRef.value);
         if (peerCount > 1) {
           return;
         }
@@ -234,7 +210,7 @@ export function useYjsCollaboration({
         return;
       }
       if (bridge.isEmpty()) {
-        const peerCount = getAwarenessPeerCount();
+        const peerCount = getAwarenessPeerCount(providerRef.value);
         if (peerCount > 1) {
           return;
         }

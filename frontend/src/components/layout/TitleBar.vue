@@ -83,16 +83,16 @@ const emit = defineEmits(['back']);
 
 .title-bar__back:hover,
 .title-bar__back:focus {
-  background: #cfe0ff !important;
-  border-color: #cfe0ff !important;
-  color: inherit !important;
+  background: var(--primary-light);
+  border-color: var(--primary-light);
+  color: inherit;
 }
 
 .dark-mode .title-bar__back:hover,
 .dark-mode .title-bar__back:focus {
-  background: rgba(59, 130, 246, 0.24) !important;
-  border-color: rgba(59, 130, 246, 0.24) !important;
-  color: #e5e7eb !important;
+  background: var(--primary-light);
+  border-color: var(--primary-light);
+  color: var(--text-medium);
 }
 
 .title-bar__back :deep(.el-icon) {

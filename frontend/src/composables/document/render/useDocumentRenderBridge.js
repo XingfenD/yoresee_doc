@@ -1,4 +1,5 @@
 import { normalizeDocumentType } from '@/utils/documentType';
+import { normalizeRows } from '@/utils/tableUtils';
 
 const MARKDOWN_DOC_TYPE = '1';
 const TABLE_DOC_TYPE = '2';
@@ -43,20 +44,6 @@ const stripCommentAnchorNoise = (value) =>
   toText(value)
     .replace(/<span\b[^>]*\bdata-comment-anchor-id=(["'])[^"']*\1[^>]*>([\s\S]*?)<\/span>/gi, '$2')
     .replace(/<\/?span\b[^>]*\bdata-comment-anchor-id=(["'])[^"']*\1[^>]*\/?>/gi, '');
-
-const normalizeRows = (rows) => {
-  if (!Array.isArray(rows) || rows.length === 0) {
-    return [];
-  }
-  const width = Math.max(1, ...rows.map((row) => (Array.isArray(row) ? row.length : 0)));
-  return rows.map((row) => {
-    const values = Array.isArray(row) ? row : [];
-    return Array.from({ length: width }, (_, index) => {
-      const cell = values[index];
-      return cell === null || cell === undefined ? '' : String(cell);
-    });
-  });
-};
 
 const parseRowsFromParsedPayload = (parsed) => {
   if (Array.isArray(parsed)) {

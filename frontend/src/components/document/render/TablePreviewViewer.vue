@@ -34,30 +34,7 @@ const props = defineProps({
   }
 });
 
-const normalizeRows = (rows) => {
-  if (!Array.isArray(rows) || rows.length === 0) {
-    return [];
-  }
-  const width = Math.max(1, ...rows.map((row) => (Array.isArray(row) ? row.length : 0)));
-  return rows.map((row) => {
-    const values = Array.isArray(row) ? row : [];
-    return Array.from({ length: width }, (_, index) => {
-      const value = values[index];
-      return value === null || value === undefined ? '' : String(value);
-    });
-  });
-};
-
-const columnLabelAt = (index) => {
-  let value = Number(index) + 1;
-  let label = '';
-  while (value > 0) {
-    const remainder = (value - 1) % 26;
-    label = String.fromCharCode(65 + remainder) + label;
-    value = Math.floor((value - 1) / 26);
-  }
-  return label || 'A';
-};
+import { normalizeRows, columnLabelAt } from '@/utils/tableUtils';
 
 const normalizedRows = computed(() => normalizeRows(props.rows));
 const hasRows = computed(() => normalizedRows.value.length > 0);

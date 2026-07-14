@@ -86,37 +86,12 @@ const { effectiveColumns, gridTemplateColumns: resizableGridTemplate, startResiz
   width: 100%;
 }
 
-.list-cell {
-  min-width: 0;
-  padding: 12px 14px;
-  font-size: 13px;
-  color: var(--list-cell-text, var(--text-dark));
-  border-bottom: 1px solid var(--list-cell-border, #d6dbe3);
-  background: var(--list-cell-bg, var(--bg-white));
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-
-.list-cell--head {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--list-head-text, #1f2937);
-  background: var(--list-head-bg, #e5ebf2);
-  border-bottom-color: var(--list-head-border, #aeb8c6);
-  overflow: visible;
-}
-
 .list-row:last-child .list-cell {
   border-bottom: none;
 }
-
-.is-left   { justify-content: flex-start; text-align: left; }
-.is-center { justify-content: center;     text-align: center; }
-.is-right  { justify-content: flex-end;   text-align: right; }
 </style>
 
 <style>
+@import '@/styles/list-cell.css';
 @import '@/styles/column-resize.css';
 </style>
