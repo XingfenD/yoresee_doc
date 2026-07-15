@@ -14,7 +14,7 @@ type ConfigService struct {
 
 func NewConfigService() *ConfigService {
 	if !storage.ConsulEnabled() {
-		panic("consul is required for config")
+		return nil
 	}
 	s := &ConfigService{}
 	if err := storage.BindConsulConfig(s, storage.Consul); err != nil {

@@ -21,7 +21,8 @@ func main() {
 		InitRedis().
 		InitElasticsearchAllowFail().
 		InitMQ().
-		InitRepository()
+		InitRepository().
+		InitService()
 	if err := initializer.Err(); err != nil {
 		logrus.Fatalf("Init snapshot-worker failed: %v", err)
 	}

@@ -7,7 +7,6 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/bootstrap"
 	"github.com/XingfenD/yoresee_doc/internal/config"
-	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/transport/connectserver"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/sirupsen/logrus"
@@ -23,13 +22,10 @@ func main() {
 		InitMinio().
 		InitElasticsearchAllowFail().
 		InitMQ().
-		InitRepository()
+		InitRepository().
+		InitService()
 	if err := initializer.Err(); err != nil {
 		logrus.Fatalf("Init backend failed: %v", err)
-	}
-
-	if err := service.Init(config.GlobalConfig, initializer.Repositories); err != nil {
-		logrus.Fatalf("Init services failed: %v", err)
 	}
 
 	grpcServer, grpcWebServer, err := connectserver.Start(

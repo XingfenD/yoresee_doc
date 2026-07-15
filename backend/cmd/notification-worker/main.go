@@ -21,7 +21,8 @@ func main() {
 		InitPostgres().
 		InitRedis().
 		InitMQ().
-		InitRepository()
+		InitRepository().
+		InitService()
 	if err := initializer.Err(); err != nil {
 		logrus.Fatalf("Init notification-worker failed: %v", err)
 	}

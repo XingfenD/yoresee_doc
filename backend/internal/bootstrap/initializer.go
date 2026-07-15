@@ -8,6 +8,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
+	"github.com/XingfenD/yoresee_doc/internal/service"
 	"github.com/XingfenD/yoresee_doc/internal/service/mq_service"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
 	"github.com/XingfenD/yoresee_doc/pkg/storage"
@@ -223,6 +224,12 @@ func (i *Initializer) InitRepository() *Initializer {
 	return i.Check("repository.NewRepositories", func() error {
 		i.Repositories = repository.NewRepositories(storage.DB, storage.KVS)
 		return nil
+	})
+}
+
+func (i *Initializer) InitService() *Initializer {
+	return i.Check("service.Init", func() error {
+		return service.Init(config.GlobalConfig, i.Repositories)
 	})
 }
 
