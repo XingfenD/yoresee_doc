@@ -4,13 +4,9 @@
 .claude/
 .codegraph/
 .understand-anything/
-docs/superpowers/
 temp/
 tmp/
 
 node_modules/
 
-gen/
-
 .DS_Store
-nginx.conf
