@@ -49,6 +49,7 @@ update_env_key() {
             }
         }
     ' "$ENV_FILE" > "$tmp_file"
+    chmod 644 "$tmp_file"
     mv "$tmp_file" "$ENV_FILE"
 }
 
