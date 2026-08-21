@@ -5,6 +5,10 @@ nginx/conf.d/default.conf
 redis/redis.conf
 
 rabbitmq/rabbitmq.conf
+
+logs/*
+!logs/.gitkeep
+
 .env
 
 # ignore log files by suffix
