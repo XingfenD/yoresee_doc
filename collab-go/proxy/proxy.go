@@ -2,18 +2,32 @@ package proxy
 
 import (
 	"io"
+	"net"
 	"net/url"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 type Proxy struct {
 	coreURL string
+	dialer  *websocket.Dialer
 }
 
 func NewProxy(coreURL string) *Proxy {
+	netDialer := &net.Dialer{
+		Timeout:   10 * time.Second,
+		KeepAlive: 30 * time.Second,
+		Resolver: &net.Resolver{
+			PreferGo: true,
+		},
+	}
+	dialer := &websocket.Dialer{
+		NetDialContext: netDialer.DialContext,
+	}
 	return &Proxy{
 		coreURL: coreURL,
+		dialer:  dialer,
 	}
 }
 
@@ -25,7 +39,7 @@ func (p *Proxy) DialCore(docID string) (*websocket.Conn, error) {
 	u.Path = "/doc-" + docID
 	u.RawQuery = ""
 
-	coreConn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	coreConn, _, err := p.dialer.Dial(u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
