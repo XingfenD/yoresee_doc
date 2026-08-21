@@ -11,7 +11,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/status"
-	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

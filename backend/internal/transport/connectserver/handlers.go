@@ -7,7 +7,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/XingfenD/yoresee_doc/internal/transport/grpcserver"
-	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 )
 
 func registerHandlers(mux *http.ServeMux, opts []connect.HandlerOption, repos *repository.Repositories) {

@@ -10,8 +10,8 @@ import {
   SettingService,
   SystemService,
   InvitationService
-} from '@/gen/yoresee_doc/v1/yoresee_doc_connect.js';
-import * as messages from '@/gen/yoresee_doc/v1/yoresee_doc_pb.js';
+} from '@yoresee/doc-proto-connect/yoresee_doc/v1/yoresee_doc_connect.js';
+import * as messages from '@yoresee/doc-proto-connect/yoresee_doc/v1/yoresee_doc_pb.js';
 import { GRPC_WEB_ENDPOINT } from '@/config/baseUrl';
 
 const transport = createConnectTransport({

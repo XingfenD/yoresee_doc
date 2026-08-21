@@ -9,7 +9,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/service/knowledge_base_service"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
-	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 )
 
 type KnowledgeBaseServiceServer struct {

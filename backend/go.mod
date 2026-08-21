@@ -18,12 +18,14 @@ require (
 	golang.org/x/net v0.48.0
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.79.2
-	google.golang.org/protobuf v1.36.10
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
+require google.golang.org/protobuf v1.36.10 // indirect
+
 require (
+	github.com/XingfenD/yoresee_doc_proto v0.1.0
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

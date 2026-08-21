@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	yoreseedocpb "github.com/XingfenD/yoresee_doc/collab-go/pkg/gen/yoresee_doc/v1"
+	yoreseedocpb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 )
 
 type HealthChecker struct {

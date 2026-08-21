@@ -17,7 +17,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/collab-go/config"
 	"github.com/XingfenD/yoresee_doc/collab-go/handler"
 	"github.com/XingfenD/yoresee_doc/collab-go/health"
-	yoreseedocpb "github.com/XingfenD/yoresee_doc/collab-go/pkg/gen/yoresee_doc/v1"
+	yoreseedocpb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 	"github.com/XingfenD/yoresee_doc/collab-go/proxy"
 )
 

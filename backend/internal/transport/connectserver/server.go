@@ -9,7 +9,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/XingfenD/yoresee_doc/internal/repository"
 	"github.com/redis/go-redis/v9"
-	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"

@@ -1,4 +1,4 @@
-const pb = require('../gen/yoresee_doc/v1/yoresee_doc_pb');
+const pb = require('@yoresee/doc-proto-grpc/yoresee_doc/v1/yoresee_doc_pb');
 const { getDocumentServiceClient, buildMetadata } = require('./client');
 
 async function getDocumentContent(documentExternalId) {

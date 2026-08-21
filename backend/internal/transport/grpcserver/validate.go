@@ -3,7 +3,7 @@ package grpcserver
 import (
 	doc_container_mapper "github.com/XingfenD/yoresee_doc/internal/mapper/doc_container_mapper"
 	"github.com/XingfenD/yoresee_doc/internal/status"
-	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 )
 
 func validateUpdateDocumentRequest(req *pb.UpdateDocumentRequest) error {

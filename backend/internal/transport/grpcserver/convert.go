@@ -8,7 +8,7 @@ import (
 	"github.com/XingfenD/yoresee_doc/internal/media"
 	"github.com/XingfenD/yoresee_doc/internal/status"
 	"github.com/XingfenD/yoresee_doc/internal/utils"
-	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 )
 
 func baseResponseFromErr(err error) *pb.BaseResponse {

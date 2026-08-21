@@ -6,7 +6,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
-	pb "github.com/XingfenD/yoresee_doc/pkg/gen/yoresee_doc/v1"
+	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 )
 
 type SystemServiceServer struct {

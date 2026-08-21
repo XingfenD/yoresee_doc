@@ -1,5 +1,5 @@
 const grpc = require('@grpc/grpc-js');
-const { DocumentServiceClient, SystemServiceClient } = require('../gen/yoresee_doc/v1/yoresee_doc_grpc_pb');
+const { DocumentServiceClient, SystemServiceClient } = require('@yoresee/doc-proto-grpc/yoresee_doc/v1/yoresee_doc_grpc_pb');
 const config = require('../config');
 
 let documentServiceClient = null;
