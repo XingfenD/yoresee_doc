@@ -49,6 +49,7 @@ render_template() {
     tmp_file="$(mktemp)"
     perl -pe 's/\$\{([A-Z0-9_]+)\}/defined $ENV{$1} ? $ENV{$1} : ""/ge' "$template" > "$tmp_file"
     mv "$tmp_file" "$output"
+    chmod 644 "$output"
 }
 
 TEMPLATE_MAPPINGS=(
