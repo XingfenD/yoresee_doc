@@ -7,9 +7,28 @@ Proto definitions live in a separate repo: `../yoresee_doc_proto`. This repo con
 - Frontend: `@yoresee/doc-proto-connect` (npm)
 - Collab: `@yoresee/doc-proto-grpc` (npm)
 
-To modify proto: edit in `../yoresee_doc_proto`, run `bash scripts/gen.sh` there, bump `proto/VERSION`, commit and tag. The publish workflow auto-opens a PR in this repo to update dependencies.
-
 Do NOT add proto files to this repo. Do NOT run protoc here.
+
+### Modifying proto (development workflow)
+
+1. Edit `.proto` files in `../yoresee_doc_proto/proto/`
+2. Run `bash ../yoresee_doc_proto/scripts/gen.sh` to regenerate code
+3. Commit changes in proto repo
+4. Bump `proto/VERSION` (e.g., `0.1.0` → `0.2.0`)
+5. Commit and tag: `git tag v$(cat proto/VERSION)`
+6. Push tag — GitHub Actions publishes to npm and Go module proxy, then opens a PR in this repo to bump dependencies
+
+### Local proto development
+
+To test proto changes before publishing:
+
+```bash
+# Link local proto repo (uses go.mod replace + npm file: dependencies)
+bash deploy/script/link_proto.sh link ../yoresee_doc_proto
+
+# Unlink and restore published versions
+bash deploy/script/link_proto.sh unlink
+```
 
 ## Two Go modules
 
