@@ -14,20 +14,22 @@ export function useDocumentEditorActions({
   router,
   kbId,
   docId,
-  currentDocType,
   currentDocTitle,
   markdownContent,
   tableContent,
   slideContent,
   richTextContent,
+  docMachine,
   directoryTree,
   updateTreeNodeTitle,
   fetchDocuments
 }) {
   const { runWithLoading } = useApiAction({ t });
 
+  const resolveActiveDocType = () => normalizeDocumentType(docMachine?.targetDocType.value, '1');
+
   const resolveActiveContent = () => {
-    const type = normalizeDocumentType(currentDocType?.value, '1');
+    const type = resolveActiveDocType();
     if (type === '2') return tableContent?.value || '';
     if (type === '3') return slideContent?.value || '';
     if (type === '4') return richTextContent?.value || '';
@@ -152,16 +154,17 @@ export function useDocumentEditorActions({
       return;
     }
 
+    const snapshotId = targetId;
     await runWithLoading(
       deletingDocument,
-      () => deleteDocumentApi(targetId),
+      () => deleteDocumentApi(snapshotId),
       {
         context: 'deleteDocument',
         successMessage: t('document.deleteSuccess'),
         errorMessage: t('common.requestFailed'),
         onSuccess: async () => {
           await fetchDocuments();
-          if (String(targetId) === String(docId.value)) {
+          if (String(snapshotId) === String(docId.value)) {
             navigateToList();
           }
         }
@@ -182,6 +185,7 @@ export function useDocumentEditorActions({
       return;
     }
 
+    const snapshotId = docId.value;
     await runWithLoading(
       renamingNode,
       () => updateDocumentMeta(targetId, { title: nextTitle }),
@@ -190,7 +194,7 @@ export function useDocumentEditorActions({
         errorMessage: t('common.requestFailed'),
         onSuccess: () => {
           updateTreeNodeTitle(directoryTree.value, targetId, nextTitle);
-          if (String(docId.value || '') === targetId) {
+          if (String(snapshotId || '') === targetId) {
             currentDocTitle.value = nextTitle;
           }
         }
@@ -228,15 +232,20 @@ export function useDocumentEditorActions({
       cancelEditTitle();
       return;
     }
+    const snapshotId = docId.value;
     await runWithLoading(
       savingTitle,
-      () => updateDocumentMeta(docId.value, { title: nextTitle }),
+      () => updateDocumentMeta(snapshotId, { title: nextTitle }),
       {
         context: 'updateDocumentMeta',
         errorMessage: t('common.requestFailed'),
         onSuccess: () => {
+          if (String(docId.value) !== String(snapshotId)) {
+            cancelEditTitle();
+            return;
+          }
           currentDocTitle.value = nextTitle;
-          updateTreeNodeTitle(directoryTree.value, docId.value, nextTitle);
+          updateTreeNodeTitle(directoryTree.value, snapshotId, nextTitle);
           cancelEditTitle();
         }
       }
@@ -275,7 +284,7 @@ export function useDocumentEditorActions({
       async () => {
         const requestBody = {
           target_container: payload.scope,
-          type: normalizeDocumentType(currentDocType?.value || DEFAULT_DOCUMENT_TYPE),
+          type: normalizeDocumentType(resolveActiveDocType() || DEFAULT_DOCUMENT_TYPE),
           template_content: JSON.stringify({
             name: payload.name,
             description: payload.description,

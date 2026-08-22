@@ -79,6 +79,7 @@ export default {
     hidePreview: '隐藏预览',
     lastSaved: '上次保存',
     loading: '正在同步文档...',
+    loadError: '文档加载失败',
     fetchContentError: '加载文档内容失败',
     createDocument: '创建文档',
     deleteDocument: '删除文档',

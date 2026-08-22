@@ -5,12 +5,14 @@ export function useDocumentEditorPolicy(options = {}) {
   const {
     kbId,
     docId,
-    currentDocType
+    docMachine
   } = options;
 
   const isPersonalDocument = computed(() => kbId.value === 'personal');
   const hasDocument = computed(() => Boolean(docId.value));
-  const normalizedDocType = computed(() => normalizeDocumentType(currentDocType.value, '1'));
+  const normalizedDocType = computed(
+    () => normalizeDocumentType(docMachine?.targetDocType.value, '1')
+  );
   const isMarkdownDocument = computed(() => normalizedDocType.value === '1');
   const isTableDocument = computed(() => normalizedDocType.value === '2');
   const isSlideDocument = computed(() => normalizedDocType.value === '3');

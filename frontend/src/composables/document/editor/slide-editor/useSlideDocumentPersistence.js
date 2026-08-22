@@ -3,8 +3,8 @@ import { useTypedDocumentPersistence } from '@/composables/document/editor/share
 export function useSlideDocumentPersistence(options = {}) {
   const {
     docId,
-    currentDocType,
     editorContent,
+    docMachine,
     slideEditorRef,
     t,
     getDocumentContent,
@@ -18,8 +18,8 @@ export function useSlideDocumentPersistence(options = {}) {
   } = useTypedDocumentPersistence({
     type: '3',
     docId,
-    currentDocType,
     editorContent,
+    docMachine,
     t,
     getDocumentContent,
     updateDocument,

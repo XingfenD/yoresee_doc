@@ -3,8 +3,8 @@ import { useTypedDocumentPersistence } from '@/composables/document/editor/share
 export function useTableDocumentPersistence(options = {}) {
   const {
     docId,
-    currentDocType,
     editorContent,
+    docMachine,
     tableEditorRef,
     t,
     getDocumentContent,
@@ -18,8 +18,8 @@ export function useTableDocumentPersistence(options = {}) {
   } = useTypedDocumentPersistence({
     type: '2',
     docId,
-    currentDocType,
     editorContent,
+    docMachine,
     t,
     getDocumentContent,
     updateDocument,

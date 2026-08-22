@@ -6,6 +6,43 @@ All notable changes to this template should be documented in this file.
 The format loosely follows Keep a Changelog and can be adapted to the team's habits.
 本文档参考了 Keep a Changelog 的思路，也可以按团队习惯调整。
 
+## [0.1.2] - 2026-08-22
+
+### Added / 新增
+
+- Introduced a document lifecycle state machine (`useDocumentStateMachine`) with states `idle` / `navigating` / `resolving` / `ready` / `saving` / `error`. The editor is now only rendered once the machine reaches `ready`, guaranteeing that `currentDocType` is resolved before any editor or persistence is activated.
+- 引入文档生命周期状态机（`useDocumentStateMachine`），包含 `idle` / `navigating` / `resolving` / `ready` / `saving` / `error` 六个状态。编辑器只在状态机进入 `ready` 后才渲染，确保 `currentDocType` 已落定，再激活任何编辑器或持久化逻辑。
+
+- The collaboration "synced" state is now expressed as a `syncedDocId` computed (`syncedDocId === targetDocId`) instead of a bare boolean, so re-navigating to an already-synced document does not flash the spinner.
+- 协作「已同步」状态改用 `syncedDocId` 计算属性（`syncedDocId === targetDocId`）表达，取代原先的裸布尔；导航回已同步的同一文档时不再闪现加载遮罩。
+
+### Changed / 变更
+
+- `DocumentEditor.vue` now renders editors based on `docMachine.targetDocType` instead of the asynchronously-derived `isRichTextDocument` flags, eliminating the transient stale-type window during cross-type navigation.
+- `DocumentEditor.vue` 改为根据 `docMachine.targetDocType` 渲染编辑器，不再依赖异步派生的 `isRichTextDocument` 等标志，彻底消除跨类型导航期间的过期类型窗口。
+
+- `useTypedDocumentPersistence` guards all load/save operations with `docMachine.isReady`, invalidates pending loads on state changes, and re-checks `isCurrentType` after every `await`. Stale loads can no longer write to a content ref after navigation has moved on.
+- `useTypedDocumentPersistence` 用 `docMachine.isReady` 守卫所有加载/保存操作，状态变化时使未完成的加载失效，并在每次 `await` 后复核 `isCurrentType`。导航已发生后，过期加载无法再写入 content ref。
+
+- `useDocumentEditorPolicy` and `useDocumentEditorActions` now prefer `docMachine.targetDocType` when resolving the active document type/content.
+- `useDocumentEditorPolicy` 与 `useDocumentEditorActions` 解析当前文档类型/内容时优先使用 `docMachine.targetDocType`。
+
+- The collaboration loading overlay is now an independent absolutely-positioned layer inside the `ready` branch (it overlays the already-mounted editor) rather than the first branch of a mutually-exclusive `v-if/v-else-if` chain. The editor always mounts; the overlay only covers it while the WebSocket is connecting.
+- 协作加载遮罩改为 `ready` 分支内的独立绝对定位覆盖层（浮于已挂载的编辑器之上），不再是 `v-if/v-else-if` 互斥链的首分支。编辑器始终挂载，遮罩仅在 WebSocket 连接期间覆盖其上。
+
+### Fixed / 修复
+
+- Rich-text / markdown documents no longer hang on "Syncing document". The loading overlay used to be the first branch of a mutually-exclusive `v-if/v-else-if` chain, so when shown it replaced the editor instead of overlaying it; `syncCollabReadyFlag` also marked collaboration as "attempted, not synced" before the editor mounted, so the editor never mounted, the WebSocket never connected and `collab-sync` never fired — a deadlock. The overlay now overlays the always-mounted editor, the `collabAttempted` boolean and the leftover `collabReady` state were removed, and `syncCollabReadyFlag` no longer unconditionally marks an already-synced document as unsynced.
+- 富文本 / markdown 文档不再卡在「正在同步文档」。此前加载遮罩是 `v-if/v-else-if` 互斥链的首个分支，条件成立时会「替换」掉编辑器而非「覆盖」；`syncCollabReadyFlag` 又在编辑器挂载前把协作态置为「已尝试、未同步」，导致编辑器永不挂载、WebSocket 不连接、`collab-sync` 永不触发，形成死锁。遮罩现覆盖始终挂载的编辑器；并移除冗余的 `collabAttempted` 布尔与遗留的 `collabReady` 状态，`syncCollabReadyFlag` 不再对已同步文档无条件置为未同步。
+
+- Fixed two `[tiptap warn]` after the Tiptap v3 upgrade: `StarterKit` now bundles `link` / `underline` / `undoRedo`, conflicting with the explicitly-imported `Link` / `Underline` and the collaboration-required `Collaboration` (which ships its own history). In `useRichTextEditorRuntime`, `StarterKit`'s `link` / `underline` are disabled (the explicit, custom-configured extensions are kept), and `StarterKit`'s `undoRedo` is disabled only while collaboration is active.
+- 修复 Tiptap v3 升级后的两条 `[tiptap warn]`：`StarterKit` 现已内置 `link` / `underline` / `undoRedo`，与显式引入的 `Link` / `Underline` 及协作所需的 `Collaboration`（自带 history）冲突。已在 `useRichTextEditorRuntime` 中关闭 `StarterKit` 的 `link` / `underline`（保留显式带自定义配置的扩展），且仅在协作激活时关闭 `StarterKit` 的 `undoRedo`。
+
+### Notes / 说明
+
+- Investigation records: `docs/bug_report/editor-collab-sync-deadlock.md`, `docs/bug_report/cross-type-content-duplication.md`
+- 排查记录：`docs/bug_report/editor-collab-sync-deadlock.md`、`docs/bug_report/cross-type-content-duplication.md`
+
 ## [0.1.1] - 2026-08-22
 
 ### Fixed / 修复

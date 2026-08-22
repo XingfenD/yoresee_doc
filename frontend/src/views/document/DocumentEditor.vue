@@ -78,53 +78,61 @@
         </DocumentEditorHeader>
         <div class="editor-content">
           <div class="editor-wrapper">
-            <div v-if="collabEnabled && !collabReady" class="editor-loading">
+            <div v-if="!docMachine.isReady.value && !docMachine.isError.value" class="editor-loading">
               {{ t('document.loading') }}
             </div>
-            <MarkdownEditor
-              v-if="isMarkdownDocument"
-              ref="markdownEditorRef"
-              v-model="markdownContent"
-              :placeholder="t('document.editorPlaceholder')"
-              :collab-enabled="collabEnabled"
-              :collab-room="collabRoom"
-              :collab-url="collabUrl"
-              :collab-token="collabToken"
-              :comment-enabled="inlineCommentEnabled"
-              @collab-sync="handleCollabSync"
-              @comment-add="handleInlineCommentAdd"
-              @comment-remove="handleInlineCommentRemove"
-              @comment-changed="handleRemoteCommentChanged"
-            />
-            <TableEditor
-              v-else-if="isTableDocument"
-              ref="tableEditorRef"
-              v-model="tableContent"
-              @commit="flushTableSave"
-            />
-            <SlideEditor
-              v-else-if="isSlideDocument"
-              ref="slideEditorRef"
-              v-model="slideContent"
-              @commit="flushSlideSave"
-            />
-            <YoreseeRichTextEditor
-              v-else-if="isRichTextDocument"
-              :key="`rich-text-${docId}`"
-              ref="richTextEditorRef"
-              v-model="richTextContent"
-              :placeholder="t('document.editorPlaceholder')"
-              :collab-enabled="collabEnabled"
-              :collab-room="collabRoom"
-              :collab-url="collabUrl"
-              :collab-token="collabToken"
-              :comment-enabled="inlineCommentEnabled"
-              :external-extensions="richTextExtensions"
-              @collab-sync="handleCollabSync"
-              @comment-add="handleInlineCommentAdd"
-              @comment-remove="handleInlineCommentRemove"
-              @comment-changed="handleRemoteCommentChanged"
-            />
+            <div v-else-if="docMachine.isError.value" class="editor-loading">
+              {{ docMachine.error.value?.message || t('document.loadError') }}
+            </div>
+            <template v-else>
+              <div v-if="collabEnabled && !docMachine.collabSynced.value" class="editor-loading">
+                {{ t('document.loading') }}
+              </div>
+              <MarkdownEditor
+                v-if="docMachine.targetDocType.value === '1'"
+                ref="markdownEditorRef"
+                v-model="markdownContent"
+                :placeholder="t('document.editorPlaceholder')"
+                :collab-enabled="collabEnabled"
+                :collab-room="collabRoom"
+                :collab-url="collabUrl"
+                :collab-token="collabToken"
+                :comment-enabled="inlineCommentEnabled"
+                @collab-sync="handleCollabSync"
+                @comment-add="handleInlineCommentAdd"
+                @comment-remove="handleInlineCommentRemove"
+                @comment-changed="handleRemoteCommentChanged"
+              />
+              <TableEditor
+                v-else-if="docMachine.targetDocType.value === '2'"
+                ref="tableEditorRef"
+                v-model="tableContent"
+                @commit="flushTableSave"
+              />
+              <SlideEditor
+                v-else-if="docMachine.targetDocType.value === '3'"
+                ref="slideEditorRef"
+                v-model="slideContent"
+                @commit="flushSlideSave"
+              />
+              <YoreseeRichTextEditor
+                v-else-if="docMachine.targetDocType.value === '4'"
+                :key="`rich-text-${docId}`"
+                ref="richTextEditorRef"
+                v-model="richTextContent"
+                :placeholder="t('document.editorPlaceholder')"
+                :collab-enabled="collabEnabled"
+                :collab-room="collabRoom"
+                :collab-url="collabUrl"
+                :collab-token="collabToken"
+                :comment-enabled="inlineCommentEnabled"
+                :external-extensions="richTextExtensions"
+                @collab-sync="handleCollabSync"
+                @comment-add="handleInlineCommentAdd"
+                @comment-remove="handleInlineCommentRemove"
+                @comment-changed="handleRemoteCommentChanged"
+              />
+            </template>
           </div>
         </div>
 
@@ -198,6 +206,7 @@ import { useDocumentEditorPolicy } from '@/composables/document/editor/useDocume
 import { useDocumentHeaderRouting } from '@/composables/document/editor/useDocumentHeaderRouting';
 import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
 import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
+import { useDocumentStateMachine } from '@/composables/document/editor/useDocumentStateMachine';
 import { usePageTitle } from '@/composables/usePageTitle';
 import { useUserStore } from '@/store/user';
 import {
@@ -231,9 +240,7 @@ const {
   resolveActiveMenu,
   collabRoom,
   collabUrl,
-  collabToken,
-  collabReady,
-  lastSyncedDocId
+  collabToken
 } = useDocumentRouteContext({ props, route });
 
 const {
@@ -262,7 +269,6 @@ const {
   directoryTree,
   knowledgeBaseName,
   currentDocTitle,
-  currentDocType,
   isAllExpanded,
   fetchDocuments,
   updateCurrentDocTitle,
@@ -287,6 +293,7 @@ const markdownContent = ref('');
 const tableContent = ref('');
 const slideContent = ref('');
 const richTextContent = ref('');
+const docMachine = useDocumentStateMachine();
 const editorLayoutRef = ref(null);
 const isCommentCollapsed = ref(false);
 const markdownEditorRef = ref(null);
@@ -303,8 +310,8 @@ const {
   rerenderTableEditor
 } = useTableDocumentPersistence({
   docId,
-  currentDocType,
   editorContent: tableContent,
+  docMachine,
   tableEditorRef,
   t,
   getDocumentContent,
@@ -315,8 +322,8 @@ const {
   rerenderSlideEditor
 } = useSlideDocumentPersistence({
   docId,
-  currentDocType,
   editorContent: slideContent,
+  docMachine,
   slideEditorRef,
   t,
   getDocumentContent,
@@ -354,7 +361,7 @@ const {
 } = useDocumentEditorPolicy({
   kbId,
   docId,
-  currentDocType
+  docMachine
 });
 const {
   isEditingTitle,
@@ -381,12 +388,12 @@ const {
   router,
   kbId,
   docId,
-  currentDocType,
   currentDocTitle,
   markdownContent,
   tableContent,
   slideContent,
   richTextContent,
+  docMachine,
   directoryTree,
   updateTreeNodeTitle,
   fetchDocuments
@@ -440,8 +447,6 @@ const {
   activeMenu,
   resolveActiveMenu,
   collabEnabled,
-  collabReady,
-  lastSyncedDocId,
   markdownContent,
   tableContent,
   slideContent,
@@ -454,19 +459,23 @@ const {
   commentSidebarRef,
   isCommentCollapsed,
   cancelEditTitle,
-  recordRecentDocument
+  recordRecentDocument,
+  docMachine
 });
 
 // When navigating from the notification center with ?comment=<anchorId>,
 // auto-expand the comment sidebar and scroll to the referenced comment.
-watch(collabReady, async (ready) => {
-  if (!ready) return;
-  const anchorId = route.query.comment;
-  if (!anchorId) return;
-  isCommentCollapsed.value = false;
-  await nextTick();
-  requestAnimationFrame(() => scrollToInlineAnchor(String(anchorId)));
-}, { once: true });
+// Uses docMachine.targetDocId as guard so stale sync events from previous
+// documents do not trigger scroll on the current document.
+watch(
+  [() => docMachine.collabSynced.value, () => docMachine.targetDocId.value, () => route.query.comment],
+  async ([synced, currentDocId, anchorId]) => {
+    if (!synced || !anchorId) return;
+    isCommentCollapsed.value = false;
+    await nextTick();
+    requestAnimationFrame(() => scrollToInlineAnchor(String(anchorId)));
+  }
+);
 </script>
 
 <style scoped>
