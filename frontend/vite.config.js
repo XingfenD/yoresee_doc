@@ -11,12 +11,13 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['codemirror', 'easymde', 'google-protobuf']
+    include: ['codemirror', 'easymde', '@bufbuild/protobuf']
   },
   server: {
     host: true,
     port: 80,
     strictPort: true,
+    allowedHosts: ['frontend', 'localhost'],
     hmr: {
       protocol: 'ws',
       host: 'localhost',
