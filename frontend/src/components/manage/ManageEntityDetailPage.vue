@@ -132,6 +132,7 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import PageLayout from '@/components/layout/PageLayout.vue';
 import TitleBar from '@/components/layout/TitleBar.vue';
 import ManageLayout from '@/components/manage/ManageLayout.vue';
@@ -147,6 +148,8 @@ const props = defineProps({
     validator: (value) => ['organization', 'user-group'].includes(value)
   }
 });
+
+const { t } = useI18n();
 
 const {
   router,

@@ -77,6 +77,7 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import CommonList from '@/components/list/CommonList.vue';
 import InviteCreateDialog from '@/components/manage/InviteCreateDialog.vue';
 import AppTag from '@/components/base/AppTag.vue';
@@ -93,6 +94,8 @@ const props = defineProps({
     default: false
   }
 });
+
+const { t } = useI18n();
 
 const {
   activeTab,
