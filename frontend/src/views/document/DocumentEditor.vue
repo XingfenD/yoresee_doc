@@ -78,7 +78,7 @@
         </DocumentEditorHeader>
         <div class="editor-content">
           <div class="editor-wrapper">
-            <div v-if="docMachine.isReady.value && collabEnabled && !collabReady" class="editor-loading">
+            <div v-if="docMachine.isReady.value && collabEnabled && !docMachine.collabSynced.value" class="editor-loading">
               {{ t('document.loading') }}
             </div>
             <div v-else-if="!docMachine.isReady.value && !docMachine.isError.value" class="editor-loading">
@@ -239,8 +239,7 @@ const {
   collabRoom,
   collabUrl,
   collabToken,
-  collabReady,
-  lastSyncedDocId
+  collabReady
 } = useDocumentRouteContext({ props, route });
 
 const {
@@ -448,7 +447,6 @@ const {
   resolveActiveMenu,
   collabEnabled,
   collabReady,
-  lastSyncedDocId,
   markdownContent,
   tableContent,
   slideContent,
@@ -467,14 +465,17 @@ const {
 
 // When navigating from the notification center with ?comment=<anchorId>,
 // auto-expand the comment sidebar and scroll to the referenced comment.
-watch(collabReady, async (ready) => {
-  if (!ready) return;
-  const anchorId = route.query.comment;
-  if (!anchorId) return;
-  isCommentCollapsed.value = false;
-  await nextTick();
-  requestAnimationFrame(() => scrollToInlineAnchor(String(anchorId)));
-}, { once: true });
+// Uses docMachine.targetDocId as guard so stale sync events from previous
+// documents do not trigger scroll on the current document.
+watch(
+  [() => docMachine.collabSynced.value, () => docMachine.targetDocId.value, () => route.query.comment],
+  async ([synced, currentDocId, anchorId]) => {
+    if (!synced || !anchorId) return;
+    isCommentCollapsed.value = false;
+    await nextTick();
+    requestAnimationFrame(() => scrollToInlineAnchor(String(anchorId)));
+  }
+);
 </script>
 
 <style scoped>

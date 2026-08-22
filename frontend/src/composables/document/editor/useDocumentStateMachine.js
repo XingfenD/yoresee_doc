@@ -15,6 +15,7 @@ export function useDocumentStateMachine() {
   const targetDocType = ref('1');
   const targetContent = ref('');
   const error = ref(null);
+  const collabSynced = ref(true);
 
   const isIdle = computed(() => state.value === DOC_STATE.IDLE);
   const isNavigating = computed(() => state.value === DOC_STATE.NAVIGATING);
@@ -66,6 +67,13 @@ export function useDocumentStateMachine() {
     }
   };
 
+  const markCollabSynced = (isSynced, docId) => {
+    if (docId !== targetDocId.value) {
+      return;
+    }
+    collabSynced.value = isSynced;
+  };
+
   return {
     state,
     targetDocId,
@@ -78,11 +86,13 @@ export function useDocumentStateMachine() {
     isReady,
     isSaving,
     isError,
+    collabSynced,
     startNavigation,
     resolveMetadata,
     resolveContent,
     markError,
     startSave,
-    finishSave
+    finishSave,
+    markCollabSynced
   };
 }

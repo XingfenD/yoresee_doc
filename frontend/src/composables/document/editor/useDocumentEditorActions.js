@@ -154,16 +154,17 @@ export function useDocumentEditorActions({
       return;
     }
 
+    const snapshotId = targetId;
     await runWithLoading(
       deletingDocument,
-      () => deleteDocumentApi(targetId),
+      () => deleteDocumentApi(snapshotId),
       {
         context: 'deleteDocument',
         successMessage: t('document.deleteSuccess'),
         errorMessage: t('common.requestFailed'),
         onSuccess: async () => {
           await fetchDocuments();
-          if (String(targetId) === String(docId.value)) {
+          if (String(snapshotId) === String(docId.value)) {
             navigateToList();
           }
         }
@@ -184,6 +185,7 @@ export function useDocumentEditorActions({
       return;
     }
 
+    const snapshotId = docId.value;
     await runWithLoading(
       renamingNode,
       () => updateDocumentMeta(targetId, { title: nextTitle }),
@@ -192,7 +194,7 @@ export function useDocumentEditorActions({
         errorMessage: t('common.requestFailed'),
         onSuccess: () => {
           updateTreeNodeTitle(directoryTree.value, targetId, nextTitle);
-          if (String(docId.value || '') === targetId) {
+          if (String(snapshotId || '') === targetId) {
             currentDocTitle.value = nextTitle;
           }
         }
@@ -230,15 +232,20 @@ export function useDocumentEditorActions({
       cancelEditTitle();
       return;
     }
+    const snapshotId = docId.value;
     await runWithLoading(
       savingTitle,
-      () => updateDocumentMeta(docId.value, { title: nextTitle }),
+      () => updateDocumentMeta(snapshotId, { title: nextTitle }),
       {
         context: 'updateDocumentMeta',
         errorMessage: t('common.requestFailed'),
         onSuccess: () => {
+          if (String(docId.value) !== String(snapshotId)) {
+            cancelEditTitle();
+            return;
+          }
           currentDocTitle.value = nextTitle;
-          updateTreeNodeTitle(directoryTree.value, docId.value, nextTitle);
+          updateTreeNodeTitle(directoryTree.value, snapshotId, nextTitle);
           cancelEditTitle();
         }
       }

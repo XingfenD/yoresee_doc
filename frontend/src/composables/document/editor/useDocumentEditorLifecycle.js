@@ -11,7 +11,6 @@ export function useDocumentEditorLifecycle({
   resolveActiveMenu,
   collabEnabled,
   collabReady,
-  lastSyncedDocId,
   markdownContent,
   tableContent,
   slideContent,
@@ -39,20 +38,14 @@ export function useDocumentEditorLifecycle({
   };
 
   const handleCollabSync = (isSynced) => {
-    if (!collabEnabled.value) {
-      collabReady.value = true;
-      return;
-    }
+    docMachine.markCollabSynced(isSynced, docId.value);
     collabReady.value = isSynced;
-    if (isSynced) {
-      lastSyncedDocId.value = docId.value || '';
-    }
   };
 
   const syncCollabReadyFlag = () => {
-    if (lastSyncedDocId.value !== docId.value) {
-      collabReady.value = !collabEnabled.value;
-    }
+    const shouldBeSynced = !collabEnabled.value;
+    docMachine.markCollabSynced(shouldBeSynced, docId.value);
+    collabReady.value = shouldBeSynced;
   };
 
   const resolveTargetDocument = async (targetDocId) => {
