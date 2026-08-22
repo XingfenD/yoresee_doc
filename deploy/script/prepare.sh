@@ -73,4 +73,10 @@ for mapping in "${TEMPLATE_MAPPINGS[@]}"; do
     echo "  - $rel_output"
 done
 
+echo "Preparing log directories..."
+for log_dir in "$DEPLOY_DIR/logs/nginx" "$DEPLOY_DIR/logs/rabbitmq"; do
+    mkdir -p "$log_dir"
+    chmod 777 "$log_dir"
+done
+
 echo "Configuration preparation completed!"
