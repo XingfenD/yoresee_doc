@@ -29,6 +29,7 @@ export function useDocumentStateMachine() {
     targetDocType.value = '1';
     targetContent.value = '';
     error.value = null;
+    collabSynced.value = true;
     state.value = DOC_STATE.NAVIGATING;
   };
 
