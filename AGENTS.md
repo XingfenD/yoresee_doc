@@ -39,7 +39,20 @@ Conventional Commits (`fix: ...`, `refactor: ...`).
 
 ## Changelog
 
-Record user-visible changes in `docs/CHANGELOG`, Keep-a-Changelog style (group under `Added`/`Changed`/`Fixed`). Newest version on top.
+Record user-visible changes in `docs/CHANGELOG`, Keep-a-Changelog style. Newest version on top. New-entry format:
+
+```markdown
+## [x.y.z] - YYYY-MM-DD
+
+### Added / 新增
+### Changed / 变更
+### Fixed / 修复
+### Removed / 移除
+
+- One line per change, bilingual (zh + en) to match repo docs.
+```
+
+Pending work that is not yet shipped goes in `docs/TODO.md`, not here.
 
 ## Gotchas
 
