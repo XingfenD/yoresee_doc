@@ -4,7 +4,24 @@ All notable changes to this template should be documented in this file.
 本模板的重要变更建议统一记录在此文件中。
 
 The format loosely follows Keep a Changelog and can be adapted to the team's habits.
-本文档参考了 Keep a Changelog 的思路，也可以根据团队习惯调整。
+本文档参考了 Keep a Changelog 的思路，也可以按团队习惯调整。
+
+## [0.1.1] - 2026-08-22
+
+### Fixed / 修复
+
+- Cross-type document switch (`yoresee_rich_text` ↔ `yoresee_table` / `yoresee_slide`) no longer duplicates content. Previously the shared `editorContent` ref was overwritten by the table/slide persistence during the brief window where `currentDocType` had not yet updated to the new type, causing the rich-text editor to receive a YJS XmlFragment XML serialization as its initial content; the subsequent `setContent` was then re-inserted into the YJS XmlFragment and merged with the remote state, producing duplicated paragraphs that the snapshot worker persisted back to the backend.
+- 富文本 ↔ 表格 / 幻灯片跨类型切换时不再出现内容重复。此前共享 `editorContent` ref 在 `currentDocType` 尚未切到新类型的瞬态窗口被 table/slide 持久化覆盖，导致富文本编辑器拿到 YJS XmlFragment 的 XML 序列化作为初识内容；随后的 `setContent` 被 Collaboration extension 回写进 YJS XmlFragment，与远端状态 CRDT 合并后产生重复段落，snapshot worker 又把脏数据写回后端。
+
+### Changed / 变更
+
+- `DocumentEditor.vue` now holds per-type content refs (`markdownContent` / `tableContent` / `slideContent` / `richTextContent`); each editor binds via `v-model` to its own ref, and each persistence (`useTableDocumentPersistence` / `useSlideDocumentPersistence`) writes to its own ref. Shared state between types is removed at the source.
+- `DocumentEditor.vue` 改为按类型持有 content ref（`markdownContent` / `tableContent` / `slideContent` / `richTextContent`），每个编辑器 v-model 绑定自己的 ref，table/slide 持久化各自只写自己的 ref，从源头消除跨类型共享状态。
+
+### Notes / 说明
+
+- Investigation record: `docs/bug_report/cross-type-content-duplication.md`
+- 排查记录：`docs/bug_report/cross-type-content-duplication.md`
 
 ## [0.1.0] - 2026-08-22
 

@@ -16,12 +16,23 @@ export function useDocumentEditorActions({
   docId,
   currentDocType,
   currentDocTitle,
-  editorContent,
+  markdownContent,
+  tableContent,
+  slideContent,
+  richTextContent,
   directoryTree,
   updateTreeNodeTitle,
   fetchDocuments
 }) {
   const { runWithLoading } = useApiAction({ t });
+
+  const resolveActiveContent = () => {
+    const type = normalizeDocumentType(currentDocType?.value, '1');
+    if (type === '2') return tableContent?.value || '';
+    if (type === '3') return slideContent?.value || '';
+    if (type === '4') return richTextContent?.value || '';
+    return markdownContent?.value || '';
+  };
 
   const isEditingTitle = ref(false);
   const pendingTitle = ref('');
@@ -239,7 +250,7 @@ export function useDocumentEditorActions({
       description: '',
       scope: defaultScope,
       tags: '',
-      content: editorContent.value || ''
+      content: resolveActiveContent()
     };
     showTemplateDialog.value = true;
   };
@@ -253,7 +264,8 @@ export function useDocumentEditorActions({
   };
 
   const submitCreateTemplate = async (payload) => {
-    if (!editorContent.value || !editorContent.value.trim()) {
+    const activeContent = resolveActiveContent();
+    if (!activeContent || !activeContent.trim()) {
       ElMessage.error(t('templates.emptyContent'));
       return;
     }
@@ -267,7 +279,7 @@ export function useDocumentEditorActions({
           template_content: JSON.stringify({
             name: payload.name,
             description: payload.description,
-            content: editorContent.value,
+            content: activeContent,
             tags: payload.tags || []
           })
         };
