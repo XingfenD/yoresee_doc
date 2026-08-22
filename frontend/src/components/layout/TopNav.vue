@@ -3,6 +3,7 @@
     <div class="nav-left">
       <router-link class="system-link" to="/">
         <h1 class="system-title">{{ systemName }}</h1>
+        <span v-if="version" class="system-version">v{{ version }}</span>
       </router-link>
     </div>
     <div class="nav-center">
@@ -81,7 +82,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ArrowDown, Flag, ChatLineRound, Moon, Sunny, Bell, Search } from '@element-plus/icons-vue';
@@ -90,6 +91,7 @@ import { listNotifications } from '@/services/api';
 import { useApiAction } from '@/composables/actions/useApiAction';
 import AppDropdown from '@/components/base/AppDropdown.vue';
 import AppAvatar from '@/components/base/AppAvatar.vue';
+import { useUserStore } from '@/store/user';
 import {
   getTopNavDisplayMenusCache,
   setTopNavDisplayMenusCache
@@ -127,6 +129,8 @@ const showSystemManage = ref(false);
 const showUserCenter = ref(false);
 const hasUnread = ref(false);
 const searchKeyword = ref('');
+
+const version = computed(() => useUserStore().version);
 
 const goToUserCenter = () => {
   router.push('/user_info/profile');
@@ -237,6 +241,15 @@ watch(
   font-weight: 600;
   color: var(--primary-color);
   margin: 0;
+}
+
+.system-version {
+  margin-left: var(--spacing-sm);
+  position: relative;
+  top: 3px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-light);
 }
 
 .system-link {

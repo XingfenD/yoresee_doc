@@ -6,6 +6,7 @@ import (
 
 	"github.com/XingfenD/yoresee_doc/internal/config"
 	"github.com/XingfenD/yoresee_doc/internal/service/config_service"
+	"github.com/XingfenD/yoresee_doc/pkg/constant"
 	pb "github.com/XingfenD/yoresee_doc_proto/yoresee_doc/v1"
 )
 
@@ -22,7 +23,7 @@ func (s *SystemServiceServer) Health(ctx context.Context, req *pb.HealthRequest)
 		Base:      baseResponseFromErr(nil),
 		Timestamp: time.Now().Format(time.RFC3339),
 		Status:    "healthy",
-		Version:   "1.0.0",
+		Version:   constant.Version,
 	}, nil
 }
 
@@ -31,5 +32,6 @@ func (s *SystemServiceServer) SystemInfo(ctx context.Context, req *pb.SystemInfo
 		Base:               baseResponseFromErr(nil),
 		SystemName:         config.GlobalConfig.Backend.SystemName,
 		SystemRegisterMode: config_service.ConfigSvc.GetSystemRegisterMode(ctx),
+		Version:            constant.Version,
 	}, nil
 }

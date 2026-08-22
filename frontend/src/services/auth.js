@@ -69,7 +69,8 @@ export const getSystemInfo = async () => {
   const base = baseToObject(resp);
   const data = {
     system_name: resp.systemName,
-    system_register_mode: resp.systemRegisterMode
+    system_register_mode: resp.systemRegisterMode,
+    version: resp.version
   };
   return handleResponse(base, data);
 };

@@ -39,7 +39,7 @@ Conventional Commits (`fix: ...`, `refactor: ...`).
 
 ## Changelog
 
-Record user-visible changes in `docs/CHANGELOG`, Keep-a-Changelog style. Newest version on top. New-entry format:
+Record user-visible changes in `docs/CHANGELOG`, Keep-a-Changelog style. Newest version on top. The `[x.y.z]` header version must match `backend/pkg/constant/version.go` — bump the constant alongside the CHANGELOG entry. New-entry format:
 
 ```markdown
 ## [x.y.z] - YYYY-MM-DD

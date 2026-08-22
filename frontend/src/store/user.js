@@ -14,6 +14,7 @@ export const useUserStore = defineStore('user', {
     })(),
     systemName: '',
     systemRegisterMode: 'open',
+    version: '',
     darkMode: localStorage.getItem('darkMode') === 'true',
     loading: false,
     error: ''
@@ -64,6 +65,7 @@ export const useUserStore = defineStore('user', {
         const response = await getSystemInfo();
         this.systemName = response.system_name;
         this.systemRegisterMode = response.system_register_mode || 'invite';
+        this.version = response.version || '';
         return response;
       } catch (error) {
         console.error('获取系统信息失败:', error);

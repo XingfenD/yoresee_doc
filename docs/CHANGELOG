@@ -6,6 +6,30 @@ All notable changes to this template should be documented in this file.
 The format loosely follows Keep a Changelog and can be adapted to the team's habits.
 本文档参考了 Keep a Changelog 的思路，也可以根据团队习惯调整。
 
+## [0.1.0] - 2026-08-22
+
+### Added / 新增
+
+- Frontend displays the backend version (e.g. `v1.1.0`) next to the system name in the top navigation bar.
+- 前端在顶栏系统名旁显示后端版本号（如 `v1.1.0`）。
+
+- Backend `SystemInfo` now returns the backend version, sourced from `pkg/constant/version.go`; `Health` also reuses the same constant.
+- 后端 `SystemInfo` 响应新增版本号字段，取自 `pkg/constant/version.go`；`Health` 同样复用此常量。
+
+- Centralized the backend build version in `backend/pkg/constant/version.go` as the single source of truth.
+- 后端版本号集中维护在 `backend/pkg/constant/version.go`，作为单一来源。
+
+- Upgraded `yoresee_doc_proto` to `v0.1.2` (adds `version` field to `SystemInfoResponse`); consumed by backend, collab-go, and frontend.
+- 升级 `yoresee_doc_proto` 至 `v0.1.2`（为 `SystemInfoResponse` 新增 `version` 字段），backend、collab-go、frontend 同步消费。
+
+### Fixed / 修复
+
+- Create-document dialog no longer shows a white border/frame in dark mode (`.el-dialog` now resolves `--el-bg-color` to the dark theme).
+- 夜间模式下创建文档弹窗不再出现白色边框（`.el-dialog` 在暗色主题下正确解析 `--el-bg-color`）。
+
+- `frontend/src/services/auth.js` `getSystemInfo` no longer drops the `version` field from the backend response.
+- `frontend/src/services/auth.js` 的 `getSystemInfo` 不再丢弃后端返回的 `version` 字段。
+
 ## [0.0.1] - 2026-08-22
 
 ### Added / 新增

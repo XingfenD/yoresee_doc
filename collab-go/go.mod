@@ -12,7 +12,7 @@ require (
 require google.golang.org/protobuf v1.36.10 // indirect
 
 require (
-	github.com/XingfenD/yoresee_doc_proto v0.1.1
+	github.com/XingfenD/yoresee_doc_proto v0.1.2
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
