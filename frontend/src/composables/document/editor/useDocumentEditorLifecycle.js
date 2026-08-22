@@ -7,7 +7,6 @@ export function useDocumentEditorLifecycle({
   fetchSystemInfo,
   kbId,
   docId,
-  currentDocType,
   activeMenu,
   resolveActiveMenu,
   collabEnabled,
@@ -79,9 +78,8 @@ export function useDocumentEditorLifecycle({
     }
 
     await expandToCurrentDoc();
-    updateCurrentDocTitle();
+    const { type } = updateCurrentDocTitle();
 
-    const type = currentDocType?.value || '1';
     docMachine.resolveMetadata({ docId: targetDocId, type });
 
     // For table/slide the typed persistence will load content once the machine

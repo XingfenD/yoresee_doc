@@ -58,15 +58,16 @@ export function useDirectoryTreeState({
   const updateCurrentDocTitle = () => {
     if (!docId.value) {
       currentDocType.value = '1';
-      return;
+      return { title: '', type: '1' };
     }
     const node = findNodeById(directoryTree.value, docId.value);
     if (node) {
       currentDocTitle.value = node.label;
       currentDocType.value = normalizeDocumentType(node.type, '1');
-      return;
+      return { title: node.label, type: currentDocType.value };
     }
     currentDocType.value = '1';
+    return { title: '', type: '1' };
   };
 
   const updateTreeNodeTitle = (nodes, targetId, title) => {

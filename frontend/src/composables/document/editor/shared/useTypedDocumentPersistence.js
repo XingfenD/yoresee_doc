@@ -6,7 +6,6 @@ export function useTypedDocumentPersistence(options = {}) {
   const {
     type,
     docId,
-    currentDocType,
     editorContent,
     docMachine,
     t,
@@ -20,7 +19,9 @@ export function useTypedDocumentPersistence(options = {}) {
   const normalizedType = normalizeDocumentType(type, '');
   const { runSilent } = useApiAction({ t });
 
-  const isCurrentType = computed(() => normalizeDocumentType(currentDocType.value, '1') === normalizedType);
+  const isCurrentType = computed(
+    () => normalizeDocumentType(docMachine?.targetDocType.value, '1') === normalizedType
+  );
   const dirty = ref(false);
   const saveTimer = ref(null);
   const saveInFlight = ref(false);
@@ -30,6 +31,7 @@ export function useTypedDocumentPersistence(options = {}) {
   const loadSeq = ref(0);
 
   const isMachineReady = () => !docMachine || docMachine.isReady.value;
+  const currentTargetDocId = () => docMachine?.targetDocId.value || docId.value || '';
 
   const clearSaveTimer = () => {
     if (!saveTimer.value) {
@@ -96,6 +98,7 @@ export function useTypedDocumentPersistence(options = {}) {
       return;
     }
     const nextLoadSeq = ++loadSeq.value;
+    const requestedDocId = currentTargetDocId();
     const response = await runSilent(
       () => getDocumentContent(docId.value),
       { context: loadContext }
@@ -104,7 +107,8 @@ export function useTypedDocumentPersistence(options = {}) {
       !response ||
       nextLoadSeq !== loadSeq.value ||
       !isMachineReady() ||
-      !isCurrentType.value
+      !isCurrentType.value ||
+      currentTargetDocId() !== requestedDocId
     ) {
       return;
     }
@@ -129,7 +133,7 @@ export function useTypedDocumentPersistence(options = {}) {
   };
 
   watch(
-    () => [docMachine?.state.value, docId.value, currentDocType.value],
+    () => [docMachine?.state.value, docMachine?.targetDocType.value, docId.value],
     async () => {
       clearSaveTimer();
       dirty.value = false;

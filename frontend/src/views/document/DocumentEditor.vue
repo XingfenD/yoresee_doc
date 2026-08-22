@@ -269,7 +269,6 @@ const {
   directoryTree,
   knowledgeBaseName,
   currentDocTitle,
-  currentDocType,
   isAllExpanded,
   fetchDocuments,
   updateCurrentDocTitle,
@@ -311,7 +310,6 @@ const {
   rerenderTableEditor
 } = useTableDocumentPersistence({
   docId,
-  currentDocType,
   editorContent: tableContent,
   docMachine,
   tableEditorRef,
@@ -324,7 +322,6 @@ const {
   rerenderSlideEditor
 } = useSlideDocumentPersistence({
   docId,
-  currentDocType,
   editorContent: slideContent,
   docMachine,
   slideEditorRef,
@@ -364,7 +361,6 @@ const {
 } = useDocumentEditorPolicy({
   kbId,
   docId,
-  currentDocType,
   docMachine
 });
 const {
@@ -392,7 +388,6 @@ const {
   router,
   kbId,
   docId,
-  currentDocType,
   currentDocTitle,
   markdownContent,
   tableContent,
@@ -449,7 +444,6 @@ const {
   fetchSystemInfo,
   kbId,
   docId,
-  currentDocType,
   activeMenu,
   resolveActiveMenu,
   collabEnabled,

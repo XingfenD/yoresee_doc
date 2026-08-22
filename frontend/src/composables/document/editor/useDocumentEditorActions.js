@@ -14,7 +14,6 @@ export function useDocumentEditorActions({
   router,
   kbId,
   docId,
-  currentDocType,
   currentDocTitle,
   markdownContent,
   tableContent,
@@ -27,12 +26,7 @@ export function useDocumentEditorActions({
 }) {
   const { runWithLoading } = useApiAction({ t });
 
-  const resolveActiveDocType = () => {
-    if (docMachine?.targetDocType.value) {
-      return normalizeDocumentType(docMachine.targetDocType.value, '1');
-    }
-    return normalizeDocumentType(currentDocType?.value, '1');
-  };
+  const resolveActiveDocType = () => normalizeDocumentType(docMachine?.targetDocType.value, '1');
 
   const resolveActiveContent = () => {
     const type = resolveActiveDocType();
