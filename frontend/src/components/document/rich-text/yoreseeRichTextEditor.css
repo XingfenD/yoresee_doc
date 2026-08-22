@@ -245,3 +245,42 @@
 :global(.dark-mode) .rich-text-body :deep(.yoresee-rich-text-content pre code .hljs-selector-pseudo) {
   color: #c4b5fd;
 }
+
+/* 顶层直接子块：精确列举，避免 > * 命中装饰节点 */
+.rich-text-editor .yoresee-rich-text-content > p:hover,
+.rich-text-editor .yoresee-rich-text-content > h1:hover,
+.rich-text-editor .yoresee-rich-text-content > h2:hover,
+.rich-text-editor .yoresee-rich-text-content > h3:hover,
+.rich-text-editor .yoresee-rich-text-content > blockquote:hover,
+.rich-text-editor .yoresee-rich-text-content > pre:hover,
+.rich-text-editor .yoresee-rich-text-content > hr:hover,
+.rich-text-editor .yoresee-rich-text-content > .mindmap-node:hover,
+.rich-text-editor .yoresee-rich-text-content > .drawio-node:hover,
+.rich-text-editor .yoresee-rich-text-content > .rich-table-node:hover,
+/* 列表项：hover 在 <p> 行上，避免 li 比 p 高一行导致高亮区过大 */
+.rich-text-editor .yoresee-rich-text-content li > p:hover,
+.rich-text-editor .yoresee-rich-text-content li:hover {
+  background-color: color-mix(in srgb, var(--primary-color) 8%, transparent);
+  border-radius: 4px;
+  transition: background-color 120ms ease;
+}
+
+/* NodeView 自带 padding/border，背景会和自身边框打架；改用外描边 */
+.rich-text-editor .yoresee-rich-text-content > .mindmap-node:hover,
+.rich-text-editor .yoresee-rich-text-content > .drawio-node:hover,
+.rich-text-editor .yoresee-rich-text-content > .rich-table-node:hover {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 18%, transparent);
+}
+
+/* 暗色模式：稍深一点，遵循项目全局 dark-mode 约定 */
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content > p:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content > h1:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content > h2:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content > h3:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content > blockquote:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content > pre:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content > hr:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content li > p:hover,
+:global(.dark-mode) .rich-text-editor .yoresee-rich-text-content li:hover {
+  background-color: color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
