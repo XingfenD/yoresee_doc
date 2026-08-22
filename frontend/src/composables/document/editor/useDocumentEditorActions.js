@@ -53,6 +53,22 @@ export function useDocumentEditorActions({
     showCreateDialog.value = false;
   };
 
+  const navigateToDocument = (externalId) => {
+    if (kbId.value === 'personal') {
+      router.push(`/mydocument/${externalId}`);
+    } else {
+      router.push(`/knowledge-base/${kbId.value}/document/${externalId}`);
+    }
+  };
+
+  const navigateToList = () => {
+    if (kbId.value === 'personal') {
+      router.push('/mydocuments');
+    } else {
+      router.push(`/knowledge-base/${kbId.value}`);
+    }
+  };
+
   const createDocument = async (payload) => {
     const title = payload?.title?.trim() || t('document.untitledDefaultTitle');
     await runWithLoading(
@@ -82,16 +98,11 @@ export function useDocumentEditorActions({
         context: 'createDocument',
         errorMessage: t('knowledgeBase.createDocumentError'),
         onSuccess: async (response) => {
-          const isPersonal = kbId.value === 'personal';
           showCreateDialog.value = false;
           pendingParentId.value = null;
           await fetchDocuments();
           if (response?.external_id) {
-            if (isPersonal) {
-              router.push(`/mydocument/${response.external_id}`);
-            } else {
-              router.push(`/knowledge-base/${kbId.value}/document/${response.external_id}`);
-            }
+            navigateToDocument(response.external_id);
           }
         }
       }
@@ -140,12 +151,7 @@ export function useDocumentEditorActions({
         onSuccess: async () => {
           await fetchDocuments();
           if (String(targetId) === String(docId.value)) {
-            const isPersonal = kbId.value === 'personal';
-            if (isPersonal) {
-              router.push('/mydocuments');
-            } else {
-              router.push(`/knowledge-base/${kbId.value}`);
-            }
+            navigateToList();
           }
         }
       }
