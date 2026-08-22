@@ -319,6 +319,11 @@ const {
   getDocumentContent,
   updateDocument
 });
+const rerenderAllEditors = () => {
+  rerenderTableEditor();
+  rerenderSlideEditor();
+  rerenderRichTextEditor();
+};
 const {
   isSidebarCollapsed,
   isSidebarResizing,
@@ -330,11 +335,7 @@ const {
   editorLayoutRef,
   commentSidebarRef,
   isCommentCollapsed,
-  onLayoutChange: () => {
-    rerenderTableEditor();
-    rerenderSlideEditor();
-    rerenderRichTextEditor();
-  }
+  onLayoutChange: rerenderAllEditors
 });
 const {
   isMarkdownDocument,
@@ -400,9 +401,7 @@ const {
   editorLayoutRef,
   docId,
   onChange: () => {
-    rerenderTableEditor();
-    rerenderSlideEditor();
-    rerenderRichTextEditor();
+    rerenderAllEditors();
     clampSidebarWidth();
   }
 });

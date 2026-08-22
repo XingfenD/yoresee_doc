@@ -10,6 +10,24 @@ import {
   resolveRangeFromDomBlock
 } from './paragraph-handle/paragraphHandleUtils';
 
+function findActionByKey(actions, targetKey) {
+  if (!Array.isArray(actions) || !targetKey) {
+    return null;
+  }
+  for (const item of actions) {
+    if (item?.key === targetKey) {
+      return item;
+    }
+    if (Array.isArray(item?.children) && item.children.length) {
+      const childMatched = findActionByKey(item.children, targetKey);
+      if (childMatched) {
+        return childMatched;
+      }
+    }
+  }
+  return null;
+}
+
 export function useRichTextParagraphHandle({
   editorRef,
   scrollContainerRef,
@@ -222,6 +240,14 @@ export function useRichTextParagraphHandle({
     updatePosition(hoveredMeta.value, hoveredDomBlock.value);
   };
 
+  const eventTargets = () => {
+    const targets = [mouseHost];
+    if (editorDom && editorDom !== mouseHost) {
+      targets.push(editorDom);
+    }
+    return targets.filter(Boolean);
+  };
+
   const bindEvents = () => {
     editorDom = getEditorDom();
     scrollContainer = scrollContainerRef.value;
@@ -231,11 +257,9 @@ export function useRichTextParagraphHandle({
       return;
     }
 
-    mouseHost.addEventListener('mousemove', handleMouseMove);
-    mouseHost.addEventListener('mouseleave', handleMouseLeave);
-    if (editorDom !== mouseHost) {
-      editorDom.addEventListener('mousemove', handleMouseMove);
-      editorDom.addEventListener('mouseleave', handleMouseLeave);
+    for (const target of eventTargets()) {
+      target.addEventListener('mousemove', handleMouseMove);
+      target.addEventListener('mouseleave', handleMouseLeave);
     }
     scrollContainer.addEventListener('scroll', handleScrollOrResize, { passive: true });
     window.addEventListener('resize', handleScrollOrResize);
@@ -243,16 +267,12 @@ export function useRichTextParagraphHandle({
 
   const unbindEvents = () => {
     clearHideTimer();
-    if (mouseHost) {
-      mouseHost.removeEventListener('mousemove', handleMouseMove);
-      mouseHost.removeEventListener('mouseleave', handleMouseLeave);
-      mouseHost = null;
+    for (const target of eventTargets()) {
+      target.removeEventListener('mousemove', handleMouseMove);
+      target.removeEventListener('mouseleave', handleMouseLeave);
     }
-    if (editorDom) {
-      editorDom.removeEventListener('mousemove', handleMouseMove);
-      editorDom.removeEventListener('mouseleave', handleMouseLeave);
-      editorDom = null;
-    }
+    mouseHost = null;
+    editorDom = null;
     if (scrollContainer) {
       scrollContainer.removeEventListener('scroll', handleScrollOrResize);
       scrollContainer = null;
@@ -351,24 +371,6 @@ export function useRichTextParagraphHandle({
   };
 
   const runParagraphAction = (key) => {
-    const findActionByKey = (actions, targetKey) => {
-      if (!Array.isArray(actions) || !targetKey) {
-        return null;
-      }
-      for (const item of actions) {
-        if (item?.key === targetKey) {
-          return item;
-        }
-        if (Array.isArray(item?.children) && item.children.length) {
-          const childMatched = findActionByKey(item.children, targetKey);
-          if (childMatched) {
-            return childMatched;
-          }
-        }
-      }
-      return null;
-    };
-
     const action = findActionByKey(paragraphActions.value, key);
     if (!action) {
       return;
