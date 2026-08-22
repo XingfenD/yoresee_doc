@@ -12,7 +12,10 @@ export function useDocumentEditorLifecycle({
   collabEnabled,
   collabReady,
   lastSyncedDocId,
-  editorContent,
+  markdownContent,
+  tableContent,
+  slideContent,
+  richTextContent,
   currentDocTitle,
   knowledgeBaseName,
   fetchDocuments,
@@ -23,6 +26,13 @@ export function useDocumentEditorLifecycle({
   cancelEditTitle,
   recordRecentDocument
 }) {
+  const clearEditorContents = () => {
+    if (markdownContent) markdownContent.value = '';
+    if (tableContent) tableContent.value = '';
+    if (slideContent) slideContent.value = '';
+    if (richTextContent) richTextContent.value = '';
+  };
+
   const toggleCommentSidebar = () => {
     isCommentCollapsed.value = !isCommentCollapsed.value;
   };
@@ -57,7 +67,7 @@ export function useDocumentEditorLifecycle({
     () => props.docId || route.params.docId,
     async (newDocId) => {
       docId.value = newDocId;
-      editorContent.value = '';
+      clearEditorContents();
       currentDocTitle.value = '';
       cancelEditTitle();
       await commentSidebarRef.value?.reload?.();

@@ -84,7 +84,7 @@
             <MarkdownEditor
               v-if="isMarkdownDocument"
               ref="markdownEditorRef"
-              v-model="editorContent"
+              v-model="markdownContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
               :collab-room="collabRoom"
@@ -99,20 +99,20 @@
             <TableEditor
               v-else-if="isTableDocument"
               ref="tableEditorRef"
-              v-model="editorContent"
+              v-model="tableContent"
               @commit="flushTableSave"
             />
             <SlideEditor
               v-else-if="isSlideDocument"
               ref="slideEditorRef"
-              v-model="editorContent"
+              v-model="slideContent"
               @commit="flushSlideSave"
             />
             <YoreseeRichTextEditor
               v-else-if="isRichTextDocument"
               :key="`rich-text-${docId}`"
               ref="richTextEditorRef"
-              v-model="editorContent"
+              v-model="richTextContent"
               :placeholder="t('document.editorPlaceholder')"
               :collab-enabled="collabEnabled"
               :collab-room="collabRoom"
@@ -283,7 +283,10 @@ const {
 
 usePageTitle(computed(() => t('pageTitle.documentEditor')), currentDocTitle);
 
-const editorContent = ref('');
+const markdownContent = ref('');
+const tableContent = ref('');
+const slideContent = ref('');
+const richTextContent = ref('');
 const editorLayoutRef = ref(null);
 const isCommentCollapsed = ref(false);
 const markdownEditorRef = ref(null);
@@ -301,7 +304,7 @@ const {
 } = useTableDocumentPersistence({
   docId,
   currentDocType,
-  editorContent,
+  editorContent: tableContent,
   tableEditorRef,
   t,
   getDocumentContent,
@@ -313,7 +316,7 @@ const {
 } = useSlideDocumentPersistence({
   docId,
   currentDocType,
-  editorContent,
+  editorContent: slideContent,
   slideEditorRef,
   t,
   getDocumentContent,
@@ -380,7 +383,10 @@ const {
   docId,
   currentDocType,
   currentDocTitle,
-  editorContent,
+  markdownContent,
+  tableContent,
+  slideContent,
+  richTextContent,
   directoryTree,
   updateTreeNodeTitle,
   fetchDocuments
@@ -436,7 +442,10 @@ const {
   collabEnabled,
   collabReady,
   lastSyncedDocId,
-  editorContent,
+  markdownContent,
+  tableContent,
+  slideContent,
+  richTextContent,
   currentDocTitle,
   knowledgeBaseName,
   fetchDocuments,
