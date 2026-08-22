@@ -25,7 +25,7 @@ require (
 require google.golang.org/protobuf v1.36.10 // indirect
 
 require (
-	github.com/XingfenD/yoresee_doc_proto v0.1.0
+	github.com/XingfenD/yoresee_doc_proto v0.1.1
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
