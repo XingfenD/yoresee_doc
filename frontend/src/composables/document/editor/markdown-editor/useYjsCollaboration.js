@@ -188,6 +188,7 @@ export function useYjsCollaboration({
   };
 
   const teardownCollaboration = () => {
+    console.log('[COLLAB_TEARDOWN] md teardownCollaboration called');
     if (contentObserverCleanupRef.value) {
       contentObserverCleanupRef.value();
       contentObserverCleanupRef.value = null;

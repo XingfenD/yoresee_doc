@@ -78,59 +78,61 @@
         </DocumentEditorHeader>
         <div class="editor-content">
           <div class="editor-wrapper">
-            <div v-if="docMachine.isReady.value && collabEnabled && !docMachine.collabSynced.value" class="editor-loading">
-              {{ t('document.loading') }}
-            </div>
-            <div v-else-if="!docMachine.isReady.value && !docMachine.isError.value" class="editor-loading">
+            <div v-if="!docMachine.isReady.value && !docMachine.isError.value" class="editor-loading">
               {{ t('document.loading') }}
             </div>
             <div v-else-if="docMachine.isError.value" class="editor-loading">
               {{ docMachine.error.value?.message || t('document.loadError') }}
             </div>
-            <MarkdownEditor
-              v-else-if="docMachine.targetDocType.value === '1'"
-              ref="markdownEditorRef"
-              v-model="markdownContent"
-              :placeholder="t('document.editorPlaceholder')"
-              :collab-enabled="collabEnabled"
-              :collab-room="collabRoom"
-              :collab-url="collabUrl"
-              :collab-token="collabToken"
-              :comment-enabled="inlineCommentEnabled"
-              @collab-sync="handleCollabSync"
-              @comment-add="handleInlineCommentAdd"
-              @comment-remove="handleInlineCommentRemove"
-              @comment-changed="handleRemoteCommentChanged"
-            />
-            <TableEditor
-              v-else-if="docMachine.targetDocType.value === '2'"
-              ref="tableEditorRef"
-              v-model="tableContent"
-              @commit="flushTableSave"
-            />
-            <SlideEditor
-              v-else-if="docMachine.targetDocType.value === '3'"
-              ref="slideEditorRef"
-              v-model="slideContent"
-              @commit="flushSlideSave"
-            />
-            <YoreseeRichTextEditor
-              v-else-if="docMachine.targetDocType.value === '4'"
-              :key="`rich-text-${docId}`"
-              ref="richTextEditorRef"
-              v-model="richTextContent"
-              :placeholder="t('document.editorPlaceholder')"
-              :collab-enabled="collabEnabled"
-              :collab-room="collabRoom"
-              :collab-url="collabUrl"
-              :collab-token="collabToken"
-              :comment-enabled="inlineCommentEnabled"
-              :external-extensions="richTextExtensions"
-              @collab-sync="handleCollabSync"
-              @comment-add="handleInlineCommentAdd"
-              @comment-remove="handleInlineCommentRemove"
-              @comment-changed="handleRemoteCommentChanged"
-            />
+            <template v-else>
+              <div v-if="collabEnabled && !docMachine.collabSynced.value" class="editor-loading">
+                {{ t('document.loading') }}
+              </div>
+              <MarkdownEditor
+                v-if="docMachine.targetDocType.value === '1'"
+                ref="markdownEditorRef"
+                v-model="markdownContent"
+                :placeholder="t('document.editorPlaceholder')"
+                :collab-enabled="collabEnabled"
+                :collab-room="collabRoom"
+                :collab-url="collabUrl"
+                :collab-token="collabToken"
+                :comment-enabled="inlineCommentEnabled"
+                @collab-sync="handleCollabSync"
+                @comment-add="handleInlineCommentAdd"
+                @comment-remove="handleInlineCommentRemove"
+                @comment-changed="handleRemoteCommentChanged"
+              />
+              <TableEditor
+                v-else-if="docMachine.targetDocType.value === '2'"
+                ref="tableEditorRef"
+                v-model="tableContent"
+                @commit="flushTableSave"
+              />
+              <SlideEditor
+                v-else-if="docMachine.targetDocType.value === '3'"
+                ref="slideEditorRef"
+                v-model="slideContent"
+                @commit="flushSlideSave"
+              />
+              <YoreseeRichTextEditor
+                v-else-if="docMachine.targetDocType.value === '4'"
+                :key="`rich-text-${docId}`"
+                ref="richTextEditorRef"
+                v-model="richTextContent"
+                :placeholder="t('document.editorPlaceholder')"
+                :collab-enabled="collabEnabled"
+                :collab-room="collabRoom"
+                :collab-url="collabUrl"
+                :collab-token="collabToken"
+                :comment-enabled="inlineCommentEnabled"
+                :external-extensions="richTextExtensions"
+                @collab-sync="handleCollabSync"
+                @comment-add="handleInlineCommentAdd"
+                @comment-remove="handleInlineCommentRemove"
+                @comment-changed="handleRemoteCommentChanged"
+              />
+            </template>
           </div>
         </div>
 
@@ -238,8 +240,7 @@ const {
   resolveActiveMenu,
   collabRoom,
   collabUrl,
-  collabToken,
-  collabReady
+  collabToken
 } = useDocumentRouteContext({ props, route });
 
 const {
@@ -446,7 +447,6 @@ const {
   activeMenu,
   resolveActiveMenu,
   collabEnabled,
-  collabReady,
   markdownContent,
   tableContent,
   slideContent,

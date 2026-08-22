@@ -10,7 +10,6 @@ export function useDocumentEditorLifecycle({
   activeMenu,
   resolveActiveMenu,
   collabEnabled,
-  collabReady,
   markdownContent,
   tableContent,
   slideContent,
@@ -38,14 +37,11 @@ export function useDocumentEditorLifecycle({
   };
 
   const handleCollabSync = (isSynced) => {
-    docMachine.markCollabSynced(isSynced, docId.value);
-    collabReady.value = isSynced;
+    docMachine.markCollabSynced(collabEnabled.value ? isSynced : true, docId.value);
   };
 
   const syncCollabReadyFlag = () => {
-    const shouldBeSynced = !collabEnabled.value;
-    docMachine.markCollabSynced(shouldBeSynced, docId.value);
-    collabReady.value = shouldBeSynced;
+    docMachine.markCollabSynced(!collabEnabled.value, docId.value);
   };
 
   const resolveTargetDocument = async (targetDocId) => {
@@ -114,7 +110,6 @@ export function useDocumentEditorLifecycle({
       cancelEditTitle();
       await fetchDocuments();
       updateCurrentDocTitle();
-      syncCollabReadyFlag();
     }
   );
 

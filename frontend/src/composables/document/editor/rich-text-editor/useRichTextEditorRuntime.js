@@ -86,12 +86,18 @@ export function useRichTextEditorRuntime(options = {}) {
     const extraExtensions = Array.isArray(additionalExtensionsRef?.value)
       ? additionalExtensionsRef.value
       : [];
+    const collabActive = extraExtensions.some(
+      (ext) => ext && ext.name === 'collaboration'
+    );
     componentToolbarItemsRef.value = componentSystem.toolbarItems;
 
     editorRef.value = new Editor({
       extensions: [
         StarterKit.configure({
           codeBlock: false,
+          link: false,
+          underline: false,
+          undoRedo: !collabActive,
           blockquote: true,
           heading: { levels: [1, 2, 3] }
         }),

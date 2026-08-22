@@ -14,7 +14,6 @@ export function useDocumentRouteContext({ props, route }) {
   const collabRoom = computed(() => (docId.value ? `${docId.value}` : ''));
   const collabUrl = computed(() => '/ws/doc');
   const collabToken = computed(() => localStorage.getItem('token') || '');
-  const collabReady = ref(false);
 
   return {
     kbId,
@@ -23,7 +22,6 @@ export function useDocumentRouteContext({ props, route }) {
     collabEnabled,
     collabRoom,
     collabUrl,
-    collabToken,
-    collabReady
+    collabToken
   };
 }
