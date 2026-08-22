@@ -78,11 +78,17 @@
         </DocumentEditorHeader>
         <div class="editor-content">
           <div class="editor-wrapper">
-            <div v-if="collabEnabled && !collabReady" class="editor-loading">
+            <div v-if="docMachine.isReady.value && collabEnabled && !collabReady" class="editor-loading">
               {{ t('document.loading') }}
             </div>
+            <div v-else-if="!docMachine.isReady.value && !docMachine.isError.value" class="editor-loading">
+              {{ t('document.loading') }}
+            </div>
+            <div v-else-if="docMachine.isError.value" class="editor-loading">
+              {{ docMachine.error.value?.message || t('document.loadError') }}
+            </div>
             <MarkdownEditor
-              v-if="isMarkdownDocument"
+              v-else-if="docMachine.targetDocType.value === '1'"
               ref="markdownEditorRef"
               v-model="markdownContent"
               :placeholder="t('document.editorPlaceholder')"
@@ -97,19 +103,19 @@
               @comment-changed="handleRemoteCommentChanged"
             />
             <TableEditor
-              v-else-if="isTableDocument"
+              v-else-if="docMachine.targetDocType.value === '2'"
               ref="tableEditorRef"
               v-model="tableContent"
               @commit="flushTableSave"
             />
             <SlideEditor
-              v-else-if="isSlideDocument"
+              v-else-if="docMachine.targetDocType.value === '3'"
               ref="slideEditorRef"
               v-model="slideContent"
               @commit="flushSlideSave"
             />
             <YoreseeRichTextEditor
-              v-else-if="isRichTextDocument"
+              v-else-if="docMachine.targetDocType.value === '4'"
               :key="`rich-text-${docId}`"
               ref="richTextEditorRef"
               v-model="richTextContent"
@@ -198,6 +204,7 @@ import { useDocumentEditorPolicy } from '@/composables/document/editor/useDocume
 import { useDocumentHeaderRouting } from '@/composables/document/editor/useDocumentHeaderRouting';
 import { useTableDocumentPersistence } from '@/composables/document/editor/table-editor/useTableDocumentPersistence';
 import { useSlideDocumentPersistence } from '@/composables/document/editor/slide-editor/useSlideDocumentPersistence';
+import { useDocumentStateMachine } from '@/composables/document/editor/useDocumentStateMachine';
 import { usePageTitle } from '@/composables/usePageTitle';
 import { useUserStore } from '@/store/user';
 import {
@@ -287,6 +294,7 @@ const markdownContent = ref('');
 const tableContent = ref('');
 const slideContent = ref('');
 const richTextContent = ref('');
+const docMachine = useDocumentStateMachine();
 const editorLayoutRef = ref(null);
 const isCommentCollapsed = ref(false);
 const markdownEditorRef = ref(null);
@@ -305,6 +313,7 @@ const {
   docId,
   currentDocType,
   editorContent: tableContent,
+  docMachine,
   tableEditorRef,
   t,
   getDocumentContent,
@@ -317,6 +326,7 @@ const {
   docId,
   currentDocType,
   editorContent: slideContent,
+  docMachine,
   slideEditorRef,
   t,
   getDocumentContent,
@@ -354,7 +364,8 @@ const {
 } = useDocumentEditorPolicy({
   kbId,
   docId,
-  currentDocType
+  currentDocType,
+  docMachine
 });
 const {
   isEditingTitle,
@@ -387,6 +398,7 @@ const {
   tableContent,
   slideContent,
   richTextContent,
+  docMachine,
   directoryTree,
   updateTreeNodeTitle,
   fetchDocuments
@@ -437,6 +449,7 @@ const {
   fetchSystemInfo,
   kbId,
   docId,
+  currentDocType,
   activeMenu,
   resolveActiveMenu,
   collabEnabled,
@@ -454,7 +467,8 @@ const {
   commentSidebarRef,
   isCommentCollapsed,
   cancelEditTitle,
-  recordRecentDocument
+  recordRecentDocument,
+  docMachine
 });
 
 // When navigating from the notification center with ?comment=<anchorId>,

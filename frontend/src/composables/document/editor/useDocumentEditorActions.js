@@ -20,14 +20,22 @@ export function useDocumentEditorActions({
   tableContent,
   slideContent,
   richTextContent,
+  docMachine,
   directoryTree,
   updateTreeNodeTitle,
   fetchDocuments
 }) {
   const { runWithLoading } = useApiAction({ t });
 
+  const resolveActiveDocType = () => {
+    if (docMachine?.targetDocType.value) {
+      return normalizeDocumentType(docMachine.targetDocType.value, '1');
+    }
+    return normalizeDocumentType(currentDocType?.value, '1');
+  };
+
   const resolveActiveContent = () => {
-    const type = normalizeDocumentType(currentDocType?.value, '1');
+    const type = resolveActiveDocType();
     if (type === '2') return tableContent?.value || '';
     if (type === '3') return slideContent?.value || '';
     if (type === '4') return richTextContent?.value || '';
@@ -275,7 +283,7 @@ export function useDocumentEditorActions({
       async () => {
         const requestBody = {
           target_container: payload.scope,
-          type: normalizeDocumentType(currentDocType?.value || DEFAULT_DOCUMENT_TYPE),
+          type: normalizeDocumentType(resolveActiveDocType() || DEFAULT_DOCUMENT_TYPE),
           template_content: JSON.stringify({
             name: payload.name,
             description: payload.description,

@@ -5,12 +5,22 @@ export function useDocumentEditorPolicy(options = {}) {
   const {
     kbId,
     docId,
-    currentDocType
+    currentDocType,
+    docMachine
   } = options;
+
+  // The state machine owns the resolved target type; currentDocType is kept as a
+  // fallback for consumers that have not been migrated yet.
+  const resolvedDocType = computed(() => {
+    if (docMachine?.targetDocType.value) {
+      return normalizeDocumentType(docMachine.targetDocType.value, '1');
+    }
+    return normalizeDocumentType(currentDocType?.value, '1');
+  });
 
   const isPersonalDocument = computed(() => kbId.value === 'personal');
   const hasDocument = computed(() => Boolean(docId.value));
-  const normalizedDocType = computed(() => normalizeDocumentType(currentDocType.value, '1'));
+  const normalizedDocType = resolvedDocType;
   const isMarkdownDocument = computed(() => normalizedDocType.value === '1');
   const isTableDocument = computed(() => normalizedDocType.value === '2');
   const isSlideDocument = computed(() => normalizedDocType.value === '3');

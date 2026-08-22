@@ -8,6 +8,7 @@ export function useTypedDocumentPersistence(options = {}) {
     docId,
     currentDocType,
     editorContent,
+    docMachine,
     t,
     getDocumentContent,
     updateDocument,
@@ -28,6 +29,8 @@ export function useTypedDocumentPersistence(options = {}) {
   const skipWatcher = ref(false);
   const loadSeq = ref(0);
 
+  const isMachineReady = () => !docMachine || docMachine.isReady.value;
+
   const clearSaveTimer = () => {
     if (!saveTimer.value) {
       return;
@@ -37,7 +40,7 @@ export function useTypedDocumentPersistence(options = {}) {
   };
 
   const persistContent = async (content, requestSeq) => {
-    if (!docId.value || !isCurrentType.value) {
+    if (!docId.value || !isCurrentType.value || !isMachineReady()) {
       return;
     }
     if (saveInFlight.value) {
@@ -67,7 +70,7 @@ export function useTypedDocumentPersistence(options = {}) {
   };
 
   const scheduleSave = () => {
-    if (!isCurrentType.value || !dirty.value) {
+    if (!isCurrentType.value || !dirty.value || !isMachineReady()) {
       return;
     }
     clearSaveTimer();
@@ -79,7 +82,7 @@ export function useTypedDocumentPersistence(options = {}) {
   };
 
   const flushSave = async () => {
-    if (!isCurrentType.value || !dirty.value) {
+    if (!isCurrentType.value || !dirty.value || !isMachineReady()) {
       return;
     }
     clearSaveTimer();
@@ -89,7 +92,7 @@ export function useTypedDocumentPersistence(options = {}) {
   };
 
   const loadContent = async () => {
-    if (!docId.value || !isCurrentType.value) {
+    if (!docId.value || !isCurrentType.value || !isMachineReady()) {
       return;
     }
     const nextLoadSeq = ++loadSeq.value;
@@ -97,7 +100,12 @@ export function useTypedDocumentPersistence(options = {}) {
       () => getDocumentContent(docId.value),
       { context: loadContext }
     );
-    if (!response || nextLoadSeq !== loadSeq.value) {
+    if (
+      !response ||
+      nextLoadSeq !== loadSeq.value ||
+      !isMachineReady() ||
+      !isCurrentType.value
+    ) {
       return;
     }
     skipWatcher.value = true;
@@ -116,13 +124,18 @@ export function useTypedDocumentPersistence(options = {}) {
     });
   };
 
+  const invalidatePendingLoad = () => {
+    loadSeq.value += 1;
+  };
+
   watch(
-    () => [docId.value, currentDocType.value],
+    () => [docMachine?.state.value, docId.value, currentDocType.value],
     async () => {
       clearSaveTimer();
       dirty.value = false;
       lastSaved.value = '';
-      if (!isCurrentType.value) {
+      if (!isCurrentType.value || !isMachineReady()) {
+        invalidatePendingLoad();
         return;
       }
       await loadContent();
@@ -133,7 +146,7 @@ export function useTypedDocumentPersistence(options = {}) {
   watch(
     () => editorContent.value,
     () => {
-      if (!isCurrentType.value || skipWatcher.value) {
+      if (!isCurrentType.value || skipWatcher.value || !isMachineReady()) {
         return;
       }
       dirty.value = true;
@@ -153,6 +166,7 @@ export function useTypedDocumentPersistence(options = {}) {
 
   onBeforeUnmount(() => {
     clearSaveTimer();
+    invalidatePendingLoad();
   });
 
   return {

@@ -81,6 +81,7 @@ export default {
     hidePreview: 'Hide Preview',
     lastSaved: 'Last saved',
     loading: 'Syncing document...',
+    loadError: 'Failed to load document',
     fetchContentError: 'Failed to load document content',
     createDocument: 'Create Document',
     deleteDocument: 'Delete Document',

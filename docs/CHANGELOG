@@ -6,6 +6,24 @@ All notable changes to this template should be documented in this file.
 The format loosely follows Keep a Changelog and can be adapted to the team's habits.
 本文档参考了 Keep a Changelog 的思路，也可以按团队习惯调整。
 
+## [0.2.0] - 2026-08-22
+
+### Added / 新增
+
+- Introduced a document lifecycle state machine (`useDocumentStateMachine`) with states `idle` / `navigating` / `resolving` / `ready` / `saving` / `error`. The editor is now only rendered once the machine reaches `ready`, guaranteeing that `currentDocType` is resolved before any editor or persistence is activated.
+- 引入文档生命周期状态机（`useDocumentStateMachine`），包含 `idle` / `navigating` / `resolving` / `ready` / `saving` / `error` 六个状态。编辑器只在状态机进入 `ready` 后才渲染，确保 `currentDocType` 已落定，再激活任何编辑器或持久化逻辑。
+
+### Changed / 变更
+
+- `DocumentEditor.vue` now renders editors based on `docMachine.targetDocType` instead of the asynchronously-derived `isRichTextDocument` flags, eliminating the transient stale-type window during cross-type navigation.
+- `DocumentEditor.vue` 改为根据 `docMachine.targetDocType` 渲染编辑器，不再依赖异步派生的 `isRichTextDocument` 等标志，彻底消除跨类型导航期间的过期类型窗口。
+
+- `useTypedDocumentPersistence` guards all load/save operations with `docMachine.isReady`, invalidates pending loads on state changes, and re-checks `isCurrentType` after every `await`. Stale loads can no longer write to a content ref after navigation has moved on.
+- `useTypedDocumentPersistence` 用 `docMachine.isReady` 守卫所有加载/保存操作，状态变化时使未完成的加载失效，并在每次 `await` 后复核 `isCurrentType`。导航已发生后，过期加载无法再写入 content ref。
+
+- `useDocumentEditorPolicy` and `useDocumentEditorActions` now prefer `docMachine.targetDocType` when resolving the active document type/content.
+- `useDocumentEditorPolicy` 与 `useDocumentEditorActions` 解析当前文档类型/内容时优先使用 `docMachine.targetDocType`。
+
 ## [0.1.1] - 2026-08-22
 
 ### Fixed / 修复

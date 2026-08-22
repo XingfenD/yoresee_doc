@@ -7,6 +7,7 @@ export function useDocumentEditorLifecycle({
   fetchSystemInfo,
   kbId,
   docId,
+  currentDocType,
   activeMenu,
   resolveActiveMenu,
   collabEnabled,
@@ -24,7 +25,8 @@ export function useDocumentEditorLifecycle({
   commentSidebarRef,
   isCommentCollapsed,
   cancelEditTitle,
-  recordRecentDocument
+  recordRecentDocument,
+  docMachine
 }) {
   const clearEditorContents = () => {
     if (markdownContent) markdownContent.value = '';
@@ -48,16 +50,58 @@ export function useDocumentEditorLifecycle({
     }
   };
 
+  const syncCollabReadyFlag = () => {
+    if (lastSyncedDocId.value !== docId.value) {
+      collabReady.value = !collabEnabled.value;
+    }
+  };
+
+  const resolveTargetDocument = async (targetDocId) => {
+    if (!targetDocId) {
+      docMachine.startNavigation('');
+      docId.value = '';
+      clearEditorContents();
+      currentDocTitle.value = '';
+      cancelEditTitle();
+      docMachine.resolveContent({ docId: '', content: '' });
+      return;
+    }
+
+    docMachine.startNavigation(targetDocId);
+    docId.value = targetDocId;
+    clearEditorContents();
+    currentDocTitle.value = '';
+    cancelEditTitle();
+
+    await commentSidebarRef.value?.reload?.();
+    if (docId.value) {
+      recordRecentDocument(docId.value).catch(() => {});
+    }
+
+    await expandToCurrentDoc();
+    updateCurrentDocTitle();
+
+    const type = currentDocType?.value || '1';
+    docMachine.resolveMetadata({ docId: targetDocId, type });
+
+    // For table/slide the typed persistence will load content once the machine
+    // reaches READY. For markdown/rich-text the collaboration layer is the
+    // source of truth, so we mount with empty local content.
+    docMachine.resolveContent({ docId: targetDocId, content: '' });
+
+    syncCollabReadyFlag();
+  };
+
   onMounted(async () => {
     initLanguage();
     activeMenu.value = resolveActiveMenu(kbId.value);
 
     await fetchDocuments();
     if (docId.value) {
-      recordRecentDocument(docId.value).catch(() => {});
-    }
-    if (lastSyncedDocId.value !== docId.value) {
-      collabReady.value = !collabEnabled.value;
+      await resolveTargetDocument(docId.value);
+    } else {
+      docMachine.startNavigation('');
+      docMachine.resolveContent({ docId: '', content: '' });
     }
 
     await fetchSystemInfo();
@@ -65,21 +109,7 @@ export function useDocumentEditorLifecycle({
 
   watch(
     () => props.docId || route.params.docId,
-    async (newDocId) => {
-      docId.value = newDocId;
-      clearEditorContents();
-      currentDocTitle.value = '';
-      cancelEditTitle();
-      await commentSidebarRef.value?.reload?.();
-      if (docId.value) {
-        recordRecentDocument(docId.value).catch(() => {});
-      }
-      await expandToCurrentDoc();
-      updateCurrentDocTitle();
-      if (lastSyncedDocId.value !== docId.value) {
-        collabReady.value = !collabEnabled.value;
-      }
-    }
+    resolveTargetDocument
   );
 
   watch(
@@ -92,10 +122,8 @@ export function useDocumentEditorLifecycle({
       activeMenu.value = resolveActiveMenu(kbId.value);
       cancelEditTitle();
       await fetchDocuments();
-      if (lastSyncedDocId.value !== docId.value) {
-        collabReady.value = !collabEnabled.value;
-      }
       updateCurrentDocTitle();
+      syncCollabReadyFlag();
     }
   );
 
