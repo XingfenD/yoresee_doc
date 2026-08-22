@@ -32,6 +32,9 @@
 }
 
 .rich-text-body :deep(.yoresee-rich-text-content) {
+  width: 720px;
+  max-width: 720px;
+  margin: 0 auto;
   min-height: 100%;
   outline: none;
   padding: 14px 18px 14px 56px;

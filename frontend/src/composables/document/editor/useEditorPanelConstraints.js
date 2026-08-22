@@ -9,11 +9,15 @@ export function useEditorPanelConstraints(options = {}) {
     onLayoutChange = null,
     sidebarWidthStorageKey = 'docSidebarWidth',
     sidebarCollapsedStorageKey = 'sidebarCollapsed',
-    minEditorMainWidth = 520
+    minEditorMainWidth = 520,
+    pageWidth = 720
   } = options;
   const COLLAPSE_ANIMATION_MS = 320;
   const COMMENT_RESIZE_DEBOUNCE_MS = 140;
+  const LAYOUT_GUTTER = 8;
+  const PAGE_MIN_MARGIN = 16;
   let layoutSettleTimer = null;
+  let resizeObserver = null;
 
   const emitLayoutChange = (delay = 0) => {
     if (layoutSettleTimer) {
@@ -82,6 +86,43 @@ export function useEditorPanelConstraints(options = {}) {
     }
   };
 
+  // When the editing area is too narrow to fit the fixed-width document page,
+  // reclaim space by collapsing the directory and comment sidebars first.
+  // The document then falls back to a horizontal scrollbar if still narrower.
+  // Sidebars we auto-collapsed are restored when the area widens again, while
+  // sidebars the user collapsed manually are left alone.
+  let responsiveDirForced = false;
+  let responsiveCommentForced = false;
+  const applyResponsiveSidebars = () => {
+    const layoutRect = editorLayoutRef.value?.getBoundingClientRect();
+    if (!layoutRect || layoutRect.width <= 0) {
+      return;
+    }
+    const dirVisible = isSidebarCollapsed.value ? 0 : sidebarWidth.value;
+    const commentVisible = getVisibleCommentWidth();
+    const editorArea = layoutRect.width - commentVisible - dirVisible - LAYOUT_GUTTER;
+    const narrow = editorArea > 0 && editorArea < pageWidth + PAGE_MIN_MARGIN;
+    if (narrow) {
+      if (!isSidebarCollapsed.value) {
+        setSidebarCollapsed(true);
+        responsiveDirForced = true;
+      }
+      if (!isCommentCollapsed.value) {
+        isCommentCollapsed.value = true;
+        responsiveCommentForced = true;
+      }
+    } else {
+      if (responsiveDirForced) {
+        setSidebarCollapsed(false);
+        responsiveDirForced = false;
+      }
+      if (responsiveCommentForced) {
+        isCommentCollapsed.value = false;
+        responsiveCommentForced = false;
+      }
+    }
+  };
+
   const handleCommentWidthChange = () => {
     clampSidebarWidth();
     emitLayoutChange(COMMENT_RESIZE_DEBOUNCE_MS);
@@ -119,18 +160,36 @@ export function useEditorPanelConstraints(options = {}) {
   onMounted(() => {
     // Always start with directory sidebar expanded when entering editor.
     setSidebarCollapsed(false);
-    window.addEventListener('resize', clampSidebarWidth);
+    window.addEventListener('resize', handleWindowResize);
+    if (typeof ResizeObserver !== 'undefined' && editorLayoutRef.value) {
+      resizeObserver = new ResizeObserver(handleLayoutResize);
+      resizeObserver.observe(editorLayoutRef.value);
+    }
     clampSidebarWidth();
+    applyResponsiveSidebars();
     emitLayoutChange(0);
   });
 
   onBeforeUnmount(() => {
-    window.removeEventListener('resize', clampSidebarWidth);
+    window.removeEventListener('resize', handleWindowResize);
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      resizeObserver = null;
+    }
     if (layoutSettleTimer) {
       clearTimeout(layoutSettleTimer);
       layoutSettleTimer = null;
     }
   });
+
+  const handleWindowResize = () => {
+    clampSidebarWidth();
+    applyResponsiveSidebars();
+  };
+
+  const handleLayoutResize = () => {
+    applyResponsiveSidebars();
+  };
 
   return {
     isSidebarCollapsed,
