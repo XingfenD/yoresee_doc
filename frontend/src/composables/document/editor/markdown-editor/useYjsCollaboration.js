@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import {
@@ -28,6 +28,7 @@ export function useYjsCollaboration({
   const activeRoomRef = ref('');
   const collabSyncedRef = ref(false);
   const pendingSeedRef = ref('');
+  const pendingRemoteRef = ref('');
 
   const getCaretOffset = (container) => {
     const selection = window.getSelection();
@@ -87,6 +88,7 @@ export function useYjsCollaboration({
   const applyRemoteValue = (remoteValue) => {
     const vditor = vditorRef.value;
     if (!vditor || !isVditorReady.value || typeof vditor.setValue !== 'function') {
+      pendingRemoteRef.value = remoteValue || '';
       return;
     }
     if (suppressInput.value) {
@@ -114,6 +116,21 @@ export function useYjsCollaboration({
       });
     }
   };
+
+  const flushPendingRemote = () => {
+    if (!pendingRemoteRef.value) {
+      return;
+    }
+    const value = pendingRemoteRef.value;
+    pendingRemoteRef.value = '';
+    applyRemoteValue(value);
+  };
+
+  watch(isVditorReady, (ready) => {
+    if (ready) {
+      flushPendingRemote();
+    }
+  });
 
   const setupCollaboration = () => {
     if (!props.collabEnabled || !props.collabRoom) {
@@ -196,6 +213,7 @@ export function useYjsCollaboration({
     activeRoomRef.value = '';
     collabSyncedRef.value = false;
     pendingSeedRef.value = '';
+    pendingRemoteRef.value = '';
     emit('collab-sync', false);
   };
 

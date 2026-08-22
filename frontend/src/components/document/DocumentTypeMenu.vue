@@ -3,6 +3,7 @@
     ref="triggerRef"
     class="document-type-menu-trigger"
     :class="{ 'is-disabled': disabled }"
+    v-bind="$attrs"
     @click.capture="handleTriggerClick"
   >
     <slot />
@@ -33,6 +34,10 @@ import { useI18n } from 'vue-i18n';
 import AppMenu from '@/components/base/AppMenu.vue';
 import AppMenuItem from '@/components/base/AppMenuItem.vue';
 import { buildDocumentTypeOptions, normalizeDocumentType } from '@/utils/documentType';
+
+defineOptions({
+  inheritAttrs: false
+});
 
 const props = defineProps({
   trigger: {
