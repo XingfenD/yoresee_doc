@@ -64,7 +64,6 @@ Shutdown behavior:
 - Source-mounted development containers
 - Backend debug port exposed (`2345`)
 - Postgres/Redis/RabbitMQ/Elasticsearch ports exposed to host
-- `start.sh dev ...` auto-runs `deploy/script/gen_proto.sh`
 
 `deploy/docker-compose.yml`:
 - Production-style images
@@ -73,13 +72,10 @@ Shutdown behavior:
 
 ## Dev Prerequisites
 
-`start.sh dev ...` runs `deploy/script/gen_proto.sh` on the host machine before docker compose starts.
-
 Required on host:
 - `docker` + `docker compose`
-- `go` + `protoc` (for Go stubs)
-- frontend plugins in `frontend/node_modules` (`protoc-gen-es`, `protoc-gen-connect-es`)
-- `grpc_tools_node_protoc_plugin` in `PATH` (for Node gRPC stubs used by `collab`)
+
+Protobuf stubs come from published packages (see Protobuf Packages), so `protoc` is not needed for normal development.
 
 ## Configuration Workflow
 
@@ -173,18 +169,17 @@ Direct infra ports in dev:
 - Redis Pub/Sub does not provide true consumer-group semantics.
 - For dirty-doc pipeline, keep `DIRTY_DOC_MQ` as `rabbitmq` or `both` if snapshot-worker should consume events from RabbitMQ.
 
-## Build and Protobuf
+## Protobuf Packages
 
-Manual protobuf generation:
+Proto definitions live in a separate repo (`yoresee_doc_proto`); this repo consumes the published packages:
+- Go: `github.com/XingfenD/yoresee_doc_proto` (`backend`, `collab-go`)
+- npm: `@yoresee/doc-proto-connect` (`frontend`), `@yoresee/doc-proto-grpc` (`collab`)
+
+To test local proto changes before publishing:
 ```bash
-bash deploy/script/gen_proto.sh
+bash deploy/script/link_proto.sh link ../yoresee_doc_proto   # go.mod replace + npm file: deps
+bash deploy/script/link_proto.sh unlink                      # restore published versions
 ```
-
-Generated targets:
-- `backend/pkg/gen`
-- `collab-go/pkg/gen`
-- `frontend/src/gen`
-- `collab/src/gen`
 
 ## Repository Structure
 
@@ -192,6 +187,5 @@ Generated targets:
 - `frontend`: Vue application
 - `collab`: Node.js collaboration core
 - `collab-go`: Go WebSocket gateway for collaboration traffic
-- `proto`: protobuf contracts
 - `deploy`: compose files, scripts, infra templates
 - `docs`: project docs

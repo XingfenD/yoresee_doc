@@ -64,7 +64,6 @@ Backend 探针：
 - 源码挂载开发模式
 - 暴露 backend 调试端口（`2345`）
 - Postgres/Redis/RabbitMQ/Elasticsearch 端口对宿主机开放
-- `start.sh dev ...` 会自动执行 `deploy/script/gen_proto.sh`
 
 `deploy/docker-compose.yml`：
 - 偏生产形态镜像
@@ -73,13 +72,10 @@ Backend 探针：
 
 ## 开发前置依赖
 
-`start.sh dev ...` 会在 docker compose 启动前，先在宿主机执行 `deploy/script/gen_proto.sh`。
-
 宿主机需要：
 - `docker` + `docker compose`
-- `go` + `protoc`（生成 Go 桩代码）
-- `frontend/node_modules` 中的插件（`protoc-gen-es`、`protoc-gen-connect-es`）
-- `PATH` 中可用的 `grpc_tools_node_protoc_plugin`（生成 `collab` 侧 Node gRPC 代码）
+
+Protobuf 桩代码来自已发布的包（见「Protobuf 包」一节），日常开发无需在宿主机安装 `protoc`。
 
 ## 配置工作流
 
@@ -173,18 +169,17 @@ bash deploy/script/start.sh dev clear
 - Redis Pub/Sub 不提供真正的组消费语义。
 - 脏文档链路建议将 `DIRTY_DOC_MQ` 设为 `rabbitmq` 或 `both`，以保证 `snapshot-worker` 能从 RabbitMQ 收到事件。
 
-## Protobuf 生成
+## Protobuf 包
 
-手动生成：
+Proto 定义在独立仓库（`yoresee_doc_proto`）中维护，本仓库直接消费已发布的包：
+- Go：`github.com/XingfenD/yoresee_doc_proto`（`backend`、`collab-go`）
+- npm：`@yoresee/doc-proto-connect`（`frontend`）、`@yoresee/doc-proto-grpc`（`collab`）
+
+发布前想在本地验证 proto 改动时：
 ```bash
-bash deploy/script/gen_proto.sh
+bash deploy/script/link_proto.sh link ../yoresee_doc_proto   # go.mod replace + npm file: 依赖
+bash deploy/script/link_proto.sh unlink                      # 恢复为已发布版本
 ```
-
-生成目标：
-- `backend/pkg/gen`
-- `collab-go/pkg/gen`
-- `frontend/src/gen`
-- `collab/src/gen`
 
 ## 仓库结构
 
@@ -192,6 +187,5 @@ bash deploy/script/gen_proto.sh
 - `frontend`：Vue 前端
 - `collab`：Node.js 协作核心
 - `collab-go`：Go WebSocket 协作网关
-- `proto`：Protobuf 协议
 - `deploy`：Compose、脚本、基础设施模板
 - `docs`：项目文档
