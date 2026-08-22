@@ -278,6 +278,7 @@ export function useInvitationCenter(props) {
   });
 
   return {
+    isSystemMode,
     activeTab,
     inviteList,
     inviteColumns,
