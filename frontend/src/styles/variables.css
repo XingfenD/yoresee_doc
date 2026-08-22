@@ -104,6 +104,7 @@
   --el-card-bg-color: var(--bg-white);
   --el-card-border-color: var(--border-color);
 
+  --el-bg-color: var(--bg-white);
   --el-dialog-bg-color: var(--bg-white);
 
   --el-menu-bg-color: var(--bg-white);
